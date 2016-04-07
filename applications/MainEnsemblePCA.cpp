@@ -80,14 +80,14 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 			}
 		}
 
-		for(vector<Edge*>::iterator eit=struc->m_spanning_tree->Edges.begin(); eit!=struc->m_spanning_tree->Edges.end(); ++eit){
-			Edge* e = *eit;
+		for(vector<KinEdge*>::iterator eit=struc->m_spanning_tree->Edges.begin(); eit!=struc->m_spanning_tree->Edges.end(); ++eit){
+			KinEdge* e = *eit;
 
 			double strucTorsion = torsion(e->getBond());
 			double nativeTorsion = 1000;
 
-			for(vector<Edge*>::iterator neit=native->m_spanning_tree->Edges.begin(); neit!=native->m_spanning_tree->Edges.end(); ++neit){
-				Edge* ne = *neit;
+			for(vector<KinEdge*>::iterator neit=native->m_spanning_tree->Edges.begin(); neit!=native->m_spanning_tree->Edges.end(); ++neit){
+				KinEdge* ne = *neit;
 				if(ne->DOF_id==e->DOF_id){
 					nativeTorsion = torsion(ne->getBond());
 					break;
@@ -98,7 +98,7 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 			if(diff>CTK_PI) diff-=2*CTK_PI;
 			//cout<<diff<<" ";
 			if(diff>3.15){
-					cout<<"Edge: ";
+					cout<<"KinEdge: ";
 				cout<<e->DOF_id<<" .. "<<diff<<" .. "<<strucTorsion<<" .. "<<nativeTorsion<<endl;
 				exit(-1);
 			}
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]){
 	cout<<"done. Total: "<<configurations.size()<<endl;
 
 	cout<<"Calculating covariance matrix .. ";
-	int n = native->m_spanning_tree->num_DOFs;
+	int n = native->m_spanning_tree->m_numDOFs;
 	double* cov = new double[n*n];
 	double* avg = new double[n];
 	for(int i=0;i<n;i++){ avg[i]=0; for(int j=0;j<n;j++) cov[i*n+j] = 0; }
@@ -190,8 +190,8 @@ int main(int argc, char* argv[]){
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		double eval_i = gsl_vector_get(eval, component);
 		
-		for(vector<Edge*>::iterator eit = native->m_spanning_tree->Edges.begin(); eit != native->m_spanning_tree->Edges.end(); ++eit){
-			Edge* e = *eit;
+		for(vector<KinEdge*>::iterator eit = native->m_spanning_tree->Edges.begin(); eit != native->m_spanning_tree->Edges.end(); ++eit){
+			KinEdge* e = *eit;
 			int dof = e->DOF_id;
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 			evec_component = fabs(evec_component)*eval_i*eval_i*100.0;
@@ -210,7 +210,7 @@ int main(int argc, char* argv[]){
 				double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 				evec_component = fabs(evec_component)*eval_i*eval_i;
 				//cout<<v<<" "<<evec_component<<endl;
-				for(vector<Atom*>::iterator ait=v->Rb_ptr->Atoms.begin(); ait!=v->Rb_ptr->Atoms.end(); ++ait){
+				for(vector<Atom*>::iterator ait=v->m_rigidbody->Atoms.begin(); ait!=v->m_rigidbody->Atoms.end(); ++ait){
 					int aid = (*ait)->getId();
 					//atom_def[aid]+=evec_component*0.22*eval_i*eval_i*100.0;
 					atom_def[aid]+=evec_component*100.0;

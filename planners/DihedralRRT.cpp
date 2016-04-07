@@ -35,7 +35,7 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, Direction& direction):
   direction(direction)
 {
 	m_protein = protein;
-	m_DOF = m_protein->m_spanning_tree->num_DOFs;//Edges.size();
+	m_DOF = m_protein->m_spanning_tree->m_numDOFs;//Edges.size();
 	Configuration *pSmp = new Configuration(m_protein);
 	pSmp->updateProtein();
   pSmp->computeCycleJacobianAndNullSpace();

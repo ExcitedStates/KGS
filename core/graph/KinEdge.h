@@ -27,7 +27,10 @@
 #ifndef KGS_RBEDGE_H
 #define KGS_RBEDGE_H
 
+#include "core/dofs/DOF.h"
 #include "KinGraph.h"
+
+class DOF;
 
 /**
  * An edge connecting two vertices in the kinematic tree.
@@ -36,16 +39,15 @@
  * can be associated with more Edges - see documentation of PentamerDOF). The edge is not responsible for
  * freeing any of these.
  */
-class Edge {
+class KinEdge {
  public:
-  Edge(KinVertex * startv, KinVertex * endv, Bond * m_bond);
+  KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond);
 
   KinVertex *StartVertex;
   KinVertex *EndVertex;
 
   int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
   int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
-
 
   void print() const;
 
@@ -55,13 +57,17 @@ class Edge {
   void printHTMLRoot() const;
 
   Bond *getBond() const;
+  DOF* getDOF() const;
+
+  void forwardPropagate();
 
  private:
   Bond * const m_bond;
+  DOF * const m_dof;
 };
 
-std::ostream& operator<<(std::ostream& os, const Edge& e);
-std::ostream& operator<<(std::ostream& os, const Edge* e);
+std::ostream& operator<<(std::ostream& os, const KinEdge& e);
+std::ostream& operator<<(std::ostream& os, const KinEdge* e);
 
 
 #endif //KGS_RBEDGE_H

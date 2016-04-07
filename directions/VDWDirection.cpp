@@ -93,8 +93,8 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
 void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
   Molecule * protein = atom->getResidue()->getChain()->getProtein();
   KinVertex *vertex = protein->getRigidbodyGraphVertex(atom);
-  while (vertex->Parent!=NULL) {
-    Edge* edge = vertex->Parent->findEdge(vertex);
+  while (vertex->m_parent!=NULL) {
+    KinEdge* edge = vertex->m_parent->findEdge(vertex);
     int dof_id = edge->DOF_id;
     Bond * bond_ptr = edge->getBond();
     Coordinate bp1 = bond_ptr->Atom1->m_Position;
@@ -103,6 +103,6 @@ void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
     gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);
-    vertex = vertex->Parent;
+    vertex = vertex->m_parent;
   }
 }

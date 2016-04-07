@@ -57,7 +57,7 @@ bool SugarVertex::sugarMember(Atom* a){
             //Check that a sugar-neighbor exists in this RB. Necessary for poly-pro sequences since two Proline CAs can exist in the same RB
             for(vector<Atom*>::iterator nIt = a->Cov_neighbor_list.begin(); nIt!=a->Cov_neighbor_list.end(); nIt++){
                 Atom* n = *nIt;
-                if( Rb_ptr->containsAtom(n) && (n->getName()=="CA" || n->getName()=="CB" || n->getName()=="CG" || n->getName()=="CD" || n->getName()=="N") )
+                if( m_rigidbody->containsAtom(n) && (n->getName()=="CA" || n->getName()=="CB" || n->getName()=="CG" || n->getName()=="CD" || n->getName()=="N") )
                     return true;
             }
         }
@@ -116,29 +116,29 @@ void SugarVertex::collectRest(Rigidbody* rb){
 }
 
 void SugarVertex::setParent(KinVertex* v){
-    //log("debugRas")<<"SugarVertex::setParent("<<v->Rb_ptr<<") this: "<<Rb_ptr<<endl;
+    //log("debugRas")<<"SugarVertex::setParent("<<v->m_rigidbody<<") this: "<<m_rigidbody<<endl;
 	KinVertex::setParent(v);
 
 	//Determine entry atom
 	Atom* entryAtom = NULL;
-	map<unsigned int,Edge*>::iterator edge_itr;
-	//for (edge_itr=Parent->Edges.begin(); edge_itr != Parent->Edges.end(); ++edge_itr) {
-	for (auto eit=Parent->edges.begin(); eit!=Parent->edges.end(); ++edge_itr) {
-		//if(KinVertex::Rb_ptr->containsAtom( (*edge_itr).second->getBond()->Atom2 )) {
-		if(KinVertex::Rb_ptr->containsAtom( (*eit)->getBond()->Atom2 )) {
+	map<unsigned int,KinEdge*>::iterator edge_itr;
+	//for (edge_itr=m_parent->Edges.begin(); edge_itr != m_parent->Edges.end(); ++edge_itr) {
+	for (auto eit=m_parent->m_edges.begin(); eit!=m_parent->m_edges.end(); ++edge_itr) {
+		//if(KinVertex::m_rigidbody->containsAtom( (*edge_itr).second->getBond()->Atom2 )) {
+		if(KinVertex::m_rigidbody->containsAtom( (*eit)->getBond()->Atom2 )) {
 			//entryAtom = (*edge_itr).second->getBond()->Atom2;
 			entryAtom = (*eit)->getBond()->Atom2;
 		}
 	}
-    //Atom* a = Rb_ptr->getAtom("CA");
-    //if(a!=NULL) log("debugRas")<<Rb_ptr<<".sugarMember("<<a<<") = "<<sugarMember(a)<<endl;
-    collectAttached(entryAtom, Rb_ptr, ringAttached[0] );
+    //Atom* a = m_rigidbody->getAtom("CA");
+    //if(a!=NULL) log("debugRas")<<m_rigidbody<<".sugarMember("<<a<<") = "<<sugarMember(a)<<endl;
+    collectAttached(entryAtom, m_rigidbody, ringAttached[0] );
     //log("debugRas")<<"Ringattached[0]: ";
     //for(list<Atom*>::iterator aIt = ringAttached[0].begin(); aIt!=ringAttached[0].end(); aIt++){
     //    log("debugRas")<<*aIt<<" , ";
     //}
     //log("debugRas")<<endl;
-	collectRest(Rb_ptr);
+	collectRest(m_rigidbody);
 
 	Vector3* pos[] = {
 		&ringAttached[0].front()->m_Position,
@@ -313,7 +313,7 @@ bool SugarVertex::getSugarConformation(double tau,Vector3* conf, double Am){//, 
 }
 
 /*
-	Updates the RigidbodyTransformation for edges going out from the sugar ring and for each adjacent Rigidbody. 
+	Updates the RigidbodyTransformation for m_edges going out from the sugar ring and for each adjacent Rigidbody.
 	It will also update the positions of atoms in ringAttached[2] and ringAttached[3]. 
 */
 void SugarVertex::configurationToGlobalMatrix(RigidTransform* ms, double* m_f){//, bool usePosition2){
@@ -332,12 +332,12 @@ void SugarVertex::configurationToGlobalMatrix(RigidTransform* ms, double* m_f){/
 		cerr<<"SugarVertex::configurationToGlobalMatrix - Invalid sugar conformation .. adjust amplitude"<<endl; exit(-1); }
 
 
-	map<unsigned int,Edge*>::iterator edge_itr;
+	map<unsigned int,KinEdge*>::iterator edge_itr;
 	RigidTransform localMat, m1, m2, m3, m4, m5,m6,m7;
 	Vector3 vec;
 	delayedUpdates.clear();
 
-	//Update transformation for outgoing edges and positions of moving atoms within this rigidbody.
+	//Update m_transformation for outgoing m_edges and positions of moving atoms within this rigidbody.
 	for(int i=1;i<5;i++){
 		m1.setIdentity();
 		m2.setIdentity();
@@ -358,11 +358,11 @@ void SugarVertex::configurationToGlobalMatrix(RigidTransform* ms, double* m_f){/
 			Atom* atm = *ait;
 		//Atom* atm = *(ringAttached[i].begin());
 
-			//If there is an outgoing edge from atm update its transformation
+			//If there is an outgoing edge from atm update its m_transformation
 			//for (edge_itr=Edges.begin(); edge_itr != Edges.end(); ++edge_itr) {
-			for (auto const& edge: edges) {
-				//Edge* edge = (*edge_itr).second;
-				//Edge* edge = *eit;
+			for (auto const& edge: m_edges) {
+				//KinEdge* edge = (*edge_itr).second;
+				//KinEdge* edge = *eit;
 				if( edge->getBond()->Atom1==atm ){
 
 
@@ -377,8 +377,8 @@ void SugarVertex::configurationToGlobalMatrix(RigidTransform* ms, double* m_f){/
 					//}
 					m6.setRotate(FindRotationMatrix(vec, -m_f[edge->DOF_id])); // !!! Since the FindRotationMatrix is for left hand, choose the negative of the angle
 
-					ms[edge->DOF_id] = transformation * localMat * m5 * m6 * m7;
-					edge->EndVertex->transformation = ms[edge->DOF_id];
+					ms[edge->DOF_id] = m_transformation * localMat * m5 * m6 * m7;
+					edge->EndVertex->m_transformation = ms[edge->DOF_id];
 				}
 			}
 
@@ -399,7 +399,7 @@ void SugarVertex::configurationToGlobalMatrix(RigidTransform* ms, double* m_f){/
 }
 
 void SugarVertex::updateDelayed(){//bool usePosition2){
-	for(vector<Atom*>::iterator ait=Rb_ptr->Atoms.begin(); ait!=Rb_ptr->Atoms.end(); ait++){
+	for(vector<Atom*>::iterator ait=m_rigidbody->Atoms.begin(); ait!=m_rigidbody->Atoms.end(); ait++){
 		Atom* atm = *ait;
 		if(delayedUpdates.find(atm->getId())!=delayedUpdates.end()){
 			//if(usePosition2) 	atm->Position2.set(delayedUpdates[atm->getId()]);
@@ -409,7 +409,7 @@ void SugarVertex::updateDelayed(){//bool usePosition2){
 	}
 }
 
-Vector3 SugarVertex::computeJacobianEntry(Edge* outEdge, double* m_f, Vector3& p){
+Vector3 SugarVertex::computeJacobianEntry(KinEdge* outEdge, double* m_f, Vector3& p){
 	assert (fabs(initTorsion)<=Amplitude);
 	double iniTau = acos(initTorsion/Amplitude)*initUp;
 	double dTau = m_f[DOF_id];

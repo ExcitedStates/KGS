@@ -63,9 +63,9 @@ KinVertex* KinGraph::addVertex (unsigned int rb_id, Rigidbody* rb, bool flexible
 	return new_vertex;
 }
 
-Edge* KinVertex::findEdge(KinVertex* v) const
+KinEdge* KinVertex::findEdge(KinVertex* v) const
 {
-  for(auto const& edge: edges){
+  for(auto const& edge: m_edges){
     if( edge->EndVertex==v )
       return edge;
   }
@@ -73,9 +73,9 @@ Edge* KinVertex::findEdge(KinVertex* v) const
 }
 
 // Add a directed edge from rb_id1 to rb_id2
-Edge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id)
+KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id)
 {
-    //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->Rb_ptr<<", "<<vertex2->Rb_ptr<<", "<<bond<<"..)"<<endl;
+    //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
 	Atom *atom2, *atom3, *atom4;
 	Bond *bond_copy = new Bond(*bond);
 	atom2 = bond_copy->Atom1;
@@ -98,7 +98,7 @@ Edge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * 
 
 	// If atom4 is in vertex1, then should flip atom2 and atom3 so that the bond is pointing from vertex1 to vertex2
 	Atom *tmp_atom;
-	for (vector<Atom*>::iterator svIT = vertex1->Rb_ptr->Atoms.begin(); svIT != vertex1->Rb_ptr->Atoms.end(); ++svIT)
+	for (vector<Atom*>::iterator svIT = vertex1->m_rigidbody->Atoms.begin(); svIT != vertex1->m_rigidbody->Atoms.end(); ++svIT)
 	{
 		if((*svIT) == atom4) 
 		{
@@ -110,9 +110,9 @@ Edge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * 
 	}
 
   //Old and weird
-//  Edge *edge1 = new Edge(vertex1,vertex2,bond_copy);
+//  KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond_copy);
 //  edge1->Bond = bond;
-	Edge *edge1 = new Edge(vertex1,vertex2,bond);
+	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond);
 	vertex1->addEdge(vertex2->id, edge1);
 	vertex2->setParent(vertex1);
 	Edges.push_back(edge1);
@@ -124,20 +124,25 @@ bool KinGraph::hasVertex (int rb_id) {
 	return (Vertex_map.find(rb_id)!=Vertex_map.end());
 }
 
+KinVertex* KinGraph::getVertex (int rb_id) {
+	return Vertex_map.find(rb_id)->second;
+}
+
+
 void KinGraph::print () {
 	map<unsigned int, KinVertex*>::iterator it;
 	for (it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
 		KinVertex *vertex = it->second;
-		log() << "Rigidbody " << vertex->id << ": " << vertex->Rb_ptr->Atoms.size() << " atoms and " << vertex->edges.size() << " edges" << endl;
+		log() << "Rigidbody " << vertex->id << ": " << vertex->m_rigidbody->Atoms.size() << " atoms and " << vertex->m_edges.size() << " m_edges" << endl;
 		vertex->print();
-		//for (map<unsigned int,Edge*>::iterator eit=vertex->Edges.begin(); eit!=vertex->Edges.end(); ++eit) {
-		for (auto eit=vertex->edges.begin(); eit!=vertex->edges.end(); ++eit) {
+		//for (map<unsigned int,KinEdge*>::iterator eit=vertex->Edges.begin(); eit!=vertex->Edges.end(); ++eit) {
+		for (auto eit=vertex->m_edges.begin(); eit!=vertex->m_edges.end(); ++eit) {
 			(*eit)->print();
 		}
 		log() << endl;
 	}
 
-    log() << "Total number of edges = " << Edges.size()/2 << endl;
+    log() << "Total number of m_edges = " << Edges.size()/2 << endl;
     log() << "Total number of rigid bodies = " << Vertex_map.size() << endl;
 }
 

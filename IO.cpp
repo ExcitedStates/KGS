@@ -575,7 +575,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
 	output.close();
 
 	///For testing only
-	vector<Edge*>::iterator eit;
+	vector<KinEdge*>::iterator eit;
 	int i=0;
 	ofstream myfile;
 	string myfile_s = output_file_name.substr(0,output_file_name.length()-4) + "_absChange.txt";
@@ -616,7 +616,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 
 	string edgeFile = output_file_name + "_allEdges.txt";
 	ofstream output1(edgeFile.c_str());
-	for (vector<Edge*>::iterator edge_itr=molecule->m_spanning_tree->Edges.begin(); edge_itr!=molecule->m_spanning_tree->Edges.end(); ++edge_itr) {
+	for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanning_tree->Edges.begin(); edge_itr!=molecule->m_spanning_tree->Edges.end(); ++edge_itr) {
 		Bond* bond = (*edge_itr)->getBond();
 		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output1 << bondVec.norm() << endl;
@@ -625,7 +625,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 
 	string anchorEdgeFile = output_file_name + "_allAnchors.txt";
 	ofstream output2(anchorEdgeFile.c_str());
-	for (vector< pair<Edge*,KinVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
+	for (vector< pair<KinEdge*,KinVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
 		Bond* bond = edge_itr->first->getBond();
 		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output2 << bondVec.norm() << endl;
@@ -976,7 +976,7 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
 	      pymol_script << "set dash_gap, 0.1" << endl;
 
 	      int site_1, site_2;
-	      vector< pair<Edge*,KinVertex*> >::iterator eit;
+	      vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
 	      for (eit=protein->m_spanning_tree->CycleAnchorEdges.begin(); eit != protein->m_spanning_tree->CycleAnchorEdges.end(); eit++) {
 
@@ -1070,7 +1070,7 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 			exit(-1);
 	}
 	if(protein->m_conf!=NULL){
-		int diff= protein->m_spanning_tree->num_DOFs - protein->m_spanning_tree->Cycle_DOF_num;
+		int diff= protein->m_spanning_tree->m_numDOFs - protein->m_spanning_tree->m_numCycleDOFs;
 		int sum = protein->m_conf->getNullspace()->NullspaceSize() + diff;
 		//int sum = m_protein->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
@@ -1079,9 +1079,9 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 		output << "Number of atoms: " << protein->atoms.size() << endl;
 		output <<"Number of covalent bonds: " << protein->Cov_bonds.size()<< endl;
 		output <<"Number of hydrogen bonds: " << protein->m_spanning_tree->CycleAnchorEdges.size()<< endl;
-		output << "Number of dihedrals in spanning tree: " << protein->m_spanning_tree->num_DOFs << endl;
+		output << "Number of dihedrals in spanning tree: " << protein->m_spanning_tree->m_numDOFs << endl;
 		output <<"Number of free dihedrals: " << diff << endl;
-		output <<"Number of cycle dihedrals: " << protein->m_spanning_tree->Cycle_DOF_num << endl<<endl;
+		output <<"Number of cycle dihedrals: " << protein->m_spanning_tree->m_numCycleDOFs << endl<<endl;
 		output <<"************* Statistics on rigidity analysis *************"<<endl;
 		output <<"Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->NullspaceSize() << endl;
 		//output <<"Number of internal m_dofs (nullspace dimension): " << m_protein->m_conf->CycleNullSpace->getNullspace()Size <<endl;
@@ -1144,7 +1144,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 		Configuration* iniConf = c;
 		output << "REMARK\tInitial Distance to target was "<<setprecision(6)<<c->m_distanceToTarget<<endl;
 
-		vector<Edge*>::iterator eit;
+		vector<KinEdge*>::iterator eit;
 
 		for(int i=0; i <= treeDepth; i++){
 
@@ -1173,7 +1173,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 
 //			map<unsigned int, unsigned int> resiColorMap;
 //			for( eit = molecule->m_spanning_tree->Edges.begin(); eit != molecule->m_spanning_tree->Edges.end(); eit++){
-//				Edge* e = (*eit);
+//				KinEdge* e = (*eit);
 //				int dofId = e->DOF_id;
 //				CTKResidue* res = e->Bond->Atom1->Parent_residue;
 //				double val = Abs(c->m_f[dofId]);
@@ -1255,7 +1255,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 		currId = c->m_id;
 		Configuration* iniConf = c;
 
-		vector<Edge*>::iterator eit;
+		vector<KinEdge*>::iterator eit;
 
 		for(int i=0; i <= treeDepth; i++){
 
@@ -1284,7 +1284,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 //			}
 //			map<unsigned int, unsigned int> resiColorMap;
 //			for( eit = target->m_spanning_tree->Edges.begin(); eit != target->m_spanning_tree->Edges.end(); eit++){
-//				Edge* e = (*eit);
+//				KinEdge* e = (*eit);
 //				int dofId = e->DOF_id;
 //				CTKResidue* res = e->Bond->Atom1->Parent_residue;
 //				double val = Abs(c->m_f[dofId]);
@@ -1395,7 +1395,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 	pymol_script << "set dash_gap, 0.1" << endl;
 
 	int site_1, site_2;
-	vector< pair<Edge*,KinVertex*> >::iterator eit;
+	vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
 	for (auto  const& eit: molecule->m_spanning_tree->CycleAnchorEdges){
 

@@ -27,7 +27,7 @@ namespace metrics{
 
 		int count = 0;
 		double distance=0.0, distanceRel=0.0;
-		for (vector<Edge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
+		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
 			int dofId = (*eit)->DOF_id;
 			double angle_diff = c2->getGlobalTorsions(dofId)-c1->getGlobalTorsions(dofId);
 			angle_diff = formatRangeRadian(angle_diff);

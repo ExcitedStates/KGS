@@ -135,7 +135,19 @@ add_library( libKGS
 		math/gsl_helpers.h
 		math/Nullspace.cpp
 		math/Nullspace.h
-		loopclosure/ExactIK.cpp loopclosure/ExactIK.h core/dofs/DOF.cpp core/dofs/DOF.h core/dofs/TorsionDOF.cpp core/dofs/TorsionDOF.h core/graph/RBEdge.cpp core/graph/RBEdge.h core/graph/KinVertex.cpp core/graph/KinVertex.h core/graph/KinTree.cpp core/graph/KinTree.h)
+		loopclosure/ExactIK.cpp
+		loopclosure/ExactIK.h
+		core/dofs/DOF.cpp
+		core/dofs/DOF.h
+		core/dofs/TorsionDOF.cpp
+		core/dofs/TorsionDOF.h
+		core/graph/KinEdge.cpp
+		core/graph/KinEdge.h
+		core/graph/KinVertex.cpp
+		core/graph/KinVertex.h
+		core/graph/KinTree.cpp
+		core/graph/KinTree.h
+		)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

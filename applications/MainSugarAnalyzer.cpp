@@ -137,14 +137,14 @@ int main( int argc, char* argv[] ){
 			if(v->isRibose){
 				SugarVertex* vs = reinterpret_cast<SugarVertex*>(v);
                 //log("sugar")<<"Sugr"<<setw(14)<<left<<vs->DOF_id<<"\t";
-				Vector3 C1 = v->Rb_ptr->getAtom("C1'")->m_Position;
-				Vector3 C2 = v->Rb_ptr->getAtom("C2'")->m_Position;
-				Vector3 C3 = v->Rb_ptr->getAtom("C3'")->m_Position;
-				Vector3 C4 = v->Rb_ptr->getAtom("C4'")->m_Position;
-				Vector3 O4 = v->Rb_ptr->getAtom("O4'")->m_Position;
-				Vector3 C5 = v->Rb_ptr->getAtom("C5'")->m_Position;
-				Vector3 O3 = v->Rb_ptr->getAtom("O3'")->m_Position;
-				Atom* scNAtom = v->Rb_ptr->getAtom("N9");
+				Vector3 C1 = v->m_rigidbody->getAtom("C1'")->m_Position;
+				Vector3 C2 = v->m_rigidbody->getAtom("C2'")->m_Position;
+				Vector3 C3 = v->m_rigidbody->getAtom("C3'")->m_Position;
+				Vector3 C4 = v->m_rigidbody->getAtom("C4'")->m_Position;
+				Vector3 O4 = v->m_rigidbody->getAtom("O4'")->m_Position;
+				Vector3 C5 = v->m_rigidbody->getAtom("C5'")->m_Position;
+				Vector3 O3 = v->m_rigidbody->getAtom("O3'")->m_Position;
+				Atom* scNAtom = v->m_rigidbody->getAtom("N9");
 				Atom* scCAtom = NULL;
 				if(scNAtom!=NULL){//purine
 					for(int i=1;i<scNAtom->Cov_neighbor_list.size();i++) 
@@ -153,7 +153,7 @@ int main( int argc, char* argv[] ){
 							break;
 						}
 				}else{//pyrimidine
-					scNAtom = v->Rb_ptr->getAtom("N1");
+					scNAtom = v->m_rigidbody->getAtom("N1");
 					for(int i=1;i<scNAtom->Cov_neighbor_list.size();i++) 
 						if(scNAtom->Cov_neighbor_list[i]->getName()=="C2"){
 							scCAtom = scNAtom->Cov_neighbor_list[i];
@@ -168,7 +168,7 @@ int main( int argc, char* argv[] ){
 				//double tau = acos(tau3/Am)*up;
 
                 log("sugar")<<setw(12)<<protein_name<<"\t"; //1
-                log("sugar")<<setw(12)<<v->Rb_ptr->Atoms[0]->getResidue()->getId()<<"\t"; //2
+                log("sugar")<<setw(12)<<v->m_rigidbody->Atoms[0]->getResidue()->getId()<<"\t"; //2
                 log("sugar")<<setw(12)<<setprecision(4)<<TorsionalAngle(C5, C4, C3, O3)<<"\t";//delta .. 3
                 log("sugar")<<setw(12)<<setprecision(4)<<TorsionalAngle(C4, O4, C1, C2)<<"\t";//tau0 .. 4
                 log("sugar")<<setw(12)<<setprecision(4)<<TorsionalAngle(O4, C1, C2, C3)<<"\t";//tau1 .. 5

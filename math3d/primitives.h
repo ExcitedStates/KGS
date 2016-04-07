@@ -654,7 +654,7 @@ class Matrix4
   inline void set(const Vector3& xb, const Vector3& yb, const Vector3& zb, const Vector3& trans);
   inline void set(const Vector4& x, const Vector4& y, const Vector4& z, const Vector4& w);
   inline void set(const Matrix3&);  ///<sets the upper 3x3 matrix
-  inline void set(const Matrix3&, const Vector3& trans);  ///<sets the upper 3x3 matrix and the upper 3x1 vector (making an affine 3D transformation)
+  inline void set(const Matrix3&, const Vector3& trans);  ///<sets the upper 3x3 matrix and the upper 3x1 vector (making an affine 3D m_transformation)
   inline void setZero();
   inline void setIdentity();
   inline void setTranslate(const Vector3& trans);
@@ -762,9 +762,9 @@ inline Vector3 operator * (const Matrix4& a, const Vector3& b);		///<WARNING: ve
 inline Vector3 operator * (const Vector3& a, const Matrix4& b);		///<WARNING: vector multiply (transpose)
 
 
-/** @brief A rigid-body transformation.
+/** @brief A rigid-body m_transformation.
  *
- * A linear transformation of the form T(t)*R where R is an orthogonal
+ * A linear m_transformation of the form T(t)*R where R is an orthogonal
  * (rotation) matrix, and T(t) is a translation by the vector t.
  *
  * The property that R is orthogonal is assumed to be user-maintained.
@@ -774,7 +774,7 @@ inline Vector3 operator * (const Vector3& a, const Matrix4& b);		///<WARNING: ve
  * 2) \f$ R*T(t) = T(R*t)*R \f$.
  *
  * Therefore, many operations are more efficient than representing the
- * transformation as a 4x4 homogeneous matrix.
+ * m_transformation as a 4x4 homogeneous matrix.
  */
 class RigidTransform
 {

@@ -1,19 +1,20 @@
-
-#include "RBEdge.h"
+#include <core/dofs/TorsionDOF.h>
+#include "KinEdge.h"
 #include "Logger.h"
 
 using namespace std;
 
-Edge::Edge(KinVertex *startv, KinVertex *endv, Bond *bond) :
+KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond) :
     StartVertex(startv),
     EndVertex(endv),
-    m_bond(bond)
+    m_bond(bond),
+    m_dof(new TorsionDOF(this))
 {
   DOF_id = -1;
   Cycle_DOF_id = -1;
 }
 
-void Edge::print () const {
+void KinEdge::print () const {
   log() << "(" << StartVertex->id << "," << EndVertex->id;
   log() << ",[" << m_bond->Atom1->getResidue()->getId()<<m_bond->Atom1->getName() << ",";
   log() << m_bond->Atom2->getResidue()->getId() << m_bond->Atom2->getName() << "]";
@@ -22,10 +23,10 @@ void Edge::print () const {
   log() << ",DOF_id=" << DOF_id << ",Cycle_DOF_id=" << Cycle_DOF_id << ")" << endl;
 }
 
-void Edge::printVerbose() const{
-  log() << "\t Edge: " << endl;
+void KinEdge::printVerbose() const{
+  log() << "\t KinEdge: " << endl;
   log() << "\t\t StartVertex: " << StartVertex->id << "  EndVertex: " << EndVertex->id << endl;
-  log() << "\t\t StartVertex: " << (StartVertex->Rb_ptr->isMainchainRb()?"isOnMainchain":"isNOTonMainchain") << endl;
+  log() << "\t\t StartVertex: " << (StartVertex->m_rigidbody->isMainchainRb()?"isOnMainchain":"isNOTonMainchain") << endl;
   //log() << "\t\t Direction: Res1_ID Atom1_Name Atom1_ID ---------> Res2_ID Atom2_Name Atom2_ID " << endl;
   log() << "\t\t Direction: " << m_bond->Atom1->getResidue()->getId() << " " << m_bond->Atom1->getId() << " " << m_bond->Atom1->getName() <<
   "\t ---------> \t"
@@ -35,8 +36,8 @@ void Edge::printVerbose() const{
   log() << "---------------------------" << endl;
 }
 
-void Edge::printShort() const{
-  log() << "\t Edge: " << endl;
+void KinEdge::printShort() const{
+  log() << "\t KinEdge: " << endl;
   log() << "\t\t StartVertex: " << StartVertex->id << "  EndVertex: " << EndVertex->id << endl;
   log() << "\t\t Direction: " << m_bond->Atom1->getResidue()->getId() << " " << m_bond->Atom1->getId() << " " << m_bond->Atom1->getName() <<
   "\t ---------> \t"
@@ -44,30 +45,39 @@ void Edge::printShort() const{
   log() << "---------------------------" << endl;
 }
 
-void Edge::printHTML() const {
-  int label = EndVertex->Rb_ptr->size();
+void KinEdge::printHTML() const {
+  int label = EndVertex->m_rigidbody->size();
   //int label = EndVertex->id;
   log() << "var vertex_" << EndVertex->id << " = graph.newNode({label: \"" << label << "\", fill: \"#000000\"});" << endl;
   log() << "graph.newEdge(vertex_" << StartVertex->id << ", vertex_" << EndVertex->id << ");" << endl;
 }
 
-void Edge::printHTMLRoot() const{
+void KinEdge::printHTMLRoot() const{
   log() << "var vertex_" << StartVertex->id << " = graph.newNode({label: \"*"
   << StartVertex->id << "*\", fill: \"#EE2222\"});" << endl;
 }
 
-Bond *Edge::getBond() const {
+Bond *KinEdge::getBond() const {
   return m_bond;
 }
 
+DOF *KinEdge::getDOF() const {
+  return m_dof;
+}
+
+void KinEdge::forwardPropagate()
+{
+  m_dof->updateEndVertexTransformation();
+  EndVertex->forwardPropagate();
+}
 
 
-ostream& operator<<(ostream& os, const Edge& e){
-  os<<"Edge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
+ostream& operator<<(ostream& os, const KinEdge& e){
+  os<<"KinEdge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
   return os;
 }
 
-ostream& operator<<(ostream& os, const Edge* e){
+ostream& operator<<(ostream& os, const KinEdge* e){
   os<<*e;
   return os;
 }

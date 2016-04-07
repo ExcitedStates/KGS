@@ -120,7 +120,7 @@ void randomSampling(SamplingOptions& options){
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein.m_spanning_tree->num_DOFs << " DOFs of which " << protein.m_spanning_tree->Cycle_DOF_num << " are cycle-DOFs\n" << endl;
+  log("samplingStatus") << "> " << protein.m_spanning_tree->m_numDOFs << " DOFs of which " << protein.m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
 
   //Initialize move
   Move* move;
@@ -159,7 +159,7 @@ void randomSampling(SamplingOptions& options){
   timer.Reset();
   double start_time = timer.LastElapsedTime();
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->num_DOFs << ", Cycle DOFs: " << protein.m_spanning_tree->Cycle_DOF_num << endl;fflush(stdout);
+  log() << "Total DOFs: " << protein.m_spanning_tree->m_numDOFs << ", Cycle DOFs: " << protein.m_spanning_tree->m_numCycleDOFs << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";
@@ -265,7 +265,7 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein.m_spanning_tree->num_DOFs << " DOFs of which " << protein.m_spanning_tree->Cycle_DOF_num << " are cycle-DOFs\n" << endl;
+  log("samplingStatus") << "> " << protein.m_spanning_tree->m_numDOFs << " DOFs of which " << protein.m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
 
   //Build rigid body tree for target
   unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.root, &protein);
@@ -274,7 +274,7 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanning_tree->num_DOFs<<" DOFs of which "<<target->m_spanning_tree->Cycle_DOF_num<<" are cycle-DOFs\n"<<endl;
+  log("samplingStatus")<<"> "<<target->m_spanning_tree->m_numDOFs<<" DOFs of which "<<target->m_spanning_tree->m_numCycleDOFs<<" are cycle-DOFs\n"<<endl;
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
@@ -328,8 +328,8 @@ void targetedSampling(SamplingOptions& options){
   timer.Reset();
   double start_time = timer.LastElapsedTime();
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->num_DOFs << ", Cycle DOFs: " << protein.m_spanning_tree->Cycle_DOF_num << endl;fflush(stdout);
-  log() << "Total DOFs in target: " << target->m_spanning_tree->num_DOFs << ", Cycle DOFs: " << target->m_spanning_tree->Cycle_DOF_num << endl << endl;fflush(stdout);
+  log() << "Total DOFs: " << protein.m_spanning_tree->m_numDOFs << ", Cycle DOFs: " << protein.m_spanning_tree->m_numCycleDOFs << endl;fflush(stdout);
+  log() << "Total DOFs in target: " << target->m_spanning_tree->m_numDOFs << ", Cycle DOFs: " << target->m_spanning_tree->m_numCycleDOFs << endl << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";

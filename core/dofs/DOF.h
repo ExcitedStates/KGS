@@ -4,6 +4,9 @@
 
 
 #include <core/graph/KinGraph.h>
+#include <core/graph/KinEdge.h>
+
+class KinEdge;
 
 /**
  * A degree-of-freedom affecting a branch of the KinTree.
@@ -15,7 +18,7 @@
  */
 class DOF {
  public:
-  DOF(Edge* edge);
+  DOF(KinEdge* edge);
 
   /**
    * Return the partial derivative of the specified position assuming that `coord` is affected
@@ -40,20 +43,23 @@ class DOF {
    */
   virtual double getGlobalValue() const = 0;
 
- protected:
-//  /**
-//   * Update the transformation `tr`, apply it to `m_edge->EndVertex`, and propagate to edges leaving
-//   * `m_edge->EndVertex`.
-//   */
-//  virtual void forwardPropagate(Math3D::RigidTransform& tr)=0;
 
+ protected:
   /**
-   * Update the transformation matrix in `m_edge->EndVertex` based on the one in `m_edge->StartVertex` and
+   * Update the m_transformation matrix in `m_edge->EndVertex` based on the one in `m_edge->StartVertex` and
    * the value for this DOF.
    */
   virtual void updateEndVertexTransformation() = 0;
 
-  Edge const * m_edge;
+  friend class KinEdge;
+//  /**
+//   * Update the m_transformation `tr`, apply it to `m_edge->EndVertex`, and propagate to m_edges leaving
+//   * `m_edge->EndVertex`.
+//   */
+//  virtual void forwardPropagate(Math3D::RigidTransform& tr)=0;
+
+
+  KinEdge const * m_edge;
 
   double m_value;
 

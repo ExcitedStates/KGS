@@ -48,14 +48,14 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
   ///	KinVertex *root = pTree->Vertex_map.begin()->second;
   KinVertex *root = pTree->root;
   KinVertex *node, *newNode;
-  Edge *pEdge;
+  KinEdge *pEdge;
   Vector3 vec;
 
   list<KinVertex *>queue;
   RigidTransform localMat, m1, m2, m3;
 
   queue.push_back(root);
-  root->transformation.setIdentity();
+  root->m_transformation.setIdentity();
 
   // ms[0].setIdentity(); // the global matrix for the root
   // log("debug") << root->id << endl;
@@ -69,7 +69,7 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
       SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
       v->configurationToGlobalMatrix(ms, q->m_dofs);
       //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto eit=node->edges.begin(); eit!=node->edges.end(); ++eit){
+      for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit){
         //newNode = edge_itr->second->EndVertex;
         newNode = (*eit)->EndVertex;
         queue.push_back(newNode);
@@ -77,13 +77,13 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
       continue;
     }
 
-    //log("debug")<<"Updating transformations out of "<<node->Rb_ptr<<endl;
-    //log("debug")<<node->transformation<<endl;
+    //log("debug")<<"Updating transformations out of "<<node->m_rigidbody<<endl;
+    //log("debug")<<node->m_transformation<<endl;
 
     //m_children = node->Edges;
-    auto children = node->edges;
+    auto children = node->m_edges;
 
-    // log("debug") << "Parent " << node->id << ": ";
+    // log("debug") << "m_parent " << node->id << ": ";
     //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
     for (auto eit=children.begin(); eit!=children.end(); ++eit)
     {
@@ -103,12 +103,12 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
       //TODO: By deriving the closed form for localMat, the computation can be optimized
       localMat = m1 * m2 * m3;
 
-      //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->Rb_ptr->id()<<" "<<pEdge->DOF_id<<" had transformation changed by Transformation"<<endl;
-      ms[pEdge->DOF_id] = node->transformation * localMat; // the global matrix for this node
+      //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->DOF_id<<" had m_transformation changed by Transformation"<<endl;
+      ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
 
-      newNode->transformation = ms[pEdge->DOF_id];
-      if(!newNode->transformation.isValid(0.0001)){
-        cerr<<"Node transformation invalid: "<<pEdge->DOF_id<<endl;
+      newNode->m_transformation = ms[pEdge->DOF_id];
+      if(!newNode->m_transformation.isValid(0.0001)){
+        cerr<<"Node m_transformation invalid: "<<pEdge->DOF_id<<endl;
       }
 
       queue.push_back(newNode);
@@ -127,7 +127,7 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
       v->updateDelayed();//false);
       //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
       //	newNode = edge_itr->second->EndVertex;
-      for (auto eit=node->edges.begin(); eit!=node->edges.end(); ++eit){
+      for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit){
         newNode = (*eit)->EndVertex;
         queue.push_back(newNode);
       }
@@ -135,9 +135,9 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
     }
 
     //m_children = node->Edges;
-    auto children = node->edges;
+    auto children = node->m_edges;
     //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-    for (auto eit=node->edges.begin(); eit!=node->edges.end(); ++eit)
+    for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit)
     {
       //pEdge = edge_itr->second;
       pEdge = *eit;
@@ -160,13 +160,13 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
   //    ms[i].setIdentity();
   for(vector<KinVertex*>::iterator it = subVerts.begin(); it!=subVerts.end(); it++){
     KinVertex* v = *it;
-    ms[v->Rb_ptr->id()].setIdentity();
+    ms[v->m_rigidbody->id()].setIdentity();
   }
 
   KinVertex *node, *newNode;
-  map<unsigned int,Edge*> children;
-  map<unsigned int,Edge*>::iterator edge_itr;
-  Edge *pEdge;
+  map<unsigned int,KinEdge*> children;
+  map<unsigned int,KinEdge*>::iterator edge_itr;
+  KinEdge *pEdge;
   Vector3 vec;
 
   list<KinVertex *>queue;
@@ -183,7 +183,7 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
       SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
       v->configurationToGlobalMatrix(ms, q->m_dofs);//, false);
       //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto const& edge: node->edges){
+      for (auto const& edge: node->m_edges){
         newNode = edge->EndVertex;
         if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
           queue.push_back(newNode);
@@ -191,14 +191,14 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
       continue;
     }
 
-    //log("debug")<<"Updating transformations out of "<<node->Rb_ptr<<endl;
-    //log("debug")<<node->transformation<<endl;
+    //log("debug")<<"Updating transformations out of "<<node->m_rigidbody<<endl;
+    //log("debug")<<node->m_transformation<<endl;
 
     //m_children = node->Edges;
 
-    // log("debug") << "Parent " << node->id << ": ";
+    // log("debug") << "m_parent " << node->id << ": ";
     //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-    for (auto const& edge: node->edges)
+    for (auto const& edge: node->m_edges)
     {
       m1.setIdentity();
       m2.setIdentity();
@@ -215,9 +215,9 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
       //TODO: By deriving the closed form for localMat, the computation can be optimized
       localMat = m1 * m2 * m3;
 
-      ms[pEdge->DOF_id] = node->transformation * localMat; // the global matrix for this node
+      ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
 
-      newNode->transformation = ms[pEdge->DOF_id];
+      newNode->m_transformation = ms[pEdge->DOF_id];
 
       if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
         queue.push_back(newNode);
@@ -236,7 +236,7 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
       SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
       v->updateDelayed();//false);
       //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto const& edge: node->edges){
+      for (auto const& edge: node->m_edges){
         newNode = edge->EndVertex;
         if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
           queue.push_back(newNode);
@@ -246,7 +246,7 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
 
     //m_children = node->Edges;
     //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-    for (auto const& edge: node->edges)
+    for (auto const& edge: node->m_edges)
     {
       //pEdge = edge_itr->second;
       pEdge = edge;
@@ -261,9 +261,9 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
 
 void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef, RigidTransform *ms){
 
-  map<unsigned int,Edge*> children;
-  map<unsigned int,Edge*>::iterator edge_itr;
-  Edge *pEdge;
+  map<unsigned int,KinEdge*> children;
+  map<unsigned int,KinEdge*>::iterator edge_itr;
+  KinEdge *pEdge;
   Vector3 vec;
 
   KinVertex *newNode;
@@ -282,9 +282,9 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
 
   //m_children = node->Edges;
 
-  // log("debug") << "Parent " << node->id << ": ";
+  // log("debug") << "m_parent " << node->id << ": ";
   //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-  for (auto const& pEdge: node->edges)
+  for (auto const& pEdge: node->m_edges)
   {
     m1.setIdentity();
     m2.setIdentity();
@@ -329,11 +329,11 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
     Vector3 newPos;
     Vector3 oldPos = atom4->m_Position;
     //if( !atom4->m_bPositionModified ){
-    newPos = node->transformation.R * oldPos;
+    newPos = node->m_transformation.R * oldPos;
 
-    newPos.x += node->transformation.t.x;
-    newPos.y += node->transformation.t.y;
-    newPos.z += node->transformation.t.z;
+    newPos.x += node->m_transformation.t.x;
+    newPos.y += node->m_transformation.t.y;
+    newPos.z += node->m_transformation.t.z;
     //}
     //else{
     //	newPos=oldPos;
@@ -354,13 +354,13 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
 
     //TODO: By deriving the closed form for localMat, the computation can be optimized
     localMat = m1 * m2 * m3;
-    //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->Rb_ptr->id()<<" "<<pEdge->DOF_id<<" had transformation changed by Transformation"<<endl;
-    ms[pEdge->DOF_id] = node->transformation * localMat; // the global matrix for this node
+    //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->DOF_id<<" had m_transformation changed by Transformation"<<endl;
+    ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
 
-    newNode->transformation = ms[pEdge->DOF_id];
+    newNode->m_transformation = ms[pEdge->DOF_id];
 
-    if(!newNode->transformation.isValid(0.0001)){
-      cerr<<"Node transformation invalid: "<<pEdge->DOF_id<<endl;
+    if(!newNode->m_transformation.isValid(0.0001)){
+      cerr<<"Node m_transformation invalid: "<<pEdge->DOF_id<<endl;
     }
 
   }

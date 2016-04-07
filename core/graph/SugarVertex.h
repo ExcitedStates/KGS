@@ -39,10 +39,10 @@ class SugarVertex: public KinVertex{
 		double getCurrentUP();
 		void configurationToGlobalMatrix(RigidTransform* ms, double* m_f);//, bool usePosition2);
 		void updateDelayed();//bool usePosition2);
-		Math3D::Vector3 computeJacobianEntry(Edge* outEdge, double* m_f, Vector3& p);
+		Math3D::Vector3 computeJacobianEntry(KinEdge* outEdge, double* m_f, Vector3& p);
 	private:
 		bool getSugarConformation(double tau, Vector3* conf, double Am);//, bool usePosition2 = false);
-		Edge* getEdgeStartingAt(std::string atomName);
+		KinEdge* getEdgeStartingAt(std::string atomName);
 		void collectAttached(Atom* a, Rigidbody* rb, std::list<Atom*>& visited);
 		void collectRest(Rigidbody* rb);
 		bool sugarMember(Atom* a);

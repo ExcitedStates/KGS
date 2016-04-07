@@ -80,10 +80,10 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     if(currVertex == protein->m_spanning_tree->root)
       break;
     //int currId = currVertex->id;
-    KinVertex *parent = currVertex->Parent;
+    KinVertex *parent = currVertex->m_parent;
     int parentId = parent->id;
 
-    Edge* currEdge = parent->findEdge(currVertex);
+    KinEdge* currEdge = parent->findEdge(currVertex);
     Bond * bond_ptr = currEdge->getBond();
     Atom* atom1 = bond_ptr->Atom1;
     Atom* atom2 = bond_ptr->Atom2;
@@ -91,7 +91,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     f.setZero();
     g.setZero();
 
-    for (vector<Atom*>::iterator ait=currVertex->Rb_ptr->Atoms.begin(); ait!=currVertex->Rb_ptr->Atoms.end(); ait++ ){
+    for (vector<Atom*>::iterator ait=currVertex->m_rigidbody->Atoms.begin(); ait!=currVertex->m_rigidbody->Atoms.end(); ait++ ){
       Atom* atom = *ait;
       //Don't include the bond atoms in the calculation, not necessary
       if(atom == atom1 || atom == atom2)
@@ -128,16 +128,16 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
         }
       }
     }
-    if( currVertex->edges.size() == 0){//push on stack
+    if( currVertex->m_edges.size() == 0){//push on stack
       stackF.push(f);
       stackG.push(g);
     }
-    else if(currVertex->edges.size() == 1){//add with correct existing stack entry
+    else if(currVertex->m_edges.size() == 1){//add with correct existing stack entry
       stackF.top() += f;
       stackG.top() += g;
     }
     else{
-      for(int i=2; i <= currVertex->edges.size(); i++){
+      for(int i=2; i <= currVertex->m_edges.size(); i++){
         //add two and pop for each edge if equal or more than 2
         //this is necessary as we specify h-bonds as additional covalent bonds (stack is not limited to three as in Abé's paper)
         f += stackF.top();
@@ -151,8 +151,8 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
         g.setZero();
       }
     }
-    //Check that only "active" edges are used in the gradient, where a torsion can be defined properly
-    //Inactive edges are currently disabled (see IO read rigid body), so not necessary
+    //Check that only "active" m_edges are used in the gradient, where a torsion can be defined properly
+    //Inactive m_edges are currently disabled (see IO read rigid body), so not necessary
     Atom* atom3 = NULL;
     vector<Atom*>::iterator ait;
     for (ait=atom1->Cov_neighbor_list.begin(); ait!=atom1->Cov_neighbor_list.end(); ++ait) {

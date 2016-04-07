@@ -114,13 +114,13 @@ class Molecule {
 
 	// Topology of rigid bodies
 	KinTree *m_spanning_tree;
-	RigidTransform *m_Transformation; // cache: store the transformation of each rigid body group
+	RigidTransform *m_Transformation; // cache: store the m_transformation of each rigid body group
 
 	// Configuration
 	Configuration *m_conf;
 	Configuration *m_conf_backup;
 
-	// Jabocian matrices containing all DOFs for updating atom positions
+	// Jacobian matrices containing all DOFs for updating atom positions
 	gsl_matrix* AtomJacobian1;
 	gsl_matrix* AtomJacobian2;
 	gsl_matrix* AtomJacobian3;

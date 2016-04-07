@@ -42,7 +42,7 @@ RandomDirection::RandomDirection(double maxRotation):
 
 void RandomDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
 {
-  //TODO: It shouldn't be necessary to go through edges of the tree ...
+  //TODO: It shouldn't be necessary to go through m_edges of the tree ...
   //TODO: Just set all entries in ret to random values (?)
   Molecule * protein = conf->getProtein();
   double absMax = 0.0;

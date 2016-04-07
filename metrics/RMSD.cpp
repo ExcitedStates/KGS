@@ -52,7 +52,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     i+=3;
   }
 
-  // Prepare the transformation matrix
+  // Prepare the m_transformation matrix
   MATRIX mtx;
   // Call the rmsd procedure
   double diff = rmsd(v1,v2,atom_num,(float *) mtx.m);
@@ -145,7 +145,7 @@ double RMSD::align(Molecule * other, Molecule * base) {
     }
   }
 
-  // Prepare the transformation matrix
+  // Prepare the m_transformation matrix
   MATRIX mtx;
   // Call the rmsd procedure, v1 is base, v2 is mobile
   double diff = rmsd(v1,v2,atom_size,(float *) mtx.m);

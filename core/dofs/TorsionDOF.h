@@ -10,7 +10,7 @@
 
 class TorsionDOF: public DOF {
  public:
-  TorsionDOF(Edge* edge): DOF(edge){}
+  TorsionDOF(KinEdge* edge): DOF(edge){}
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const;
 

@@ -22,7 +22,7 @@ double TorsionDOF::getGlobalValue() const
 void TorsionDOF::updateEndVertexTransformation()
 {
   if( std::fabs(m_value)<0.0001 ) {
-    m_edge->EndVertex->transformation.setIdentity();
+    m_edge->EndVertex->m_transformation.setIdentity();
     return;
   }
 
@@ -41,5 +41,5 @@ void TorsionDOF::updateEndVertexTransformation()
   p1.inplaceNegative();
   m3.setTranslate(p1);
 
-  m_edge->EndVertex->transformation = m_edge->StartVertex->transformation * m1 * m2 * m3;
+  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m1 * m2 * m3;
 }

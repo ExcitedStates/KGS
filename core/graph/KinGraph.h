@@ -36,23 +36,23 @@
 #include "core/Bond.h"
 #include "core/Rigidbody.h"
 #include "math3d/primitives.h"
-#include "core/graph/RBEdge.h"
+#include "core/graph/KinEdge.h"
 #include "core/graph/KinVertex.h"
 
-class Edge;
+class KinEdge;
 
 class KinGraph {
  public:
   std::map<unsigned int, KinVertex*> Vertex_map;
   std::list< std::pair< unsigned int, KinVertex*> > m_sortedVertices;
-  std::vector<Edge*> Edges;
+  std::vector<KinEdge*> Edges;
 
   KinGraph ();
   ~KinGraph ();
   KinVertex* addVertex (unsigned int vertex_id, Rigidbody *rb, bool flexibleSugar);
   KinVertex* getVertex (int rb_id);
   void addEdge (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
-  Edge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2
+  KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2
 
   bool hasVertex (int rb_id);
   void print ();

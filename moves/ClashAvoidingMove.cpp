@@ -41,7 +41,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->Cycle_DOF_num + new_q->getNullspace()->NullspaceSize();
+  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->m_numCycleDOFs + new_q->getNullspace()->NullspaceSize();
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -57,7 +57,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
 
     for (int i = 0; i < new_q->m_numDOFs; ++i) {
-      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i); //added as transformation always starts from original coordinates
+      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i); //added as m_transformation always starts from original coordinates
       new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
 //			log("dominik") <<"New q: "<<new_q->m_f[i]<<endl;
     }
@@ -144,7 +144,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Therefore, we use the full set of dihedrals to determine this matrix!
 
   int rowNum = conf->getCycleJacobian()->size1 + numCollisions;
-  int colNum = conf->getProtein()->m_spanning_tree->num_DOFs;
+  int colNum = conf->getProtein()->m_spanning_tree->m_numDOFs;
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 
@@ -166,7 +166,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       }
     }
 
-//    for (vector<Edge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
+//    for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
     for(auto const& edge: conf->getProtein()->m_spanning_tree->Edges){
       int dof_id = edge->DOF_id;
       int cycle_dof_id = edge->Cycle_DOF_id;
@@ -207,8 +207,8 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {
-      KinVertex* parent = vertex1->Parent;
-      Edge* p_edge = parent->findEdge(vertex1);
+      KinVertex* parent = vertex1->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex1);
 
       if(parent->isRibose) {//RFonseca
         SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -234,7 +234,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       }
 
       //Quick trick for plotting the clash cycles (don't use in real sampling)
-//			for (ait=vertex1->Rb_ptr->Atoms.begin(); ait !=vertex1->Rb_ptr->Atoms.end(); ait++){
+//			for (ait=vertex1->m_rigidbody->Atoms.begin(); ait !=vertex1->m_rigidbody->Atoms.end(); ait++){
 //				Atom* atom = (*ait);
 //				atom->m_assignedBiggerRB_id = consCounter;
 //			}
@@ -243,8 +243,8 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
     // trace back until the common ancestor from vertex2
     while ( vertex2 != common_ancestor ) {
-      KinVertex* parent = vertex2->Parent;
-      Edge* p_edge = parent->findEdge(vertex2);
+      KinVertex* parent = vertex2->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex2);
 
       if(parent->isRibose) {//RFonseca
         SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);

@@ -76,7 +76,7 @@ Configuration::Configuration(Molecule * protein_):
 	m_clashFreeDofs					 = 0;
 
 	// Set up DOF-values and set them to 0
-	m_numDOFs = m_protein->m_spanning_tree->num_DOFs;
+	m_numDOFs = m_protein->m_spanning_tree->m_numDOFs;
 	m_dofs = new double[m_numDOFs];
 	m_dofs_global = NULL;
 	m_sumProjSteps = new double[m_numDOFs];
@@ -109,7 +109,7 @@ Configuration::Configuration(Configuration* parent_):
   parent_->m_children.push_back(this);
 
   // Set up DOF-values and set them to 0
-  m_numDOFs = m_protein->m_spanning_tree->num_DOFs;
+  m_numDOFs = m_protein->m_spanning_tree->m_numDOFs;
   m_dofs = new double[m_numDOFs];
   m_dofs_global = NULL;
   m_sumProjSteps = new double[m_numDOFs];
@@ -179,10 +179,10 @@ void Configuration::identifyBiggerRigidBodies(){
 	int j=0; //numbering for fixed dihedrals
 
 	//First, we set the constrained flag for the corresponding bonds
-	for (vector< pair<Edge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin(); it!=
+	for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin(); it!=
 																																																											 m_protein->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
 
-		Edge* edge_ptr = it->first;
+		KinEdge* edge_ptr = it->first;
 		KinVertex* common_ancestor = it->second;
 
 		//Get corresponding rigidity information
@@ -199,11 +199,11 @@ void Configuration::identifyBiggerRigidBodies(){
 		KinVertex* vertex1 = edge_ptr->StartVertex;
 		KinVertex* vertex2 = edge_ptr->EndVertex;
 
-		//Trace back along dof edges for vertex 1
+		//Trace back along dof m_edges for vertex 1
 		while ( vertex1 != common_ancestor ) {
 
-			KinVertex* parent = vertex1->Parent;
-      Edge* p_edge = parent->findEdge(vertex1);
+			KinVertex* parent = vertex1->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex1);
 
 			if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -234,11 +234,11 @@ void Configuration::identifyBiggerRigidBodies(){
 			vertex1 = parent;
 		}
 
-		//Trace back along dof edges for vertex 2
+		//Trace back along dof m_edges for vertex 2
 		while ( vertex2 != common_ancestor ) {
 
-			KinVertex* parent = vertex2->Parent;
-      Edge* p_edge = parent->findEdge(vertex2);
+			KinVertex* parent = vertex2->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -434,8 +434,8 @@ void Configuration::updateGlobalTorsions(){
   for(int i=0; i < m_numDOFs; ++i){
     m_dofs_global[i] = 0;
   }
-  for (vector<Edge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
-    Edge* pEdge = (*itr);
+  for (vector<KinEdge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
+    KinEdge* pEdge = (*itr);
     int dof_id = pEdge->DOF_id;
     if (dof_id==-1)
       continue;
@@ -528,7 +528,7 @@ void Configuration::computeJacobians() {
 
 	int hBond_row_num = (m_protein->m_spanning_tree->CycleAnchorEdges).size();
 	int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
-	int col_num = m_protein->m_spanning_tree->Cycle_DOF_num; // number of DOFs in cycles
+	int col_num = m_protein->m_spanning_tree->m_numCycleDOFs; // number of DOFs in cycles
 
 	if(CycleJacobian==NULL){
 		CycleJacobian = gsl_matrix_calloc(row_num,col_num);
@@ -555,12 +555,12 @@ void Configuration::computeJacobians() {
 
 	// for each cycle, fill in the Jacobian entries
 	int i=0;
-	for (vector< pair<Edge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin();
+	for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin();
        it!= m_protein->m_spanning_tree->CycleAnchorEdges.end();
        ++it)
   {
 		// get end-effectors
-		Edge* edge_ptr = it->first;
+		KinEdge* edge_ptr = it->first;
 		KinVertex* common_ancestor = it->second;
 		Bond * bond_ptr = edge_ptr->getBond();
 
@@ -602,8 +602,8 @@ void Configuration::computeJacobians() {
 
 		// trace back until the common ancestor from vertex1
 		while ( vertex1 != common_ancestor ) {
-			KinVertex* parent = vertex1->Parent;
-      Edge* p_edge = parent->findEdge(vertex1);
+			KinVertex* parent = vertex1->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex1);
 
 			if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -635,7 +635,7 @@ void Configuration::computeJacobians() {
 			int dof_id = p_edge->Cycle_DOF_id;
 			if (dof_id!=-1) { // this edge is a DOF
 				//if(dof_id==20)
-				//	cout<<"Edge "<<p_edge<<endl;
+				//	cout<<"KinEdge "<<p_edge<<endl;
 
 				Atom* ea1 = p_edge->getBond()->Atom1;
 				Atom* ea2 = p_edge->getBond()->Atom2;
@@ -665,8 +665,8 @@ void Configuration::computeJacobians() {
 		}
 		// trace back until the common ancestor from vertex2
 		while ( vertex2 != common_ancestor ) {
-			KinVertex* parent = vertex2->Parent;
-      Edge* p_edge = parent->findEdge(vertex2);
+			KinVertex* parent = vertex2->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -698,7 +698,7 @@ void Configuration::computeJacobians() {
 			int dof_id = p_edge->Cycle_DOF_id;
 			if (dof_id!=-1) { // this edge is a DOF
 				//if(dof_id==20)
-				//	cout<<"Edge "<<p_edge<<endl;
+				//	cout<<"KinEdge "<<p_edge<<endl;
 				Atom* ea1 = p_edge->getBond()->Atom1;
 				Atom* ea2 = p_edge->getBond()->Atom2;
 
@@ -771,11 +771,11 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 	if( CycleJacobian != NULL){
 		rowNum = CycleJacobian->size1 + numCollisions;
-		colNum = m_protein->m_spanning_tree->num_DOFs;
+		colNum = m_protein->m_spanning_tree->m_numDOFs;
 	}
 	else{
 		rowNum = numCollisions;
-		colNum = m_protein->m_spanning_tree->num_DOFs;
+		colNum = m_protein->m_spanning_tree->m_numDOFs;
 	}
 
 	if(ClashAvoidingJacobian==NULL){
@@ -806,7 +806,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 				}
 			}
 		}
-		for (vector<Edge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
+		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
 			int dof_id = (*eit)->DOF_id;
 			int cycle_dof_id = (*eit)->Cycle_DOF_id;
 			if ( cycle_dof_id!=-1 ) {
@@ -845,8 +845,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 		// trace back until the common ancestor from vertex1
 		while ( vertex1 != common_ancestor ) {
-			KinVertex* parent = vertex1->Parent;
-			Edge* p_edge = parent->findEdge(vertex1);
+			KinVertex* parent = vertex1->m_parent;
+			KinEdge* p_edge = parent->findEdge(vertex1);
 
       if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -872,7 +872,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 			}
 
 			//Quick trick for plotting the clash cycles (don't use in real sampling)
-//			for (ait=vertex1->Rb_ptr->Atoms.begin(); ait !=vertex1->Rb_ptr->Atoms.end(); ait++){
+//			for (ait=vertex1->m_rigidbody->Atoms.begin(); ait !=vertex1->m_rigidbody->Atoms.end(); ait++){
 //				Atom* atom = (*ait);
 //				atom->m_assignedBiggerRB_id = consCounter;
 //			}
@@ -881,8 +881,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 		// trace back until the common ancestor from vertex2
 		while ( vertex2 != common_ancestor ) {
-			KinVertex* parent = vertex2->Parent;
-			Edge* p_edge = parent->findEdge(vertex2);
+			KinVertex* parent = vertex2->m_parent;
+			KinEdge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
@@ -913,7 +913,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 			}
 
 //			//Quick trick for plotting the clash cycles (don't use in real sampling)
-//			for (ait=vertex2->Rb_ptr->Atoms.begin(); ait !=vertex2->Rb_ptr->Atoms.end(); ait++){
+//			for (ait=vertex2->m_rigidbody->Atoms.begin(); ait !=vertex2->m_rigidbody->Atoms.end(); ait++){
 //				Atom* atom = (*ait);
 //				atom->m_assignedBiggerRB_id = consCounter;
 //			}
