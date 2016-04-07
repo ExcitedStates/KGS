@@ -33,7 +33,7 @@
 #include "core/Atom.h"
 #include "core/Bond.h"
 
-class RigidbodyGraphVertex;
+class KinVertex;
 
 class Rigidbody {
  public:
@@ -68,13 +68,13 @@ class Rigidbody {
   bool containsMainchainAtoms() const;
   bool containsAlongMainchainAtoms() const;
 
-  void setVertex (RigidbodyGraphVertex* vertex);
-  RigidbodyGraphVertex* getVertex();
+  void setVertex (KinVertex* vertex);
+  KinVertex* getVertex();
 
  private:
   unsigned int rbId_;
   bool isMainchainRb_;
-  RigidbodyGraphVertex* m_rbVertex;
+  KinVertex* m_rbVertex;
 };
 
 std::ostream& operator<<(std::ostream& os, const Rigidbody& rb);

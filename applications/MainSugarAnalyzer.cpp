@@ -132,8 +132,8 @@ int main( int argc, char* argv[] ){
 		IO::readRigidbody( protein );
 		protein->buildRigidbodyTree();
 		
-		for(map<unsigned int, RigidbodyGraphVertex*>::iterator vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); ++vit){
-			RigidbodyGraphVertex* v = vit->second;
+		for(map<unsigned int, KinVertex*>::iterator vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); ++vit){
+			KinVertex* v = vit->second;
 			if(v->isRibose){
 				SugarVertex* vs = reinterpret_cast<SugarVertex*>(v);
                 //log("sugar")<<"Sugr"<<setw(14)<<left<<vs->DOF_id<<"\t";

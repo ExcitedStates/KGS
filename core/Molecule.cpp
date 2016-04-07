@@ -367,7 +367,7 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
   // add all rigid bodies as vertices into Rigidbody_graph
   int dof_id = 0;
   for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
-    RigidbodyGraphVertex* vtx;
+    KinVertex* vtx;
 
     //if (it->first == rootRBId ){
     if (it->second->id() == rootRBId ){
@@ -393,10 +393,10 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
   }
 
   list<Edge*> cycle_edges;
-  list<RigidbodyGraphVertex*> queue;
+  list<KinVertex*> queue;
   queue.push_back(m_spanning_tree->root);
   while (!queue.empty()) {
-    RigidbodyGraphVertex* current_vertex = queue.front();
+    KinVertex* current_vertex = queue.front();
     visited[current_vertex->id] = true;
     Rigidbody* rb1 = current_vertex->Rb_ptr;
 
@@ -406,7 +406,7 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
       for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
         unsigned int i = it->first;
         if ( visited[i]==false ) {
-          RigidbodyGraphVertex *vtx = m_spanning_tree->Vertex_map.find(i)->second;
+          KinVertex *vtx = m_spanning_tree->Vertex_map.find(i)->second;
           Rigidbody* rb2 = vtx->Rb_ptr;
           for (vector<Bond *>::iterator bit2=rb2->Bonds.begin(); bit2 != rb2->Bonds.end(); ++bit2) {
             if ( (*bit1)==(*bit2) ) {
@@ -435,11 +435,11 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
   int cycle_dof_id = 0;
   for ( list<Edge*>::iterator it=cycle_edges.begin(); it!=cycle_edges.end(); ++it) {
     Edge* h_edge = *it;
-    RigidbodyGraphVertex *startv = h_edge->StartVertex;
-    RigidbodyGraphVertex *endv = h_edge->EndVertex;
-    RigidbodyGraphVertex *ancestor = m_spanning_tree->findCommonAncestor(startv,endv);
+    KinVertex *startv = h_edge->StartVertex;
+    KinVertex *endv = h_edge->EndVertex;
+    KinVertex *ancestor = m_spanning_tree->findCommonAncestor(startv,endv);
     m_spanning_tree->CycleAnchorEdges.push_back( make_pair(h_edge,ancestor) );
-    RigidbodyGraphVertex *vertex, *parent;
+    KinVertex *vertex, *parent;
     for (vertex=startv; vertex!=ancestor; vertex=parent) {
       parent = vertex->Parent;
       if(parent->isRibose){//RFonseca
@@ -489,7 +489,7 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
     visited[i] = false;
   }
   Edge* currEdge = m_spanning_tree->Edges.back();
-  RigidbodyGraphVertex *currVertex = currEdge->EndVertex;
+  KinVertex *currVertex = currEdge->EndVertex;
   int currId = currVertex->id;
 
   m_spanning_tree->m_sortedVertices.push_back(make_pair( currId, currVertex ));
@@ -497,7 +497,7 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
 
   while( currVertex != m_spanning_tree->root){
 //		cout<<"Current vertex id "<<currId<<endl;fflush(stdout);
-    RigidbodyGraphVertex *parent = currVertex->Parent;
+    KinVertex *parent = currVertex->Parent;
 
     if(parent->edges.size() == 1){
 //    		cout<<"Single edged m_parent vertex "<<m_parent->id<<endl;
@@ -533,12 +533,12 @@ void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
   }
 }
 
-RigidbodyGraphVertex*Molecule::getRigidbodyGraphVertex (Atom* atom) const {
+KinVertex*Molecule::getRigidbodyGraphVertex (Atom* atom) const {
   //TODO: Not sure whats happening here. Clean up
   int smallest_dof_id = m_spanning_tree->num_DOFs - 1;//Edges.size()-1; // the possible maximum DOF id
-  RigidbodyGraphVertex* vertex_with_smallest_dof_id = m_spanning_tree->getVertex(atom->getRigidbody()->id());
-  RigidbodyGraphVertex* vertex = m_spanning_tree->getVertex(atom->getRigidbody()->id());
-  RigidbodyGraphVertex* parent = vertex->Parent;
+  KinVertex* vertex_with_smallest_dof_id = m_spanning_tree->getVertex(atom->getRigidbody()->id());
+  KinVertex* vertex = m_spanning_tree->getVertex(atom->getRigidbody()->id());
+  KinVertex* parent = vertex->Parent;
   if (parent==NULL)
     return vertex;
   Edge* edge_to_parent = parent->findEdge(vertex);
@@ -559,8 +559,8 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
   }
   log("debug") << "in Molecule::computeAtomJacobian - after IF" << endl;
   gsl_matrix* jacobian = *j_addr;
-  RigidbodyGraphVertex *vertex = getRigidbodyGraphVertex(atom);
-  //RigidbodyGraphVertex *vertex1 = getRigidbodyGraphVertex( getAtom( 35 ) );
+  KinVertex *vertex = getRigidbodyGraphVertex(atom);
+  //KinVertex *vertex1 = getRigidbodyGraphVertex( getAtom( 35 ) );
   atom->printSummaryInfo();
   //getAtom( 35 )->printSummaryInfo();
   log("debug") << "in Molecule::computeAtomJacobian - vertex->id= " << vertex->id << endl;
@@ -574,7 +574,7 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
   log("debug") << "in Molecule::computeAtomJacobian - before while loop" << endl;
   while (vertex!=m_spanning_tree->root) {
     log("debug") << "in Molecule::computeAtomJacobian - in while loop" << endl;
-    RigidbodyGraphVertex *parent;
+    KinVertex *parent;
     if ( vertex->Parent!=NULL )
       parent = vertex->Parent;
     else
@@ -601,7 +601,7 @@ gsl_vector*Molecule::getEndEffectors(){
   gsl_vector* ret = gsl_vector_alloc(  (m_spanning_tree->CycleAnchorEdges).size()*6  );
 
   int i=0;
-  for (vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator it=m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); ++it) {
+  for (vector< pair<Edge*,KinVertex*> >::iterator it=m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); ++it) {
     // get end-effectors
     Edge* edge_ptr = it->first;
     Hbond * bond_ptr = (Hbond *)(edge_ptr->getBond());
@@ -639,7 +639,7 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
     gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
     gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
-    map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
+    map<unsigned int, KinVertex*>::iterator vit;
     for (vit=m_spanning_tree->Vertex_map.begin(); vit!=m_spanning_tree->Vertex_map.end(); vit++){
       if( (*vit).second->isRibose ){
         SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
@@ -737,12 +737,12 @@ void Molecule::_SetConfiguration(Configuration *q ){
   Confvec2MatrixGlobal(m_spanning_tree, q, m_Transformation);
 
   //Initialize queue
-  list<RigidbodyGraphVertex *> queue;
-  RigidbodyGraphVertex *root = m_spanning_tree->root;
+  list<KinVertex *> queue;
+  KinVertex *root = m_spanning_tree->root;
   queue.push_back(root);
 
   while(queue.size()>0){
-    RigidbodyGraphVertex* node = queue.front();
+    KinVertex* node = queue.front();
     queue.pop_front();
 
     for(auto const& pEdge: node->edges){
@@ -759,18 +759,18 @@ void Molecule::_SetConfiguration(Configuration *q ){
   Set the positions of atoms only within subVerts so they correspond to configuration q.
   Assumes root is member of subVerts.
   */
-void Molecule::_SetConfiguration(Configuration *q, RigidbodyGraphVertex* root, vector<RigidbodyGraphVertex*>& subVerts){//, bool usePosition2){
+void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVertex*>& subVerts){//, bool usePosition2){
   m_conf = q;
 
   // assume the base vector is 0
   Confvec2MatrixLocal(root, q, m_Transformation, subVerts);
 
-  list<RigidbodyGraphVertex *>queue;
+  list<KinVertex *>queue;
 
   queue.push_back(root);
   while(queue.size()>0)
   {
-    RigidbodyGraphVertex* node = queue.front();
+    KinVertex* node = queue.front();
     queue.pop_front();
 
     //map<unsigned int,Edge*> m_children = node->Edges;
@@ -778,7 +778,7 @@ void Molecule::_SetConfiguration(Configuration *q, RigidbodyGraphVertex* root, v
     //for (map<unsigned int,Edge*>::iterator edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr){
     for (auto const& pEdge: node->edges){
       //Edge* pEdge = edge_itr->second;
-      RigidbodyGraphVertex* newNode = pEdge->EndVertex;
+      KinVertex* newNode = pEdge->EndVertex;
 
       newNode->TransformAtomPosition(m_Transformation+pEdge->DOF_id);//,usePosition2);
 
@@ -1017,7 +1017,7 @@ Coordinate Molecule::centerOfGeometry () const {
 void Molecule::checkCycleClosure(Configuration *q){
   SetConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
-  vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator pair_it;
+  vector< pair<Edge*,KinVertex*> >::iterator pair_it;
   Edge *pEdge;
   int id=1;
   double maxViolation = 0.0;
@@ -1114,8 +1114,8 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
     }
   }
 
-  for(map<unsigned int, RigidbodyGraphVertex*>::iterator vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
-    RigidbodyGraphVertex* vtx = vit->second;
+  for(map<unsigned int, KinVertex*>::iterator vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
+    KinVertex* vtx = vit->second;
     if(vtx->isRibose){
       SugarVertex* v = reinterpret_cast<SugarVertex*>(vtx);
       int res = v->Rb_ptr->Atoms[0]->getResidue()->getId();
@@ -1167,7 +1167,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   ret->computeCycleJacobianAndNullSpace();
 
   //Find smallest connected subgraph that contains both resetDOFS and recloseDOFs (TODO: Approximate Steiner tree)
-  vector<RigidbodyGraphVertex*> subVerts;
+  vector<KinVertex*> subVerts;
   vector<Edge*> subEdges;
   Edge* entry = NULL;
   for(vector<Edge*>::iterator eit = m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); eit++){
@@ -1182,8 +1182,8 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
       if(entry==NULL || entry->DOF_id>e->DOF_id) entry = e;
     }
   }
-  for(map<unsigned int, RigidbodyGraphVertex*>::iterator vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
-    RigidbodyGraphVertex* vtx = vit->second;
+  for(map<unsigned int, KinVertex*>::iterator vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
+    KinVertex* vtx = vit->second;
     if(vtx->isRibose){
       SugarVertex* v = reinterpret_cast<SugarVertex*>(vtx);
       if(	find(resetDOFs.begin(), resetDOFs.end(), v->DOF_id)!=resetDOFs.end() ||
@@ -1209,7 +1209,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
     if( firstInSub && !lastInSub && e->StartVertex!=entry->StartVertex) boundary.push_back(e);
   }
-  for(vector<pair<Edge*,RigidbodyGraphVertex*> >::iterator it = m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); it++){
+  for(vector<pair<Edge*,KinVertex*> >::iterator it = m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); it++){
     Edge* e = it->first;
     bool firstInSub = find(subVerts.begin(), subVerts.end(), e->StartVertex)!=subVerts.end();
     bool lastInSub = find(subVerts.begin(), subVerts.end(), e->EndVertex)!=subVerts.end();
@@ -1242,7 +1242,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
 
   //Make sure only endpoints within subgraph and boundary can move
-  for(vector<RigidbodyGraphVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
+  for(vector<KinVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
     for(vector<Atom*>::iterator ait=(*vit)->Rb_ptr->Atoms.begin();ait!=(*vit)->Rb_ptr->Atoms.end();ait++){
       (*ait)->m_Position = (*ait)->m_referencePosition;
     }
@@ -1323,7 +1323,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     for(vector<Edge*>::iterator bit = boundary.begin(); bit!=boundary.end(); bit++){
       Edge* eBoundary = *bit;
 
-      RigidbodyGraphVertex* v = eBoundary->StartVertex;
+      KinVertex* v = eBoundary->StartVertex;
       Edge* e;
 
       do{ //find(subVerts.begin(), subVerts.end(), v)!=subVerts.end() ){
@@ -1396,7 +1396,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     //	Atom* a = *ait;
     //	//a->m_bPositionModified = true;
     //}
-    for(vector<RigidbodyGraphVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
+    for(vector<KinVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
       for(vector<Atom*>::iterator ait=(*vit)->Rb_ptr->Atoms.begin();ait!=(*vit)->Rb_ptr->Atoms.end();ait++){
         //(*ait)->m_bPositionModified = false;
         (*ait)->m_Position = (*ait)->m_referencePosition;

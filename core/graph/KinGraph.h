@@ -37,49 +37,26 @@
 #include "core/Rigidbody.h"
 #include "math3d/primitives.h"
 #include "core/graph/RBEdge.h"
+#include "core/graph/KinVertex.h"
 
-class RigidbodyGraphVertex;
-class RigidbodyTree;
 class Edge;
 
-
-class RigidbodyGraph {
+class KinGraph {
  public:
-  std::map<unsigned int, RigidbodyGraphVertex*> Vertex_map;
-  std::list< std::pair< unsigned int, RigidbodyGraphVertex*> > m_sortedVertices;
+  std::map<unsigned int, KinVertex*> Vertex_map;
+  std::list< std::pair< unsigned int, KinVertex*> > m_sortedVertices;
   std::vector<Edge*> Edges;
-  unsigned int MaxCycleClusterId;
 
-  RigidbodyGraph ();
-  ~RigidbodyGraph ();
-  RigidbodyGraphVertex* addVertex (unsigned int vertex_id, Rigidbody *rb, bool flexibleSugar);
-  RigidbodyGraphVertex* getVertex (int rb_id);
-  void addEdge (RigidbodyGraphVertex *vertex1, RigidbodyGraphVertex *vertex2, Bond * bond);
-  Edge* addEdgeDirected (RigidbodyGraphVertex *vertex1, RigidbodyGraphVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2
+  KinGraph ();
+  ~KinGraph ();
+  KinVertex* addVertex (unsigned int vertex_id, Rigidbody *rb, bool flexibleSugar);
+  KinVertex* getVertex (int rb_id);
+  void addEdge (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
+  Edge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2
 
   bool hasVertex (int rb_id);
   void print ();
   void findCycleClusters();
 };
-
-class RigidbodyTree: public RigidbodyGraph {
-  // In RigidbodyTree, only edges to m_children are stored in Edges.
-  // The bonds associated with edges not necessarily point from smaller Id atom to larger Id atom.
-  // Rather, they point from m_parent rigidbody to child rigidbody.
- public:
-  RigidbodyTree();
-  RigidbodyGraphVertex *root;
-  std::vector< std::pair<Edge*,RigidbodyGraphVertex*> > CycleAnchorEdges; // pair<edge,common anchor>; each edge closes a cycle
-  int Cycle_DOF_num; // total number of DOFs in the cycles
-  int num_DOFs;
-
-  ~RigidbodyTree();
-  void print();
-  void printForSpringy();
-  RigidbodyGraphVertex* findCommonAncestor (RigidbodyGraphVertex *v1, RigidbodyGraphVertex *v2);
-};
-
-std::ostream& operator<<(std::ostream& os, const Edge& e);
-std::ostream& operator<<(std::ostream& os, const Edge* e);
 
 #endif

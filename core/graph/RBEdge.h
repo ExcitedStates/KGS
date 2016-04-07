@@ -27,7 +27,7 @@
 #ifndef KGS_RBEDGE_H
 #define KGS_RBEDGE_H
 
-#include "RigidbodyGraph.h"
+#include "KinGraph.h"
 
 /**
  * An edge connecting two vertices in the kinematic tree.
@@ -38,10 +38,10 @@
  */
 class Edge {
  public:
-  Edge(RigidbodyGraphVertex * startv, RigidbodyGraphVertex * endv, Bond * m_bond);
+  Edge(KinVertex * startv, KinVertex * endv, Bond * m_bond);
 
-  RigidbodyGraphVertex *StartVertex;
-  RigidbodyGraphVertex *EndVertex;
+  KinVertex *StartVertex;
+  KinVertex *EndVertex;
 
   int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
   int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
@@ -59,6 +59,9 @@ class Edge {
  private:
   Bond * const m_bond;
 };
+
+std::ostream& operator<<(std::ostream& os, const Edge& e);
+std::ostream& operator<<(std::ostream& os, const Edge* e);
 
 
 #endif //KGS_RBEDGE_H

@@ -625,7 +625,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 
 	string anchorEdgeFile = output_file_name + "_allAnchors.txt";
 	ofstream output2(anchorEdgeFile.c_str());
-	for (vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
+	for (vector< pair<Edge*,KinVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
 		Bond* bond = edge_itr->first->getBond();
 		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output2 << bondVec.norm() << endl;
@@ -976,7 +976,7 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
 	      pymol_script << "set dash_gap, 0.1" << endl;
 
 	      int site_1, site_2;
-	      vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator eit;
+	      vector< pair<Edge*,KinVertex*> >::iterator eit;
 
 	      for (eit=protein->m_spanning_tree->CycleAnchorEdges.begin(); eit != protein->m_spanning_tree->CycleAnchorEdges.end(); eit++) {
 
@@ -1395,7 +1395,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 	pymol_script << "set dash_gap, 0.1" << endl;
 
 	int site_1, site_2;
-	vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator eit;
+	vector< pair<Edge*,KinVertex*> >::iterator eit;
 
 	for (auto  const& eit: molecule->m_spanning_tree->CycleAnchorEdges){
 

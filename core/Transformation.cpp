@@ -26,7 +26,7 @@
 
 */
 #include "core/Configuration.h"
-#include "core/graph/RigidbodyGraph.h"
+#include "core/graph/KinGraph.h"
 #include "math3d/primitives.h"
 #include "Transformation.h"
 #include "Logger.h"
@@ -45,13 +45,13 @@ void Confvec2MatrixGlobal(RigidbodyTree *pTree, Configuration *q, RigidTransform
   for(i=0; i<n; ++i)
     ms[i].setIdentity();
 
-  ///	RigidbodyGraphVertex *root = pTree->Vertex_map.begin()->second;
-  RigidbodyGraphVertex *root = pTree->root;
-  RigidbodyGraphVertex *node, *newNode;
+  ///	KinVertex *root = pTree->Vertex_map.begin()->second;
+  KinVertex *root = pTree->root;
+  KinVertex *node, *newNode;
   Edge *pEdge;
   Vector3 vec;
 
-  list<RigidbodyGraphVertex *>queue;
+  list<KinVertex *>queue;
   RigidTransform localMat, m1, m2, m3;
 
   queue.push_back(root);
@@ -153,23 +153,23 @@ void Confvec2MatrixGlobal(RigidbodyTree *pTree, Configuration *q, RigidTransform
 /**
   Update a local set of transformations defined by subVerts and starting at the specified root vertex
   */
-void Confvec2MatrixLocal (RigidbodyGraphVertex *root, Configuration *q, RigidTransform *ms, vector<RigidbodyGraphVertex*> subVerts)
+void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms, vector<KinVertex*> subVerts)
 {
 
   //for(int i=0; i<q->m_numDOFs; ++i)
   //    ms[i].setIdentity();
-  for(vector<RigidbodyGraphVertex*>::iterator it = subVerts.begin(); it!=subVerts.end(); it++){
-    RigidbodyGraphVertex* v = *it;
+  for(vector<KinVertex*>::iterator it = subVerts.begin(); it!=subVerts.end(); it++){
+    KinVertex* v = *it;
     ms[v->Rb_ptr->id()].setIdentity();
   }
 
-  RigidbodyGraphVertex *node, *newNode;
+  KinVertex *node, *newNode;
   map<unsigned int,Edge*> children;
   map<unsigned int,Edge*>::iterator edge_itr;
   Edge *pEdge;
   Vector3 vec;
 
-  list<RigidbodyGraphVertex *>queue;
+  list<KinVertex *>queue;
   RigidTransform localMat, m1, m2, m3;
 
   queue.push_back(root);
@@ -259,14 +259,14 @@ void Confvec2MatrixLocal (RigidbodyGraphVertex *root, Configuration *q, RigidTra
 
 }
 
-void Confvec2MatrixIndividual(Configuration *q, RigidbodyGraphVertex *node, double* iniRef, RigidTransform *ms){
+void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef, RigidTransform *ms){
 
   map<unsigned int,Edge*> children;
   map<unsigned int,Edge*>::iterator edge_itr;
   Edge *pEdge;
   Vector3 vec;
 
-  RigidbodyGraphVertex *newNode;
+  KinVertex *newNode;
   RigidTransform localMat, m1, m2, m3;
   //RFonseca
   //Todo: Update also for sugars

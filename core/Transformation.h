@@ -28,13 +28,13 @@
 #ifndef CTK_TRANSFORMATION_H
 #define CTK_TRANSFORMATION_H
 
+#include <core/graph/KinTree.h>
 #include "math3d/primitives.h"
 
 class Configuration;
-class RigidbodyGraph;
 
 void Confvec2MatrixGlobal(RigidbodyTree *pTree, Configuration *q, RigidTransform *ms);//, bool usePosition2=false);
-void Confvec2MatrixLocal (RigidbodyGraphVertex *root, Configuration *q, RigidTransform *ms, std::vector<RigidbodyGraphVertex*> subVerts);
-void Confvec2MatrixIndividual(Configuration *q, RigidbodyGraphVertex *node, double* globalRef, RigidTransform *ms);
+void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms, std::vector<KinVertex*> subVerts);
+void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* globalRef, RigidTransform *ms);
 
 #endif

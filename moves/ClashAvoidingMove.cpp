@@ -151,7 +151,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Convert the cycle Jacobian to a full Jacobian
   //Columns correspond to cycle_dof_ids
   if(projectConstraints){
-    map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
+    map<unsigned int, KinVertex*>::iterator vit;
 //    for (vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=->m_spanning_tree->Vertex_map.end(); vit++){
     for(auto const& id_vertex_pair: conf->getProtein()->m_spanning_tree->Vertex_map){
       if( id_vertex_pair.second->isRibose ){
@@ -201,13 +201,13 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
     clashNormal.getNormalized(clashNormal);
 
     //Vertices
-    RigidbodyGraphVertex* vertex1 = atom1->getRigidbody()->getVertex();
-    RigidbodyGraphVertex* vertex2 = atom2->getRigidbody()->getVertex();
-    RigidbodyGraphVertex* common_ancestor = conf->getProtein()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
+    KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
+    KinVertex* common_ancestor = conf->getProtein()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {
-      RigidbodyGraphVertex* parent = vertex1->Parent;
+      KinVertex* parent = vertex1->Parent;
       Edge* p_edge = parent->findEdge(vertex1);
 
       if(parent->isRibose) {//RFonseca
@@ -243,7 +243,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
     // trace back until the common ancestor from vertex2
     while ( vertex2 != common_ancestor ) {
-      RigidbodyGraphVertex* parent = vertex2->Parent;
+      KinVertex* parent = vertex2->Parent;
       Edge* p_edge = parent->findEdge(vertex2);
 
       if(parent->isRibose) {//RFonseca

@@ -1,25 +1,61 @@
-#include <core/Rigidbody.h>
 #include "KinVertex.h"
-#include "RBEdge.h"
 
-class RigidbodyGraphVertex {
- public:
-  const unsigned int id;
-  Rigidbody * const Rb_ptr;
-  std::vector<Edge*> edges;     ///< Child-edges after spanning tree has been created
-  RigidbodyGraphVertex *Parent; ///< Parent-vertex after spanning tree has been created
-  bool Visited;                 ///< When finding common ancestor, vertices are marked as visited up to the root
-  Math3D::RigidTransform transformation;  ///< The rigid body transformation matrix of this rigid group
+#include "Logger.h"
 
-  bool isRibose;
+using namespace std;
 
-  RigidbodyGraphVertex();
-  RigidbodyGraphVertex(int id, Rigidbody* rb);
-  virtual ~RigidbodyGraphVertex();
+KinVertex::KinVertex ():
+    id(0),
+    Rb_ptr(NULL)
+{
+  Parent = NULL;
+  isRibose = false;
+}
 
-  void addEdge(unsigned int neighbor_vertex_id, Edge *edge);
-  Edge* findEdge(RigidbodyGraphVertex* v) const;
-  virtual void setParent(RigidbodyGraphVertex* v);
-  void print();
-  void TransformAtomPosition(Math3D::RigidTransform *trsfm);
-};
+KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
+    id(id_),
+    Rb_ptr(rb_ptr)
+{
+  Parent = NULL;
+  Visited = false;
+  isRibose = false;
+  rb_ptr->setVertex(this);
+}
+
+KinVertex::~KinVertex () {
+  //map<unsigned int,Edge*>::iterator eit;
+  for (auto eit=edges.begin(); eit!=edges.end(); ++eit) {
+    delete *eit;
+  }
+  Rb_ptr->setVertex(NULL);
+}
+
+void KinVertex::setParent(KinVertex* v) {
+  Parent = v;
+}
+
+void KinVertex::addEdge (unsigned int neighbor_vertex_id, Edge *edge) {
+  edges.push_back( edge );
+}
+
+void KinVertex::print () {
+  log() << "Rigidbody_" << id << ", id ";
+  for (vector<Atom*>::iterator it=Rb_ptr->Atoms.begin(); it!=Rb_ptr->Atoms.end(); ++it)
+    log() << (*it)->getId() << "+";
+  log() << endl;
+}
+
+void KinVertex::TransformAtomPosition(Math3D::RigidTransform *trsfm){
+
+  for (auto const& atom: Rb_ptr->Atoms){
+    Math3D::Vector3 newPos = trsfm->R * atom->m_Position;
+
+    newPos.x += trsfm->t.x;
+    newPos.y += trsfm->t.y;
+    newPos.z += trsfm->t.z;
+
+    atom->m_Position.x = newPos.x;
+    atom->m_Position.y = newPos.y;
+    atom->m_Position.z = newPos.z;
+  }
+}

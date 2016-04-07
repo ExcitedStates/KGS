@@ -48,15 +48,15 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		Configuration* conf = new Configuration(native);
 		//Configuration* conf = new Configuration(native->m_spanning_tree->m_numDOFs);
 
-		for(map<unsigned int, RigidbodyGraphVertex*>::iterator vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
-			RigidbodyGraphVertex* vertex = vit->second;
+		for(map<unsigned int, KinVertex*>::iterator vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
+			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(vertex);
 				double strucTorsion = v->initTorsion;
 				double nativeTorsion = 1000;
 
-				for(map<unsigned int, RigidbodyGraphVertex*>::iterator nvit = native->m_spanning_tree->Vertex_map.begin(); nvit != native->m_spanning_tree->Vertex_map.end(); nvit++){
-					RigidbodyGraphVertex* nvertex = nvit->second;
+				for(map<unsigned int, KinVertex*>::iterator nvit = native->m_spanning_tree->Vertex_map.begin(); nvit != native->m_spanning_tree->Vertex_map.end(); nvit++){
+					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
 						if(nv->DOF_id==v->DOF_id){
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]){
 //			cout<<e<<" "<<evec_component<<endl;
 		}
 
-		map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
+		map<unsigned int, KinVertex*>::iterator vit;
 		for (vit=native->m_spanning_tree->Vertex_map.begin(); vit!=native->m_spanning_tree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);

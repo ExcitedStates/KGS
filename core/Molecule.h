@@ -32,9 +32,10 @@
 #include <string>
 #include <list>
 #include <set>
+#include <core/graph/KinTree.h>
 
 #include "Rigidbody.h"
-#include "core/graph/RigidbodyGraph.h"
+#include "core/graph/KinGraph.h"
 #include "core/Configuration.h"
 
 class Chain;
@@ -90,7 +91,7 @@ class Molecule {
 	void setToHbondIntersection (Molecule * p2);
 	void buildRigidbodyTree(unsigned int bestRigidBody = 0 , bool flexibleSugar=true);
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = NULL);
-	RigidbodyGraphVertex* getRigidbodyGraphVertex (Atom* atom) const; // Return the vertex which is associated with the smallest DOF id edge among all the atom's rigidbodies.
+	KinVertex* getRigidbodyGraphVertex (Atom* atom) const; // Return the vertex which is associated with the smallest DOF id edge among all the atom's rigidbodies.
 	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
   gsl_vector* getEndEffectors();
 	void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
@@ -131,7 +132,7 @@ class Molecule {
 private:
 	std::string name_;
 	void _SetConfiguration(Configuration *q); // set the positions of atoms at configuration q (according to the spanning tree)
-	void _SetConfiguration(Configuration *q, RigidbodyGraphVertex* root, std::vector<RigidbodyGraphVertex*>& subVerts);
+	void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
 
   Chain* addChain (const std::string& chainName);
 

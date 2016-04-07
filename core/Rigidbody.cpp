@@ -56,11 +56,11 @@ void Rigidbody::addBond (Bond * bond) {
 	Bonds.push_back(bond);
 }
 
-void Rigidbody::setVertex (RigidbodyGraphVertex* vertex) {
+void Rigidbody::setVertex (KinVertex* vertex) {
   m_rbVertex = vertex;
 }
 
-RigidbodyGraphVertex* Rigidbody::getVertex (){
+KinVertex* Rigidbody::getVertex (){
   return m_rbVertex;
 }
 

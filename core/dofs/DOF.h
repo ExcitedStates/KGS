@@ -3,7 +3,7 @@
 #define KGS_DOF_H
 
 
-#include <core/graph/RigidbodyGraph.h>
+#include <core/graph/KinGraph.h>
 
 /**
  * A degree-of-freedom affecting a branch of the RigidbodyTree.

@@ -59,8 +59,8 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     metrics::RMSD::align(target, protein);
   }
 
-  list< pair< unsigned int, RigidbodyGraphVertex*> > *orderedVertices = &(protein->m_spanning_tree->m_sortedVertices);
-  list< pair< unsigned int, RigidbodyGraphVertex*> >::iterator vit;
+  list< pair< unsigned int, KinVertex*> > *orderedVertices = &(protein->m_spanning_tree->m_sortedVertices);
+  list< pair< unsigned int, KinVertex*> >::iterator vit;
 
   //TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
   const vector<int>& resNetwork = options->residueNetwork;
@@ -76,11 +76,11 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 
   //Now we compute the MSD gradient with a "fast" implementation based on Abé's paper from 1984
   for ( vit = orderedVertices->begin(); vit != orderedVertices->end(); vit++ ){//traverse tree by vertices starting at the final leaves
-    RigidbodyGraphVertex *currVertex = vit->second;
+    KinVertex *currVertex = vit->second;
     if(currVertex == protein->m_spanning_tree->root)
       break;
     //int currId = currVertex->id;
-    RigidbodyGraphVertex *parent = currVertex->Parent;
+    KinVertex *parent = currVertex->Parent;
     int parentId = parent->id;
 
     Edge* currEdge = parent->findEdge(currVertex);

@@ -179,11 +179,11 @@ void Configuration::identifyBiggerRigidBodies(){
 	int j=0; //numbering for fixed dihedrals
 
 	//First, we set the constrained flag for the corresponding bonds
-	for (vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin(); it!=
+	for (vector< pair<Edge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin(); it!=
 																																																											 m_protein->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
 
 		Edge* edge_ptr = it->first;
-		RigidbodyGraphVertex* common_ancestor = it->second;
+		KinVertex* common_ancestor = it->second;
 
 		//Get corresponding rigidity information
 		//The m_protein hBonds are ordered in the same way as the rigid HBonds
@@ -196,13 +196,13 @@ void Configuration::identifyBiggerRigidBodies(){
 		i++;
 
 		//Now, the dihedral angles
-		RigidbodyGraphVertex* vertex1 = edge_ptr->StartVertex;
-		RigidbodyGraphVertex* vertex2 = edge_ptr->EndVertex;
+		KinVertex* vertex1 = edge_ptr->StartVertex;
+		KinVertex* vertex2 = edge_ptr->EndVertex;
 
 		//Trace back along dof edges for vertex 1
 		while ( vertex1 != common_ancestor ) {
 
-			RigidbodyGraphVertex* parent = vertex1->Parent;
+			KinVertex* parent = vertex1->Parent;
       Edge* p_edge = parent->findEdge(vertex1);
 
 			if(parent->isRibose) {//RFonseca
@@ -237,7 +237,7 @@ void Configuration::identifyBiggerRigidBodies(){
 		//Trace back along dof edges for vertex 2
 		while ( vertex2 != common_ancestor ) {
 
-			RigidbodyGraphVertex* parent = vertex2->Parent;
+			KinVertex* parent = vertex2->Parent;
       Edge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca
@@ -555,13 +555,13 @@ void Configuration::computeJacobians() {
 
 	// for each cycle, fill in the Jacobian entries
 	int i=0;
-	for (vector< pair<Edge*,RigidbodyGraphVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin();
+	for (vector< pair<Edge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin();
        it!= m_protein->m_spanning_tree->CycleAnchorEdges.end();
        ++it)
   {
 		// get end-effectors
 		Edge* edge_ptr = it->first;
-		RigidbodyGraphVertex* common_ancestor = it->second;
+		KinVertex* common_ancestor = it->second;
 		Bond * bond_ptr = edge_ptr->getBond();
 
 		//End-effectors and their positions, corresponds to a and b
@@ -570,8 +570,8 @@ void Configuration::computeJacobians() {
 		Coordinate p1 = atom1->m_Position; //end-effector, position 1
 		Coordinate p2 = atom2->m_Position; //end-effector, position 2
 
-		RigidbodyGraphVertex* vertex1 = edge_ptr->StartVertex;
-		RigidbodyGraphVertex* vertex2 = edge_ptr->EndVertex;
+		KinVertex* vertex1 = edge_ptr->StartVertex;
+		KinVertex* vertex2 = edge_ptr->EndVertex;
 
 		//Use the covalently bonded atoms to find A-1 and B-1
 		Atom* atom1_prev = atom1->Cov_neighbor_list[0] == atom2 ? atom1->Cov_neighbor_list[1] : atom1->Cov_neighbor_list[0];
@@ -602,7 +602,7 @@ void Configuration::computeJacobians() {
 
 		// trace back until the common ancestor from vertex1
 		while ( vertex1 != common_ancestor ) {
-			RigidbodyGraphVertex* parent = vertex1->Parent;
+			KinVertex* parent = vertex1->Parent;
       Edge* p_edge = parent->findEdge(vertex1);
 
 			if(parent->isRibose) {//RFonseca
@@ -665,7 +665,7 @@ void Configuration::computeJacobians() {
 		}
 		// trace back until the common ancestor from vertex2
 		while ( vertex2 != common_ancestor ) {
-			RigidbodyGraphVertex* parent = vertex2->Parent;
+			KinVertex* parent = vertex2->Parent;
       Edge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca
@@ -793,7 +793,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 	//Convert the cycle Jacobian to a full Jacobian
 	//Columns correspond to cycle_dof_ids
 	if(projectConstraints){
-		map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
+		map<unsigned int, KinVertex*>::iterator vit;
 		for (vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=m_protein->m_spanning_tree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
@@ -839,13 +839,13 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 		clashNormal.getNormalized(clashNormal);
 
 		//Vertices
-		RigidbodyGraphVertex* vertex1 = atom1->getRigidbody()->getVertex();
-		RigidbodyGraphVertex* vertex2 = atom2->getRigidbody()->getVertex();
-		RigidbodyGraphVertex* common_ancestor = m_protein->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+		KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
+		KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
+		KinVertex* common_ancestor = m_protein->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
 
 		// trace back until the common ancestor from vertex1
 		while ( vertex1 != common_ancestor ) {
-			RigidbodyGraphVertex* parent = vertex1->Parent;
+			KinVertex* parent = vertex1->Parent;
 			Edge* p_edge = parent->findEdge(vertex1);
 
       if(parent->isRibose) {//RFonseca
@@ -881,7 +881,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 		// trace back until the common ancestor from vertex2
 		while ( vertex2 != common_ancestor ) {
-			RigidbodyGraphVertex* parent = vertex2->Parent;
+			KinVertex* parent = vertex2->Parent;
 			Edge* p_edge = parent->findEdge(vertex2);
 
 			if(parent->isRibose) {//RFonseca

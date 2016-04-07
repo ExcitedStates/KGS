@@ -6,7 +6,7 @@
 #include <iostream>
 #include <map>
 
-#include "RigidbodyGraph.h"
+#include "KinGraph.h"
 #include "math/MathUtility.h"
 #include "core/Bond.h"
 #include "core/Rigidbody.h"
@@ -15,7 +15,7 @@
 using namespace Math3D;
 
 
-class SugarVertex: public RigidbodyGraphVertex{
+class SugarVertex: public KinVertex{
 	public:
 		int DOF_id;//Can be different from -1 if its a sugar
 		int Cycle_DOF_id;
@@ -34,7 +34,7 @@ class SugarVertex: public RigidbodyGraphVertex{
 		SugarVertex (int id, Rigidbody* rb);
 		~SugarVertex ();
 
-		void setParent(RigidbodyGraphVertex* v);
+		void setParent(KinVertex* v);
 
 		double getCurrentUP();
 		void configurationToGlobalMatrix(RigidTransform* ms, double* m_f);//, bool usePosition2);

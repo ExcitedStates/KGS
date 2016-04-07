@@ -35,14 +35,14 @@
 
 using namespace std;
 
-SugarVertex::SugarVertex(): RigidbodyGraphVertex(){
+SugarVertex::SugarVertex(): KinVertex(){
     //log("debugRas")<<"SugarVertex() ["<<this<<"]"<<endl;
     DOF_id = -1;
 	Cycle_DOF_id = -1;
 	isRibose = true;
 }
 
-SugarVertex::SugarVertex(int id, Rigidbody* rb): RigidbodyGraphVertex(id,rb){
+SugarVertex::SugarVertex(int id, Rigidbody* rb): KinVertex(id,rb){
     //log("debugRas")<<"SugarVertex("<<id<<", "<<rb<<") ["<<this<<"]"<<endl;
 	DOF_id = -1;
 	Cycle_DOF_id = -1;
@@ -115,17 +115,17 @@ void SugarVertex::collectRest(Rigidbody* rb){
 
 }
 
-void SugarVertex::setParent(RigidbodyGraphVertex* v){
+void SugarVertex::setParent(KinVertex* v){
     //log("debugRas")<<"SugarVertex::setParent("<<v->Rb_ptr<<") this: "<<Rb_ptr<<endl;
-	RigidbodyGraphVertex::setParent(v);
+	KinVertex::setParent(v);
 
 	//Determine entry atom
 	Atom* entryAtom = NULL;
 	map<unsigned int,Edge*>::iterator edge_itr;
 	//for (edge_itr=Parent->Edges.begin(); edge_itr != Parent->Edges.end(); ++edge_itr) {
 	for (auto eit=Parent->edges.begin(); eit!=Parent->edges.end(); ++edge_itr) {
-		//if(RigidbodyGraphVertex::Rb_ptr->containsAtom( (*edge_itr).second->getBond()->Atom2 )) {
-		if(RigidbodyGraphVertex::Rb_ptr->containsAtom( (*eit)->getBond()->Atom2 )) {
+		//if(KinVertex::Rb_ptr->containsAtom( (*edge_itr).second->getBond()->Atom2 )) {
+		if(KinVertex::Rb_ptr->containsAtom( (*eit)->getBond()->Atom2 )) {
 			//entryAtom = (*edge_itr).second->getBond()->Atom2;
 			entryAtom = (*eit)->getBond()->Atom2;
 		}

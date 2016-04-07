@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Edge::Edge(RigidbodyGraphVertex *startv, RigidbodyGraphVertex *endv, Bond *bond) :
+Edge::Edge(KinVertex *startv, KinVertex *endv, Bond *bond) :
     StartVertex(startv),
     EndVertex(endv),
     m_bond(bond)
@@ -62,23 +62,12 @@ Bond *Edge::getBond() const {
 
 
 
-//bool Edge::containsAtomAtPosition ( const clipper::Coord_orth& pos ) const {
-//	if( ( pos[0] >= m_bond->Atom1->m_Position[0] - m_bond->Atom1->Vdw_radius / 100 &&
-//	      pos[0] <= m_bond->Atom1->m_Position[0] + m_bond->Atom1->Vdw_radius / 100 &&
-//	      pos[1] >= m_bond->Atom1->m_Position[1] - m_bond->Atom1->Vdw_radius / 100 &&
-//	      pos[1] <= m_bond->Atom1->m_Position[1] + m_bond->Atom1->Vdw_radius / 100 &&
-//	      pos[2] >= m_bond->Atom1->m_Position[2] - m_bond->Atom1->Vdw_radius / 100 &&
-//	      pos[2] <= m_bond->Atom1->m_Position[2] + m_bond->Atom1->Vdw_radius / 100 ) ||
-//	    ( pos[0] >= m_bond->Atom2->m_Position[0] - m_bond->Atom2->Vdw_radius / 100 &&
-//	      pos[0] <= m_bond->Atom2->m_Position[0] + m_bond->Atom2->Vdw_radius / 100 &&
-//	      pos[1] >= m_bond->Atom2->m_Position[1] - m_bond->Atom2->Vdw_radius / 100 &&
-//	      pos[1] <= m_bond->Atom2->m_Position[1] + m_bond->Atom2->Vdw_radius / 100 &&
-//	      pos[2] >= m_bond->Atom2->m_Position[2] - m_bond->Atom2->Vdw_radius / 100 &&
-//	      pos[2] <= m_bond->Atom2->m_Position[2] + m_bond->Atom2->Vdw_radius / 100 ) )
-//		return true;
-//	return false;
-//}
+ostream& operator<<(ostream& os, const Edge& e){
+  os<<"Edge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
+  return os;
+}
 
-//bool Edge::isDOF () {
-//	return !Hbond;
-//}
+ostream& operator<<(ostream& os, const Edge* e){
+  os<<*e;
+  return os;
+}
