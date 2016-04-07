@@ -227,7 +227,8 @@ void Molecule::indexAtoms () {
   // Atom_pos_index is the current indexing
   if (Atom_pos_index!=NULL)
     delete Atom_pos_index;
-  Atom_pos_index = new Grid(this);
+
+  Atom_pos_index = new Grid(this, SamplingOptions::getOptions()->collisionFactor);
 }
 
 void Molecule::backupAtomIndex () {

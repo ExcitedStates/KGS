@@ -136,7 +136,6 @@ void RRTPlanner::GenerateSamples() {
 
 		if (pNewSmp != NULL) {
 			if (!pNewSmp->updatedProtein()->inCollision()) {
-				//			cout<<"Got new sample"<<endl;
 				++sample_id;
 				m_numSamples = sample_id;
 				pNewSmp->m_distanceToIni = metric->distance(pNewSmp, m_samples.front());
@@ -189,7 +188,6 @@ void RRTPlanner::GenerateSamples() {
 				createNewTarget = true;
 			}
 		}
-
 	}
   gsl_vector_free(gradient);
 }

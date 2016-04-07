@@ -30,13 +30,14 @@
 #include <math.h>
 
 #include "Grid.h"
-#include "SamplingOptions.h"
 
 using namespace std;
 
 const double Grid::Cell_size = GRID_CELL_SIZE;
 
-Grid::Grid (Molecule * protein, double collisionFactor): m_collisionFactor(collisionFactor) {
+Grid::Grid (Molecule * protein, double collisionFactor):
+    m_collisionFactor(collisionFactor)
+{
 	Max_x = -1000;
 	Max_y = -1000;
 	Max_z = -1000;

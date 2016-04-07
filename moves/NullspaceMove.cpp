@@ -43,8 +43,7 @@ Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gr
     Configuration *new_q = new Configuration(current);
 
     for (int i = 0; i < new_q->m_numDOFs; ++i) {
-      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient,
-                                                                                         i); //added as transformation always starts from original coordinates
+      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i);
       new_q->m_sumProjSteps[i] =
           min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
     }
