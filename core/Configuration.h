@@ -34,8 +34,8 @@
 #include <vector>
 #include <math/Nullspace.h>
 
-#include "RigidbodyGraph.h"
-#include "SugarVertex.h"
+#include "core/graph/RigidbodyGraph.h"
+#include "core/graph/SugarVertex.h"
 
 class Molecule;
 class Configuration;

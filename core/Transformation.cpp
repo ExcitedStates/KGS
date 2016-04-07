@@ -26,7 +26,7 @@
 
 */
 #include "core/Configuration.h"
-#include "core/RigidbodyGraph.h"
+#include "core/graph/RigidbodyGraph.h"
 #include "math3d/primitives.h"
 #include "Transformation.h"
 #include "Logger.h"

@@ -30,82 +30,24 @@
 
 #include <vector>
 #include <map>
+#include <list>
 
 #include "math/MathUtility.h"
 #include "core/Bond.h"
-#include "Rigidbody.h"
+#include "core/Rigidbody.h"
 #include "math3d/primitives.h"
+#include "core/graph/RBEdge.h"
 
 class RigidbodyGraphVertex;
 class RigidbodyTree;
+class Edge;
 
-class Edge {
- public:
-  RigidbodyGraphVertex *StartVertex;
-  RigidbodyGraphVertex *EndVertex;
-  //bool Hbond;
-  bool Shared;
-  unsigned int RigidbodyGraphCycleCluster_id;
-  int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
-  int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
-
-  Edge(RigidbodyGraphVertex *startv, RigidbodyGraphVertex *endv, Bond * m_bond);
-  void print();
-  void printVerbose();
-  void printShort();
-  void printHTML();
-  void printHTMLRoot();
-
-  Bond *getBond() const;
-
- private:
-  Bond * const m_bond;
-};
-
-class RigidbodyGraphVertex {
- public:
-  const unsigned int id;
-  Rigidbody * const Rb_ptr;
-  std::vector<Edge*> edges;     ///< Child-edges after spanning tree has been created
-  RigidbodyGraphVertex *Parent; ///< Parent-vertex after spanning tree has been created
-  bool Visited;                 ///< When finding common ancestor, vertices are marked as visited up to the root
-  Math3D::RigidTransform transformation;  ///< The rigid body transformation matrix of this rigid group
-
-  bool isRibose;
-
-  RigidbodyGraphVertex();
-  RigidbodyGraphVertex(int id, Rigidbody* rb);
-  virtual ~RigidbodyGraphVertex();
-
-  void addEdge(unsigned int neighbor_vertex_id, Edge *edge);
-  Edge* findEdge(RigidbodyGraphVertex* v) const;
-  virtual void setParent(RigidbodyGraphVertex* v);
-  void print();
-  void TransformAtomPosition(Math3D::RigidTransform *trsfm);
-};
-
-class RigidbodyGraphCycle {
- public:
-  std::vector<Edge*> CycleEdges;
-  unsigned int IndependentLength; // number of independent DOFs in the cycle; H-bond is NOT a DOF!
-
-  RigidbodyGraphCycle();
-  ~RigidbodyGraphCycle() {};
-};
-
-class RigidbodyGraphCycleCluster {
- public:
-  std::vector< RigidbodyGraphCycle > Cycles;
-
-  void print();
-};
 
 class RigidbodyGraph {
  public:
   std::map<unsigned int, RigidbodyGraphVertex*> Vertex_map;
   std::list< std::pair< unsigned int, RigidbodyGraphVertex*> > m_sortedVertices;
   std::vector<Edge*> Edges;
-  std::map<unsigned int, RigidbodyGraphCycleCluster> CycleClusters; // cluster_id -> cluster
   unsigned int MaxCycleClusterId;
 
   RigidbodyGraph ();

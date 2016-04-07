@@ -43,7 +43,7 @@ add_library( libKGS
         core/Residue.h
         ResidueProfiles.h
         core/Rigidbody.h
-        core/RigidbodyGraph.h
+        core/graph/RigidbodyGraph.h
         RunFirst.h
         math/SVD.h
         SamplingOptions.h
@@ -54,7 +54,7 @@ add_library( libKGS
         	planners/BidirectionalMovingFront.h
         Selection.h
         SiteID.h
-        core/SugarVertex.h
+        core/graph/SugarVertex.h
         core/Transformation.h
         Util.h
         KGSExceptions.h
@@ -95,7 +95,7 @@ add_library( libKGS
         core/ProteinHBond.cpp
         core/Residue.cpp
         core/Rigidbody.cpp
-        core/RigidbodyGraph.cpp
+        core/graph/RigidbodyGraph.cpp
         RunFirst.cpp
         math/SVD.cpp
         SamplingOptions.cpp
@@ -105,7 +105,7 @@ add_library( libKGS
 		planners/PoissonPlanner.cpp
         	planners/BidirectionalMovingFront.cpp
         Selection.cpp
-        core/SugarVertex.cpp
+        core/graph/SugarVertex.cpp
         core/Transformation.cpp
         Util.cpp
         KGSExceptions.cpp
@@ -135,7 +135,7 @@ add_library( libKGS
 		math/gsl_helpers.h 
 		math/Nullspace.cpp 
 		math/Nullspace.h
-        loopclosure/ExactIK.cpp loopclosure/ExactIK.h core/dofs/DOF.cpp core/dofs/DOF.h core/dofs/TorsionDOF.cpp core/dofs/TorsionDOF.h)
+        loopclosure/ExactIK.cpp loopclosure/ExactIK.h core/dofs/DOF.cpp core/dofs/DOF.h core/dofs/TorsionDOF.cpp core/dofs/TorsionDOF.h core/graph/RBEdge.cpp core/graph/RBEdge.h core/graph/KinVertex.cpp core/graph/KinVertex.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

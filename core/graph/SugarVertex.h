@@ -9,7 +9,7 @@
 #include "RigidbodyGraph.h"
 #include "math/MathUtility.h"
 #include "core/Bond.h"
-#include "Rigidbody.h"
+#include "core/Rigidbody.h"
 #include "math3d/primitives.h"
 
 using namespace Math3D;

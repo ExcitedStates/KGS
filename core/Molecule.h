@@ -34,7 +34,7 @@
 #include <set>
 
 #include "Rigidbody.h"
-#include "RigidbodyGraph.h"
+#include "core/graph/RigidbodyGraph.h"
 #include "core/Configuration.h"
 
 class Chain;

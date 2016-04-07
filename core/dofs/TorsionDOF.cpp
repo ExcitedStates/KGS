@@ -16,6 +16,7 @@ Math3D::Vector3 TorsionDOF::getDerivative(Coordinate& coord) const
 double TorsionDOF::getGlobalValue() const
 {
   //TODO: Implement
+  return 0;
 }
 
 void TorsionDOF::updateEndVertexTransformation()

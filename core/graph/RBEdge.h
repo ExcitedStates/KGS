@@ -24,48 +24,41 @@
         IN THE SOFTWARE.
 */
 
-#include <vector>
-#include <math/gsl_helpers.h>
-#include <cmath>
+#ifndef KGS_RBEDGE_H
+#define KGS_RBEDGE_H
 
-#include "RandomDirection.h"
-#include "SamplingOptions.h"
-#include "core/graph/RigidbodyGraph.h"
-#include "core/Molecule.h"
-#include "math.h" //dPi
-#include "math/MathUtility.h"
+#include "RigidbodyGraph.h"
 
-RandomDirection::RandomDirection(double maxRotation):
-    m_maxRotation(maxRotation)
-{ }
+/**
+ * An edge connecting two vertices in the kinematic tree.
+ *
+ * An edge is responsible for holding its two end-vertices and reference to a DOF object (though one DOF
+ * can be associated with more Edges - see documentation of PentamerDOF). The edge is not responsible for
+ * freeing any of these.
+ */
+class Edge {
+ public:
+  Edge(RigidbodyGraphVertex * startv, RigidbodyGraphVertex * endv, Bond * m_bond);
+
+  RigidbodyGraphVertex *StartVertex;
+  RigidbodyGraphVertex *EndVertex;
+
+  int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
+  int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
 
 
-void RandomDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
-{
-  //TODO: It shouldn't be necessary to go through edges of the tree ...
-  //TODO: Just set all entries in ret to random values (?)
-  Molecule * protein = conf->getProtein();
-  double absMax = 0.0;
-  for (auto const& edge: protein->m_spanning_tree->Edges) {
-    int dofId = edge->DOF_id;
-    double newVal = RandomAngleUniform(dPi);
-    absMax = std::max(absMax, std::fabs(newVal));
+  void print() const;
 
-    //ToDo: adapt to sampling options selectionMoving etc
-    const std::vector<int> &res_network = SamplingOptions::getOptions()->residueNetwork;
-    if (res_network.empty()) {
-      gsl_vector_set(ret, dofId, newVal);
-    } else {
-      int resId = edge->getBond()->Atom1->getResidue()->getId();
-      if (std::find(res_network.begin(), res_network.end(), resId) != res_network.end()) {
-        gsl_vector_set(ret, dofId, newVal);
-      }
-    }
-  }
+  void printVerbose() const;
+  void printShort() const;
+  void printHTML() const;
+  void printHTMLRoot() const;
 
-  if ( absMax > m_maxRotation ){
-    gsl_vector_scale(ret, m_maxRotation/absMax);
-  }
+  Bond *getBond() const;
 
-  gsl_vector_scale(ret, SamplingOptions::getOptions()->stepSize);
-}
+ private:
+  Bond * const m_bond;
+};
+
+
+#endif //KGS_RBEDGE_H
