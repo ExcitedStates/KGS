@@ -89,7 +89,7 @@ class Molecule {
 	void addCovBond (Bond * bond);
 	void addHbond (Hbond * hb);
 	void setToHbondIntersection (Molecule * p2);
-	void buildRigidbodyTree(unsigned int bestRigidBody = 0 , bool flexibleSugar=true);
+	void buildSpanningTree(unsigned int bestRigidBody = 0, bool flexibleSugar = true);
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = NULL);
 	KinVertex* getRigidbodyGraphVertex (Atom* atom) const; // Return the vertex which is associated with the smallest DOF id edge among all the atom's rigidbodies.
 	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
@@ -113,7 +113,7 @@ class Molecule {
 	std::set< std::pair<Atom*,Atom*> > Initial_collisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
 
 	// Topology of rigid bodies
-	RigidbodyTree *m_spanning_tree;
+	KinTree *m_spanning_tree;
 	RigidTransform *m_Transformation; // cache: store the transformation of each rigid body group
 
 	// Configuration

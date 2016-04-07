@@ -6,7 +6,7 @@
 #include <core/graph/KinGraph.h>
 
 /**
- * A degree-of-freedom affecting a branch of the RigidbodyTree.
+ * A degree-of-freedom affecting a branch of the KinTree.
  * All DOFs must be able to return an absolute value (for instance the N-CA-C-N dihedral angle) but in practice
  * relative angles (related to some conformational origo) are stored and updated when working with DOFs.
  *

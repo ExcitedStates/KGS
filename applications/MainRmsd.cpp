@@ -18,7 +18,7 @@ Molecule * myReadFile(string pdbFile){
     vector<string> extraCovBonds;
     IO::readPdb( protein, pdbFile, extraCovBonds );
     IO::readRigidbody( protein );
-    protein->buildRigidbodyTree(0, false);
+    protein->buildSpanningTree(0, false);
 
     return protein;
 }

@@ -10,7 +10,7 @@
 
 using namespace std;
 
-void RigidbodyTree::printForSpringy () {
+void KinTree::printForSpringy () {
   queue<KinVertex*> node_queue;
   node_queue.push(root);
   //log()<<"var nd_"<<root->id<<" = graph.newNode({label: \"*"<<root->Rb_ptr<<"*\"});"<<endl;
@@ -33,7 +33,7 @@ void RigidbodyTree::printForSpringy () {
   log() << "Go to http://getspringy.com/, download the demo and paste the above into the javascript" << endl;
 }
 
-void RigidbodyTree::print() {
+void KinTree::print() {
   //return;
   // breadth-first-traverse
   log() << "Breadth-first-traversal of the tree:" << endl;
@@ -82,7 +82,7 @@ void RigidbodyTree::print() {
 
 }
 
-KinVertex* RigidbodyTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
+KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   // traverse from v1 to root, and mark every vertex along the way to be Visited
   KinVertex *cur_node = v1;
   do {
@@ -92,7 +92,7 @@ KinVertex* RigidbodyTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
       break;
     else{
       if(cur_node->Parent==NULL){
-        cerr<<"RigidbodyTree::findCommonAncestor("<<v1->Rb_ptr<<","<<v2->Rb_ptr<<") node has no m_parent: "<<cur_node->Rb_ptr<<endl;
+        cerr<<"KinTree::findCommonAncestor("<<v1->Rb_ptr<<","<<v2->Rb_ptr<<") node has no m_parent: "<<cur_node->Rb_ptr<<endl;
         cerr<<"You might see this error because of multiple occupancy atoms in the structure"<<endl;
         exit(-1);
       }
@@ -105,7 +105,7 @@ KinVertex* RigidbodyTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   while ( !cur_node->Visited ) {
     //log("debug")<<"Cur node [2] : "<<cur_node->Rb_ptr<<endl;
     if(cur_node->Parent==NULL){
-      cerr<<"RigidbodyTree::findCommonAncestor("<<v1->Rb_ptr<<","<<v2->Rb_ptr<<") node has no m_parent: "<<cur_node->Rb_ptr<<endl;
+      cerr<<"KinTree::findCommonAncestor("<<v1->Rb_ptr<<","<<v2->Rb_ptr<<") node has no m_parent: "<<cur_node->Rb_ptr<<endl;
       cerr<<"You might see this error because of multiple occupancy atoms in the structure"<<endl;
       exit(-1);
     }
@@ -129,11 +129,11 @@ KinVertex* KinGraph::getVertex (int rb_id) {
   return Vertex_map.find(rb_id)->second;
 }
 
-RigidbodyTree::RigidbodyTree(): KinGraph(){
+KinTree::KinTree(): KinGraph(){
   num_DOFs = 0;
   Cycle_DOF_num = 0;
 }
-RigidbodyTree::~RigidbodyTree () {
+KinTree::~KinTree () {
   for (vector< pair<Edge*,KinVertex*> >::iterator it=CycleAnchorEdges.begin(); it!=CycleAnchorEdges.end(); ++it) {
     delete it->first;
   }

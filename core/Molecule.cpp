@@ -357,23 +357,23 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   }
 }
 
-void Molecule::buildRigidbodyTree (unsigned int rootRBId, bool flexibleSugar ) {
-  //log() << "In buildRigidbodyTree" << endl;
-  m_spanning_tree = new RigidbodyTree();
+void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
+  //log() << "In buildSpanningTree" << endl;
+  m_spanning_tree = new KinTree();
 
   m_spanning_tree->root = m_spanning_tree->addVertex(rootRBId, Rigidbody_map_by_id[rootRBId], flexibleSugar);
 
 
   // add all rigid bodies as vertices into Rigidbody_graph
   int dof_id = 0;
-  for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
-    KinVertex* vtx;
+  for (auto const& id_rb_pair: Rigidbody_map_by_id) {
+    Rigidbody* rb = id_rb_pair.second;
 
-    //if (it->first == rootRBId ){
-    if (it->second->id() == rootRBId ){
+    KinVertex* vtx;
+    if (rb->id() == rootRBId ){
       vtx = m_spanning_tree->root;
     }else{
-      vtx = m_spanning_tree->addVertex(it->second->id(),it->second, flexibleSugar);
+      vtx = m_spanning_tree->addVertex(rb->id(),rb, flexibleSugar);
     }
 
     if(vtx->isRibose){//RFonseca
@@ -792,7 +792,7 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
 
 int Molecule::totalDofNum () const {
   if (m_spanning_tree==NULL) {
-    cerr << "Error: to get the total number of DOFs in the m_protein, you have to call Molecule::buildRigidbodyTree() first." << endl;
+    cerr << "Error: to get the total number of DOFs in the m_protein, you have to call Molecule::buildSpanningTree() first." << endl;
     exit(1);
   }
   return m_spanning_tree->num_DOFs;

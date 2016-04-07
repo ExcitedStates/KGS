@@ -22,7 +22,7 @@ Molecule * readProtein(char* path){
 	IO::readPdb( protein, path, extraCovBonds );
 
 	IO::readRigidbody( protein );
-	protein->buildRigidbodyTree();
+	protein->buildSpanningTree();
 	protein->SetConfiguration(new Configuration(protein));
 	return protein;
 }

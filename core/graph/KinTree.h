@@ -8,18 +8,18 @@
 
 #include "KinGraph.h"
 
-class RigidbodyTree: public KinGraph {
-  // In RigidbodyTree, only edges to m_children are stored in Edges.
+class KinTree: public KinGraph {
+  // In KinTree, only edges to m_children are stored in Edges.
   // The bonds associated with edges not necessarily point from smaller Id atom to larger Id atom.
   // Rather, they point from m_parent rigidbody to child rigidbody.
 public:
-  RigidbodyTree();
+  KinTree();
   KinVertex *root;
   std::vector< std::pair<Edge*,KinVertex*> > CycleAnchorEdges; // pair<edge,common anchor>; each edge closes a cycle
   int Cycle_DOF_num; // total number of DOFs in the cycles
   int num_DOFs;
 
-  ~RigidbodyTree();
+  ~KinTree();
   void print();
   void printForSpringy();
   KinVertex* findCommonAncestor (KinVertex *v1, KinVertex *v2);

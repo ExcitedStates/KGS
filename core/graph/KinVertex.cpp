@@ -23,7 +23,6 @@ KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
 }
 
 KinVertex::~KinVertex () {
-  //map<unsigned int,Edge*>::iterator eit;
   for (auto eit=edges.begin(); eit!=edges.end(); ++eit) {
     delete *eit;
   }
@@ -39,7 +38,7 @@ void KinVertex::addEdge (unsigned int neighbor_vertex_id, Edge *edge) {
 }
 
 void KinVertex::print () {
-  log() << "Rigidbody_" << id << ", id ";
+  log() << "KinVertex_" << id << ", id ";
   for (vector<Atom*>::iterator it=Rb_ptr->Atoms.begin(); it!=Rb_ptr->Atoms.end(); ++it)
     log() << (*it)->getId() << "+";
   log() << endl;

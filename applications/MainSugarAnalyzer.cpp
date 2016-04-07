@@ -130,7 +130,7 @@ int main( int argc, char* argv[] ){
         IO::readPdb( protein, argv[a], extraCovBonds );
 
 		IO::readRigidbody( protein );
-		protein->buildRigidbodyTree();
+		protein->buildSpanningTree();
 		
 		for(map<unsigned int, KinVertex*>::iterator vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); ++vit){
 			KinVertex* v = vit->second;

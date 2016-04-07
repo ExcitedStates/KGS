@@ -37,7 +37,7 @@ using namespace Math3D;
 using namespace std;
 
 
-void Confvec2MatrixGlobal(RigidbodyTree *pTree, Configuration *q, RigidTransform *ms)
+void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
 {
   int n = q->m_numDOFs;
   int i;

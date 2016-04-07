@@ -113,7 +113,7 @@ void randomSampling(SamplingOptions& options){
   options.setResidueNetwork(&protein);
 
   unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root);//Todo: adapt this to usage without target
-  protein.buildRigidbodyTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
 
 //	m_protein.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -258,7 +258,7 @@ void targetedSampling(SamplingOptions& options){
 
   //Build rigid body tree for protein
   unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root, target);
-  protein.buildRigidbodyTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
 
 //	m_protein.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -269,7 +269,7 @@ void targetedSampling(SamplingOptions& options){
 
   //Build rigid body tree for target
   unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.root, &protein);
-  target->buildRigidbodyTree(bestTargetRBId, options.flexibleRibose);
+  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->Initial_collisions.size()<<" initial collisions"<<endl;

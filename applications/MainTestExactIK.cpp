@@ -27,7 +27,7 @@ int main( int argc, char* argv[] ) {
   //Create the rigid body trees
   IO::readRigidbody( &protein );
 
-  protein.buildRigidbodyTree(0, false);//with the rigid body tree in place, we can generate a configuration
+  protein.buildSpanningTree(0, false);//with the rigid body tree in place, we can generate a configuration
 
   ExactIK ik;
 

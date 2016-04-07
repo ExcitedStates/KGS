@@ -50,7 +50,7 @@ int main( int argc, char* argv[] ){
         HbondIdentifier::identify_hbonds(protein);
 
     IO::readRigidbody( protein );
-    protein->buildRigidbodyTree(0, options.flexibleRibose);
+  protein->buildSpanningTree(0, options.flexibleRibose);
 //	if(options.hydrogenbondMethod!="user")
 //		writeHBondPML(m_protein, argv[1]);
 

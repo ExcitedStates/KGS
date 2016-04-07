@@ -99,7 +99,7 @@ int main( int argc, char* argv[] ) {
     IO::readPdb(protein, argv[a], extraCovBonds);
 
     IO::readRigidbody(protein);
-    protein->buildRigidbodyTree();
+    protein->buildSpanningTree();
 
     bool rna = true;
     for (int i = 0; i < protein->atoms.size(); i++) {
