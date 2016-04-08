@@ -21,10 +21,10 @@ double TorsionDOF::getGlobalValue() const
 
 void TorsionDOF::updateEndVertexTransformation()
 {
-  if( std::fabs(m_value)<0.0001 ) {
-    m_edge->EndVertex->m_transformation.setIdentity();
-    return;
-  }
+  //if( std::fabs(m_value)<0.0001 ) {
+  //  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation;
+  //  return;
+  //}
 
   Coordinate& p1 = m_edge->getBond()->Atom1->m_Position;
   Coordinate& p2 = m_edge->getBond()->Atom2->m_Position;
@@ -36,10 +36,10 @@ void TorsionDOF::updateEndVertexTransformation()
   m2.setIdentity();
   m3.setIdentity();
 
+  //TODO: Theres a closed-form expression that would save some matrix multiplications and make this faster
   m1.setTranslate(p1);
   m2.setRotate(FindRotationMatrix(axis, -m_value)); //FindRotationMatrix returns left-handed rotation
-  p1.inplaceNegative();
-  m3.setTranslate(p1);
+  m3.setTranslate(-1.0*p1);
 
-  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m1 * m2 * m3;
+  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m1*m2*m3;
 }

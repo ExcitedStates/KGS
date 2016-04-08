@@ -551,11 +551,9 @@ void IO::writePdb (Molecule * protein, string output_file_name) {
 		Residue* res = (*atom_itr)->getResidue();
 		char buffer[100];
 		sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s  ",
-		//sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6d          %2s  ",
 			atom->getId(),atom->getName().c_str(),
 			res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
 			atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom->getType().c_str());
-			//atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
 		string line(buffer);
 		output << line << endl;
 	}

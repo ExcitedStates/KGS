@@ -118,6 +118,7 @@ void RRTPlanner::GenerateSamples() {
 		CTKTimer timer;
 		double start_time = timer.getTimeNow();
 
+    cout<<"RRTPlanner - choosing seed"<<endl;
 		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == NULL || createNewTarget) {
 			log("dominik") << "Generating new target, getting new seed" << endl;
 			pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
@@ -133,6 +134,7 @@ void RRTPlanner::GenerateSamples() {
 
 		direction.gradient(pClosestSmp, NULL, gradient);
 		pNewSmp = move.move(pClosestSmp, gradient);
+    cout<<"RRTPlanner - "<<pNewSmp<<endl;
 
 		if (pNewSmp != NULL) {
 			if (!pNewSmp->updatedProtein()->inCollision()) {
@@ -220,9 +222,11 @@ Configuration *RRTPlanner::SelectNodeFromBuckets (Configuration *pTarget) {
 	double min_distance = 1000000.0;
 	double distance;
 	pMinSmp = NULL;
+  cout<<"RRTPlanner::SelectNodeFromBuckets"<<endl;
 
 	int selected_bucket_id;
 	while ( pMinSmp==NULL ) {
+    cout<<"RRTPlanner::SelectNodeFromBuckets (pMinSmp==NULL)"<<endl;
 		do {
 			selected_bucket_id = rand() % (m_numBuckets-1);
 		} while ( distance_buckets[selected_bucket_id].empty() );
@@ -234,7 +238,8 @@ Configuration *RRTPlanner::SelectNodeFromBuckets (Configuration *pTarget) {
 			}
 			// Using closest to random
 			distance = metric->distance(pSmp,pTarget);
-			
+
+      cout<<"RRTPlanner::SelectNodeFromBuckets ("<<pSmp<<", "<<pTarget<<")"<<endl;
 			if (distance<min_distance) {
 				min_distance = distance;
 				pMinSmp = pSmp;

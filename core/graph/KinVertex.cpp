@@ -6,10 +6,11 @@ using namespace std;
 
 KinVertex::KinVertex ():
     id(0),
-    m_rigidbody(NULL)
+    m_rigidbody(NULL),
+    m_parent(NULL),
+    isRibose(false)
 {
-  m_parent = NULL;
-  isRibose = false;
+  m_transformation.setIdentity();
 }
 
 KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
@@ -20,6 +21,7 @@ KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
   Visited = false;
   isRibose = false;
   rb_ptr->setVertex(this);
+  m_transformation.setIdentity();
 }
 
 KinVertex::~KinVertex () {
@@ -55,16 +57,25 @@ void KinVertex::forwardPropagate()
 
 void KinVertex::transformAtoms()
 {
+  //cout<<"KinVertex::transformAtoms - "<<this->id<<endl<<m_transformation<<endl;
   for (auto const& atom: m_rigidbody->Atoms){
-    Math3D::Vector3 newPos = m_transformation * atom->m_Position;
+    Math3D::Vector3 newPos = m_transformation * atom->m_referencePosition;
+    if(atom->getResidue()->getId()==1 && atom->getName()=="CA"){
+      cout<<"1/CA trans: "<<endl<<m_transformation<<endl;
+      cout<<"1/CA pos:   "<<atom->m_Position<<endl;
+      cout<<"1/CA resn:  "<<atom->getResidue()->getName()<<endl;
+    }
 
-    //newPos.x += m_transformation->t.x;
-    //newPos.y += m_transformation->t.y;
-    //newPos.z += m_transformation->t.z;
+    //newPos.x += m_transformation.t.x;
+    //newPos.y += m_transformation.t.y;
+    //newPos.z += m_transformation.t.z;
 
     atom->m_Position.x = newPos.x;
     atom->m_Position.y = newPos.y;
     atom->m_Position.z = newPos.z;
+    if(atom->getResidue()->getId()==1 && atom->getName()=="CA"){
+      cout<<"1/CA newpos:"<<atom->m_Position<<endl;
+    }
   }
 }
 

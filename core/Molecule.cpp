@@ -715,7 +715,6 @@ void Molecule::RestoreAtomPos(){
 
   m_conf = NULL;
   restoreAtomIndex();
-
 }
 
 void Molecule::SetConfiguration(Configuration *q){
@@ -740,12 +739,14 @@ void Molecule::_SetConfiguration(Configuration *q ){
   // assume the base vector is 0, relative rotation to original position
 //  Confvec2MatrixGlobal(m_spanning_tree, q, m_Transformation);
 
-  //cerr<<"REMEMBER TO UPDATE DOF VALUES (Molecule::_SetConfiguration)"<<endl;
   for(size_t id=0 ; id<m_spanning_tree->m_dofs.size() ; ++id){
     m_spanning_tree->m_dofs[id]->setValue(q->m_dofs[id]);
   }
+
+  cout<<"Molecule::_SetConfiguration - before "<<getAtom("A",1,"CA")->m_Position<<endl;
   KinVertex *root = m_spanning_tree->root;
   root->forwardPropagate();
+  cout<<"Molecule::_SetConfiguration - after  "<<getAtom("A",1,"CA")->m_Position<<endl;
 
   //Initialize queue
 //  list<KinVertex *> queue;

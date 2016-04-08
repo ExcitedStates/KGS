@@ -195,6 +195,7 @@ add_executable( print_sugars    applications/MainSugarAnalyzer.cpp )
 add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd		    applications/MainRmsd.cpp )
 add_executable( testik		    applications/MainTestExactIK.cpp )
+add_executable( test  		    applications/MainTest.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
@@ -203,6 +204,7 @@ target_link_libraries( print_sugars     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd			    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( testik		    libKGS ${GSL_LIBRARIES} )
+target_link_libraries( test  		    libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 
