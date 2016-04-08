@@ -61,10 +61,12 @@ class KinEdge {
 
   void forwardPropagate();
 
+  void setDOF(DOF* dof);
+
  private:
   DOF* createDOF(Bond* bond, int dof_id) const;
   Bond * const m_bond;
-  DOF * const m_dof;
+  DOF * m_dof;
 };
 
 std::ostream& operator<<(std::ostream& os, const KinEdge& e);

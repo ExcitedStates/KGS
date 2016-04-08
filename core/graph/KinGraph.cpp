@@ -78,9 +78,9 @@ KinEdge* KinGraph::addTranslateEdgeDirected(KinVertex *vertex1, KinVertex *verte
   Edges.push_back(edge1);
   return edge1;
 }
-KinEdge* KinGraph::addTranslateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
+KinEdge* KinGraph::addRotateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
 {
-  KinEdge *edge1 = new KinEdge(vertex1,vertex2,0,axis, DOF_id);
+  KinEdge *edge1 = new KinEdge(vertex1,vertex2,1,axis, DOF_id);
   vertex1->addEdge(vertex2->id, edge1);
   vertex2->setParent(vertex1);
   Edges.push_back(edge1);
