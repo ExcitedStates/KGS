@@ -520,6 +520,8 @@ void Configuration::Print () {
 
 void Configuration::computeJacobians() {
 
+  updateProtein();
+
 	// No cycles
 	if(m_protein->m_spanning_tree->CycleAnchorEdges.size() == 0) {
 		CycleJacobian = NULL; //TODO: Memory leak
@@ -793,8 +795,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 	//Convert the cycle Jacobian to a full Jacobian
 	//Columns correspond to cycle_dof_ids
 	if(projectConstraints){
-		map<unsigned int, KinVertex*>::iterator vit;
-		for (vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=m_protein->m_spanning_tree->Vertex_map.end(); vit++){
+		for (auto vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=m_protein->m_spanning_tree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 				int dof_id = v->DOF_id;

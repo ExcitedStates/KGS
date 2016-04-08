@@ -1,17 +1,28 @@
 #include <core/dofs/TorsionDOF.h>
+#include <core/dofs/GlobalRotateDOF.h>
+#include <core/dofs/GlobalTranslateDOF.h>
 #include "KinEdge.h"
 #include "Logger.h"
 
 using namespace std;
 
-KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond) :
+KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond, int dof_id) :
     StartVertex(startv),
     EndVertex(endv),
     m_bond(bond),
-    m_dof(new TorsionDOF(this))
+    m_dof(createDOF(bond, dof_id)),
+    DOF_id(dof_id)
 {
-  DOF_id = -1;
   Cycle_DOF_id = -1;
+}
+
+DOF* KinEdge::createDOF(Bond* bond, int dof_id) const{
+  if(dof_id<-3)
+    return new GlobalRotateDOF(this, dof_id+6);
+  if(dof_id<0)
+    return new GlobalTranslateDOF(this, dof_id+6);
+
+  return new TorsionDOF(this);
 }
 
 void KinEdge::print () const {

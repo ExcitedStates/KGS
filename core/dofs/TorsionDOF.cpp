@@ -21,7 +21,7 @@ double TorsionDOF::getGlobalValue() const
 
 void TorsionDOF::updateEndVertexTransformation()
 {
-  //if( std::fabs(m_value)<0.0001 ) {
+  //if( std::fabs(m_value)<0.000001 ) {
   //  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation;
   //  return;
   //}

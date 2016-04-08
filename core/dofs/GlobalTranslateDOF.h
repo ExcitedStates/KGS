@@ -2,15 +2,15 @@
 // Created by Rasmus Fonseca on 05/04/16.
 //
 
-#ifndef KGS_TORSIONDOF_H
-#define KGS_TORSIONDOF_H
+#ifndef KGS_GLOBALTRANSLATEDOF_H
+#define KGS_GLOBALTRANSLATEDOF_H
 
 
 #include "DOF.h"
 
-class TorsionDOF: public DOF {
+class GlobalTranslateDOF: public DOF {
  public:
-  TorsionDOF(const KinEdge* edge): DOF(edge){}
+  GlobalTranslateDOF(const KinEdge* edge, int axis);
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const;
 
@@ -19,7 +19,10 @@ class TorsionDOF: public DOF {
  protected:
 
   void updateEndVertexTransformation();
+
+ private:
+  int m_axis;
 };
 
 
-#endif //KGS_TORSIONDOF_H
+#endif //KGS_GLOBALTRANSLATEDOF_H

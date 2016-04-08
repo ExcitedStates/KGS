@@ -41,15 +41,14 @@ KinGraph::KinGraph () {
 }
 
 KinGraph::~KinGraph () {
-	map<unsigned int, KinVertex*>::iterator it;
 	m_sortedVertices.clear();
-	for (it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
+	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
 		delete it->second;
 	}
 
 }
 
-KinVertex* KinGraph::addVertex (unsigned int rb_id, Rigidbody* rb, bool flexibleRibose){
+KinVertex* KinGraph::addVertex(int rb_id, Rigidbody* rb, bool flexibleRibose){
     //log("debugRas")<<"addVertex("<<rb_id<<" , "<<rb<<" )"<<endl;
 	KinVertex* new_vertex;
 	//if( (rb->getAtom("O4'") && rb->getAtom("C3'")) || (rb->getAtom("CB") && rb->getAtom("CB")->getResidue()->getName()=="PRO") ){
@@ -71,52 +70,69 @@ KinEdge* KinVertex::findEdge(KinVertex* v) const
   }
   return NULL;
 }
+KinEdge* KinGraph::addTranslateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
+{
+  KinEdge *edge1 = new KinEdge(vertex1,vertex2,0,axis, DOF_id);
+  vertex1->addEdge(vertex2->id, edge1);
+  vertex2->setParent(vertex1);
+  Edges.push_back(edge1);
+  return edge1;
+}
+KinEdge* KinGraph::addTranslateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
+{
+  KinEdge *edge1 = new KinEdge(vertex1,vertex2,0,axis, DOF_id);
+  vertex1->addEdge(vertex2->id, edge1);
+  vertex2->setParent(vertex1);
+  Edges.push_back(edge1);
+  return edge1;
+}
 
 // Add a directed edge from rb_id1 to rb_id2
 KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id)
 {
     //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
-	Atom *atom2, *atom3, *atom4;
-	Bond *bond_copy = new Bond(*bond);
-	atom2 = bond_copy->Atom1;
-	atom3 = bond_copy->Atom2;
-	atom4 = NULL;
+    Atom *atom2, *atom3, *atom4;
+    Bond *bond_copy = new Bond(*bond);
+    atom2 = bond_copy->Atom1;
+    atom3 = bond_copy->Atom2;
+    atom4 = NULL;
 
-	// Find out the atom that covalently bonded to atom3 with smallest Id. It participates in the definition of the torsional angle.
-	for (vector<Atom*>::iterator aitr=atom3->Cov_neighbor_list.begin(); aitr!=atom3->Cov_neighbor_list.end(); ++aitr) {
-		if ( (*aitr)==atom2 ) continue;
-		if ( atom4==NULL || (*aitr)->getId()<atom4->getId() ) {
-			atom4 = *aitr;
-		}
-	}
-	for (vector<Atom*>::iterator aitr=atom3->Hbond_neighbor_list.begin(); aitr!=atom3->Hbond_neighbor_list.end(); ++aitr) {
-		if ( (*aitr)==atom2 ) continue;
-		if ( atom4==NULL || (*aitr)->getId()<atom4->getId() ) {
-			atom4 = *aitr;
-		}
-	}
+    // Find out the atom that covalently bonded to atom3 with smallest Id. It participates in the definition of the torsional angle.
+    for (vector<Atom *>::iterator aitr = atom3->Cov_neighbor_list.begin();
+         aitr != atom3->Cov_neighbor_list.end(); ++aitr) {
+      if ((*aitr) == atom2) continue;
+      if (atom4 == NULL || (*aitr)->getId() < atom4->getId()) {
+        atom4 = *aitr;
+      }
+    }
+    for (vector<Atom *>::iterator aitr = atom3->Hbond_neighbor_list.begin();
+         aitr != atom3->Hbond_neighbor_list.end(); ++aitr) {
+      if ((*aitr) == atom2) continue;
+      if (atom4 == NULL || (*aitr)->getId() < atom4->getId()) {
+        atom4 = *aitr;
+      }
+    }
 
-	// If atom4 is in vertex1, then should flip atom2 and atom3 so that the bond is pointing from vertex1 to vertex2
-	Atom *tmp_atom;
-	for (vector<Atom*>::iterator svIT = vertex1->m_rigidbody->Atoms.begin(); svIT != vertex1->m_rigidbody->Atoms.end(); ++svIT)
-	{
-		if((*svIT) == atom4) 
-		{
-			tmp_atom = bond_copy->Atom1;
-			bond_copy->Atom1 = bond_copy->Atom2;
-			bond_copy->Atom2 = tmp_atom;
-			break;
-		}
-	}
+    // If atom4 is in vertex1, then should flip atom2 and atom3 so that the bond is pointing from vertex1 to vertex2
+    Atom *tmp_atom;
+    for (vector<Atom *>::iterator svIT = vertex1->m_rigidbody->Atoms.begin();
+         svIT != vertex1->m_rigidbody->Atoms.end(); ++svIT) {
+      if ((*svIT) == atom4) {
+        tmp_atom = bond_copy->Atom1;
+        bond_copy->Atom1 = bond_copy->Atom2;
+        bond_copy->Atom2 = tmp_atom;
+        break;
+      }
+    }
 
   //Old and weird
 //  KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond_copy);
 //  edge1->Bond = bond;
-	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond);
+	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond,DOF_id);
 	vertex1->addEdge(vertex2->id, edge1);
 	vertex2->setParent(vertex1);
 	Edges.push_back(edge1);
-	edge1->DOF_id = DOF_id;
+	//edge1->DOF_id = DOF_id;
 	return edge1;
 }
 
@@ -130,8 +146,7 @@ KinVertex* KinGraph::getVertex (int rb_id) {
 
 
 void KinGraph::print () {
-	map<unsigned int, KinVertex*>::iterator it;
-	for (it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
+	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
 		KinVertex *vertex = it->second;
 		log() << "Rigidbody " << vertex->id << ": " << vertex->m_rigidbody->Atoms.size() << " atoms and " << vertex->m_edges.size() << " m_edges" << endl;
 		vertex->print();

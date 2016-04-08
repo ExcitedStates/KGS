@@ -20,7 +20,8 @@ KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
   m_parent = NULL;
   Visited = false;
   isRibose = false;
-  rb_ptr->setVertex(this);
+  if(rb_ptr!=NULL)
+    rb_ptr->setVertex(this);
   m_transformation.setIdentity();
 }
 

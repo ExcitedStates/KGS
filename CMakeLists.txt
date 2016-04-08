@@ -139,8 +139,12 @@ add_library( libKGS
 		loopclosure/ExactIK.h
 		core/dofs/DOF.cpp
 		core/dofs/DOF.h
-		core/dofs/TorsionDOF.cpp
-		core/dofs/TorsionDOF.h
+        core/dofs/TorsionDOF.cpp
+        core/dofs/TorsionDOF.h
+        core/dofs/GlobalTranslateDOF.cpp
+        core/dofs/GlobalTranslateDOF.h
+		core/dofs/GlobalRotateDOF.cpp
+		core/dofs/GlobalRotateDOF.h
 		core/graph/KinEdge.cpp
 		core/graph/KinEdge.h
 		core/graph/KinVertex.cpp
@@ -195,7 +199,7 @@ add_executable( print_sugars    applications/MainSugarAnalyzer.cpp )
 add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd		    applications/MainRmsd.cpp )
 add_executable( testik		    applications/MainTestExactIK.cpp )
-add_executable( test  		    applications/MainTest.cpp )
+add_executable( mytest  	    applications/MainTest.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
@@ -204,7 +208,7 @@ target_link_libraries( print_sugars     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd			    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( testik		    libKGS ${GSL_LIBRARIES} )
-target_link_libraries( test  		    libKGS ${GSL_LIBRARIES} )
+target_link_libraries( mytest  		    libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 

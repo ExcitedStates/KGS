@@ -1,7 +1,7 @@
 
 #include "DOF.h"
 
-DOF::DOF(KinEdge* edge):
+DOF::DOF(const KinEdge* edge):
     m_edge(edge),
     m_value(0)
 { }

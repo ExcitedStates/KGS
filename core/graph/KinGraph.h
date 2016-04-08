@@ -43,14 +43,14 @@ class KinEdge;
 
 class KinGraph {
  public:
-  std::map<unsigned int, KinVertex*> Vertex_map;
+  std::map<int, KinVertex*> Vertex_map;
   std::list< std::pair< unsigned int, KinVertex*> > m_sortedVertices;
   std::vector<KinEdge*> Edges;
 
   KinGraph ();
   ~KinGraph ();
-  KinVertex* addVertex (unsigned int vertex_id, Rigidbody *rb, bool flexibleSugar);
-  KinVertex* getVertex (int rb_id);
+  KinVertex* addVertex(int vertex_id, Rigidbody *rb, bool flexibleSugar);
+  KinVertex* getVertex(int rb_id);
   void addEdge (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
   KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2
 
