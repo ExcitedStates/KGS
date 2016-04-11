@@ -76,11 +76,11 @@ Configuration::Configuration(Molecule * protein_):
 	m_clashFreeDofs					 = 0;
 
 	// Set up DOF-values and set them to 0
-	m_numDOFs = m_protein->m_spanning_tree->m_numDOFs;
+	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
 	m_dofs = new double[m_numDOFs];
 	m_dofs_global = NULL;
 	m_sumProjSteps = new double[m_numDOFs];
-	for(int i=0; i< m_numDOFs; ++i){
+	for(int i=0; i<m_numDOFs; ++i){
 		m_dofs[i] = 0;
 		m_sumProjSteps[i]=0;
 	}
@@ -109,11 +109,11 @@ Configuration::Configuration(Configuration* parent_):
   parent_->m_children.push_back(this);
 
   // Set up DOF-values and set them to 0
-  m_numDOFs = m_protein->m_spanning_tree->m_numDOFs;
+  m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
   m_dofs = new double[m_numDOFs];
   m_dofs_global = NULL;
   m_sumProjSteps = new double[m_numDOFs];
-  for(int i=0; i< m_numDOFs; ++i){
+  for(int i=0; i<m_numDOFs; ++i){
     m_dofs[i] = 0;
     m_sumProjSteps[i]=0;
   }
@@ -431,16 +431,17 @@ void Configuration::updateGlobalTorsions(){
   if(m_dofs_global == NULL){
     m_dofs_global = new double[m_numDOFs];
   }
-  for(int i=0; i < m_numDOFs; ++i){
-    m_dofs_global[i] = 0;
+  for(int i=0; i<m_numDOFs; ++i){
+//    m_dofs_global[i] = 0;
+    m_dofs_global[i] = m_protein->m_spanning_tree->m_dofs[i]->getGlobalValue();
   }
-  for (vector<KinEdge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
-    KinEdge* pEdge = (*itr);
-    int dof_id = pEdge->DOF_id;
-    if (dof_id==-1)
-      continue;
-    m_dofs_global[dof_id] = pEdge->getBond()->getTorsion();
-  }
+  //for (vector<KinEdge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
+  //  KinEdge* pEdge = (*itr);
+  //  int dof_id = pEdge->DOF_id;
+  //  if (dof_id==-1)
+  //    continue;
+  //  m_dofs_global[dof_id] = pEdge->getBond()->getTorsion();
+  //}
 }
 //------------------------------------------------------
 double Configuration::getGlobalTorsions(int i) const{
@@ -458,23 +459,21 @@ Configuration* Configuration::clone() const {
 
 	if (m_parent) {
 		ret = new Configuration(m_parent);
-	}
-	else{
+	}else{
 		ret = new Configuration(m_protein);
-
 	}
 
 	ret->m_id = m_id;
   ret->m_vdwEnergy = m_vdwEnergy;
   ret->m_numDOFs = m_numDOFs;
 
-	for(int i=0; i < m_numDOFs; ++i){
+	for(int i=0; i <m_numDOFs; ++i){
 		ret->m_dofs[i]        = m_dofs[i];
 	}
 	if(getGlobalTorsions()!=NULL){
     ret->m_dofs_global = new double[m_numDOFs];
-    for(int i=0; i < m_numDOFs; ++i) {
-      ret->m_dofs_global[i]    = m_dofs_global[i];
+    for(int i=0; i<m_numDOFs; ++i) {
+      ret->m_dofs_global[i]  = m_dofs_global[i];
       ret->m_sumProjSteps[i] = m_sumProjSteps[i];
     }
 	}else{
@@ -487,7 +486,7 @@ Configuration* Configuration::clone() const {
 void Configuration::Normalize(){
 	double s = 0;
 
-	for(int i=0; i < m_numDOFs; ++i)
+	for(int i=0; i <m_numDOFs; ++i)
 		s += m_dofs[i] * m_dofs[i];
 
 	s = sqrt(s);
@@ -773,11 +772,11 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 	if( CycleJacobian != NULL){
 		rowNum = CycleJacobian->size1 + numCollisions;
-		colNum = m_protein->m_spanning_tree->m_numDOFs;
+		colNum = m_protein->m_spanning_tree->getNumDOFs();
 	}
 	else{
 		rowNum = numCollisions;
-		colNum = m_protein->m_spanning_tree->m_numDOFs;
+		colNum = m_protein->m_spanning_tree->getNumDOFs();
 	}
 
 	if(ClashAvoidingJacobian==NULL){

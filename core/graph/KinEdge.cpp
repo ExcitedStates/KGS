@@ -16,11 +16,13 @@ KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond, int dof_id) :
   Cycle_DOF_id = -1;
 }
 
-DOF* KinEdge::setDOF(DOF* dof) {
+void KinEdge::setDOF(DOF* dof) {
   if(m_dof){
-    std::cerr<<
+    std::cerr<<"KinEdge::setDOF - m_dof already set."<<std::endl;
+    exit(-1);
   }
 
+   m_dof = dof;
 }
 
 void KinEdge::print () const {

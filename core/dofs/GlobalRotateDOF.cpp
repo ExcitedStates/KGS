@@ -22,7 +22,7 @@ Math3D::Vector3 GlobalRotateDOF::getDerivative(Coordinate& coord) const
 double GlobalRotateDOF::getGlobalValue() const
 {
   //TODO: Implement
-  std::cerr<<"GlobalRotateDOF::getGlobalValue not implemented"<<std::endl;
+//  std::cerr<<"GlobalRotateDOF::getGlobalValue not implemented"<<std::endl;
   return 0;
 }
 

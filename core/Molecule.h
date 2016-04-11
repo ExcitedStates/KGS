@@ -89,7 +89,7 @@ class Molecule {
 	void addCovBond (Bond * bond);
 	void addHbond (Hbond * hb);
 	void setToHbondIntersection (Molecule * p2);
-	void buildSpanningTree(unsigned int bestRigidBody = 0, bool flexibleSugar = true);
+	void buildSpanningTree();
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = NULL);
 	KinVertex* getRigidbodyGraphVertex (Atom* atom) const; // Return the vertex which is associated with the smallest DOF id edge among all the atom's rigidbodies.
 	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);

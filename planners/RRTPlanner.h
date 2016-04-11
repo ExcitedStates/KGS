@@ -81,7 +81,7 @@ public:
 	double m_bucket_size;
 	int m_numBuckets; //number of buckets
 
-	int m_DOF;
+	int m_numDOFs;
 	ConfigurationList m_samples;
 	ConfigurationArray m_path;
 

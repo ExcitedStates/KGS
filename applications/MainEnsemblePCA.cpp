@@ -46,16 +46,16 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 	for(int i=0;i<arrSz;i++){
 		Molecule * struc = readProtein(fileList[i]);
 		Configuration* conf = new Configuration(native);
-		//Configuration* conf = new Configuration(native->m_spanning_tree->m_numDOFs);
+		//Configuration* conf = new Configuration(native->m_spanning_tree->getNumDOFs());
 
-		for(map<unsigned int, KinVertex*>::iterator vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
+		for(auto vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
 			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(vertex);
 				double strucTorsion = v->initTorsion;
 				double nativeTorsion = 1000;
 
-				for(map<unsigned int, KinVertex*>::iterator nvit = native->m_spanning_tree->Vertex_map.begin(); nvit != native->m_spanning_tree->Vertex_map.end(); nvit++){
+				for(auto nvit = native->m_spanning_tree->Vertex_map.begin(); nvit != native->m_spanning_tree->Vertex_map.end(); nvit++){
 					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]){
 	cout<<"done. Total: "<<configurations.size()<<endl;
 
 	cout<<"Calculating covariance matrix .. ";
-	int n = native->m_spanning_tree->m_numDOFs;
+	int n = native->m_spanning_tree->getNumDOFs();
 	double* cov = new double[n*n];
 	double* avg = new double[n];
 	for(int i=0;i<n;i++){ avg[i]=0; for(int j=0;j<n;j++) cov[i*n+j] = 0; }
@@ -202,15 +202,14 @@ int main(int argc, char* argv[]){
 //			cout<<e<<" "<<evec_component<<endl;
 		}
 
-		map<unsigned int, KinVertex*>::iterator vit;
-		for (vit=native->m_spanning_tree->Vertex_map.begin(); vit!=native->m_spanning_tree->Vertex_map.end(); vit++){
+		for (auto vit=native->m_spanning_tree->Vertex_map.begin(); vit!=native->m_spanning_tree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 				int dof = v->DOF_id;
 				double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 				evec_component = fabs(evec_component)*eval_i*eval_i;
 				//cout<<v<<" "<<evec_component<<endl;
-				for(vector<Atom*>::iterator ait=v->m_rigidbody->Atoms.begin(); ait!=v->m_rigidbody->Atoms.end(); ++ait){
+				for(auto ait=v->m_rigidbody->Atoms.begin(); ait!=v->m_rigidbody->Atoms.end(); ++ait){
 					int aid = (*ait)->getId();
 					//atom_def[aid]+=evec_component*0.22*eval_i*eval_i*100.0;
 					atom_def[aid]+=evec_component*100.0;
@@ -282,7 +281,7 @@ int main(int argc, char* argv[]){
 		cout<<"Writing component "<<component<<" pdb files ";cout.flush();
 		Molecule * aligned = readProtein(argv[1]);
 		Configuration* conf = new Configuration(aligned);
-		//Configuration* conf = new Configuration(native->m_spanning_tree->m_numDOFs);
+		//Configuration* conf = new Configuration(native->m_spanning_tree->getNumDOFs());
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		for(double a=-amplitude;a<=amplitude;a+=stepsize){
             if(fabs(a)<0.001) a = 0.0;

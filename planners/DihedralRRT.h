@@ -55,7 +55,7 @@ public:
 	double m_max_distance;
 
 	ConfigurationList m_samples;
-	int m_DOF;
+	int m_numDOFs;
 	ConfigurationArray m_path;
 
 	int m_nCDCall;

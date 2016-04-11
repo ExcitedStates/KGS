@@ -38,14 +38,14 @@ int main( int argc, char* argv[] ) {
 
   //Create the rigid body trees
   IO::readRigidbody( &protein );
-  protein.buildSpanningTree(0, false);
+  protein.buildSpanningTree();
 
   Configuration* conf = new Configuration(&protein);
 
   IO::writePdb(conf->updatedProtein(), "/Users/rfonseca/Downloads/test1.pdb");
 
-  gsl_vector* gradient = gsl_vector_calloc(protein.m_spanning_tree->m_numDOFs);
-  gsl_vector_set(gradient, 4, 0.1);
+  gsl_vector* gradient = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
+  gsl_vector_set(gradient, 2, 0.01);
   Move* move = new RawMove();
   for(int i=0;i<10;i++){
     Configuration* cNew = move->move(conf, gradient);
@@ -58,7 +58,8 @@ int main( int argc, char* argv[] ) {
 
   }
 
-  std::system("/usr/local/bin/pymol /Users/rfonseca/Downloads/test*pdb");
+  std::system("/usr/local/bin/python /Users/rfonseca/Documents/KGSrepo/trunk/Scripts/combinePDBs.py /Users/rfonseca/Downloads/test{1,2,3,4,5,6,7,8,9,8,7,6,5,4,3,2}.pdb > /Users/rfonseca/Downloads/test_multi.pdb");
+  std::system("/usr/local/bin/pymol /Users/rfonseca/Downloads/test_multi.pdb");
 
 
 }

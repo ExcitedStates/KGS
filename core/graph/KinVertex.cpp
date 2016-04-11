@@ -29,7 +29,8 @@ KinVertex::~KinVertex () {
   for (auto eit=m_edges.begin(); eit!=m_edges.end(); ++eit) {
     delete *eit;
   }
-  m_rigidbody->setVertex(NULL);
+  if(m_rigidbody)
+    m_rigidbody->setVertex(NULL);
 }
 
 void KinVertex::setParent(KinVertex* v) {
@@ -42,8 +43,9 @@ void KinVertex::addEdge (unsigned int neighbor_vertex_id, KinEdge *edge) {
 
 void KinVertex::print() const {
   log() << "KinVertex_" << id << ", id ";
-  for (vector<Atom*>::iterator it=m_rigidbody->Atoms.begin(); it!=m_rigidbody->Atoms.end(); ++it)
-    log() << (*it)->getId() << "+";
+  if(m_rigidbody)
+    for (vector<Atom*>::iterator it=m_rigidbody->Atoms.begin(); it!=m_rigidbody->Atoms.end(); ++it)
+      log() << (*it)->getId() << "+";
   log() << endl;
 }
 
@@ -58,25 +60,14 @@ void KinVertex::forwardPropagate()
 
 void KinVertex::transformAtoms()
 {
-  //cout<<"KinVertex::transformAtoms - "<<this->id<<endl<<m_transformation<<endl;
+  if(!m_rigidbody) return;
+
   for (auto const& atom: m_rigidbody->Atoms){
     Math3D::Vector3 newPos = m_transformation * atom->m_referencePosition;
-    if(atom->getResidue()->getId()==1 && atom->getName()=="CA"){
-      cout<<"1/CA trans: "<<endl<<m_transformation<<endl;
-      cout<<"1/CA pos:   "<<atom->m_Position<<endl;
-      cout<<"1/CA resn:  "<<atom->getResidue()->getName()<<endl;
-    }
-
-    //newPos.x += m_transformation.t.x;
-    //newPos.y += m_transformation.t.y;
-    //newPos.z += m_transformation.t.z;
 
     atom->m_Position.x = newPos.x;
     atom->m_Position.y = newPos.y;
     atom->m_Position.z = newPos.z;
-    if(atom->getResidue()->getId()==1 && atom->getName()=="CA"){
-      cout<<"1/CA newpos:"<<atom->m_Position<<endl;
-    }
   }
 }
 

@@ -16,11 +16,11 @@ class KinTree: public KinGraph
   KinVertex *root;
   std::vector< std::pair<KinEdge*,KinVertex*> > CycleAnchorEdges; // pair<edge,common anchor>; each edge closes a cycle
   int m_numCycleDOFs; // total number of DOFs in the cycles
-  int m_numDOFs;
   std::vector<DOF*> m_dofs;
 
   KinTree();
   ~KinTree();
+  size_t getNumDOFs() const;
   void print();
   void printForSpringy();
   KinVertex* findCommonAncestor (KinVertex *v1, KinVertex *v2);
@@ -28,6 +28,7 @@ class KinTree: public KinGraph
 private:
   void collectDOFs(KinVertex* v);
 
+//  int m_numDOFs;
 
 };
 

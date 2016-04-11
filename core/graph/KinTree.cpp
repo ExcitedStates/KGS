@@ -9,6 +9,10 @@
 #include "Logger.h"
 
 using namespace std;
+size_t KinTree::getNumDOFs() const
+{
+  return m_dofs.size();
+}
 
 void KinTree::printForSpringy () {
   queue<KinVertex*> node_queue;
@@ -141,7 +145,7 @@ void KinTree::collectDOFs(KinVertex* v)
 }
 
 KinTree::KinTree(): KinGraph(){
-  m_numDOFs = 0;
+  //m_numDOFs = 0;
   m_numCycleDOFs = 0;
 }
 KinTree::~KinTree () {

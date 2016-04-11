@@ -58,7 +58,7 @@ int main( int argc, char* argv[] ){
     log("rigidity") << "> " << protein->atoms.size() << " atoms" << endl;
     log("rigidity")<<"> "<<protein->Initial_collisions.size()<<" initial collisions"<<endl;
     log("rigidity")<<"> "<<protein->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-    log("rigidity") << "> " << protein->m_spanning_tree->m_numDOFs << " DOFs of which " << protein->m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
+    log("rigidity") << "> " << protein->m_spanning_tree->getNumDOFs() << " DOFs of which " << protein->m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
 
     Configuration* conf = new Configuration(protein);
     protein->SetConfiguration(conf);

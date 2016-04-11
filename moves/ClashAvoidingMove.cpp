@@ -144,7 +144,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Therefore, we use the full set of dihedrals to determine this matrix!
 
   int rowNum = conf->getCycleJacobian()->size1 + numCollisions;
-  int colNum = conf->getProtein()->m_spanning_tree->m_numDOFs;
+  int colNum = conf->getProtein()->m_spanning_tree->getNumDOFs();
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 

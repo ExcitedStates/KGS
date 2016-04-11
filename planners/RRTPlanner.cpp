@@ -53,7 +53,7 @@ RRTPlanner::RRTPlanner(Molecule *protein, Move& move, Direction& direction):
 	m_protein(protein),
 	m_max_distance(SamplingOptions::getOptions()->explorationRadius)
 {
-	m_DOF = m_protein->m_spanning_tree->m_numDOFs;//Edges.size();
+	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();//Edges.size();
 	Configuration *pSmp = new Configuration(m_protein);
 	pSmp->updateProtein();
   pSmp->computeCycleJacobianAndNullSpace();

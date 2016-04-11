@@ -22,7 +22,7 @@ Math3D::Vector3 GlobalTranslateDOF::getDerivative(Coordinate& coord) const
 double GlobalTranslateDOF::getGlobalValue() const
 {
   //TODO: Implement
-  std::cerr<<"GlobalTranslateDOF::getGlobalValue not implemented"<<std::endl;
+//  std::cerr<<"GlobalTranslateDOF::getGlobalValue not implemented"<<std::endl;
   return 0;
 }
 

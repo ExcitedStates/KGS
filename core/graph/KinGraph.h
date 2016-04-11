@@ -49,7 +49,7 @@ class KinGraph {
 
   KinGraph ();
   ~KinGraph ();
-  KinVertex* addVertex(int vertex_id, Rigidbody *rb, bool flexibleSugar);
+  KinVertex* addVertex(int vertex_id, Rigidbody *rb);
   KinVertex* getVertex(int rb_id);
   void addEdge (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
   KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id); // Add a directed edge from rb_id1 to rb_id2

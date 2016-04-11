@@ -31,6 +31,7 @@
 #include <gsl/gsl_blas.h>
 #include <queue>
 
+#include "DisjointSets.h"
 #include "Molecule.h"
 #include "core/Chain.h"
 #include "Residue.h"
@@ -50,6 +51,9 @@
 #include <sstream>
 #include <math/MKLSVD.h>
 #include <set>
+#include <core/dofs/GlobalRotateDOF.h>
+#include <core/dofs/GlobalTranslateDOF.h>
+#include <core/dofs/TorsionDOF.h>
 
 const double VDW_SIGMA = 0.2; // sigma = 0.2 kcal/mol
 const double VDW_R0 = 3.5; // r_0 = 3.5A
@@ -358,45 +362,45 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   }
 }
 
-void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
+void Molecule::buildSpanningTree() {
+  unsigned int rootRBId = 0;
   //log() << "In buildSpanningTree" << endl;
   m_spanning_tree = new KinTree();
 
-//  m_spanning_tree->root = m_spanning_tree->addVertex(rootRBId, Rigidbody_map_by_id[rootRBId], flexibleSugar);
-
-  KinVertex* v1 = m_spanning_tree->addVertex(-6, NULL, false);
-  KinVertex* v2 = m_spanning_tree->addVertex(-5, NULL, false);
-  KinVertex* v3 = m_spanning_tree->addVertex(-4, NULL, false);
-  KinVertex* v4 = m_spanning_tree->addVertex(-3, NULL, false);
-  KinVertex* v5 = m_spanning_tree->addVertex(-2, NULL, false);
-  KinVertex* v6 = m_spanning_tree->addVertex(-1, NULL, false);
-
-  m_spanning_tree->root = v1;
-
-  int dof_id = 0;
-  m_spanning_tree->addEdgeDirected(v1, v2, NULL, dof_id++);
-  m_spanning_tree->addEdgeDirected(v1, v2, NULL, dof_id++);
-  m_spanning_tree->addEdgeDirected(v1, v2, NULL, dof_id++);
-
+//  m_spanning_tree->root = m_spanning_tree->addVertex(rootRBId, Rigidbody_map_by_id[rootRBId]);
 
   // add all rigid bodies as vertices into Rigidbody_graph
   for (auto const& id_rb_pair: Rigidbody_map_by_id) {
     Rigidbody* rb = id_rb_pair.second;
 
-    KinVertex* vtx;
-    if (rb->id() == rootRBId ){
-      vtx = m_spanning_tree->root;
-    }else{
-      vtx = m_spanning_tree->addVertex(rb->id(),rb, flexibleSugar);
-    }
-
-    if(vtx->isRibose){//RFonseca
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(vtx);
-      v->DOF_id = dof_id++;
-      m_spanning_tree->m_numDOFs++;
-    }
-
+//    if (rb->id() != rootRBId ){
+    m_spanning_tree->addVertex(rb->id(),rb);
+//    }
   }
+
+  KinVertex* v1 = m_spanning_tree->addVertex(-6, NULL);
+  KinVertex* v2 = m_spanning_tree->addVertex(-5, NULL);
+  KinVertex* v3 = m_spanning_tree->addVertex(-4, NULL);
+  KinVertex* v4 = m_spanning_tree->addVertex(-3, NULL);
+  KinVertex* v5 = m_spanning_tree->addVertex(-2, NULL);
+  KinVertex* v6 = m_spanning_tree->addVertex(-1, NULL);
+
+  m_spanning_tree->root = v1;
+
+  int dof_id = 0;
+  KinEdge* e1 = m_spanning_tree->addEdgeDirected(v1, v2, NULL, dof_id++);
+  KinEdge* e2 = m_spanning_tree->addEdgeDirected(v2, v3, NULL, dof_id++);
+  KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, v4, NULL, dof_id++);
+  KinEdge* e4 = m_spanning_tree->addEdgeDirected(v4, v5, NULL, dof_id++);
+  KinEdge* e5 = m_spanning_tree->addEdgeDirected(v5, v6, NULL, dof_id++);
+  KinEdge* e6 = m_spanning_tree->addEdgeDirected(v6, m_spanning_tree->Vertex_map[rootRBId], NULL, dof_id++);
+
+  e1->setDOF(new GlobalRotateDOF(e1,0));
+  e2->setDOF(new GlobalRotateDOF(e2,1));
+  e3->setDOF(new GlobalRotateDOF(e3,2));
+  e4->setDOF(new GlobalTranslateDOF(e4, 0));
+  e5->setDOF(new GlobalTranslateDOF(e5, 1));
+  e6->setDOF(new GlobalTranslateDOF(e6, 2));
 
   // Used to ensure that m_edges are only created once for any pair of rigid bodies
   bool visited[Rigidbody_map_by_id.size()+1];
@@ -408,40 +412,34 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
 
   list<KinEdge*> cycle_edges;
   list<KinVertex*> queue;
-  queue.push_back(m_spanning_tree->root);
+//  queue.push_back(m_spanning_tree->root);
+  queue.push_back(m_spanning_tree->Vertex_map[rootRBId]);
   while (!queue.empty()) {
     KinVertex* current_vertex = queue.front();
+    queue.pop_front();
+    if(current_vertex->id<0) continue;
     visited[current_vertex->id] = true;
-    Rigidbody* rb1 = current_vertex->m_rigidbody;
 
-    for (vector<Bond *>::iterator bit1=rb1->Bonds.begin(); bit1 != rb1->Bonds.end(); ++bit1) {
+    for (auto const& bond1: current_vertex->m_rigidbody->Bonds) { //bit1=rb1->Bonds.begin(); bit1 != rb1->Bonds.end(); ++bit1) {
+      // Determine which other rb bond1 is connected to
+      KinVertex* bonded_vertex = bond1->Atom2->getRigidbody()->getVertex();
+      if(bonded_vertex==current_vertex)
+        bonded_vertex = bond1->Atom1->getRigidbody()->getVertex();
 
-      // for each unvisited vertex, look for common bonds
-      for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
-        unsigned int i = it->first;
-        if ( visited[i]==false ) {
-          KinVertex *vtx = m_spanning_tree->Vertex_map.find(i)->second;
-          Rigidbody* rb2 = vtx->m_rigidbody;
-          for (vector<Bond *>::iterator bit2=rb2->Bonds.begin(); bit2 != rb2->Bonds.end(); ++bit2) {
-            if ( (*bit1)==(*bit2) ) {
-              // if it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
-              if ( (*bit1)->isHbond() ) {
-                Hbond *hb = (Hbond *)(*bit1);
-                KinEdge *h_edge = new KinEdge(current_vertex,vtx,hb,0);//TODO: Might be a problem. Idx changed from -1 to 0
-                cycle_edges.push_back(h_edge);
-              }
-                // if it's a covalent bond, add it into the tree m_edges
-              else {
-                queue.push_back(vtx);
-                m_spanning_tree->addEdgeDirected(current_vertex,vtx,*bit1, dof_id++); // the edge and the bond associated with the edge are pointing from rb1 to rb2
-                m_spanning_tree->m_numDOFs++;
-              }
-            }
-          }
-        }
+      if(visited[bonded_vertex->m_rigidbody->id()]) continue;
+
+      if ( bond1->isHbond() ) {
+        // if it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
+        Hbond *hb = (Hbond *)(bond1);
+        KinEdge *h_edge = new KinEdge(current_vertex,bonded_vertex,hb,0);//TODO: Might be a problem. Idx changed from -1 to 0
+        cycle_edges.push_back(h_edge);
+      }else {
+        // if it's a covalent bond, add it into the tree m_edges
+        queue.push_back(bonded_vertex);
+        KinEdge* edge = m_spanning_tree->addEdgeDirected(current_vertex,bonded_vertex,bond1, dof_id++);
+        edge->setDOF(new TorsionDOF(edge));
       }
     }
-    queue.pop_front();
   } // end while
 
   // For each hbond KinEdge, find the common ancestor.
@@ -456,10 +454,6 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
     KinVertex *vertex, *parent;
     for (vertex=startv; vertex!=ancestor; vertex=parent) {
       parent = vertex->m_parent;
-      if(parent->isRibose){//RFonseca
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-        if(v->Cycle_DOF_id==-1)	v->Cycle_DOF_id = cycle_dof_id++;
-      }
 
       KinEdge *edge = parent->findEdge(vertex);
 
@@ -470,10 +464,6 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
     }
     for (vertex=endv; vertex!=ancestor; vertex=parent) {
       parent = vertex->m_parent;
-      if(parent->isRibose){//RFonseca
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-        if(v->Cycle_DOF_id==-1)	v->Cycle_DOF_id = cycle_dof_id++;
-      }
       KinEdge *edge = parent->findEdge(vertex);
       if (edge->Cycle_DOF_id==-1) {
         edge->Cycle_DOF_id = cycle_dof_id;
@@ -484,11 +474,11 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
   m_spanning_tree->m_numCycleDOFs = cycle_dof_id;
   log("dimitar") << "InfoProtein)\t Molecule has " << m_spanning_tree->m_numCycleDOFs << " cycle DOFs." << endl;
   log("dimitar") << "InfoProtein)\t Molecule has " << m_spanning_tree->Edges.size() << " total m_edges." << endl;
-  log("dimitar") << "InfoProtein)\t Molecule has m_numDOFs " << m_spanning_tree->m_numDOFs << " total DOFs." << endl;
+  log("dimitar") << "InfoProtein)\t Molecule has m_numDOFs " << m_spanning_tree->getNumDOFs() << " total DOFs." << endl;
 
 //	m_spanning_tree = Rigidbody_graph->ComputeSpanningTree();
 
-  m_Transformation = new RigidTransform [m_spanning_tree->m_numDOFs];//m_spanning_tree->Edges.size()];
+  m_Transformation = new RigidTransform [m_spanning_tree->getNumDOFs()];//m_spanning_tree->Edges.size()];
 /*	log() << "*** Spanning Tree ***" << endl;
 	m_spanning_tree->print();
 	Rigidbody_graph->findCycleClusters();
@@ -521,8 +511,7 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
       m_spanning_tree->m_sortedVertices.push_back(make_pair( currId,currVertex));
       visited[currId] = true;
 
-    }
-    else{//multiple branches open
+    }else{ //multiple branches open
       currVertex = parent;
       int numEdgesLeft = currVertex->m_edges.size();
       while( numEdgesLeft != 0){
@@ -551,7 +540,7 @@ void Molecule::buildSpanningTree(unsigned int rootRBId, bool flexibleSugar) {
 
 KinVertex*Molecule::getRigidbodyGraphVertex (Atom* atom) const {
   //TODO: Not sure whats happening here. Clean up
-  int smallest_dof_id = m_spanning_tree->m_numDOFs - 1;//Edges.size()-1; // the possible maximum DOF id
+  int smallest_dof_id = m_spanning_tree->getNumDOFs() - 1;//Edges.size()-1; // the possible maximum DOF id
   KinVertex* vertex_with_smallest_dof_id = m_spanning_tree->getVertex(atom->getRigidbody()->id());
   KinVertex* vertex = m_spanning_tree->getVertex(atom->getRigidbody()->id());
   KinVertex* parent = vertex->m_parent;
@@ -655,16 +644,6 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
     gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
     gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
-    for (auto vit=m_spanning_tree->Vertex_map.begin(); vit!=m_spanning_tree->Vertex_map.end(); vit++){
-      if( (*vit).second->isRibose ){
-        SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-        int dof_id = v->DOF_id;
-        int cycle_dof_id = v->Cycle_DOF_id;
-        if ( cycle_dof_id!=-1 ) {
-          gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
-        }
-      }
-    }
     for (auto eit=m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); ++eit) {
       int dof_id = (*eit)->DOF_id;
       int cycle_dof_id = (*eit)->Cycle_DOF_id;
@@ -680,19 +659,6 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     m_conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
 
     // Convert back to full length DOFs vector
-    for (auto vit=m_spanning_tree->Vertex_map.begin(); vit!=m_spanning_tree->Vertex_map.end(); vit++){
-      if( (*vit).second->isRibose ){
-        SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-        int dof_id = v->DOF_id;
-        int cycle_dof_id = v->Cycle_DOF_id;
-        if ( cycle_dof_id!=-1 ) {
-          gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
-        }
-        else if ( dof_id!=-1 ) {
-          gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
-        }
-      }
-    }
     for (vector<KinEdge*>::iterator eit=m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); ++eit) {
       int dof_id = (*eit)->DOF_id;
       int cycle_dof_id = (*eit)->Cycle_DOF_id;
@@ -755,10 +721,8 @@ void Molecule::_SetConfiguration(Configuration *q ){
     m_spanning_tree->m_dofs[id]->setValue(q->m_dofs[id]);
   }
 
-  cout<<"Molecule::_SetConfiguration - before "<<getAtom("A",1,"CA")->m_Position<<endl;
   KinVertex *root = m_spanning_tree->root;
   root->forwardPropagate();
-  cout<<"Molecule::_SetConfiguration - after  "<<getAtom("A",1,"CA")->m_Position<<endl;
 
   //Initialize queue
 //  list<KinVertex *> queue;
@@ -819,7 +783,7 @@ int Molecule::totalDofNum () const {
     cerr << "Error: to get the total number of DOFs in the m_protein, you have to call Molecule::buildSpanningTree() first." << endl;
     exit(1);
   }
-  return m_spanning_tree->m_numDOFs;
+  return m_spanning_tree->getNumDOFs();
 }
 
 gsl_vector*Molecule::vdwGradient () { // minimize the L-J potential
@@ -1138,26 +1102,6 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
     }
   }
 
-  for(auto vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
-    KinVertex* vtx = vit->second;
-    if(vtx->isRibose){
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(vtx);
-      int res = v->m_rigidbody->Atoms[0]->getResidue()->getId();
-      //log("debug")<<"Res "<<res<<endl;;
-      if( res>=startRes && res<endRes ){
-        resetDOFs.push_back(v->DOF_id);
-
-        double sampledTau = 0;
-        //sampledTau = RandomAngleUniform(3.1415);
-        if( Random01()<0.6 )	sampledTau = RandomNormalNPiPPi(-2.68, 0.2);
-        else					sampledTau = RandomNormalNPiPPi(0.76, 0.3);
-        double iniTau = acos(v->initTorsion/v->Amplitude)*v->initUp;
-        resetValues.push_back(sampledTau-iniTau);
-        //resetValues.push_back(sampledTau);
-      }
-
-    }
-  }
   if(resetDOFs.empty()) {
     log("verbose")<<"Molecule::resampleSugars("<<startRes<<","<<endRes<<"..) called on non-nucleic acid chain. Exiting.";
     return cur;
@@ -1180,7 +1124,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   CTKTimer timer;
   start_time = timer.getTimeNow();
 
-  //Configuration* ret = new Configuration(m_spanning_tree->m_numDOFs);
+  //Configuration* ret = new Configuration(m_spanning_tree->getNumDOFs());
 
   //Configuration* ret = new Configuration(this);
   //ret->Copy(cur);
@@ -1204,16 +1148,6 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
       if(find(subVerts.begin(), subVerts.end(), e->EndVertex	)==subVerts.end()) 	subVerts.push_back(e->EndVertex);
 
       if(entry==NULL || entry->DOF_id>e->DOF_id) entry = e;
-    }
-  }
-  for(auto vit = m_spanning_tree->Vertex_map.begin();vit!=m_spanning_tree->Vertex_map.end();vit++){
-    KinVertex* vtx = vit->second;
-    if(vtx->isRibose){
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(vtx);
-      if(	find(resetDOFs.begin(), resetDOFs.end(), v->DOF_id)!=resetDOFs.end() ||
-           find(recloseDOFs.begin(), recloseDOFs.end(), v->DOF_id)!=recloseDOFs.end() ||
-           find(ignoreDOFs.begin(), ignoreDOFs.end(), v->DOF_id)!=ignoreDOFs.end())
-        subVerts.push_back(vtx);
     }
   }
   //log("debugRas")<<"SubEdges:"<<endl;
@@ -1360,20 +1294,6 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
         if(dof<recloseDOFs.size()){ // Continue if the edge is not in the recloseDOFs
           Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom1->m_Position);
           Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom2->m_Position);
-          gsl_matrix_set(J, c*6+0, dof, v1[0]);
-          gsl_matrix_set(J, c*6+1, dof, v1[1]);
-          gsl_matrix_set(J, c*6+2, dof, v1[2]);
-          gsl_matrix_set(J, c*6+3, dof, v2[0]);
-          gsl_matrix_set(J, c*6+4, dof, v2[1]);
-          gsl_matrix_set(J, c*6+5, dof, v2[2]);
-        }
-
-        SugarVertex* sv;
-        if(v->isRibose) sv = reinterpret_cast<SugarVertex*>(v); else continue;
-        dof = find(recloseDOFs.begin(), recloseDOFs.end(), sv->DOF_id)-recloseDOFs.begin();
-        if(dof<recloseDOFs.size()){ // Continue if the sugar is not in the recloseDOFs
-          Vector3 v1 = sv->computeJacobianEntry(e, ret->m_dofs, eBoundary->getBond()->Atom1->m_Position);
-          Vector3 v2 = sv->computeJacobianEntry(e, ret->m_dofs, eBoundary->getBond()->Atom2->m_Position);
           gsl_matrix_set(J, c*6+0, dof, v1[0]);
           gsl_matrix_set(J, c*6+1, dof, v1[1]);
           gsl_matrix_set(J, c*6+2, dof, v1[2]);

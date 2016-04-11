@@ -1068,7 +1068,7 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 			exit(-1);
 	}
 	if(protein->m_conf!=NULL){
-		int diff= protein->m_spanning_tree->m_numDOFs - protein->m_spanning_tree->m_numCycleDOFs;
+		int diff= protein->m_spanning_tree->getNumDOFs() - protein->m_spanning_tree->m_numCycleDOFs;
 		int sum = protein->m_conf->getNullspace()->NullspaceSize() + diff;
 		//int sum = m_protein->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
@@ -1077,7 +1077,7 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 		output << "Number of atoms: " << protein->atoms.size() << endl;
 		output <<"Number of covalent bonds: " << protein->Cov_bonds.size()<< endl;
 		output <<"Number of hydrogen bonds: " << protein->m_spanning_tree->CycleAnchorEdges.size()<< endl;
-		output << "Number of dihedrals in spanning tree: " << protein->m_spanning_tree->m_numDOFs << endl;
+		output << "Number of dihedrals in spanning tree: " << protein->m_spanning_tree->getNumDOFs() << endl;
 		output <<"Number of free dihedrals: " << diff << endl;
 		output <<"Number of cycle dihedrals: " << protein->m_spanning_tree->m_numCycleDOFs << endl<<endl;
 		output <<"************* Statistics on rigidity analysis *************"<<endl;

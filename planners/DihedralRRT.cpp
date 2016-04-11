@@ -35,7 +35,7 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, Direction& direction):
   direction(direction)
 {
 	m_protein = protein;
-	m_DOF = m_protein->m_spanning_tree->m_numDOFs;//Edges.size();
+	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
 	Configuration *pSmp = new Configuration(m_protein);
 	pSmp->updateProtein();
   pSmp->computeCycleJacobianAndNullSpace();
@@ -152,18 +152,18 @@ void DihedralRRT::GenerateSamples(){
 }
 
 Configuration* DihedralRRT::GenerateRandConf() {
-	//Configuration *pNewSmp = new Configuration(m_numDOFs);
+	//Configuration *pNewSmp = new Configuration(getNumDOFs());
 	Configuration *pNewSmp = new Configuration(m_protein);
 
 	double length=0.0;
-	for (int i=0; i<m_DOF; ++i) {
+	for (int i=0; i<m_numDOFs; ++i) {
 		pNewSmp->m_dofs[i] = dPi * RandomN1P1();
 		length+= pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
 	}
 	length = sqrt(length);
 	if(SamplingOptions::getOptions()->scaleToRadius){
-		double factor = pow( Random01(), 1.0/m_DOF )*SamplingOptions::getOptions()->explorationRadius/length;
-		for (int i=0; i<m_DOF; ++i) {
+		double factor = pow( Random01(), 1.0/m_numDOFs )*SamplingOptions::getOptions()->explorationRadius/length;
+		for (int i=0; i<m_numDOFs; ++i) {
 			pNewSmp->m_dofs[i] = factor * pNewSmp->m_dofs[i];
 		}
 	}

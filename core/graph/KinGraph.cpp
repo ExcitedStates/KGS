@@ -48,16 +48,8 @@ KinGraph::~KinGraph () {
 
 }
 
-KinVertex* KinGraph::addVertex(int rb_id, Rigidbody* rb, bool flexibleRibose){
-    //log("debugRas")<<"addVertex("<<rb_id<<" , "<<rb<<" )"<<endl;
-	KinVertex* new_vertex;
-	//if( (rb->getAtom("O4'") && rb->getAtom("C3'")) || (rb->getAtom("CB") && rb->getAtom("CB")->getResidue()->getName()=="PRO") ){
-  if( flexibleRibose && (rb->getAtom("O4'") && rb->getAtom("C3'")) ){
-		new_vertex = new SugarVertex(rb_id,rb);
-	}else{
-		new_vertex = new KinVertex(rb_id,rb);
-	}
-	//Vertex_map.insert(make_pair(rb_id,new_vertex));
+KinVertex* KinGraph::addVertex(int rb_id, Rigidbody* rb){
+	KinVertex* new_vertex = new KinVertex(rb_id,rb);
 	Vertex_map[rb_id] = new_vertex;
 	return new_vertex;
 }
@@ -70,26 +62,11 @@ KinEdge* KinVertex::findEdge(KinVertex* v) const
   }
   return NULL;
 }
-KinEdge* KinGraph::addTranslateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
-{
-  KinEdge *edge1 = new KinEdge(vertex1,vertex2,0,axis, DOF_id);
-  vertex1->addEdge(vertex2->id, edge1);
-  vertex2->setParent(vertex1);
-  Edges.push_back(edge1);
-  return edge1;
-}
-KinEdge* KinGraph::addRotateEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, int axis, int DOF_id)
-{
-  KinEdge *edge1 = new KinEdge(vertex1,vertex2,1,axis, DOF_id);
-  vertex1->addEdge(vertex2->id, edge1);
-  vertex2->setParent(vertex1);
-  Edges.push_back(edge1);
-  return edge1;
-}
 
 // Add a directed edge from rb_id1 to rb_id2
 KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id)
 {
+  if(bond!=NULL) {
     //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
     Atom *atom2, *atom3, *atom4;
     Bond *bond_copy = new Bond(*bond);
@@ -124,15 +101,12 @@ KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond
         break;
       }
     }
+  }
 
-  //Old and weird
-//  KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond_copy);
-//  edge1->Bond = bond;
 	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond,DOF_id);
 	vertex1->addEdge(vertex2->id, edge1);
 	vertex2->setParent(vertex1);
 	Edges.push_back(edge1);
-	//edge1->DOF_id = DOF_id;
 	return edge1;
 }
 

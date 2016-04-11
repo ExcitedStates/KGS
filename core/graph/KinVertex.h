@@ -8,7 +8,7 @@ class KinEdge;
 
 class KinVertex {
 public:
-  const unsigned int id;
+  const int id;
   Rigidbody * const m_rigidbody;
   std::vector<KinEdge*> m_edges;             ///< Child-m_edges after spanning tree has been created
   KinVertex *m_parent;                       ///< m_parent-vertex after spanning tree has been created
