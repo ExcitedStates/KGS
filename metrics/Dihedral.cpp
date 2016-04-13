@@ -27,14 +27,14 @@ namespace metrics{
 
 		int count = 0;
 		double distance=0.0, distanceRel=0.0;
-		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
-			int dofId = (*eit)->DOF_id;
+    for(KinEdge*& edge: m_protein->m_spanning_tree->Edges){
+			int dofId = edge->getDOF()->getIndex();
 			double angle_diff = c2->getGlobalTorsions(dofId)-c1->getGlobalTorsions(dofId);
 			angle_diff = formatRangeRadian(angle_diff);
 			double diff_rel = formatRangeRadian(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
 			if(atom_selection=="MOV"){
-				int cycle_dof_id = (*eit)->Cycle_DOF_id;
-				bool locked = (*eit)->getBond()->constrained;
+				int cycle_dof_id = edge->getDOF()->getCycleIndex();
+				bool locked = edge->getBond()->constrained;
 				if( cycle_dof_id == -1 ){//free dihedral, always moveable
 					distance += angle_diff*angle_diff;
 					distanceRel += diff_rel*diff_rel;

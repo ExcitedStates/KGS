@@ -41,20 +41,19 @@ class DOF;
  */
 class KinEdge {
  public:
-  KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond, int dof_id);
+//  KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond, int dof_id);
+  KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond);
 
   KinVertex *StartVertex;
   KinVertex *EndVertex;
 
-  const int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
-  int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
+  //const int DOF_id; // Start from 0. If the edge is not a DOF, its DOF_id is -1.
+  //int Cycle_DOF_id; // IDs of DOFs in cycles only. Start from 0. If the edge is not a cycle dof, the value is -1.
 
   void print() const;
 
   void printVerbose() const;
   void printShort() const;
-  void printHTML() const;
-  void printHTMLRoot() const;
 
   Bond *getBond() const;
   DOF* getDOF() const;
@@ -64,7 +63,7 @@ class KinEdge {
   void setDOF(DOF* dof);
 
  private:
-  DOF* createDOF(Bond* bond, int dof_id) const;
+  //DOF* createDOF(Bond* bond, int dof_id) const;
   Bond * const m_bond;
   DOF * m_dof;
 };

@@ -59,7 +59,7 @@ RRTPlanner::RRTPlanner(Molecule *protein, Move& move, Direction& direction):
   pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
-	m_target = NULL;
+	m_target = nullptr;
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;
 	pSmp->m_id = 0; // root
@@ -104,7 +104,7 @@ void RRTPlanner::GenerateSamples() {
 	int nBatch = SamplingOptions::getOptions()->samplesToGenerate;
 
 	int sample_id = 0, max_depth = 0, failed_trials = 0, total_trials = 0;
-	Configuration *pTarget = NULL, *pClosestSmp, *pNewSmp = NULL;
+	Configuration *pTarget = nullptr, *pClosestSmp, *pNewSmp = nullptr;
 	gsl_vector *gradient = gsl_vector_alloc(m_protein->totalDofNum());
 
 	//Save initial file (for movie)
@@ -118,8 +118,7 @@ void RRTPlanner::GenerateSamples() {
 		CTKTimer timer;
 		double start_time = timer.getTimeNow();
 
-    cout<<"RRTPlanner - choosing seed"<<endl;
-		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == NULL || createNewTarget) {
+		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik") << "Generating new target, getting new seed" << endl;
 			pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
 			createNewTarget = false;
@@ -132,11 +131,10 @@ void RRTPlanner::GenerateSamples() {
 			pClosestSmp = m_samples.back();
 		}
 
-		direction.gradient(pClosestSmp, NULL, gradient);
+		direction.gradient(pClosestSmp, nullptr, gradient);
 		pNewSmp = move.move(pClosestSmp, gradient);
-    cout<<"RRTPlanner - "<<pNewSmp<<endl;
 
-		if (pNewSmp != NULL) {
+		if (pNewSmp != nullptr) {
 			if (!pNewSmp->updatedProtein()->inCollision()) {
 				++sample_id;
 				m_numSamples = sample_id;
@@ -177,7 +175,7 @@ void RRTPlanner::GenerateSamples() {
 					createNewTarget = true;
 				}
 				//Check if target has been reached!
-				//if(m_target != NULL && (m_top_min_rmsd < RMSD_DIFF_THRESHOLD )){
+				//if(m_target != nullptr && (m_top_min_rmsd < RMSD_DIFF_THRESHOLD )){
 				//cout<<"Reached target, not creating more samples!"<<" rmsd: "<<m_top_min_rmsd<<", dih: "<<m_minMovDihDistance<<endl;
 				//break;
 				//}
@@ -185,7 +183,7 @@ void RRTPlanner::GenerateSamples() {
 				++failed_trials;
 				//Only for the straight path testing
 				//if( !options.sampleRandom )
-				//return NULL;
+				//return nullptr;
 				delete pTarget;
 				createNewTarget = true;
 			}
@@ -200,7 +198,7 @@ Configuration* RRTPlanner::GenerateRandConf() {
 	double num_dofs = m_protein->totalDofNum();
 	double length=0.0;
 	for (int i=0; i<num_dofs; ++i) {
-		pNewSmp->m_dofs[i] = dPi * RandomN1P1();
+		pNewSmp->m_dofs[i] = Math3D::dPi * RandomN1P1();
 		length+= pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
 	}
 	length = sqrt(length);
@@ -221,12 +219,10 @@ Configuration *RRTPlanner::SelectNodeFromBuckets (Configuration *pTarget) {
 	Configuration *pSmp, *pMinSmp;
 	double min_distance = 1000000.0;
 	double distance;
-	pMinSmp = NULL;
-  cout<<"RRTPlanner::SelectNodeFromBuckets"<<endl;
+	pMinSmp = nullptr;
 
 	int selected_bucket_id;
-	while ( pMinSmp==NULL ) {
-    cout<<"RRTPlanner::SelectNodeFromBuckets (pMinSmp==NULL)"<<endl;
+	while ( pMinSmp==nullptr ) {
 		do {
 			selected_bucket_id = rand() % (m_numBuckets-1);
 		} while ( distance_buckets[selected_bucket_id].empty() );
@@ -239,7 +235,6 @@ Configuration *RRTPlanner::SelectNodeFromBuckets (Configuration *pTarget) {
 			// Using closest to random
 			distance = metric->distance(pSmp,pTarget);
 
-      cout<<"RRTPlanner::SelectNodeFromBuckets ("<<pSmp<<", "<<pTarget<<")"<<endl;
 			if (distance<min_distance) {
 				min_distance = distance;
 				pMinSmp = pSmp;

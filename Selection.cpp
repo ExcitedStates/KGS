@@ -28,6 +28,7 @@
 #include "Selection.h"
 #include "Logger.h"
 
+using namespace std;
 
 Selection::Selection( ) : delim_( " " ) { 
 }
@@ -209,47 +210,56 @@ Selection::getSelectedAtoms( const vector<Residue*> residues ) {
 //						atoms.push_back( res->Atom_map_by_name.find(*itw)->second );
 //					}
 				// Loop over all the atoms of the residue
-				for(map<string, Atom*>::iterator itm = res->name_to_atom_map.begin() ; itm != res->name_to_atom_map.end(); ++itm ) {
+//        for(map<string, Atom*>::iterator itm = res->name_to_atom_map.begin() ; itm != res->name_to_atom_map.end(); ++itm ) {
+				for(auto const& atom: res->getAtoms() ) {
 					isInSelection = false;
 					for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
 						if( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
 						    		      (*itw) == "O*" || (*itw) == "P*" || (*itw) == "S*" ) {
-							if( itm->second->compareType( (*itw).substr(0,1) ) ) {
+//              if( itm->second->compareType( (*itw).substr(0,1) ) ) {
+							if( atom->compareType( (*itw).substr(0,1) ) ) {
 								isInSelection = true;
 								break;
 							}
 						}else{
-							if( itm->second->compareName(*itw) ) {
+//              if( itm->second->compareName(*itw) ) {
+							if( atom->compareName(*itw) ) {
 								isInSelection = true;
 								break;
 							}
 						}
-					if( isInSelection ) atoms.push_back( itm->second );
+//					if( isInSelection ) atoms.push_back( itm->second );
+          if( isInSelection ) atoms.push_back( atom );
 				}
 			}else{
 				// Loop over all the atoms of the residue
-				for(map<string, Atom*>::iterator itm = res->name_to_atom_map.begin() ; itm != res->name_to_atom_map.end(); ++itm ) {
+//				for(map<string, Atom*>::iterator itm = res->name_to_atom_map.begin() ; itm != res->name_to_atom_map.end(); ++itm ) {
+        for(auto const& atom: res->getAtoms() ) {
 					isInSelection = false;
 					for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
 						if( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
 						    		      (*itw) == "O*" || (*itw) == "P*" || (*itw) == "S*" ) {
-							if( itm->second->compareType( (*itw).substr(0,1) ) ) {
+//							if( itm->second->compareType( (*itw).substr(0,1) ) ) {
+              if( atom->compareType( (*itw).substr(0,1) ) ) {
 								isInSelection = true;
 								break;
 							}
 						}else{
-							if( itm->second->compareName(*itw) ) {
+//							if( itm->second->compareName(*itw) ) {
+              if( atom->compareName(*itw) ) {
 								isInSelection = true;
 								break;
 							}
 						}
-					if( !isInSelection ) atoms.push_back( itm->second );
+					if( !isInSelection ) atoms.push_back( atom );
+//          if( !isInSelection ) atoms.push_back( itm->second );
 				}
 			}
 		}
 	}
 	return atoms;
 }
+
 //---------------------------------------------------------
 /*
  * Combine a vector of strings.

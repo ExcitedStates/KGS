@@ -5,39 +5,15 @@
 #include "KinTree.h"
 
 #include <queue>
+#include <cassert>
 
 #include "Logger.h"
 
 using namespace std;
-size_t KinTree::getNumDOFs() const
-{
-  return m_dofs.size();
-}
+size_t KinTree::getNumDOFs() const      { return m_dofs.size(); }
+size_t KinTree::getNumCycleDOFs() const { return m_cycleDOFs.size(); }
 
-void KinTree::printForSpringy () {
-  queue<KinVertex*> node_queue;
-  node_queue.push(root);
-  //log()<<"var nd_"<<root->id<<" = graph.newNode({label: \"*"<<root->m_rigidbody<<"*\"});"<<endl;
-  log() << "var nd_" << root->id << " = graph.newNode({label: \"*" << root->id << "*\"});" << endl;
-  while ( node_queue.size()>0 ) {
-    // get the first element in the queue
-    KinVertex *cur_node = node_queue.front();
-    // for each edge, print it and insert the child into the queue
-    //for (map<unsigned int,KinEdge*>::iterator eit=cur_node->Edges.begin(); eit!=cur_node->Edges.end(); ++eit) {
-    for (auto eit=cur_node->m_edges.begin(); eit!=cur_node->m_edges.end(); ++eit) {
-      KinVertex* end_node = (*eit)->EndVertex;
-      //KinVertex* end_node = eit->second->EndVertex;
-      node_queue.push(end_node);
-      log() << "var nd_" << end_node->id << " = graph.newNode({label: \"" << end_node->m_rigidbody << "\"});" << endl;
-      log() << "graph.newEdge(nd_" << cur_node->id << ", nd_" << end_node->id << "); //DOF:" << (*eit)->DOF_id << endl;
-    }
-    node_queue.pop();
-  }
-
-  log() << "Go to http://getspringy.com/, download the demo and paste the above into the javascript" << endl;
-}
-
-void KinTree::print() {
+void KinTree::print() const {
   //return;
   // breadth-first-traverse
   log() << "Breadth-first-traversal of the tree:" << endl;
@@ -59,7 +35,7 @@ void KinTree::print() {
 
   // print the m_edges closing cycles and common ancestors for the anchors in each edge
   log() << "Edges closing cycles:" << endl;
-  for (vector< pair<KinEdge*,KinVertex*> >::iterator pit=CycleAnchorEdges.begin(); pit!=CycleAnchorEdges.end(); ++pit) {
+  for (auto pit=CycleAnchorEdges.begin(); pit!=CycleAnchorEdges.end(); ++pit) {
     pit->first->print();
     log() << "Common ancestor: ";
     pit->second->print();
@@ -71,13 +47,13 @@ void KinTree::print() {
     int length = 1;
     log() << "Left cycle:";
     for (cur=start; cur!=pit->second; cur=cur->m_parent) {
-      log() << " " << cur->id;
+      log() << " " << cur->m_rigidbody->id();
       ++length;
     }
     log() << endl;
     log() << "Right cycle:";
     for (cur=end; cur!=pit->second; cur=cur->m_parent) {
-      log() << " " << cur->id;
+      log() << " " << cur->m_rigidbody->id();
       ++length;
     }
     log() << endl;
@@ -137,19 +113,46 @@ void KinTree::collectDOFs()
 void KinTree::collectDOFs(KinVertex* v)
 {
   for(auto const& edge: v->m_edges){
-    if( std::find(m_dofs.begin(),m_dofs.end(), edge->getDOF())==m_dofs.end() )
-      m_dofs.push_back(edge->getDOF());
+    if( std::find(m_dofs.begin(),m_dofs.end(), edge->getDOF())==m_dofs.end() ) {
+      DOF* dof = edge->getDOF();
+      dof->setIndex(m_dofs.size());
+      m_dofs.push_back(dof);
+    }
 
     collectDOFs(edge->EndVertex);
   }
 }
 
-KinTree::KinTree(): KinGraph(){
-  //m_numDOFs = 0;
-  m_numCycleDOFs = 0;
+KinTree::KinTree():
+    KinGraph()
+{
 }
+
 KinTree::~KinTree () {
   for (vector< pair<KinEdge*,KinVertex*> >::iterator it=CycleAnchorEdges.begin(); it!=CycleAnchorEdges.end(); ++it) {
     delete it->first;
   }
 }
+
+
+DOF* KinTree::getDOF(unsigned int idx) const{
+  assert(idx<m_dofs.size());
+  return m_dofs[idx];
+}
+
+DOF* KinTree::getCycleDOF(unsigned int idx) const
+{
+  assert(idx<m_cycleDOFs.size());
+  return m_cycleDOFs[idx];
+}
+
+void KinTree::addCycleDOF(DOF* dof)
+{
+  if(std::find(m_cycleDOFs.begin(), m_cycleDOFs.end(), dof)==m_cycleDOFs.end()) {
+    //DOF is not already in m_cycleDOFs
+    dof->setCycleIndex(m_cycleDOFs.size());
+    m_cycleDOFs.push_back(dof);
+  }
+}
+
+

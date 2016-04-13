@@ -65,7 +65,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
   }
 
   Configuration* parent = res1->getChain()->getProtein()->m_conf;
-  if(parent==NULL) parent = new Configuration(res1->getChain()->getProtein());
+  if(parent==nullptr) parent = new Configuration(res1->getChain()->getProtein());
   vector<Configuration*> ret;
 
   for(int i=0;i<n_soln;i++){
@@ -115,12 +115,12 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     double delPsi3 = newPsi3 - oldPsi3;
 
     for(auto const& edge: parent->getProtein()->m_spanning_tree->Edges){
-      if(edge->getBond()->Atom1==N1) child->m_dofs[edge->DOF_id] += delPhi1;
-      if(edge->getBond()->Atom1==A1) child->m_dofs[edge->DOF_id] += delPsi1;
-      if(edge->getBond()->Atom1==N2) child->m_dofs[edge->DOF_id] += delPhi2;
-      if(edge->getBond()->Atom1==A2) child->m_dofs[edge->DOF_id] += delPsi2;
-      if(edge->getBond()->Atom1==N3) child->m_dofs[edge->DOF_id] += delPhi3;
-      if(edge->getBond()->Atom1==A3) child->m_dofs[edge->DOF_id] += delPsi3;
+      if(edge->getBond()->Atom1==N1) child->m_dofs[edge->getDOF()->getIndex()] += delPhi1;
+      if(edge->getBond()->Atom1==A1) child->m_dofs[edge->getDOF()->getIndex()] += delPsi1;
+      if(edge->getBond()->Atom1==N2) child->m_dofs[edge->getDOF()->getIndex()] += delPhi2;
+      if(edge->getBond()->Atom1==A2) child->m_dofs[edge->getDOF()->getIndex()] += delPsi2;
+      if(edge->getBond()->Atom1==N3) child->m_dofs[edge->getDOF()->getIndex()] += delPhi3;
+      if(edge->getBond()->Atom1==A3) child->m_dofs[edge->getDOF()->getIndex()] += delPsi3;
     }
 
     ret.push_back(child);
@@ -146,15 +146,15 @@ bool ExactIK::validRebuildLoop(const Residue* res1, const Residue* res2, const R
   if(res1->getChain()!=res2->getChain()) return false;
 
   //Check that all residues are amino acids
-  if(res1->getAtom("C")==NULL) return false;
-  if(res1->getAtom("CA")==NULL) return false;
-  if(res1->getAtom("N")==NULL) return false;
-  if(res2->getAtom("C")==NULL) return false;
-  if(res2->getAtom("CA")==NULL) return false;
-  if(res2->getAtom("N")==NULL) return false;
-  if(res3->getAtom("C")==NULL) return false;
-  if(res3->getAtom("CA")==NULL) return false;
-  if(res3->getAtom("N")==NULL) return false;
+  if(res1->getAtom("C")==nullptr) return false;
+  if(res1->getAtom("CA")==nullptr) return false;
+  if(res1->getAtom("N")==nullptr) return false;
+  if(res2->getAtom("C")==nullptr) return false;
+  if(res2->getAtom("CA")==nullptr) return false;
+  if(res2->getAtom("N")==nullptr) return false;
+  if(res3->getAtom("C")==nullptr) return false;
+  if(res3->getAtom("CA")==nullptr) return false;
+  if(res3->getAtom("N")==nullptr) return false;
 
   //Check for constraints between res1 and res3
   for(auto const& edge: res1->getChain()->getProtein()->m_spanning_tree->Edges){

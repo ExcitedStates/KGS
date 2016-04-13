@@ -38,39 +38,38 @@
 #include "core/Chain.h"
 #include "core/Residue.h"
 
-using namespace std;
 
 class Selection {
 public:
 	Selection( );
-	Selection( string selection );
-	Selection( string selection, string delim );
+	Selection( std::string selection );
+	Selection( std::string selection, std::string delim );
 	void print() const;
-	void print( string selName ) const;
+	void print( std::string selName ) const;
 
 	// Mutator and Accessor
-	void delim(string delim);
-	string delim() const;
+	void delim(std::string delim);
+	std::string delim() const;
 	// Mutator and Accessor
-	void selection(string selection);
-	string selection() const;
+	void selection(std::string selection);
+	std::string selection() const;
 	// Mutator and Accessor
-	void selectionWords( vector<string> selectionWords );
-	vector<string> selectionWords() const;
+	void selectionWords( std::vector<std::string> selectionWords );
+	std::vector<std::string> selectionWords() const;
 
-	vector<Residue*> getSelectedResidues( const Molecule *protein ) const;
-	vector<Atom*> getSelectedAtoms( const Molecule *protein );
-	vector<Atom*> getSelectedAtoms( const vector<Residue*> residues );
+	std::vector<Residue*> getSelectedResidues( const Molecule *protein ) const;
+	std::vector<Atom*> getSelectedAtoms( const Molecule *protein );
+	std::vector<Atom*> getSelectedAtoms( const std::vector<Residue*> residues );
 
-	static vector<string> &split( const string &s, string delim, vector<string> &words );
-	static vector<string>  split( const string &s, string delim );
-	static vector<int> &split( const string &s, string delim, vector<int> &numbers );
-	string &combine( const vector<string> &words, string delim, string &s );
-	string  combine( const vector<string> &words, string delim );
+	static std::vector<std::string> &split( const std::string &s, std::string delim, std::vector<std::string> &words );
+	static std::vector<std::string>  split( const std::string &s, std::string delim );
+	static std::vector<int> &split( const std::string &s, std::string delim, std::vector<int> &numbers );
+	std::string &combine( const std::vector<std::string> &words, std::string delim, std::string &s );
+	std::string  combine( const std::vector<std::string> &words, std::string delim );
 
 private:
-	string selection_, delim_;
-	vector<string> selectionWords_;
+	std::string selection_, delim_;
+	std::vector<std::string> selectionWords_;
 };
 
 #endif // SELECTION_H

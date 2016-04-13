@@ -48,6 +48,7 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		Configuration* conf = new Configuration(native);
 		//Configuration* conf = new Configuration(native->m_spanning_tree->getNumDOFs());
 
+    /*
 		for(auto vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
 			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
@@ -59,7 +60,7 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
-						if(nv->DOF_id==v->DOF_id){
+						if(nv->getDOF()->getIndex()==v->getDOF()->getIndex()){
 							nativeTorsion=nv->initTorsion;
 							break;
 						}
@@ -72,13 +73,14 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 				//cout<<diff<<" ";
 				if(diff>3.15){
 					cout<<"Sugar: ";
-					cout<<v->DOF_id<<" .. "<<diff<<" .. "<<strucTorsion<<" .. "<<nativeTorsion<<endl;
+					cout<<v->getDOF()->getIndex()<<" .. "<<diff<<" .. "<<strucTorsion<<" .. "<<nativeTorsion<<endl;
 					exit(-1);
 				}
-				conf->m_dofs[v->DOF_id] = diff;
+				conf->m_dofs[v->getDOF()->getIndex()] = diff;
 
 			}
 		}
+     */
 
 		for(vector<KinEdge*>::iterator eit=struc->m_spanning_tree->Edges.begin(); eit!=struc->m_spanning_tree->Edges.end(); ++eit){
 			KinEdge* e = *eit;
@@ -88,7 +90,7 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 
 			for(vector<KinEdge*>::iterator neit=native->m_spanning_tree->Edges.begin(); neit!=native->m_spanning_tree->Edges.end(); ++neit){
 				KinEdge* ne = *neit;
-				if(ne->DOF_id==e->DOF_id){
+				if(ne->getDOF()->getIndex()==e->getDOF()->getIndex()){
 					nativeTorsion = torsion(ne->getBond());
 					break;
 				}
@@ -99,10 +101,10 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 			//cout<<diff<<" ";
 			if(diff>3.15){
 					cout<<"KinEdge: ";
-				cout<<e->DOF_id<<" .. "<<diff<<" .. "<<strucTorsion<<" .. "<<nativeTorsion<<endl;
+				cout<<e->getDOF()->getIndex()<<" .. "<<diff<<" .. "<<strucTorsion<<" .. "<<nativeTorsion<<endl;
 				exit(-1);
 			}
-			conf->m_dofs[e->DOF_id] = diff;
+			conf->m_dofs[e->getDOF()->getIndex()] = diff;
 
 		}
 
@@ -192,7 +194,7 @@ int main(int argc, char* argv[]){
 		
 		for(vector<KinEdge*>::iterator eit = native->m_spanning_tree->Edges.begin(); eit != native->m_spanning_tree->Edges.end(); ++eit){
 			KinEdge* e = *eit;
-			int dof = e->DOF_id;
+			int dof = e->getDOF()->getIndex();
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 			evec_component = fabs(evec_component)*eval_i*eval_i*100.0;
 			int id1 = e->getBond()->Atom1->getId();
@@ -202,10 +204,11 @@ int main(int argc, char* argv[]){
 //			cout<<e<<" "<<evec_component<<endl;
 		}
 
+    /*
 		for (auto vit=native->m_spanning_tree->Vertex_map.begin(); vit!=native->m_spanning_tree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-				int dof = v->DOF_id;
+				int dof = v->getDOF()->getIndex();
 				double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 				evec_component = fabs(evec_component)*eval_i*eval_i;
 				//cout<<v<<" "<<evec_component<<endl;
@@ -218,6 +221,7 @@ int main(int argc, char* argv[]){
 
 			}
 		}
+     */
 	}
 
 //    for(int i=0;i<configurations.size(); i++){

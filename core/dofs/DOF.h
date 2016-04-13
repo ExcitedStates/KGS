@@ -43,15 +43,26 @@ class DOF {
    */
   virtual double getGlobalValue() const = 0;
 
+  unsigned int getIndex() const;
+
+  unsigned int getCycleIndex() const;
 
  protected:
+  friend class KinEdge;
+  friend class KinTree;
+
   /**
    * Update the m_transformation matrix in `m_edge->EndVertex` based on the one in `m_edge->StartVertex` and
    * the value for this DOF.
    */
   virtual void updateEndVertexTransformation() = 0;
 
-  friend class KinEdge;
+  /** Set the DOF index. Only called from KinTree. */
+  void setIndex(unsigned int idx);
+
+  /** Set the cycle-DOF index. Only called from KinTree. */
+  void setCycleIndex(unsigned int idx);
+
 //  /**
 //   * Update the m_transformation `tr`, apply it to `m_edge->EndVertex`, and propagate to m_edges leaving
 //   * `m_edge->EndVertex`.
@@ -62,6 +73,9 @@ class DOF {
   KinEdge const * m_edge;
 
   double m_value;
+
+  int m_index;
+  int m_cycleIndex;
 
 };
 

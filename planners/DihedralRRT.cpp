@@ -41,7 +41,7 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, Direction& direction):
   pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
-	m_target = NULL;
+	m_target = nullptr;
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;
 	pSmp->m_id = 0; // root
@@ -79,7 +79,7 @@ DihedralRRT::~DihedralRRT() {
 void DihedralRRT::GenerateSamples(){
 	int nBatch = SamplingOptions::getOptions()->samplesToGenerate;
 	int sample_id=0, max_depth=0, failed_trials=0, total_trials=0;
-	Configuration *pTarget=NULL, *pClosestSmp, *pNewSmp=NULL;
+	Configuration *pTarget=nullptr, *pClosestSmp, *pNewSmp=nullptr;
   gsl_vector* gradient = gsl_vector_alloc(m_protein->totalDofNum());
 
 	//Save initial file (for movie)
@@ -93,7 +93,7 @@ void DihedralRRT::GenerateSamples(){
 		CTKTimer timer;
 		double start_time = timer.getTimeNow();
 
-		if( SamplingOptions::getOptions()->sampleRandom || pNewSmp == NULL || createNewTarget) {
+		if( SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik")<<"Generating new target, getting new seed"<<endl;
 			pTarget = GenerateRandConf(); // used in selection ONLY if no m_target m_protein specified
 			createNewTarget = false;
@@ -105,7 +105,7 @@ void DihedralRRT::GenerateSamples(){
 			pClosestSmp = m_samples.back();
 		}
 
-    direction.gradient(pClosestSmp, NULL, gradient);
+    direction.gradient(pClosestSmp, nullptr, gradient);
 		pNewSmp = move.move(pClosestSmp, gradient);
 
 		if( !pNewSmp->updatedProtein()->inCollision() ) {
@@ -134,7 +134,7 @@ void DihedralRRT::GenerateSamples(){
 				createNewTarget = true;
 			}
 			//Check if target has been reached!
-			//if(m_target != NULL && (m_top_min_rmsd < RMSD_DIFF_THRESHOLD )){
+			//if(m_target != nullptr && (m_top_min_rmsd < RMSD_DIFF_THRESHOLD )){
 			//cout<<"Reached target, not creating more samples!"<<" rmsd: "<<m_top_min_rmsd<<", dih: "<<m_minMovDihDistance<<endl;
 			//break;
 			//}
@@ -142,7 +142,7 @@ void DihedralRRT::GenerateSamples(){
 			++failed_trials;
 			//Only for the straight path testing
 			//if( !options.sampleRandom )
-			//return NULL;
+			//return nullptr;
 			delete pTarget;
 			createNewTarget = true;
 		}
@@ -157,7 +157,7 @@ Configuration* DihedralRRT::GenerateRandConf() {
 
 	double length=0.0;
 	for (int i=0; i<m_numDOFs; ++i) {
-		pNewSmp->m_dofs[i] = dPi * RandomN1P1();
+		pNewSmp->m_dofs[i] = Math3D::dPi * RandomN1P1();
 		length+= pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
 	}
 	length = sqrt(length);
@@ -178,7 +178,7 @@ Configuration *DihedralRRT::SelectNodeFromBuckets (Configuration *pTarget) {
 	Configuration *pSmp, *pMinSmp;
 	double min_distance = 1000000.0;
 	double distance;
-	pMinSmp = NULL;
+	pMinSmp = nullptr;
 
 	for (list<Configuration*>::iterator iter=m_samples.begin(); iter!=m_samples.end(); ++iter) {
 		pSmp = *iter;

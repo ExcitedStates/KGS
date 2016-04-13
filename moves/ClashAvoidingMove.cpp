@@ -41,7 +41,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->m_numCycleDOFs + new_q->getNullspace()->NullspaceSize();
+  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -152,24 +152,10 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Columns correspond to cycle_dof_ids
   if(projectConstraints){
     map<unsigned int, KinVertex*>::iterator vit;
-//    for (vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=->m_spanning_tree->Vertex_map.end(); vit++){
-    for(auto const& id_vertex_pair: conf->getProtein()->m_spanning_tree->Vertex_map){
-      if( id_vertex_pair.second->isRibose ){
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(id_vertex_pair.second);
-        int dof_id = v->DOF_id;
-        int cycle_dof_id = v->Cycle_DOF_id;
-        if ( cycle_dof_id!=-1 ) {
-          for( int i=0; i!=ret->size1; i++){
-            gsl_matrix_set(ret, i, dof_id, gsl_matrix_get(conf->getCycleJacobian(),i,cycle_dof_id));
-          }
-        }
-      }
-    }
 
-//    for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
     for(auto const& edge: conf->getProtein()->m_spanning_tree->Edges){
-      int dof_id = edge->DOF_id;
-      int cycle_dof_id = edge->Cycle_DOF_id;
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
         for( int i=0; i!=conf->getCycleJacobian()->size1; i++){
           gsl_matrix_set(ret, i, dof_id, gsl_matrix_get(conf->getCycleJacobian(),i,cycle_dof_id));
@@ -197,7 +183,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
     Coordinate p1 = atom1->m_Position; //end-effector, position 1
     Coordinate p2 = atom2->m_Position; //end-effector, position 2
 
-    Vector3 clashNormal = p2-p1;
+    Math3D::Vector3 clashNormal = p2-p1;
     clashNormal.getNormalized(clashNormal);
 
     //Vertices
@@ -210,23 +196,10 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       KinVertex* parent = vertex1->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex1);
 
-      if(parent->isRibose) {//RFonseca
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-        int dof_id = v->DOF_id;
-        if(dof_id!=-1){
-
-          Vector3 derivativeP1 = v->computeJacobianEntry(p_edge, conf->m_dofs, p1);
-          double jacobianEntryClash = dot(clashNormal, derivativeP1);
-
-          gsl_matrix_set(ret,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//					log("dominik")<<"Setting sugar clash on left branch entry at "<<dof_id<<endl;
-        }
-      }
-
-      int dof_id = p_edge->DOF_id;
+      int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-        Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
         gsl_matrix_set(ret,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
@@ -246,24 +219,10 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       KinVertex* parent = vertex2->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex2);
 
-      if(parent->isRibose) {//RFonseca
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-//				int dof_id = v->Cycle_DOF_id;
-        int dof_id = v->DOF_id;
-        if(dof_id!=-1){
-
-          Vector3 derivativeP2 = v->computeJacobianEntry(p_edge, conf->m_dofs, p2);
-          double  jacobianEntryClash = - dot(clashNormal, derivativeP2);
-
-          gsl_matrix_set(ret,i,dof_id,gsl_matrix_get(ret,i,dof_id) + jacobianEntryClash); //set: Matrix, row, column, what to set
-//					log("dominik")<<"Setting sugar clash entry on right branch at "<<dof_id<<endl;
-        }
-      }
-
-      int dof_id = p_edge->DOF_id;
+      int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-        Vector3 derivativeP2 = ComputeJacobianEntry(
+        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
             p_edge->getBond()->Atom1->m_Position,
             p_edge->getBond()->Atom2->m_Position,
             p2); //b

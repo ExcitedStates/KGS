@@ -33,8 +33,8 @@
 
 class Configuration;
 
-void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms);//, bool usePosition2=false);
-void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms, std::vector<KinVertex*> subVerts);
-void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* globalRef, RigidTransform *ms);
+void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, Math3D::RigidTransform *ms);//, bool usePosition2=false);
+void Confvec2MatrixLocal (KinVertex *root, Configuration *q, Math3D::RigidTransform *ms, std::vector<KinVertex*> subVerts);
+void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* globalRef, Math3D::RigidTransform *ms);
 
 #endif

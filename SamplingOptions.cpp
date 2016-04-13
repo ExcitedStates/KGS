@@ -10,6 +10,7 @@
 #include "core/Atom.h"
 #include "core/Chain.h"
 
+using namespace std;
 
 SamplingOptions::SamplingOptions(){
 	initializeVariables();
@@ -152,8 +153,8 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 
 
 	//Set workingDirectory and moleculeName using the initialStructureFile.
-	char* tmp = realpath(initialStructureFile.c_str(), NULL);
-	if(tmp==NULL){ cerr<<initialStructureFile<<" is not a valid PDB-file"<<endl; exit(-1); }
+	char* tmp = realpath(initialStructureFile.c_str(), nullptr);
+	if(tmp==nullptr){ cerr<<initialStructureFile<<" is not a valid PDB-file"<<endl; exit(-1); }
 
 
 	string pdb_file(tmp);
@@ -399,11 +400,11 @@ inline bool SamplingOptions::fileExists (const std::string& name) {
 	}
 }
 
-SamplingOptions* SamplingOptions::instance = NULL;
+SamplingOptions* SamplingOptions::instance = nullptr;
 
 SamplingOptions* SamplingOptions::getOptions()
 {
-  if(instance==NULL) {
+  if(instance==nullptr) {
 		cerr << "SamplingOptions::getInstance - Sampling options haven't been initialized"<<endl;
 		exit(-1);
 	}
@@ -413,7 +414,7 @@ SamplingOptions* SamplingOptions::getOptions()
 
 SamplingOptions* SamplingOptions::createOptions(int argc, char* argv[] )
 {
-  if(instance!=NULL) {
+  if(instance!=nullptr) {
     delete instance;
   }
   instance = new SamplingOptions(argc, argv);
@@ -422,7 +423,7 @@ SamplingOptions* SamplingOptions::createOptions(int argc, char* argv[] )
 
 SamplingOptions* SamplingOptions::createOptions()
 {
-  if(instance!=NULL) {
+  if(instance!=nullptr) {
     delete instance;
   }
   instance = new SamplingOptions();
@@ -476,7 +477,7 @@ void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 		int resId = a1->getResidue()->getId();
 		if(target){
 			Atom* a2=target->getAtom(chainName,resId, name);
-			if(a2!=NULL)
+			if(a2!=nullptr)
 				m_atomsAlign.push_back(a1);
 		} else{
 			m_atomsAlign.push_back(a1);
@@ -506,7 +507,7 @@ void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 		int resId = a1->getResidue()->getId();
 		if(target){
 			Atom* a2=target->getAtom(chainName,resId, name);
-			if(a2!=NULL)
+			if(a2!=nullptr)
 				m_atomsMoving.push_back(a1);
 		} else{
 			m_atomsMoving.push_back(a1);

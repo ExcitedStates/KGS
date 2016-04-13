@@ -28,6 +28,7 @@
 #define KGS_MSDDIRECTION_H
 
 
+#include <core/graph/KinTree.h>
 #include "Direction.h"
 
 class MSDDirection: public Direction {
@@ -37,6 +38,14 @@ class MSDDirection: public Direction {
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
+ private:
+  /** Build the `m_sortedVertices`. */
+  void collectVerticesPostorder(KinVertex*);
+
+  /** A preprocessed list of all vertices (except the root) sorted according to a post-order traversal of the tree. */
+  std::list< KinVertex* > m_sortedVertices;
+
+  KinTree* m_preprocessedTree;
 };
 
 

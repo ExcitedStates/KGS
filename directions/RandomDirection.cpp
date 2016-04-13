@@ -47,8 +47,8 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
   Molecule * protein = conf->getProtein();
   double absMax = 0.0;
   for (auto const& edge: protein->m_spanning_tree->Edges) {
-    int dofId = edge->DOF_id;
-    double newVal = RandomAngleUniform(dPi);
+    int dofId = edge->getDOF()->getIndex();
+    double newVal = RandomAngleUniform(Math3D::dPi);
     absMax = std::max(absMax, std::fabs(newVal));
 
     //ToDo: adapt to sampling options selectionMoving etc

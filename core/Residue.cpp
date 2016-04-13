@@ -63,8 +63,10 @@ void Residue::setNextResidue(Residue* next) {
 
 void Residue::printSummaryInfo() const {
 	cout << "Residue " << Name << " " << Id << " " << SSE_type << " " << sidechainSize() << endl;
-	for (map<string,Atom*>::const_iterator it= name_to_atom_map.begin(); it != name_to_atom_map.end(); ++it) {
-		it->second->printSummaryInfo();
+//	for (map<string,Atom*>::const_iterator it= name_to_atom_map.begin(); it != name_to_atom_map.end(); ++it) {
+//  it->second->printSummaryInfo();
+  for (auto const& atom: m_atoms) {
+		atom->printSummaryInfo();
 	}
 }
 
@@ -78,7 +80,8 @@ Atom* Residue::addAtom(const std::string& atomName,
                       const Coordinate& position)
 {
   Atom* atom = new Atom(atomName, atomId, position, this);
-	name_to_atom_map[atom->getName()] = atom;
+	//name_to_atom_map[atom->getName()] = atom;
+  m_atoms.push_back(atom);
   return atom;
 }
 
@@ -87,10 +90,17 @@ int Residue::getId () const {
 }
 
 Atom* Residue::getAtom (string atom_name) const{
-  auto it = name_to_atom_map.find(atom_name);
-	if (it == name_to_atom_map.end())
-		return NULL;
-	return it->second;
+  //auto it = name_to_atom_map.find(atom_name);
+  //if (it == name_to_atom_map.end())
+  //  return NULL;
+//  return (*it)->second;
+  for(auto const& atom: m_atoms)
+    if(atom->getName()==atom_name) return atom;
+  return NULL;
+}
+
+std::list<Atom*>& Residue::getAtoms(){
+  return m_atoms;
 }
 
 const Chain* Residue::getChain() const{
@@ -153,10 +163,12 @@ string Residue::getNameType () const {
 
 int Residue::sidechainSize () const {
 	int size = 0;
-	for (map<string,Atom*>::const_iterator it= name_to_atom_map.begin(); it != name_to_atom_map.end(); ++it) {
-		if ( (it->second)->isSidechainAtom() )
-			++size;
-	}
+//	for (map<string,Atom*>::const_iterator it= name_to_atom_map.begin(); it != name_to_atom_map.end(); ++it) {
+//		if ( (it->second)->isSidechainAtom() )
+//			++size;
+//	}
+  for (auto const& atom: m_atoms)
+    if ( atom->isSidechainAtom() ) ++size;
 	return size;
 }
 

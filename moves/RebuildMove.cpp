@@ -52,9 +52,9 @@ Configuration* RebuildMove::performMove(Configuration* current, gsl_vector*)
 	//i is now the index of the first residue we want to rebuild
 	j = i+fragmentLength;
 
-	Configuration* new_q = NULL; 
+	Configuration* new_q = nullptr;
 	int count = 0;
-	while(count++<20 && new_q==NULL) {
+	while(count++<20 && new_q==nullptr) {
 		new_q = m_protein->resampleSugars(i, j, current, m_rebuildAggression);
 	}
 

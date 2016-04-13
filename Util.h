@@ -29,37 +29,28 @@
 #define UTIL_H
 
 #include <string>
-#include <map>
-#include <vector>
-#include <utility>
-#include <map>
-#include <sys/stat.h>
-
-#include "core/Molecule.h"
 
 #define CTK_PI 3.14159265
 
 
-using namespace std;
-
-typedef pair<string,string> CovBond;
+typedef std::pair<std::string,std::string> CovBond;
 
 class Util {
   public:
-	static string d2s (double x);
-	static string f2s (float x);
-	static string i2s (int x);
-	static string i2s(int x, int length);
-	static bool stob (string s);
-	static string trim (string s,char c=' ');
-	static string getPath (string s);
-	static string getBaseName (string s);
-	static string formatNumber(string number, int digits_num);
+	static std::string d2s (double x);
+	static std::string f2s (float x);
+	static std::string i2s (int x);
+	static std::string i2s(int x, int length);
+	static bool stob (std::string s);
+	static std::string trim (std::string s,char c=' ');
+	static std::string getPath (std::string s);
+	static std::string getBaseName (std::string s);
+	static std::string formatNumber(std::string number, int digits_num);
 	static float round(float number, int precision);
 	static double round(double number, int precision);
-	static string cutDecimal(float number, int decimals);
+	static std::string cutDecimal(float number, int decimals);
 
-	static string to_string(int i);
+//	static std::string to_string(int i);
 };
 
 #endif

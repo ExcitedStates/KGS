@@ -64,51 +64,30 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
     node = queue.front();
     queue.pop_front();
 
-    //RFonseca
-    if(node->isRibose) {
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-      v->configurationToGlobalMatrix(ms, q->m_dofs);
-      //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit){
-        //newNode = edge_itr->second->EndVertex;
-        newNode = (*eit)->EndVertex;
-        queue.push_back(newNode);
-      }
-      continue;
-    }
-
-    //log("debug")<<"Updating transformations out of "<<node->m_rigidbody<<endl;
-    //log("debug")<<node->m_transformation<<endl;
-
-    //m_children = node->Edges;
     auto children = node->m_edges;
 
-    // log("debug") << "m_parent " << node->id << ": ";
-    //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-    for (auto eit=children.begin(); eit!=children.end(); ++eit)
-    {
+//    for (auto eit=children.begin(); eit!=children.end(); ++eit){
+    for (auto const& pEdge: children){
+      int dof_id = pEdge->getDOF()->getIndex();
       m1.setIdentity();
       m2.setIdentity();
       m3.setIdentity();
-      //pEdge = edge_itr->second;
-      pEdge = *eit;
-      ///			newNode = pEdge->StartVertex == node ? pEdge->EndVertex : pEdge->StartVertex;
       newNode = pEdge->EndVertex;
 
       vec = pEdge->getBond()->Atom2->m_Position - pEdge->getBond()->Atom1->m_Position;
       m1.setTranslate(pEdge->getBond()->Atom1->m_Position);
-      m2.setRotate(FindRotationMatrix(vec, -q->m_dofs[pEdge->DOF_id])); // !!! Since the FindRotationMatrix is for left hand, choose the negative of the angle
+      m2.setRotate(FindRotationMatrix(vec, -q->m_dofs[dof_id])); // !!! Since the FindRotationMatrix is for left hand, choose the negative of the angle
       m3.setTranslate(-1.0 * (pEdge->getBond()->Atom1->m_Position) );
 
       //TODO: By deriving the closed form for localMat, the computation can be optimized
       localMat = m1 * m2 * m3;
 
-      //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->DOF_id<<" had m_transformation changed by Transformation"<<endl;
-      ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
+      //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->getDOF()->getIndex()<<" had m_transformation changed by Transformation"<<endl;
+      ms[dof_id] = node->m_transformation * localMat; // the global matrix for this node
 
-      newNode->m_transformation = ms[pEdge->DOF_id];
+      newNode->m_transformation = ms[dof_id];
       if(!newNode->m_transformation.isValid(0.0001)){
-        cerr<<"Node m_transformation invalid: "<<pEdge->DOF_id<<endl;
+        cerr<<"Node m_transformation invalid: "<<dof_id<<endl;
       }
 
       queue.push_back(newNode);
@@ -122,24 +101,9 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
     node = queue.front();
     queue.pop_front();
 
-    if(node->isRibose) {
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-      v->updateDelayed();//false);
-      //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      //	newNode = edge_itr->second->EndVertex;
-      for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit){
-        newNode = (*eit)->EndVertex;
-        queue.push_back(newNode);
-      }
-      continue;
-    }
-
-    //m_children = node->Edges;
     auto children = node->m_edges;
-    //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
     for (auto eit=node->m_edges.begin(); eit!=node->m_edges.end(); ++eit)
     {
-      //pEdge = edge_itr->second;
       pEdge = *eit;
       newNode = pEdge->EndVertex;
       queue.push_back(newNode);
@@ -179,25 +143,6 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
     node = queue.front();
     queue.pop_front();
 
-    if(node->isRibose) {
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-      v->configurationToGlobalMatrix(ms, q->m_dofs);//, false);
-      //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto const& edge: node->m_edges){
-        newNode = edge->EndVertex;
-        if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
-          queue.push_back(newNode);
-      }
-      continue;
-    }
-
-    //log("debug")<<"Updating transformations out of "<<node->m_rigidbody<<endl;
-    //log("debug")<<node->m_transformation<<endl;
-
-    //m_children = node->Edges;
-
-    // log("debug") << "m_parent " << node->id << ": ";
-    //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
     for (auto const& edge: node->m_edges)
     {
       m1.setIdentity();
@@ -209,48 +154,16 @@ void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms,
 
       vec = pEdge->getBond()->Atom2->m_Position - pEdge->getBond()->Atom1->m_Position;
       m1.setTranslate(pEdge->getBond()->Atom1->m_Position);
-      m2.setRotate(FindRotationMatrix(vec, -q->m_dofs[pEdge->DOF_id])); // !!! Since the FindRotationMatrix is for left hand, choose the negative of the angle
+      m2.setRotate(FindRotationMatrix(vec, -q->m_dofs[pEdge->getDOF()->getIndex()])); // !!! Since the FindRotationMatrix is for left hand, choose the negative of the angle
       m3.setTranslate(-1*pEdge->getBond()->Atom1->m_Position);
 
       //TODO: By deriving the closed form for localMat, the computation can be optimized
       localMat = m1 * m2 * m3;
 
-      ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
+      ms[pEdge->getDOF()->getIndex()] = node->m_transformation * localMat; // the global matrix for this node
 
-      newNode->m_transformation = ms[pEdge->DOF_id];
+      newNode->m_transformation = ms[pEdge->getDOF()->getIndex()];
 
-      if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
-        queue.push_back(newNode);
-    }
-
-  }
-  // log("debug") << endl;
-
-  //Hack for sugars
-  queue.push_back(root);
-  while(queue.size()>0) {
-    node = queue.front();
-    queue.pop_front();
-
-    if(node->isRibose) {
-      SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-      v->updateDelayed();//false);
-      //for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-      for (auto const& edge: node->m_edges){
-        newNode = edge->EndVertex;
-        if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
-          queue.push_back(newNode);
-      }
-      continue;
-    }
-
-    //m_children = node->Edges;
-    //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-    for (auto const& edge: node->m_edges)
-    {
-      //pEdge = edge_itr->second;
-      pEdge = edge;
-      newNode = pEdge->EndVertex;
       if(find(subVerts.begin(), subVerts.end(), newNode)!=subVerts.end())
         queue.push_back(newNode);
     }
@@ -268,19 +181,7 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
 
   KinVertex *newNode;
   RigidTransform localMat, m1, m2, m3;
-  //RFonseca
-  //Todo: Update also for sugars
-//	if(node->isRibose) {
-//		SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-//		v->configurationToGlobalMatrix(ms, q->m_f);
-//		for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-//			newNode = edge_itr->second->EndVertex;
-//			queue.push_back(newNode);
-//		}
-//		continue;
-//	}
 
-  //m_children = node->Edges;
 
   // log("debug") << "m_parent " << node->id << ": ";
   //for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
@@ -292,7 +193,7 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
     ///			newNode = pEdge->StartVertex == node ? pEdge->EndVertex : pEdge->StartVertex;
     newNode = pEdge->EndVertex;
     //Measure desired global value with respect to the set value
-//		cout<<"Initial ref: "<<iniRef[pEdge->DOF_id]<<", newVal: "<<pEdge->getBond()->getTorsion()<<endl;
+//		cout<<"Initial ref: "<<iniRef[pEdge->getDOF()->getIndex()]<<", newVal: "<<pEdge->getBond()->getTorsion()<<endl;
 //		cout<<"Now checking!"<<endl;
 
     Atom* atom1 = pEdge->getBond()->Atom1;
@@ -341,10 +242,10 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
 
     double currentTorsion = TorsionalAngle(atom3->m_Position,atom1->m_Position,atom2->m_Position,newPos);
 
-    double rot = q->getGlobalTorsions(pEdge->DOF_id) - currentTorsion;
+    double rot = q->getGlobalTorsions(pEdge->getDOF()->getIndex()) - currentTorsion;
 //		cout<<"Updated torsion from "<< pEdge->getBond()->getTorsion()<<" to "<<currentTorsion<<endl;
     rot = formatRangeRadian(rot);
-//		log("dominik")<<"Transformation at edge "<<pEdge->DOF_id<<" for node "<<newNode->id<<" with rot "<<q->getGlobalTorsions(pEdge->DOF_id)<<" - "<<currentTorsion<<" = "<<rot<<endl;
+//		log("dominik")<<"Transformation at edge "<<pEdge->getDOF()->getIndex()<<" for node "<<newNode->id<<" with rot "<<q->getGlobalTorsions(pEdge->DOF_id)<<" - "<<currentTorsion<<" = "<<rot<<endl;
 
     vec = pEdge->getBond()->Atom2->m_Position - pEdge->getBond()->Atom1->m_Position;
 
@@ -354,43 +255,15 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
 
     //TODO: By deriving the closed form for localMat, the computation can be optimized
     localMat = m1 * m2 * m3;
-    //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->DOF_id<<" had m_transformation changed by Transformation"<<endl;
-    ms[pEdge->DOF_id] = node->m_transformation * localMat; // the global matrix for this node
+    //log("debugRebuild")<<"RB:"<<pEdge->EndVertex->m_rigidbody->id()<<" "<<pEdge->getDOF()->getIndex()<<" had m_transformation changed by Transformation"<<endl;
+    ms[pEdge->getDOF()->getIndex()] = node->m_transformation * localMat; // the global matrix for this node
 
-    newNode->m_transformation = ms[pEdge->DOF_id];
+    newNode->m_transformation = ms[pEdge->getDOF()->getIndex()];
 
     if(!newNode->m_transformation.isValid(0.0001)){
-      cerr<<"Node m_transformation invalid: "<<pEdge->DOF_id<<endl;
+      cerr<<"Node m_transformation invalid: "<<pEdge->getDOF()->getIndex()<<endl;
     }
 
   }
-
-  //Hack for sugars
-  //Todo: Update also for sugars
-//	queue.push_back(root);
-//	while(queue.size()>0) {
-//		node = queue.front();
-//		queue.pop_front();
-//
-//		if(node->isRibose) {
-//			SugarVertex* v = reinterpret_cast<SugarVertex*>(node);
-//			v->updateDelayed();//false);
-//			for (edge_itr=(node->Edges).begin(); edge_itr != (node->Edges).end(); ++edge_itr){
-//				newNode = edge_itr->second->EndVertex;
-//				queue.push_back(newNode);
-//			}
-//			continue;
-//		}
-//
-//		m_children = node->Edges;
-//		for (edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr)
-//		{
-//			pEdge = edge_itr->second;
-//			newNode = pEdge->EndVertex;
-//			queue.push_back(newNode);
-//		}
-//
-//	}
-
 }
 

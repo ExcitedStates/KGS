@@ -67,7 +67,7 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
 
       computeAtomJacobian(atom2,atomJacobian2);
       gsl_matrix_sub(atomJacobian1,atomJacobian2); // atomJacobian1 = atomJacobian1 - atomJacobian2
-      Vector3 p12_v3 = atom1->m_Position - atom2->m_Position;//TODO: Subtract  directly into gsl_vector
+      Math3D::Vector3 p12_v3 = atom1->m_Position - atom2->m_Position;//TODO: Subtract  directly into gsl_vector
       Coordinate::copyToGslVector(p12_v3, p12);
       gsl_blas_dgemv(CblasTrans,1,atomJacobian1,p12,0,p_temp);
       //std::cout<<"VDWDirection::computeGradient - pair-gradient norm: "<<gsl_blas_dnrm2(p_temp)<<std::endl;
@@ -92,14 +92,15 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
 }
 void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
   Molecule * protein = atom->getResidue()->getChain()->getProtein();
-  KinVertex *vertex = protein->getRigidbodyGraphVertex(atom);
+  //KinVertex *vertex = protein->getRigidbodyGraphVertex(atom);
+  KinVertex *vertex = atom->getRigidbody()->getVertex();
   while (vertex->m_parent!=NULL) {
     KinEdge* edge = vertex->m_parent->findEdge(vertex);
-    int dof_id = edge->DOF_id;
+    int dof_id = edge->getDOF()->getIndex();
     Bond * bond_ptr = edge->getBond();
     Coordinate bp1 = bond_ptr->Atom1->m_Position;
     Coordinate bp2 = bond_ptr->Atom2->m_Position;
-    Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
+    Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
     gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);

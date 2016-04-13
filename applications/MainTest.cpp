@@ -15,6 +15,8 @@
 #include "math/gsl_helpers.h"
 #include "core/Configuration.h"
 
+using namespace std;
+
 int main( int argc, char* argv[] ) {
   std::string prg = argv[0];
   argc=9;

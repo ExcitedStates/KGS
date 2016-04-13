@@ -15,6 +15,8 @@
 #include "SamplingOptions.h"
 #include "math/gsl_helpers.h"
 
+using namespace std;
+
 int main( int argc, char* argv[] ) {
 
   string pdb_file = "/Users/rfonseca/Downloads/1crn_Processed.pdb";
@@ -27,7 +29,7 @@ int main( int argc, char* argv[] ) {
   //Create the rigid body trees
   IO::readRigidbody( &protein );
 
-  protein.buildSpanningTree(0, false);//with the rigid body tree in place, we can generate a configuration
+  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
   ExactIK ik;
 

@@ -27,6 +27,7 @@
 */
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 #include "Util.h"
 
@@ -96,24 +97,16 @@ string Util::formatNumber(string number, int digits_num) {
 }
 
 float Util::round(float number, int precision) {
-	const int prec = pow(10.,precision);
-	return floor( number*prec + 0.5 )/prec;
+	const int prec = std::pow(10.,precision);
+	return std::floor( number*prec + 0.5 )/prec;
 }
 
 double Util::round(double number, int precision) {
-	const int prec = pow(10.,precision);
-	return floor( number*prec + 0.5 )/prec;
+	const int prec = std::pow(10.,precision);
+	return std::floor( number*prec + 0.5 )/prec;
 }
 
 string Util::cutDecimal(float number, int decimals) {
 	return f2s(round(number,decimals));
 }
 
-string Util::to_string(int i)
-{
-	ostringstream stream;
-	stream<<i;
-	string ret(stream.str());
-	return std::move(ret);
-	//return static_cast<ostringstream*>( &(ostringstream() << i) )->str();
-}

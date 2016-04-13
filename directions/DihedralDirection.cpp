@@ -30,7 +30,7 @@
 #include "core/Molecule.h"
 
 DihedralDirection::DihedralDirection():
-    m_target(NULL)
+    m_target(nullptr)
 {}
 
 void DihedralDirection::setTarget(Configuration* conf)
@@ -44,13 +44,13 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
   const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
   bool allResidues = resNetwork.size() == 0 ? true:false;
 
-  if(m_target->getGlobalTorsions() == NULL){
+  if(m_target->getGlobalTorsions() == nullptr){
     std::cerr<<"DihedralDirection::computeGradient - No global torsions, please calculate them first!"<<std::endl;
     exit(-1);
   }
 
   for (auto const& edge: protein->m_spanning_tree->Edges){
-    int dofId = edge->DOF_id;
+    int dofId = edge->getDOF()->getIndex();
     int resId = edge->getBond()->Atom1->getResidue()->getId();
     double angle_diff = m_target->getGlobalTorsions(dofId) - conf->getGlobalTorsions(dofId);
     angle_diff = formatRangeRadian(angle_diff);

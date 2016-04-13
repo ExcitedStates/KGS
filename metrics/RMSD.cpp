@@ -13,7 +13,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
 {
   const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
 
-  // If atomsAlign is NULL, align the entire m_protein
+  // If atomsAlign is nullptr, align the entire m_protein
   if( atomsRMSD->empty() ) {
     //cout<<"Found no atoms to align .. using all."<<endl;
     atomsRMSD = &(c1->getProtein()->atoms);//choose all atoms
@@ -68,8 +68,8 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
 
   const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsMoving();
 
-  // If atomsAlign is NULL, align the entire m_protein
-  if (atomsRMSD==NULL) {
+  // If atomsAlign is nullptr, align the entire m_protein
+  if (atomsRMSD==nullptr) {
     cout<<"Found no atoms to align .. using all"<<endl;
     atomsRMSD = &(c1->getProtein()->atoms);//choose all atoms
   }
@@ -110,8 +110,8 @@ double RMSD::align(Molecule * other, Molecule * base) {
 
   const std::vector<Atom*>* atomsAlign = SamplingOptions::getOptions()->getAtomsAlign();
 
-  // If atomsAlign is NULL, align the entire m_protein
-  if (atomsAlign == NULL) {
+  // If atomsAlign is nullptr, align the entire m_protein
+  if (atomsAlign == nullptr) {
     cout<<"Found no atoms to align"<<endl;
     atomsAlign = &(base->atoms);//choose all atoms
   }

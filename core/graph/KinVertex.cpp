@@ -4,24 +4,15 @@
 
 using namespace std;
 
-KinVertex::KinVertex ():
-    id(0),
-    m_rigidbody(NULL),
-    m_parent(NULL),
-    isRibose(false)
-{
-  m_transformation.setIdentity();
-}
-
-KinVertex::KinVertex (int id_, Rigidbody* rb_ptr):
-    id(id_),
+KinVertex::KinVertex (Rigidbody* rb_ptr):
     m_rigidbody(rb_ptr)
 {
   m_parent = NULL;
   Visited = false;
-  isRibose = false;
+
   if(rb_ptr!=NULL)
     rb_ptr->setVertex(this);
+
   m_transformation.setIdentity();
 }
 
@@ -37,12 +28,12 @@ void KinVertex::setParent(KinVertex* v) {
   m_parent = v;
 }
 
-void KinVertex::addEdge (unsigned int neighbor_vertex_id, KinEdge *edge) {
+void KinVertex::addEdge (KinEdge *edge) {
   m_edges.push_back( edge );
 }
 
 void KinVertex::print() const {
-  log() << "KinVertex_" << id << ", id ";
+  log() << "KinVertex";
   if(m_rigidbody)
     for (vector<Atom*>::iterator it=m_rigidbody->Atoms.begin(); it!=m_rigidbody->Atoms.end(); ++it)
       log() << (*it)->getId() << "+";

@@ -21,7 +21,7 @@ ostream& Logger::log(const string& name){
 }
 
 Logger* Logger::getInstance(){
-  if(Logger::instance==NULL) Logger::instance = new Logger();
+  if(Logger::instance==nullptr) Logger::instance = new Logger();
   return Logger::instance;
 }
 
@@ -30,7 +30,7 @@ bool Logger::loggerEnabled(const string& name){
 }
 
 
-Logger* Logger::instance = NULL;
+Logger* Logger::instance = nullptr;
 
 
 ostream& log(){ return Logger::getInstance()->log("default"); }

@@ -34,8 +34,10 @@
 
 using namespace std;
 
-MSDDirection::MSDDirection()
+MSDDirection::MSDDirection():
+    m_preprocessedTree(nullptr)
 {
+//  collectVerticesPostorder(tree->root);
 }
 
 void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target, gsl_vector* ret)
@@ -44,7 +46,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
   //atom_selection defines the atoms considered for the distance gradient
   Molecule * protein = conf->updatedProtein();
   Molecule * target = c_target->updatedProtein();
-  if(target==NULL){
+  if(target==nullptr){
     std::cerr<<"MSDDirection::computeGradient - Target not set"<<std::endl;
     exit(-1);
   }
@@ -59,9 +61,6 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     metrics::RMSD::align(target, protein);
   }
 
-  list< pair< unsigned int, KinVertex*> > *orderedVertices = &(protein->m_spanning_tree->m_sortedVertices);
-  list< pair< unsigned int, KinVertex*> >::iterator vit;
-
   //TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
   const vector<int>& resNetwork = options->residueNetwork;
   bool allResidues = resNetwork.size() == 0 ? true:false;
@@ -70,20 +69,27 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     atom_selection="RESHEAVY";
   }
 
-  Vector3 f, g, zeros(0.0);
-  stack<Vector3> stackF, stackG;
+  //Ensure that m_sortedVertices is filled with vertices from `protein`.
+  if(m_preprocessedTree==nullptr || protein->m_spanning_tree!=m_preprocessedTree){
+    m_sortedVertices.clear();
+    collectVerticesPostorder(protein->m_spanning_tree->root);
+    m_preprocessedTree = protein->m_spanning_tree;
+  }
+
+  Math3D::Vector3 f, g, zeros(0.0);
+  stack<Math3D::Vector3> stackF, stackG;
   int count=0;
 
   //Now we compute the MSD gradient with a "fast" implementation based on Abé's paper from 1984
-  for ( vit = orderedVertices->begin(); vit != orderedVertices->end(); vit++ ){//traverse tree by vertices starting at the final leaves
-    KinVertex *currVertex = vit->second;
+//  for ( vit = orderedVertices->begin(); vit != orderedVertices->end(); vit++ ){//traverse tree by vertices starting at the final leaves
+  for ( KinVertex* const& currVertex: m_sortedVertices ){
+    //traverse tree by vertices in a bottom-up fashion (starting at leaves)
+
+    //KinVertex *currVertex = vit->second;
     if(currVertex == protein->m_spanning_tree->root)
       break;
-    //int currId = currVertex->id;
-    KinVertex *parent = currVertex->m_parent;
-    int parentId = parent->id;
 
-    KinEdge* currEdge = parent->findEdge(currVertex);
+    KinEdge* currEdge = currVertex->m_parent->findEdge(currVertex);
     Bond * bond_ptr = currEdge->getBond();
     Atom* atom1 = bond_ptr->Atom1;
     Atom* atom2 = bond_ptr->Atom2;
@@ -116,13 +122,13 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
         Atom* aTarget = target->getAtom(atom->getResidue()->getChain()->getName(),
                                         atom->getResidue()->getId(),
                                         atom->getName() );
-        if(aTarget == NULL ){//|| aTarget->getResidue()->getProperName() != atom->getResidue()->getProperName()){
+        if(aTarget == nullptr ){//|| aTarget->getResidue()->getProperName() != atom->getResidue()->getProperName()){
           continue;//skip the non-existing atom
         }
-        Vector3 distance = aTarget->m_Position - atom->m_Position;
+        Math3D::Vector3 distance = aTarget->m_Position - atom->m_Position;
         if(distance != zeros ){
           g += distance;
-          Vector3 crossP = cross(aTarget->m_Position,atom->m_Position);
+          Math3D::Vector3 crossP = cross(aTarget->m_Position,atom->m_Position);
           f += crossP;
           ++count;
         }
@@ -153,28 +159,28 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     }
     //Check that only "active" m_edges are used in the gradient, where a torsion can be defined properly
     //Inactive m_edges are currently disabled (see IO read rigid body), so not necessary
-    Atom* atom3 = NULL;
+    Atom* atom3 = nullptr;
     vector<Atom*>::iterator ait;
     for (ait=atom1->Cov_neighbor_list.begin(); ait!=atom1->Cov_neighbor_list.end(); ++ait) {
       if ( (*ait)->getId()==atom2->getId() ) continue;
-      if ( atom3==NULL || (*ait)->getId()<atom3->getId() ) {
+      if ( atom3==nullptr || (*ait)->getId()<atom3->getId() ) {
         atom3 = *ait;
       }
     }
-    Atom* atom4 = NULL;
+    Atom* atom4 = nullptr;
     for (ait=atom2->Cov_neighbor_list.begin(); ait!=atom2->Cov_neighbor_list.end(); ++ait) {
       if ( (*ait)->getId()==atom2->getId() ) continue;
-      if ( atom4==NULL || (*ait)->getId()<atom4->getId() ) {
+      if ( atom4==nullptr || (*ait)->getId()<atom4->getId() ) {
         atom4 = *ait;
       }
     }
-    if(atom3 != NULL && atom4 != NULL){
-      Vector3 r_i = atom2->m_Position - atom1->m_Position;
+    if(atom3 != nullptr && atom4 != nullptr){
+      Math3D::Vector3 r_i = atom2->m_Position - atom1->m_Position;
       r_i.setNormalized(r_i);
-      Vector3 rp_cross = cross(r_i,atom1->m_Position);
+      Math3D::Vector3 rp_cross = cross(r_i,atom1->m_Position);
 
       double deltaQ_i = -r_i.dot(stackF.top() ) - rp_cross.dot( stackG.top() ); //final formula without pre-factor
-      gsl_vector_set(ret, currEdge->DOF_id, deltaQ_i);
+      gsl_vector_set(ret, currEdge->getDOF()->getIndex(), deltaQ_i);
     }
     else{
       cerr<<"Found inactive torsion"<<endl;
@@ -187,4 +193,16 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     gsl_vector_set(ret, i,formatRangeRadian(gsl_vector_get(ret, i)));//format range
   }
 
+}
+
+void MSDDirection::collectVerticesPostorder(KinVertex* v)
+{
+  //First add children
+  for(KinEdge* const& edge: v->m_edges){
+    collectVerticesPostorder(v);
+  }
+
+  //Next, add v itself
+  if(v->m_parent!=nullptr)
+    m_sortedVertices.push_back(v);
 }

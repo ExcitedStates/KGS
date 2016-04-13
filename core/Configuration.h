@@ -35,7 +35,6 @@
 #include <math/Nullspace.h>
 
 #include "core/graph/KinGraph.h"
-#include "core/graph/SugarVertex.h"
 
 class Molecule;
 class Configuration;

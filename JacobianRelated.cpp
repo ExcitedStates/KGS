@@ -49,22 +49,22 @@
 
 using namespace std;
 
-gsl_matrix* NullSpaceRet::V = NULL;
-gsl_vector* NullSpaceRet::singularValues = NULL;
-//gsl_matrix* NullSpaceRet::Ut= NULL;
+gsl_matrix* NullSpaceRet::V = nullptr;
+gsl_vector* NullSpaceRet::singularValues = nullptr;
+//gsl_matrix* NullSpaceRet::Ut= nullptr;
 
 NullSpaceRet::NullSpaceRet (int input_m, int input_n) : 
 							m (input_m),
 							n (input_n),
-							m_rigidAngles( NULL ),
-							m_rigidHBonds( NULL ),
+							m_rigidAngles( nullptr ),
+							m_rigidHBonds( nullptr ),
 							m_numCoordinated( 0 ),
 							m_numRigid( 0 ),
 							m_numRigidHBonds( 0 ),
 							numOwners_( 0 ) 
 {
-	m_nullspaceBasis = NULL;
-	if( singularValues == NULL){
+	m_nullspaceBasis = nullptr;
+	if( singularValues == nullptr){
 		singularValues = gsl_vector_alloc(std::min(m,n));
 	}else if( singularValues->size == std::min(m,n) ){
 		//correct size already
@@ -74,7 +74,7 @@ NullSpaceRet::NullSpaceRet (int input_m, int input_n) :
 	}
 	//V = gsl_matrix_alloc(n,n);//Works with old nr_svd
 	//V = gsl_matrix_alloc(n,std::min(n,m));
-	if(V==NULL){
+	if(V==nullptr){
 		V = gsl_matrix_alloc(n,n);//FULL
 	}else if( V->size1==n && V->size2==n ){//FULL
 	}else{
@@ -82,10 +82,10 @@ NullSpaceRet::NullSpaceRet (int input_m, int input_n) :
 		V = gsl_matrix_alloc(n,n);//FULL
 	}
 
-	if(m_rigidAngles==NULL){
+	if(m_rigidAngles==nullptr){
 		m_rigidAngles = gsl_vector_alloc(n);
 	}
-	if(m_rigidHBonds==NULL){
+	if(m_rigidHBonds==nullptr){
 		m_rigidHBonds = gsl_vector_alloc(n);
 	}
 }
@@ -113,7 +113,7 @@ void NullSpaceRet::NullSpacePostCompute()
 {
 	if(nullspaceSize == 0){
 		cerr<<"No nullspace available for motion, returning."<<endl;
-		m_nullspaceBasis = NULL;
+		m_nullspaceBasis = nullptr;
 		//exit(-1);
 	}
 	else{

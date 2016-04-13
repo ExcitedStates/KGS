@@ -11,6 +11,8 @@
 #include "Logger.h"
 #include "metrics/RMSD.h"
 
+using namespace std;
+
 Molecule * myReadFile(string pdbFile){
     char* tmp = realpath(pdbFile.c_str(), NULL);
     if(tmp==NULL){ cerr<<pdbFile<<" is not a valid PDB-file"<<endl; exit(-1); }
@@ -18,7 +20,7 @@ Molecule * myReadFile(string pdbFile){
     vector<string> extraCovBonds;
     IO::readPdb( protein, pdbFile, extraCovBonds );
     IO::readRigidbody( protein );
-    protein->buildSpanningTree(0, false);
+    protein->buildSpanningTree();
 
     return protein;
 }

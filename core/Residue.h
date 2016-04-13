@@ -30,6 +30,7 @@
 
 #include <string>
 #include <map>
+#include <list>
 #include "core/Coordinate.h"
 
 
@@ -49,6 +50,7 @@ class Residue {
                  const int& atomId,
                  const Coordinate& position);
   Atom* getAtom (std::string atom_name) const;
+  std::list<Atom*>& getAtoms();
   const Chain* getChain () const;
   void printSummaryInfo() const;
   void print() const;
@@ -61,7 +63,6 @@ class Residue {
   void setSSE (std::string& type);
   std::string getSSE () const;
 
-  std::map<std::string,Atom*> name_to_atom_map;
 
   bool isWithinResidueRange( unsigned int resid1, unsigned int resid2 ) const;
   bool isWithinTwoResidueRanges( unsigned int resid1, unsigned int resid2, unsigned int resid3, unsigned int resid4 ) const;
@@ -73,6 +74,8 @@ class Residue {
   std::string SSE_type;
   Residue* Last_residue;
   Residue* Next_residue;
+  //std::map<std::string,Atom*> name_to_atom_map;
+  std::list<Atom*> m_atoms;
 
 
 };

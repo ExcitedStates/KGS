@@ -112,15 +112,17 @@ void randomSampling(SamplingOptions& options){
 
   options.setResidueNetwork(&protein);
 
-  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root);//Todo: adapt this to usage without target
-  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root);//Todo: adapt this to usage without target
+//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
+  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
 //	m_protein.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
+  log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize move
   Move* move;
@@ -159,7 +161,7 @@ void randomSampling(SamplingOptions& options){
   timer.Reset();
   double start_time = timer.LastElapsedTime();
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->m_numCycleDOFs << endl;fflush(stdout);
+  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";
@@ -257,24 +259,26 @@ void targetedSampling(SamplingOptions& options){
   }
 
   //Build rigid body tree for protein
-  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root, target);
-  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root, target);
+//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
 //	m_protein.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->m_numCycleDOFs << " are cycle-DOFs\n" << endl;
+  log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Build rigid body tree for target
-  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.root, &protein);
-  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
+//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.root, &protein);
+//  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
+  target->buildSpanningTree();
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->m_numCycleDOFs<<" are cycle-DOFs\n"<<endl;
+  log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
@@ -328,8 +332,8 @@ void targetedSampling(SamplingOptions& options){
   timer.Reset();
   double start_time = timer.LastElapsedTime();
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->m_numCycleDOFs << endl;fflush(stdout);
-  log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->m_numCycleDOFs << endl << endl;fflush(stdout);
+  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
+  log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";

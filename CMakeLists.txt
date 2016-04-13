@@ -54,7 +54,6 @@ add_library( libKGS
 		planners/BidirectionalMovingFront.h
 		Selection.h
 		SiteID.h
-		core/graph/SugarVertex.h
 		core/Transformation.h
 		Util.h
 		KGSExceptions.h
@@ -105,7 +104,6 @@ add_library( libKGS
 		planners/PoissonPlanner.cpp
 		planners/BidirectionalMovingFront.cpp
 		Selection.cpp
-		core/graph/SugarVertex.cpp
 		core/Transformation.cpp
 		Util.cpp
 		KGSExceptions.cpp
@@ -195,7 +193,6 @@ include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths
 add_executable( kgs             applications/MainKGS.cpp)
 add_executable( rigidity        applications/MainRigidity.cpp )
 add_executable( print_torsions  applications/MainTorsionPrinter.cpp )
-add_executable( print_sugars    applications/MainSugarAnalyzer.cpp )
 add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd		    applications/MainRmsd.cpp )
 add_executable( testik		    applications/MainTestExactIK.cpp )
@@ -204,7 +201,6 @@ add_executable( mytest  	    applications/MainTest.cpp )
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
 target_link_libraries( print_torsions   libKGS ${GSL_LIBRARIES} )
-target_link_libraries( print_sugars     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd			    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( testik		    libKGS ${GSL_LIBRARIES} )

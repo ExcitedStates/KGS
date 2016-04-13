@@ -33,7 +33,7 @@ DisjointSets::DisjointSets(const DisjointSets & s)
 
   // Update m_parent pointers to point to newly created nodes rather than the old ones
   for(int i = 0; i < m_numElements; ++i)
-    if(m_nodes[i]->parent != NULL)
+    if(m_nodes[i]->parent != nullptr)
       m_nodes[i]->parent = m_nodes[s.m_nodes[i]->parent->index];
 }
 
@@ -55,7 +55,7 @@ int DisjointSets::FindSet(int elementId) const
 
   // Find the root element that represents the set which `elementId` belongs to
   curNode = m_nodes[elementId];
-  while(curNode->parent != NULL)
+  while(curNode->parent != nullptr)
     curNode = curNode->parent;
   Node* root = curNode;
 
@@ -109,11 +109,11 @@ void DisjointSets::AddElements(int numToAdd)
   assert(numToAdd >= 0);
 
   // insert and initialize the specified number of element nodes to the end of the `m_nodes` array
-  m_nodes.insert(m_nodes.end(), numToAdd, (Node*)NULL);
+  m_nodes.insert(m_nodes.end(), numToAdd, (Node*)nullptr);
   for(int i = m_numElements; i < m_numElements + numToAdd; ++i)
   {
     m_nodes[i] = new Node();
-    m_nodes[i]->parent = NULL;
+    m_nodes[i]->parent = nullptr;
     m_nodes[i]->index = i;
     m_nodes[i]->rank = 0;
   }

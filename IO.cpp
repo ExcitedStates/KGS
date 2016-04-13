@@ -150,7 +150,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 					atom_name2 = Util::trim(atom_name2,'+');
 					res2 = cur_res->getNextResidue();
 				}
-				if (res1==NULL || res2==NULL) {
+				if (res1==nullptr || res2==nullptr) {
 					continue;
 				}
 
@@ -159,18 +159,18 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 		} // finish looping over residues
 	} // finish looping over chains
 
-	if(reference == NULL) {
+	if(reference == nullptr) {
 		for (unsigned int i = 0; i < extraCovBonds.size(); i++) {
 			vector<string> tokens = Selection::split(extraCovBonds[i], "-");
 			int atomId1 = atoi(tokens[0].c_str());
 			int atomId2 = atoi(tokens[1].c_str());
 			Atom *a1 = protein->getAtom(atomId1);
 			Atom *a2 = protein->getAtom(atomId2);
-			if (a1 == NULL) {
+			if (a1 == nullptr) {
 				cerr << "Cannot find atom with id " << atomId1 << endl;
 				exit(-1);
 			}
-			if (a2 == NULL) {
+			if (a2 == nullptr) {
 				cerr << "Cannot find atom with id " << atomId2 << endl;
 				exit(-1);
 			}
@@ -195,8 +195,8 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 			//use names to identify atoms in protein
 			Atom* a3 = protein->getAtom(chainName1,resId1, name1);
 			Atom* a4 = protein->getAtom(chainName2,resId2, name2);
-			if(a3==NULL) { cerr<<"Cannot find atom with residue id "<<resId1<<" and name "<<name1<<endl; exit(-1); }
-			if(a4==NULL) { cerr<<"Cannot find atom with residue id "<<resId2<<" and name "<<name2<<endl; exit(-1); }
+			if(a3==nullptr) { cerr<<"Cannot find atom with residue id "<<resId1<<" and name "<<name1<<endl; exit(-1); }
+			if(a4==nullptr) { cerr<<"Cannot find atom with residue id "<<resId2<<" and name "<<name2<<endl; exit(-1); }
 			makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());		}
 	}
 
@@ -281,15 +281,18 @@ void IO::makeCovBond (Residue* res1, Residue* res2, string atom_name1, string at
 	Atom* atom1 = res1->getAtom(atom_name1);
 	Atom* atom2 = res2->getAtom(atom_name2);
 	bool valid = true;
-	if (atom1==NULL) {
+	if (atom1==nullptr) {
 		//cerr << "Warning: No such atom (" << atom_name1 << ") in Res" << res1->getId() << endl;
 		valid = false;
 	}
-	if (atom2==NULL) {
+	if (atom2==nullptr) {
 		//cerr << "Warning: No such atom (" << atom_name2 << ") in Res" << res2->getId() << endl;
 		valid = false;
 	}
 	if (valid) {
+    if(atom1->getId()>atom2->getId())
+      std::swap(atom1,atom2);
+
 		Bond * new_cb = new Bond(atom1, atom2, "COV");
 		res1->getChain()->getProtein()->addCovBond(new_cb);
 	}
@@ -318,7 +321,7 @@ void IO::readDssp (Molecule * protein, string dssp_file) {
 		chain_name = line.substr(11,1); // line[12]
 		if (chain_name.compare(last_chain_name)!=0) {
 			chain = protein->getChain(chain_name);
-			if (chain==NULL) {
+			if (chain==nullptr) {
 				cerr << "Error: No such chain (" << chain_name << ") in m_protein." << endl;
 				exit(1);
 			}
@@ -326,7 +329,7 @@ void IO::readDssp (Molecule * protein, string dssp_file) {
 		}
 		res_id = atoi(line.substr(6,5).c_str()); // line[7:11]
 		res = chain->getResidue(res_id);
-		if (res==NULL) {
+		if (res==nullptr) {
 			cerr << "Error: No such residue " << res_id << " in chain (" << chain_name << ")." << endl;
 			exit(1);
 		}
@@ -456,35 +459,14 @@ void IO::readRigidbody (Molecule * protein) {
 		Rigidbody* rb = protein->Rigidbody_map_by_id.find(body_id)->second;
 		if (!rb->containsAtom(atom)) rb->addAtom(atom);
 
-		// Add the covalent neighbors of this atom into its rigid body, if it's not there already
-//		for ( vector<Atom*>::iterator it=atom->Cov_neighbor_list.begin(); it!=atom->Cov_neighbor_list.end(); ++it) {
-//			if ( !rb->containsAtom(*it) ) {
-//				rb->addAtom(*it);
-//			}
-//		}
-		//Add the Hbond neighbors of this atom into this rigid body, if it's not there
-//		for ( vector<Atom*>::iterator it=atom->Hbond_neighbor_list.begin(); it!=atom->Hbond_neighbor_list.end(); ++it) {
-//			if ( !rb->containsAtom(*it) ) {
-//				rb->addAtom(*it);
-//			}
-//		}
 	}
-
-	//for(map<unsigned int, Rigidbody*>::iterator it = m_protein->Rigidbody_map_by_id.begin(); it!=m_protein->Rigidbody_map_by_id.end(); it++){
-	//	Rigidbody* rb = it->second;
-    //	log("debugRas")<<rb<<endl;
-	//}
 
 	//Delete small RBs and sort atoms within each RB
 	map<unsigned int, Rigidbody*>::iterator it = protein->Rigidbody_map_by_id.begin();
 	while ( it!=protein->Rigidbody_map_by_id.end() ) {
 		Rigidbody *rb = it->second;
 		if ( rb->Atoms.size() <= 0 ) {
-			cerr << "Error: rigid body " << rb->id() << " has less than 3 atoms." << endl;
-			//exit(1);
-			//for (vector<Atom*>::iterator ait=rb->Atoms.begin(); ait!=rb->Atoms.end(); ++ait) {
-      //  (*ait)->removeRigidbody(rb);
-			//}
+			cerr << "Error: rigid body " << rb->id() << " has no atoms." << endl;
 			protein->Rigidbody_map_by_id.erase(it++);
 			delete rb;
 		}
@@ -503,6 +485,8 @@ void IO::readRigidbody (Molecule * protein) {
 	
 	//Store bonds in rigid bodies
 	for (list<Bond *>::iterator bit=protein->Cov_bonds.begin(); bit != protein->Cov_bonds.end(); ++bit) {
+    Bond* bond = *bit;
+//    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
 		int setId1 = ds.FindSet((*bit)->Atom1->getId());
 		protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
 		int setId2 = ds.FindSet((*bit)->Atom2->getId());
@@ -532,15 +516,15 @@ void IO::writePdb (Molecule * protein, string output_file_name) {
 		cerr<<"Cannot write to "<<output_file_name<<endl;
 		exit(-1);
 	}
-	if(protein->m_conf!=NULL){
+	if(protein->m_conf!=nullptr){
 		Configuration* c = protein->m_conf;
 		output << "REMARK\tID = " << c->m_id << endl;
-		if(c->getParent() != NULL)
+		if(c->getParent() != nullptr)
 			output << "REMARK\tParent ID = " << c->getParent()->m_id << endl;
 		output << "REMARK\tTree depth = " << c->m_treeDepth << endl;
 		output<<"REMARK\tTree-path = ";
 		int count=0;
-		while(c->getParent() != NULL && c->getParent() != c) { output << c->m_id << " "; c=c->getParent(); count++; }
+		while(c->getParent() != nullptr && c->getParent() != c) { output << c->m_id << " "; c=c->getParent(); count++; }
 		output << c->m_id << endl;
 		output<<"REMARK\tDistance_initial = "<<setprecision(3)<<protein->m_conf->m_distanceToIni<<endl;
 		output<<"REMARK\tDistance to m_parent = "<<setprecision(3)<<protein->m_conf->m_distanceToParent<<endl;
@@ -581,22 +565,22 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
 	//myfile<<"Absolute change, dof_id, res_id, 0/1/2 for free/coordinated/rigid"<<endl;
 	//Keep track of changes (in magnitude)
 	for (eit = protein->m_spanning_tree->Edges.begin(); eit != protein->m_spanning_tree->Edges.end(); eit++){
-		int dof_id = (*eit)->DOF_id;
-		int resId = (*eit)->getBond()->Atom1->getResidue()->getId();
-//		if( dof_id == -1)
-//			continue;
-//		else{
-			int cycleDOF_id = (*eit)->Cycle_DOF_id;
-			int second = 1;
-			if(cycleDOF_id == -1)
-				second = 0;
-			//else if(gsl_vector_get(m_protein->m_conf->CycleNullSpace->m_rigidAngles,cycleDOF_id)==1)
-      else if( protein->m_conf->getNullspace()->IsAngleRigid(cycleDOF_id) )
-				second = 2;
-			double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsions(i) - referenceConf->getGlobalTorsions(i));
-			myfile << absChangeI <<" "<< dof_id <<" "<<resId <<" "<<second<<endl;
-			i++;
-//		}
+    int dof_id = (*eit)->getDOF()->getIndex();
+		int resId = -1;
+    if((*eit)->getBond()!=nullptr)
+      resId = (*eit)->getBond()->Atom1->getResidue()->getId();
+
+    //int cycleDOF_id = (*eit)->Cycle_DOF_id;
+    int cycleDOF_id = (*eit)->getDOF()->getCycleIndex();
+    int second = 1;
+    if(cycleDOF_id == -1)
+      second = 0;
+      //else if(gsl_vector_get(m_protein->m_conf->CycleNullSpace->m_rigidAngles,cycleDOF_id)==1)
+    else if( protein->m_conf->getNullspace()->IsAngleRigid(cycleDOF_id) )
+      second = 2;
+    double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsions(i) - referenceConf->getGlobalTorsions(i));
+    myfile << absChangeI <<" "<< dof_id <<" "<<resId <<" "<<second<<endl;
+    i++;
 	}
 	myfile.close();
 
@@ -607,7 +591,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 	ofstream output(covBondFile.c_str());
 	for (list<Bond*>::iterator bond_itr=molecule->Cov_bonds.begin(); bond_itr!=molecule->Cov_bonds.end(); ++bond_itr) {
 		Bond* bond = (*bond_itr);
-		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+    Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output << bondVec.norm() << endl;
 	}
 	output.close();
@@ -616,7 +600,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 	ofstream output1(edgeFile.c_str());
 	for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanning_tree->Edges.begin(); edge_itr!=molecule->m_spanning_tree->Edges.end(); ++edge_itr) {
 		Bond* bond = (*edge_itr)->getBond();
-		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+		Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output1 << bondVec.norm() << endl;
 	}
 	output1.close();
@@ -625,7 +609,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 	ofstream output2(anchorEdgeFile.c_str());
 	for (vector< pair<KinEdge*,KinVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
 		Bond* bond = edge_itr->first->getBond();
-		Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+		Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
 		output2 << bondVec.norm() << endl;
 	}
 	output2.close();
@@ -704,9 +688,9 @@ void IO::readHbonds (Molecule *protein, string hbond_file_name) {
 		oatom_id = atoi(atom2_sid.c_str());
 
 		hatom = protein->getAtom(hatom_id);
-        if(hatom==NULL){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<hatom_id<<endl; exit(-1); }
+        if(hatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<hatom_id<<endl; exit(-1); }
         oatom = protein->getAtom(oatom_id);
-        if(oatom==NULL){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
+        if(oatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
 
 		donor = hatom->getFirstCovNeighbor();
 		AA = oatom->getFirstCovNeighbor();
@@ -804,16 +788,16 @@ void IO::readHbonds_rnaview(Molecule * protein, string file, bool fillAnnotation
       acceptorName = "O2"; //(This might primarily be valid for 1LDZ)
     }else continue;
     Atom* donor = protein->getAtom(chain1, res1, donorName);
-    if(donor==NULL) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res1<<"_"<<donorName<<endl;exit(-1);}
+    if(donor==nullptr) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res1<<"_"<<donorName<<endl;exit(-1);}
     Atom* acceptor = protein->getAtom(chain2, res2, acceptorName);
-    if(acceptor==NULL) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res2<<"_"<<acceptorName<<endl;exit(-1);}
+    if(acceptor==nullptr) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res2<<"_"<<acceptorName<<endl;exit(-1);}
     Atom* AA = acceptor->getFirstCovNeighbor();
-    Atom* hatom = NULL;
+    Atom* hatom = nullptr;
     for(vector<Atom*>::iterator ait = donor->Cov_neighbor_list.begin(); ait != donor->Cov_neighbor_list.end(); ait++){
       Atom* a = *ait;
       if(a->Element==atomH){ hatom = a; break; }
     }
-    if(hatom==NULL){//TODO: Manually create H-atom
+    if(hatom==nullptr){//TODO: Manually create H-atom
       //int newId = *(m_protein->atoms.end()-1)
       //Atom* atom = new Atom("H",,pos,occ,B);
       //m_protein->addAtom(chain_name,res_name,res_id,atom);
@@ -888,15 +872,15 @@ void IO::readHbonds_vadar(Molecule * protein, string file){
     //TODO: Assumes the chains are the same
 
     Atom* donor = protein->getAtom(chain1, resId1, name1);
-    if(donor==NULL) { cerr<<"Cannot find res "<<resId1<<"/"<<name1<<endl; exit(-1); }
+    if(donor==nullptr) { cerr<<"Cannot find res "<<resId1<<"/"<<name1<<endl; exit(-1); }
     Atom* acceptor = protein->getAtom(chain1, resId2, name2);
-    if(acceptor==NULL) { cerr<<"Cannot find res "<<resId2<<"/"<<name2<<endl; exit(-1); }
+    if(acceptor==nullptr) { cerr<<"Cannot find res "<<resId2<<"/"<<name2<<endl; exit(-1); }
     cout<<"Hbond "<<donor->getId()<<" "<<acceptor->getId()<<endl;
     Atom* hatom = donor->getFirstCovNeighbor();
     Atom* AA = acceptor->getFirstCovNeighbor();
     //Atom* hatom = donor->getFirstCovHydrogenNeighbor();
     //Atom* AA = acceptor->getFirstCovNeighbor();
-    //if(hatom==NULL){
+    //if(hatom==nullptr){
     //	hatom = donor->getFirstCovHydrogenNeighbor();
     //	h
     //}
@@ -1037,7 +1021,7 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
 			cerr<<"Cannot write to "<<output_file_name<<". You might need to create output directory first"<<endl;
 			exit(-1);
 	}
-	if(protein->m_conf!=NULL){
+	if(protein->m_conf!=nullptr){
 		Configuration* c = protein->m_conf;
 		vector< pair<int, unsigned int> >::iterator it=c->m_sortedRBs.begin();
 
@@ -1067,8 +1051,8 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 			cerr<<"Cannot write to "<<output_file_name<<". You might need to create output directory first"<<endl;
 			exit(-1);
 	}
-	if(protein->m_conf!=NULL){
-		int diff= protein->m_spanning_tree->getNumDOFs() - protein->m_spanning_tree->m_numCycleDOFs;
+	if(protein->m_conf!=nullptr){
+		int diff= protein->m_spanning_tree->getNumDOFs() - protein->m_spanning_tree->getNumCycleDOFs();
 		int sum = protein->m_conf->getNullspace()->NullspaceSize() + diff;
 		//int sum = m_protein->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
@@ -1078,8 +1062,8 @@ void IO::writeStats(Molecule * protein, string output_file_name){
 		output <<"Number of covalent bonds: " << protein->Cov_bonds.size()<< endl;
 		output <<"Number of hydrogen bonds: " << protein->m_spanning_tree->CycleAnchorEdges.size()<< endl;
 		output << "Number of dihedrals in spanning tree: " << protein->m_spanning_tree->getNumDOFs() << endl;
-		output <<"Number of free dihedrals: " << diff << endl;
-		output <<"Number of cycle dihedrals: " << protein->m_spanning_tree->m_numCycleDOFs << endl<<endl;
+		output <<"Number of free DOFs: " << diff << endl;
+		output <<"Number of cycle DOFs: " << protein->m_spanning_tree->getNumCycleDOFs() << endl<<endl;
 		output <<"************* Statistics on rigidity analysis *************"<<endl;
 		output <<"Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->NullspaceSize() << endl;
 		//output <<"Number of internal m_dofs (nullspace dimension): " << m_protein->m_conf->CycleNullSpace->getNullspace()Size <<endl;
@@ -1107,7 +1091,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 	int firstPathLength;
 	Configuration* cFinalFwd = molecule->m_conf;
 
-	if(molecule->m_conf!=NULL){
+	if(molecule->m_conf!=nullptr){
 
 		Configuration* c = molecule->m_conf;
 		int currId = c->m_id;
@@ -1228,7 +1212,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 			}
 		}
 	}
-	if( target != NULL && target->m_conf != NULL){//also add the additional path of the reversePlanner
+	if( target != nullptr && target->m_conf != nullptr){//also add the additional path of the reversePlanner
 
 		Configuration* c = target->m_conf;
 		int currId = c->m_id;
@@ -1243,7 +1227,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 		output << "REMARK\tRMSD at transition is "<<setprecision(3)<<distance<<endl;
 		output << "REMARK\tReverse path follows "<<currId;
 
-		while( c->getParent() != NULL){
+		while( c->getParent() != nullptr){
 			c=c->getParent();
 			currId = c->m_id;
 			output << ", "<<currId;
@@ -1323,7 +1307,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 //			writePdb(target, out_pdb);
 
 			//Next configuration only if we haven't reached the last one yet!
-			if( c->getParent() != NULL){
+			if( c->getParent() != nullptr){
 				c=c->getParent();
 //				target->SetConfiguration(c);
 				c->updateProtein();

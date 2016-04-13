@@ -45,6 +45,8 @@
 #include "DisjointSets.h"
 #include "Logger.h"
 
+using namespace std;
+
 double jacobianTime = 0;
 double rigidityTime = 0;
 
@@ -205,22 +207,7 @@ void Configuration::identifyBiggerRigidBodies(){
 			KinVertex* parent = vertex1->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex1);
 
-			if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-				int dof_id = v->Cycle_DOF_id;
-
-				if(dof_id!=-1){
-
-					double valDih=gsl_vector_get(rigidDihedrals,dof_id);
-
-					if( valDih == 1 ) { // && p_edge->getBond()->constrained == false ){
-						p_edge->getBond()->constrained=true;
-						j++;
-					}
-				}
-
-			}
-			int dof_id = p_edge->Cycle_DOF_id;
+      int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
 
 				double valDih=gsl_vector_get(rigidDihedrals,dof_id);
@@ -240,22 +227,7 @@ void Configuration::identifyBiggerRigidBodies(){
 			KinVertex* parent = vertex2->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex2);
 
-			if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-				int dof_id = v->Cycle_DOF_id;
-
-				if(dof_id!=-1){
-
-					double valDih = gsl_vector_get(rigidDihedrals,dof_id);
-
-					if( valDih == 1 ) {//&& p_edge->getBond()->constrained == false){
-						p_edge->getBond()->constrained=true;
-						j++;
-					}
-				}
-			}
-
-			int dof_id = p_edge->Cycle_DOF_id;
+      int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
 
 				double valDih = gsl_vector_get(rigidDihedrals,dof_id);
@@ -433,7 +405,7 @@ void Configuration::updateGlobalTorsions(){
   }
   for(int i=0; i<m_numDOFs; ++i){
 //    m_dofs_global[i] = 0;
-    m_dofs_global[i] = m_protein->m_spanning_tree->m_dofs[i]->getGlobalValue();
+    m_dofs_global[i] = m_protein->m_spanning_tree->getDOF(i)->getGlobalValue();
   }
   //for (vector<KinEdge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
   //  KinEdge* pEdge = (*itr);
@@ -529,7 +501,7 @@ void Configuration::computeJacobians() {
 
 	int hBond_row_num = (m_protein->m_spanning_tree->CycleAnchorEdges).size();
 	int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
-	int col_num = m_protein->m_spanning_tree->m_numCycleDOFs; // number of DOFs in cycles
+	int col_num = m_protein->m_spanning_tree->getNumCycleDOFs(); // number of DOFs in cycles
 
 	if(CycleJacobian==NULL){
 		CycleJacobian = gsl_matrix_calloc(row_num,col_num);
@@ -556,13 +528,11 @@ void Configuration::computeJacobians() {
 
 	// for each cycle, fill in the Jacobian entries
 	int i=0;
-	for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin();
-       it!= m_protein->m_spanning_tree->CycleAnchorEdges.end();
-       ++it)
+	for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_protein->m_spanning_tree->CycleAnchorEdges)
   {
 		// get end-effectors
-		KinEdge* edge_ptr = it->first;
-		KinVertex* common_ancestor = it->second;
+		KinEdge* edge_ptr = edge_vertex_pair.first;
+		KinVertex* common_ancestor = edge_vertex_pair.second;
 		Bond * bond_ptr = edge_ptr->getBond();
 
 		//End-effectors and their positions, corresponds to a and b
@@ -606,49 +576,29 @@ void Configuration::computeJacobians() {
 			KinVertex* parent = vertex1->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex1);
 
-			if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-				int dof_id = v->Cycle_DOF_id;
-				//cout<<"Ribose "<<v->DOF_id<<" has Cycle_DOF_id "<<v->Cycle_DOF_id<<endl;
-				if(dof_id!=-1){
-
-					Vector3 derivativeP1 = v->computeJacobianEntry(p_edge, m_dofs, p1);
-					Vector3 derivativeP2 = v->computeJacobianEntry(p_edge, m_dofs, p2);
-					Vector3 derivativeP1_prev = v->computeJacobianEntry(p_edge, m_dofs, p1_prev);
-					// Vector3 derivativeP2_prev = v->computeJacobianEntry(p_edge, m_f, p2_prev);
-
-					Vector3 jacobianEntryTrans=derivativeP1 + derivativeP2;
-					double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
-					double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
-
-					gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-					gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
-					gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
-					gsl_matrix_set(CycleJacobian,i*5+3,dof_id,jacobianEntryRot1);
-					gsl_matrix_set(CycleJacobian,i*5+4,dof_id,jacobianEntryRot2);
-
-					///Matrix to check hBond Rotation
-					double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
-					gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
-				}
-			}
-
-			int dof_id = p_edge->Cycle_DOF_id;
+			//int dof_id = p_edge->Cycle_DOF_id;
+      int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a DOF
 				//if(dof_id==20)
 				//	cout<<"KinEdge "<<p_edge<<endl;
 
+        /*
 				Atom* ea1 = p_edge->getBond()->Atom1;
 				Atom* ea2 = p_edge->getBond()->Atom2;
 
 				// Jacobian_entry is the derivative of the vertices of the hydrogen bond
 				// Now, we also have to calculate the derivatives of the other neighboring atoms!
-				Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
-				Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
-				Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
+        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
+				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
+				Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
 				//Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2_prev);
+         */
+        Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
+        Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
+        Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
-				Vector3 jacobianEntryTrans=derivativeP1 + derivativeP2;
+
+				Math3D::Vector3 jacobianEntryTrans=derivativeP1 + derivativeP2;
 				double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
 				double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
@@ -669,48 +619,27 @@ void Configuration::computeJacobians() {
 			KinVertex* parent = vertex2->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex2);
 
-			if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-				int dof_id = v->Cycle_DOF_id;
-				//cout<<"Ribose "<<v->DOF_id<<" has Cycle_DOF_id "<<v->Cycle_DOF_id<<endl;
-				if(dof_id!=-1){
-
-					Vector3 derivativeP1 = v->computeJacobianEntry(p_edge, m_dofs, p1);
-					Vector3 derivativeP2 = v->computeJacobianEntry(p_edge, m_dofs, p2);
-					// Vector3 derivativeP1_prev = v->computeJacobianEntry(p_edge, m_f, p1_prev);
-					Vector3 derivativeP2_prev = v->computeJacobianEntry(p_edge, m_dofs, p2_prev);
-
-					Vector3 jacobianEntryTrans= - ( derivativeP1 + derivativeP2);
-					double jacobianEntryRot1 = dot((p1 - p1_prev),(derivativeP2-derivativeP1));
-					double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
-
-					gsl_matrix_set(CycleJacobian,i*5+0,dof_id,gsl_matrix_get(CycleJacobian,i*5+0,dof_id) + jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-					gsl_matrix_set(CycleJacobian,i*5+1,dof_id,gsl_matrix_get(CycleJacobian,i*5+1,dof_id) + jacobianEntryTrans.y);
-					gsl_matrix_set(CycleJacobian,i*5+2,dof_id,gsl_matrix_get(CycleJacobian,i*5+2,dof_id) + jacobianEntryTrans.z);
-					gsl_matrix_set(CycleJacobian,i*5+3,dof_id,gsl_matrix_get(CycleJacobian,i*5+3,dof_id) + jacobianEntryRot1);
-					gsl_matrix_set(CycleJacobian,i*5+4,dof_id,gsl_matrix_get(CycleJacobian,i*5+4,dof_id) + jacobianEntryRot2);
-
-					///Matrix to check hBond Rotation
-					double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
-					gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
-				}
-			}
-
-			int dof_id = p_edge->Cycle_DOF_id;
+//			int dof_id = p_edge->Cycle_DOF_id;
+      int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a DOF
 				//if(dof_id==20)
 				//	cout<<"KinEdge "<<p_edge<<endl;
+        /*
 				Atom* ea1 = p_edge->getBond()->Atom1;
 				Atom* ea2 = p_edge->getBond()->Atom2;
 
 				// Jacobian_entry is the derivative of the vertices of the hydrogen bond
 				// Now, we also have to calculate the derivatives of the other neighboring atoms!
-				Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
-				Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
-				//Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
-				Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2_prev);
+				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
+				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
+				//Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
+				Math3D::Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2_prev);
+         */
+        Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
+        Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
+        Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
 
-				Vector3 jacobianEntryTrans= - (derivativeP1 + derivativeP2);
+				Math3D::Vector3 jacobianEntryTrans= - (derivativeP1 + derivativeP2);
 				double jacobianEntryRot1 = dot((p1 - p1_prev),(derivativeP2-derivativeP1));
 				double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
@@ -794,21 +723,10 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 	//Convert the cycle Jacobian to a full Jacobian
 	//Columns correspond to cycle_dof_ids
 	if(projectConstraints){
-		for (auto vit=m_protein->m_spanning_tree->Vertex_map.begin(); vit!=m_protein->m_spanning_tree->Vertex_map.end(); vit++){
-			if( (*vit).second->isRibose ){
-				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-				int dof_id = v->DOF_id;
-				int cycle_dof_id = v->Cycle_DOF_id;
-				if ( cycle_dof_id!=-1 ) {
-					for( int i=0; i!=CycleJacobian->size1; i++){
-						gsl_matrix_set(ClashAvoidingJacobian, i, dof_id, gsl_matrix_get(CycleJacobian,i,cycle_dof_id));
-					}
-				}
-			}
-		}
-		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
-			int dof_id = (*eit)->DOF_id;
-			int cycle_dof_id = (*eit)->Cycle_DOF_id;
+//		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
+    for (auto const& edge: m_protein->m_spanning_tree->Edges){
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
 			if ( cycle_dof_id!=-1 ) {
 				for( int i=0; i!=CycleJacobian->size1; i++){
 					gsl_matrix_set(ClashAvoidingJacobian, i, dof_id, gsl_matrix_get(CycleJacobian,i,cycle_dof_id));
@@ -835,7 +753,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 		Coordinate p1 = atom1->m_Position; //end-effector, position 1
 		Coordinate p2 = atom2->m_Position; //end-effector, position 2
 
-		Vector3 clashNormal = p2-p1;
+		Math3D::Vector3 clashNormal = p2-p1;
 		clashNormal.getNormalized(clashNormal);
 
 		//Vertices
@@ -848,23 +766,11 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 			KinVertex* parent = vertex1->m_parent;
 			KinEdge* p_edge = parent->findEdge(vertex1);
 
-      if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-				int dof_id = v->DOF_id;
-				if(dof_id!=-1){
-
-					Vector3 derivativeP1 = v->computeJacobianEntry(p_edge, m_dofs, p1);
-					double jacobianEntryClash = dot(clashNormal, derivativeP1);
-
-					gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//					log("dominik")<<"Setting sugar clash on left branch entry at "<<dof_id<<endl;
-				}
-			}
-
-			int dof_id = p_edge->DOF_id;
+      int dof_id = p_edge->getDOF()->getIndex();
 			if (dof_id!=-1) { // this edge is a DOF
 
-				Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+        Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
 				double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
 				gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
@@ -884,28 +790,14 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 			KinVertex* parent = vertex2->m_parent;
 			KinEdge* p_edge = parent->findEdge(vertex2);
 
-			if(parent->isRibose) {//RFonseca
-				SugarVertex* v = reinterpret_cast<SugarVertex*>(parent);
-//				int dof_id = v->Cycle_DOF_id;
-				int dof_id = v->DOF_id;
-				if(dof_id!=-1){
-
-					Vector3 derivativeP2 = v->computeJacobianEntry(p_edge, m_dofs, p2);
-					double  jacobianEntryClash = - dot(clashNormal, derivativeP2);
-
-					gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,gsl_matrix_get(ClashAvoidingJacobian,i,dof_id) + jacobianEntryClash); //set: Matrix, row, column, what to set
-//					log("dominik")<<"Setting sugar clash entry on right branch at "<<dof_id<<endl;
-				}
-			}
-
-//			int dof_id = p_edge->Cycle_DOF_id;
-			int dof_id = p_edge->DOF_id;
+      int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a DOF
 
-				Vector3 derivativeP2 = ComputeJacobianEntry(
-            p_edge->getBond()->Atom1->m_Position,
-            p_edge->getBond()->Atom2->m_Position,
-            p2); //b
+//				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
+//            p_edge->getBond()->Atom1->m_Position,
+//            p_edge->getBond()->Atom2->m_Position,
+//            p2); //b
+        Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
 				double jacobianEntryClash = - dot(clashNormal, derivativeP2);
 
 				gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set

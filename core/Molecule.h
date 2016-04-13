@@ -68,7 +68,6 @@ class Molecule {
 	int size() const;
 	int totalDofNum () const;
 	void printSummaryInfo() const;
-	void printBackboneAngleAndLength (std::string length_file="", std::string angle_file="") const;
 	void updateAtom (int atom_id, Coordinate new_pos);
 	void indexAtoms();
 	bool inCollision (std::string collisionCheckAtoms = "all" ) const;
@@ -91,7 +90,6 @@ class Molecule {
 	void setToHbondIntersection (Molecule * p2);
 	void buildSpanningTree();
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = NULL);
-	KinVertex* getRigidbodyGraphVertex (Atom* atom) const; // Return the vertex which is associated with the smallest DOF id edge among all the atom's rigidbodies.
 	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
   gsl_vector* getEndEffectors();
 	void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
@@ -114,7 +112,7 @@ class Molecule {
 
 	// Topology of rigid bodies
 	KinTree *m_spanning_tree;
-	RigidTransform *m_Transformation; // cache: store the m_transformation of each rigid body group
+	Math3D::RigidTransform *m_Transformation; // cache: store the m_transformation of each rigid body group
 
 	// Configuration
 	Configuration *m_conf;

@@ -28,7 +28,7 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
     stopAfter(SamplingOptions::getOptions()->samplesToGenerate),
     m_frontSize(SamplingOptions::getOptions()->frontSize)
 {
-  if (m_target == NULL ){
+  if (m_target == nullptr ){
     cerr<<"No valid target specified. Please provide target or choose a different planner."<<endl;
     exit(-1);
   }
@@ -83,7 +83,7 @@ void BidirectionalMovingFront::GenerateSamples() {
   static int numSamples = 0, failedTrials = 0, totalTrials = 0;
   static double accept_ratio;
 
-  Configuration *qTarget = NULL, *qSeed, *qNew = NULL; //this qTarget is either global or random and can change for each sample
+  Configuration *qTarget = nullptr, *qSeed, *qNew = nullptr; //this qTarget is either global or random and can change for each sample
 
   while (numSamples < stopAfter) {//sample at most until the number of samples has been reached
     ++totalTrials;
@@ -91,11 +91,11 @@ void BidirectionalMovingFront::GenerateSamples() {
     CTKTimer timer;
     double start_time = timer.getTimeNow();
 
-    if (SamplingOptions::getOptions()->sampleRandom || qNew == NULL ||
+    if (SamplingOptions::getOptions()->sampleRandom || qNew == nullptr ||
         m_addedToFront == false) {//create new target and compute closest seed
       log("dominik") << "Generating new target" << endl;
 
-      if (qTarget != NULL) {//prevent leakage, delete existing target configuration from previous round
+      if (qTarget != nullptr) {//prevent leakage, delete existing target configuration from previous round
         delete qTarget;
       }
 
@@ -120,7 +120,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       failedTrials++;
       totalTrials++;
       delete qNew;
-      qNew = NULL;
+      qNew = nullptr;
       //Could not find a new conformation, swap search directions
       swapFwdRev();
     }
@@ -210,7 +210,7 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
     qNew->m_distanceToIni = m_metric->distance(qNew, m_fwdRoot);
   }
   //Distance to parents
-  if(qNew->getParent()!= NULL && qNew->getParent()->getParent() != NULL) {
+  if(qNew->getParent()!= nullptr && qNew->getParent()->getParent() != nullptr) {
     double distToParent = m_metric->distance(qNew, qNew->getParent());
 //    double distToParentsParent = m_metric->distance(qNew,qNew->getParent()->getParent());
     qNew->m_distanceToParent = distToParent;
@@ -250,7 +250,7 @@ Configuration* BidirectionalMovingFront::GenerateRandConf() {
     pTarget = new Configuration(m_revRoot);
     log("dominik")<<"Using random target"<<endl;
     for (int i=0; i<pTarget->m_numDOFs; ++i) {
-      pTarget->m_dofs[i]=dPi*RandomN1P1();
+      pTarget->m_dofs[i]=Math3D::dPi*RandomN1P1();
     }
     pTarget->m_id = -1; //invalid ID, identify non-sampled coonformations
   }
@@ -265,7 +265,7 @@ Configuration* BidirectionalMovingFront::SelectSeed (Configuration *pTarget) {
   Configuration *pSmp, *pMinSmp;
   double minDistance = 1000000.0;
   double distance;
-  pMinSmp = NULL;
+  pMinSmp = nullptr;
 
   const vector<int>* resNetwork = &(SamplingOptions::getOptions()->residueNetwork);
   bool allResidues = resNetwork->size() == 0 ? true:false;

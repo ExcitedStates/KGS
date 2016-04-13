@@ -31,7 +31,6 @@
 #include <queue>
 
 #include "KinGraph.h"
-#include "SugarVertex.h"
 #include "Logger.h"
 
 using namespace std;
@@ -41,16 +40,16 @@ KinGraph::KinGraph () {
 }
 
 KinGraph::~KinGraph () {
-	m_sortedVertices.clear();
 	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
 		delete it->second;
 	}
-
 }
 
-KinVertex* KinGraph::addVertex(int rb_id, Rigidbody* rb){
-	KinVertex* new_vertex = new KinVertex(rb_id,rb);
-	Vertex_map[rb_id] = new_vertex;
+KinVertex* KinGraph::addVertex(Rigidbody* rb){
+	KinVertex* new_vertex = new KinVertex(rb);
+  if(rb!=NULL)
+    Vertex_map[rb->id()] = new_vertex;
+
 	return new_vertex;
 }
 
@@ -64,7 +63,7 @@ KinEdge* KinVertex::findEdge(KinVertex* v) const
 }
 
 // Add a directed edge from rb_id1 to rb_id2
-KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond, int DOF_id)
+KinEdge* KinGraph::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond * bond)
 {
   if(bond!=NULL) {
     //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
@@ -103,8 +102,8 @@ KinEdge* KinGraph::addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond
     }
   }
 
-	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond,DOF_id);
-	vertex1->addEdge(vertex2->id, edge1);
+	KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond);
+	vertex1->addEdge(edge1);
 	vertex2->setParent(vertex1);
 	Edges.push_back(edge1);
 	return edge1;
@@ -122,16 +121,14 @@ KinVertex* KinGraph::getVertex (int rb_id) {
 void KinGraph::print () {
 	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
 		KinVertex *vertex = it->second;
-		log() << "Rigidbody " << vertex->id << ": " << vertex->m_rigidbody->Atoms.size() << " atoms and " << vertex->m_edges.size() << " m_edges" << endl;
+//		log() << "KinVertex " << vertex->id << ": " << vertex->m_rigidbody->Atoms.size() << " atoms and " << vertex->m_edges.size() << " m_edges" << endl;
 		vertex->print();
-		//for (map<unsigned int,KinEdge*>::iterator eit=vertex->Edges.begin(); eit!=vertex->Edges.end(); ++eit) {
-		for (auto eit=vertex->m_edges.begin(); eit!=vertex->m_edges.end(); ++eit) {
+		for (auto eit=vertex->m_edges.begin(); eit!=vertex->m_edges.end(); ++eit)
 			(*eit)->print();
-		}
 		log() << endl;
 	}
 
-    log() << "Total number of m_edges = " << Edges.size()/2 << endl;
+    log() << "Total number of edges = " << Edges.size()/2 << endl;
     log() << "Total number of rigid bodies = " << Vertex_map.size() << endl;
 }
 
