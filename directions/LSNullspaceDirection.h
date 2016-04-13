@@ -26,8 +26,8 @@
 
 */
 
-#ifndef KGS_LSNULLSPACEDIRECTION_H
-#define KGS_LSNULLSPACEDIRECTION_H
+#ifndef KGS_LSnullptrSPACEDIRECTION_H
+#define KGS_LSnullptrSPACEDIRECTION_H
 
 #include <gsl/gsl_vector.h>
 
@@ -46,4 +46,4 @@ class LSNullspaceDirection: public Direction {
 };
 
 
-#endif //KGS_LSNULLSPACEDIRECTION_H
+#endif //KGS_LSnullptrSPACEDIRECTION_H

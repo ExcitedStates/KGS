@@ -94,7 +94,7 @@ void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
   Molecule * protein = atom->getResidue()->getChain()->getProtein();
   //KinVertex *vertex = protein->getRigidbodyGraphVertex(atom);
   KinVertex *vertex = atom->getRigidbody()->getVertex();
-  while (vertex->m_parent!=NULL) {
+  while (vertex->m_parent!=nullptr) {
     KinEdge* edge = vertex->m_parent->findEdge(vertex);
     int dof_id = edge->getDOF()->getIndex();
     Bond * bond_ptr = edge->getBond();

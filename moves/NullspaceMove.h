@@ -1,5 +1,5 @@
-#ifndef NULLSPACEMOVE_H_
-#define NULLSPACEMOVE_H_
+#ifndef nullptrSPACEMOVE_H_
+#define nullptrSPACEMOVE_H_
 
 #include <vector>
 

@@ -98,23 +98,23 @@ double Bond::getTorsion() {
     
 	int atom_id1 = Atom1->getId(); // due to the assertion of Bond, atom_id1 must be smaller than atom_id2
 	int atom_id2 = Atom2->getId();
-	Atom* atom3 = NULL;
+	Atom* atom3 = nullptr;
 	for (vector<Atom*>::iterator aitr=Atom1->Cov_neighbor_list.begin(); aitr!=Atom1->Cov_neighbor_list.end(); ++aitr) {
 		if ( (*aitr)->getId()==atom_id2 ) continue;
-		if ( atom3==NULL || (*aitr)->getId()<atom3->getId() ) {
+		if ( atom3==nullptr || (*aitr)->getId()<atom3->getId() ) {
 			atom3 = *aitr;
 		}
 	}
-	Atom* atom4 = NULL;
+	Atom* atom4 = nullptr;
 	for (vector<Atom*>::iterator aitr=Atom2->Cov_neighbor_list.begin(); aitr!=Atom2->Cov_neighbor_list.end(); ++aitr) {
 		if ( (*aitr)->getId()==atom_id1 ) continue;
-		if ( atom4==NULL || (*aitr)->getId()<atom4->getId() ) {
+		if ( atom4==nullptr || (*aitr)->getId()<atom4->getId() ) {
 			atom4 = *aitr;
 		}
 	}
 
 	double ret = 0.0;
-	if(atom3 != NULL && atom4 != NULL){//only measure it if four covalently bonded atoms exist
+	if(atom3 != nullptr && atom4 != nullptr){//only measure it if four covalently bonded atoms exist
 		ret = TorsionalAngle(atom3->m_Position,Atom1->m_Position,Atom2->m_Position,atom4->m_Position); // in radians
 		ret = formatRangeRadian(ret);
 	}

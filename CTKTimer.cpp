@@ -25,7 +25,7 @@
 // #pragma comment(lib,"")
 #define GETCURRENTTIME(x) x=timeGetTime()
 #else
-#define GETCURRENTTIME(x) gettimeofday(&x,NULL)
+#define GETCURRENTTIME(x) gettimeofday(&x,nullptr)
 #endif //WIN32
 
 // Sadly, timersub isn't defined in Solaris. :(
@@ -88,7 +88,7 @@ double CTKTimer::getTimeNow()
 {
   timeval tod;
 
-  gettimeofday(&tod, NULL);
+  gettimeofday(&tod, nullptr);
   double time_seconds = (double) tod.tv_sec + ((double) tod.tv_usec / 1000000.0);
   return time_seconds;
 }

@@ -41,7 +41,7 @@ string RunFirst::FirstPath(){
 	char buffer[128]; 
 	string result = "";
 	while(!feof(pipe)) { 
-		if(fgets(buffer, 128, pipe) != NULL) result += buffer; 
+		if(fgets(buffer, 128, pipe) != nullptr) result += buffer; 
 	} 
 	pclose(pipe); 
 

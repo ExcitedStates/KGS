@@ -40,7 +40,7 @@
 class IO {
   public:
 	static ResidueProfile readResidueProfile ();
-	static void readPdb (Molecule * protein, std::string pdb_file, std::vector<std::string> &hbondsAsCov, Molecule * reference = NULL);
+	static void readPdb (Molecule * protein, std::string pdb_file, std::vector<std::string> &hbondsAsCov, Molecule * reference = nullptr);
 	static void readDssp (Molecule * protein, std::string dssp_file);
 	static void readRigidbody (Molecule * protein);
 	static void writePdb (Molecule * protein, std::string output_file_name);
@@ -57,7 +57,7 @@ class IO {
 	static void writeRBs(Molecule * protein, std::string output_file_name);
 	static void writeStats(Molecule * protein, std::string output_file_name);
 	static void writeQ (Molecule *protein, Configuration* referenceConf, std::string output_file_name);
-  static void writeTrajectory (Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = NULL);
+  static void writeTrajectory (Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
   private:
 	static void makeCovBond (Residue* res1, Residue* res2, std::string atom_name1, std::string atom_name2);
 };

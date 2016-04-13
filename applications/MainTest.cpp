@@ -51,7 +51,7 @@ int main( int argc, char* argv[] ) {
   Move* move = new RawMove();
   for(int i=0;i<10;i++){
     Configuration* cNew = move->move(conf, gradient);
-    if(cNew==NULL){
+    if(cNew==nullptr){
       cerr<<"ERROR .. new conf is null"<<endl;
       continue;
     }

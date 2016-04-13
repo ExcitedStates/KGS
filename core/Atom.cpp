@@ -40,8 +40,8 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
     Id(id),
     m_Position(pos),
     Parent_residue(residue),
-    m_rigidbody(NULL),
-    m_biggerRigidbody(NULL)
+    m_rigidbody(nullptr),
+    m_biggerRigidbody(nullptr)
 {
 	m_referencePosition = pos;
 	On_sidechain = true;
@@ -227,7 +227,7 @@ bool Atom::isSidechainAtom () const {
 }
 
 void Atom::setRigidbody(Rigidbody* rb) {
-  if(m_rigidbody!=NULL)
+  if(m_rigidbody!=nullptr)
     cerr<<"Atom::setRigidbody - OVERRIDING RIGID BODY NOW"<<endl;
 	m_rigidbody = rb;
 }

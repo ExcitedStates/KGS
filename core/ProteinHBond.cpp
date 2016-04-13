@@ -111,7 +111,7 @@ Vector3 Hbond::getIdealAcceptorPoint(){
 void Hbond::coordinateSystem(Atom* a, Vector3& x, Vector3& y, Vector3& z ){
 	Atom* a1 = a;
     Atom* a2 = a->Cov_neighbor_list[0];
-    Atom* a3 = NULL;
+    Atom* a3 = nullptr;
     if( a1->Cov_neighbor_list.size()>1) a3 = a1->Cov_neighbor_list[1];
     else{
         if(a2->Cov_neighbor_list[0]!=a1)

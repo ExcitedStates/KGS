@@ -40,8 +40,8 @@ Residue::Residue(const string& name, const int& id, const Chain* parent_chain, c
     Parent_chain(parent_chain),
     SSE_type(sse_type)
 {
-  Last_residue = NULL;
-  Next_residue = NULL;
+  Last_residue = nullptr;
+  Next_residue = nullptr;
 }
 
 Residue::~Residue() {
@@ -49,14 +49,14 @@ Residue::~Residue() {
 
 void Residue::setLastResidue(Residue* last) {
 	Last_residue = last;
-	if (last!=NULL) {
+	if (last!=nullptr) {
 		last->Next_residue = this;
 	}
 }
 
 void Residue::setNextResidue(Residue* next) {
 	Next_residue = next;
-	if (next!=NULL) {
+	if (next!=nullptr) {
 		next->Last_residue = this;
 	}
 }
@@ -92,11 +92,11 @@ int Residue::getId () const {
 Atom* Residue::getAtom (string atom_name) const{
   //auto it = name_to_atom_map.find(atom_name);
   //if (it == name_to_atom_map.end())
-  //  return NULL;
+  //  return nullptr;
 //  return (*it)->second;
   for(auto const& atom: m_atoms)
     if(atom->getName()==atom_name) return atom;
-  return NULL;
+  return nullptr;
 }
 
 std::list<Atom*>& Residue::getAtoms(){

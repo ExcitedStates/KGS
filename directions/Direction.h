@@ -46,7 +46,7 @@ class Direction {
    * Any values stored in the `ret` vector will be overwritten by this function so there is
    * no need to reset it to zero before use.
    *
-   * \pre  { `conf` and `ret` are both non-NULL }
+   * \pre  { `conf` and `ret` are both non-nullptr }
    * \post { All values in `ret` are guaranteed to be in the the range -π to π. }
    */
   void gradient(Configuration* conf, Configuration* target, gsl_vector* ret);

@@ -99,7 +99,7 @@ void PoissonPlanner::GenerateSamples()
     size_t attempt;
     for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
 
-      direction->gradient(seed, NULL, gradient); // Compute random gradient
+      direction->gradient(seed, nullptr, gradient); // Compute random gradient
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc

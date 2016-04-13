@@ -117,8 +117,8 @@ int main( int argc, char* argv[] ){
 	}
 
 	for(int a=start;a<argc;a++){
-		char* tmp = realpath(argv[a], NULL);
-		if(tmp==NULL){ cerr<<argv[a]<<" is not a valid PDB-file"<<endl; exit(-1); }
+		char* tmp = realpath(argv[a], nullptr);
+		if(tmp==nullptr){ cerr<<argv[a]<<" is not a valid PDB-file"<<endl; exit(-1); }
 		string pdb_file(tmp);
 		int nameSplit = pdb_file.find_last_of("/\\");
 		string path = pdb_file.substr(0,nameSplit+1);
@@ -145,8 +145,8 @@ int main( int argc, char* argv[] ){
 				Vector3 C5 = v->m_rigidbody->getAtom("C5'")->m_Position;
 				Vector3 O3 = v->m_rigidbody->getAtom("O3'")->m_Position;
 				Atom* scNAtom = v->m_rigidbody->getAtom("N9");
-				Atom* scCAtom = NULL;
-				if(scNAtom!=NULL){//purine
+				Atom* scCAtom = nullptr;
+				if(scNAtom!=nullptr){//purine
 					for(int i=1;i<scNAtom->Cov_neighbor_list.size();i++) 
 						if(scNAtom->Cov_neighbor_list[i]->getName()=="C4"){
 							scCAtom = scNAtom->Cov_neighbor_list[i];

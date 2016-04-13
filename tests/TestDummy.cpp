@@ -109,7 +109,7 @@ void TestDummy::torsionAccumTest(){
 	Configuration *pSmp = new Configuration(protein);
 	protein->m_conf = pSmp;
 	protein->m_conf_backup = pSmp;
-	pSmp->m_parent = NULL;
+	pSmp->m_parent = nullptr;
 
 	string out_path = "./";
 	string name = "init";
@@ -181,7 +181,7 @@ void TestDummy::derivativeTest(){
 			Atom* atom = *ait;
 
 			//Locate the RBVertex containing to atom
-			RigidbodyGraphVertex* vertex = NULL;
+			RigidbodyGraphVertex* vertex = nullptr;
 			map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
 			for(vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); ++vit){
 				RigidbodyGraphVertex* v = vit->second;
@@ -438,7 +438,7 @@ void TestDummy::sampleAndDisplay(){
         cout<<"Generating sample "<<i<<endl;
         prevSmp = smp;
 		//smp = planner.Extend(smp, options);
-		smp = move.performMove(smp, NULL);
+		smp = move.performMove(smp, nullptr);
 		if (smp) {
 			string out_file = "test_run/output/smp_" +
 			        Util::to_string(i) 
@@ -606,7 +606,7 @@ void TestDummy::sampleHIV1TAR(){
 		cout<<"Generating sample "<<i<<endl;
 		prevSmp = smp;
 		//smp = planner.Extend(smp, options);
-		smp = move.performMove(smp, NULL);
+		smp = move.performMove(smp, nullptr);
 		if (smp) {
 
 			//planner.m_protein->SetConfiguration(prevSmp);

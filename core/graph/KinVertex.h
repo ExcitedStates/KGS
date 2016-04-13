@@ -15,7 +15,7 @@ public:
   bool Visited;   ///< When finding common ancestor, vertices are marked as visited up to the root
   Math3D::RigidTransform m_transformation;   ///< The transformation to apply to atoms in the rigid body
 
-  KinVertex(Rigidbody* rb=NULL);
+  KinVertex(Rigidbody* rb=nullptr);
   virtual ~KinVertex();
 
   void addEdge(KinEdge *edge);

@@ -33,8 +33,8 @@ using namespace std;
 
 //---------------------------------------------------------
 // Constructors and Destructors
-Rigidbody::Rigidbody () {m_rbVertex = NULL;}
-Rigidbody::Rigidbody (unsigned int id) : rbId_(id) {m_rbVertex = NULL;}
+Rigidbody::Rigidbody () {m_rbVertex = nullptr;}
+Rigidbody::Rigidbody (unsigned int id) : rbId_(id) {m_rbVertex = nullptr;}
 Rigidbody::~Rigidbody () {}
 //---------------------------------------------------------
 // Accessor id
@@ -232,7 +232,7 @@ Atom* Rigidbody::getAtom(string name){
 		if(Atoms[i]->getName()==name)
 			return Atoms[i];
 	}
-	return NULL;
+	return nullptr;
 }
 
 

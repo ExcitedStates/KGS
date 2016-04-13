@@ -1,6 +1,6 @@
 
-#ifndef KGS_NULLSPACE_H
-#define KGS_NULLSPACE_H
+#ifndef KGS_nullptrSPACE_H
+#define KGS_nullptrSPACE_H
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
@@ -91,4 +91,4 @@ class Nullspace {
 };
 
 
-#endif //KGS_NULLSPACE_H
+#endif //KGS_nullptrSPACE_H

@@ -62,7 +62,7 @@ Atom* Chain::addAtom (const std::string& resName,
                      const Coordinate& position )
 {
 	Residue* res = getResidue(resId);
-	if (res == NULL) { // this is a new residue
+	if (res == nullptr) { // this is a new residue
 		res = addResidue(resName,resId);
 	}
 	return res->addAtom(atomName, atomId, position);
@@ -79,7 +79,7 @@ Residue* Chain::getResidue (int res_id){
 			return (*it);
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 Residue* Chain::addResidue (const string& resName, const int& resId) {

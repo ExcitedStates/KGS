@@ -10,7 +10,7 @@ KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond) :
     StartVertex(startv),
     EndVertex(endv),
     m_bond(bond),
-    m_dof(NULL)
+    m_dof(nullptr)
 //    DOF_id(dof_id)
 {
 //  Cycle_DOF_id = -1;

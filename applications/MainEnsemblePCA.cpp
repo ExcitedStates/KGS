@@ -14,8 +14,8 @@
 using namespace std;
 
 Molecule * readProtein(char* path){
-	char* tmp = realpath(path, NULL);
-	if(tmp==NULL){ cerr<<path<<" is not a valid PDB-file"<<endl; exit(-1); }
+	char* tmp = realpath(path, nullptr);
+	if(tmp==nullptr){ cerr<<path<<" is not a valid PDB-file"<<endl; exit(-1); }
 
 	vector<string> extraCovBonds;
 	Molecule * protein = new Molecule();
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]){
 
 //    for(int i=0;i<configurations.size(); i++){
 //        Molecule* prot = proteins[i];
-//        RRTPlanner::align(prot, native, NULL);
+//        RRTPlanner::align(prot, native, nullptr);
 //        for (int a=0;a<native->atoms.size();a++){
 //            Atom* natom = native->atoms[a];
 //            Atom* atom = prot->atoms[a];
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]){
 				conf->m_dofs[i] = avg[i] + gsl_vector_get(&(evec_i.vector), i) * a;
 			}
 			aligned->SetConfiguration(conf);
-			//RRTPlanner::align(aligned, native, NULL);
+			//RRTPlanner::align(aligned, native, nullptr);
 			metrics::RMSD::align(aligned, native);
 			stringstream ss;ss<<"comp_"<<component<<"_"<<a<<".pdb";
 			IO::writePdb(aligned, ss.str());

@@ -18,7 +18,7 @@ namespace metrics{
 			cerr<<"Configurations to compare do not have the same number of m_dofs!"<<endl;
 			exit(-1);
 		}
-		if(c1->getGlobalTorsions()== NULL || c2->getGlobalTorsions()== NULL){
+		if(c1->getGlobalTorsions()== nullptr || c2->getGlobalTorsions()== nullptr){
 			cerr<<"Need to set configuration and determine global torsions first!"<<endl;
 			exit(-1);
 		}

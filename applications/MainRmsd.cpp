@@ -14,8 +14,8 @@
 using namespace std;
 
 Molecule * myReadFile(string pdbFile){
-    char* tmp = realpath(pdbFile.c_str(), NULL);
-    if(tmp==NULL){ cerr<<pdbFile<<" is not a valid PDB-file"<<endl; exit(-1); }
+    char* tmp = realpath(pdbFile.c_str(), nullptr);
+    if(tmp==nullptr){ cerr<<pdbFile<<" is not a valid PDB-file"<<endl; exit(-1); }
     Molecule * protein = new Molecule();
     vector<string> extraCovBonds;
     IO::readPdb( protein, pdbFile, extraCovBonds );

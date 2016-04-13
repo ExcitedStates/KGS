@@ -89,7 +89,7 @@ class Molecule {
 	void addHbond (Hbond * hb);
 	void setToHbondIntersection (Molecule * p2);
 	void buildSpanningTree();
-  unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = NULL);
+  unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
 	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
   gsl_vector* getEndEffectors();
 	void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);

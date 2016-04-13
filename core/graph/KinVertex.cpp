@@ -7,10 +7,10 @@ using namespace std;
 KinVertex::KinVertex (Rigidbody* rb_ptr):
     m_rigidbody(rb_ptr)
 {
-  m_parent = NULL;
+  m_parent = nullptr;
   Visited = false;
 
-  if(rb_ptr!=NULL)
+  if(rb_ptr!=nullptr)
     rb_ptr->setVertex(this);
 
   m_transformation.setIdentity();
@@ -21,7 +21,7 @@ KinVertex::~KinVertex () {
     delete *eit;
   }
   if(m_rigidbody)
-    m_rigidbody->setVertex(NULL);
+    m_rigidbody->setVertex(nullptr);
 }
 
 void KinVertex::setParent(KinVertex* v) {

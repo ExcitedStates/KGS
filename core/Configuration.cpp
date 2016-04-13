@@ -50,17 +50,17 @@ using namespace std;
 double jacobianTime = 0;
 double rigidityTime = 0;
 
-gsl_matrix* Configuration::CycleJacobian = NULL;
-gsl_matrix* Configuration::HBondJacobian = NULL;
-SVD* Configuration::JacobianSVD = NULL;
+gsl_matrix* Configuration::CycleJacobian = nullptr;
+gsl_matrix* Configuration::HBondJacobian = nullptr;
+SVD* Configuration::JacobianSVD = nullptr;
 
-gsl_matrix* Configuration::ClashAvoidingJacobian = NULL;
-Nullspace* Configuration::ClashAvoidingNullSpace = NULL;
+gsl_matrix* Configuration::ClashAvoidingJacobian = nullptr;
+Nullspace* Configuration::ClashAvoidingNullSpace = nullptr;
 
 Configuration::Configuration(Molecule * protein_):
 	m_protein(protein_),
-  nullspace(NULL),
-  m_parent(NULL),
+  nullspace(nullptr),
+  m_parent(nullptr),
   m_treeDepth(0)
 {
 	m_id 										 = 0;
@@ -80,7 +80,7 @@ Configuration::Configuration(Molecule * protein_):
 	// Set up DOF-values and set them to 0
 	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
 	m_dofs = new double[m_numDOFs];
-	m_dofs_global = NULL;
+	m_dofs_global = nullptr;
 	m_sumProjSteps = new double[m_numDOFs];
 	for(int i=0; i<m_numDOFs; ++i){
 		m_dofs[i] = 0;
@@ -91,7 +91,7 @@ Configuration::Configuration(Molecule * protein_):
 Configuration::Configuration(Configuration* parent_):
     m_protein(parent_->m_protein),
     m_parent(parent_),
-    nullspace(NULL),
+    nullspace(nullptr),
     m_treeDepth(parent_->m_treeDepth +1)
 {
   m_id 										 = 0;
@@ -113,7 +113,7 @@ Configuration::Configuration(Configuration* parent_):
   // Set up DOF-values and set them to 0
   m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
   m_dofs = new double[m_numDOFs];
-  m_dofs_global = NULL;
+  m_dofs_global = nullptr;
   m_sumProjSteps = new double[m_numDOFs];
   for(int i=0; i<m_numDOFs; ++i){
     m_dofs[i] = 0;
@@ -123,11 +123,11 @@ Configuration::Configuration(Configuration* parent_):
 
 Configuration::~Configuration(){
   // Remove DOF-value arrays
-	if (m_dofs != NULL)
+	if (m_dofs != nullptr)
 		delete[] m_dofs;
-	if(m_dofs_global != NULL)
+	if(m_dofs_global != nullptr)
 		delete[] m_dofs_global;
-	if( m_sumProjSteps != NULL)
+	if( m_sumProjSteps != nullptr)
 		delete[] m_sumProjSteps;
 
 	//m_biggerRBMap.clear();
@@ -138,7 +138,7 @@ Configuration::~Configuration(){
   if(nullspace)
     delete nullspace;
 
-  if( m_parent !=NULL )
+  if( m_parent !=nullptr )
     m_parent->m_children.remove(this);
 }
 
@@ -150,7 +150,7 @@ void Configuration::computeCycleJacobianAndNullSpace() {
 	//Compute the Jacobian matrix
   computeJacobians();
 
-	if (JacobianSVD!=NULL) {
+	if (JacobianSVD!=nullptr) {
     nullspace = new Nullspace(JacobianSVD);
     nullspace->UpdateFromMatrix();
 	}
@@ -158,7 +158,7 @@ void Configuration::computeCycleJacobianAndNullSpace() {
 	double new_time = timer.ElapsedTime();
 	jacobianTime += new_time - old_time;
 
-  if(CycleJacobian!=NULL) {
+  if(CycleJacobian!=nullptr) {
     nullspace->RigidityAnalysis(HBondJacobian);
     identifyBiggerRigidBodies();
   }
@@ -400,7 +400,7 @@ void Configuration::readBiggerSet(){
 
 //------------------------------------------------------
 void Configuration::updateGlobalTorsions(){
-  if(m_dofs_global == NULL){
+  if(m_dofs_global == nullptr){
     m_dofs_global = new double[m_numDOFs];
   }
   for(int i=0; i<m_numDOFs; ++i){
@@ -442,14 +442,14 @@ Configuration* Configuration::clone() const {
 	for(int i=0; i <m_numDOFs; ++i){
 		ret->m_dofs[i]        = m_dofs[i];
 	}
-	if(getGlobalTorsions()!=NULL){
+	if(getGlobalTorsions()!=nullptr){
     ret->m_dofs_global = new double[m_numDOFs];
     for(int i=0; i<m_numDOFs; ++i) {
       ret->m_dofs_global[i]  = m_dofs_global[i];
       ret->m_sumProjSteps[i] = m_sumProjSteps[i];
     }
 	}else{
-		ret->m_dofs_global = NULL;
+		ret->m_dofs_global = nullptr;
 	}
   return ret;
 }
@@ -495,7 +495,7 @@ void Configuration::computeJacobians() {
 
 	// No cycles
 	if(m_protein->m_spanning_tree->CycleAnchorEdges.size() == 0) {
-		CycleJacobian = NULL; //TODO: Memory leak
+		CycleJacobian = nullptr; //TODO: Memory leak
 		return;
 	}
 
@@ -503,7 +503,7 @@ void Configuration::computeJacobians() {
 	int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
 	int col_num = m_protein->m_spanning_tree->getNumCycleDOFs(); // number of DOFs in cycles
 
-	if(CycleJacobian==NULL){
+	if(CycleJacobian==nullptr){
 		CycleJacobian = gsl_matrix_calloc(row_num,col_num);
     JacobianSVD = new MKLSVD(CycleJacobian);
 	}else if(CycleJacobian->size1==row_num && CycleJacobian->size2==col_num){
@@ -515,7 +515,7 @@ void Configuration::computeJacobians() {
 	}
 
 	///HBond Jacobian
-	if(HBondJacobian==NULL){
+	if(HBondJacobian==nullptr){
 			HBondJacobian = gsl_matrix_calloc(hBond_row_num,col_num);
 
 	}else if(HBondJacobian->size1==hBond_row_num && HBondJacobian->size2==col_num){
@@ -676,9 +676,9 @@ void Configuration::ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pai
 	//Add the clash constraints
 	computeClashAvoidingJacobian(allCollisions,projectConstraints);
 
-	if (JacobianSVD != NULL) {
+	if (JacobianSVD != nullptr) {
 		// CycleNullSpace needs to be deleted to free memory.
-		if( ClashAvoidingNullSpace!=NULL ) {
+		if( ClashAvoidingNullSpace!=nullptr ) {
 			delete ClashAvoidingNullSpace;
 		}
 		ClashAvoidingNullSpace = new Nullspace(JacobianSVD);
@@ -699,7 +699,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 	//Clashes can occur also for previously free dihedrals!
 	//Therefore, we use the full set of dihedrals to determine this matrix!
 
-	if( CycleJacobian != NULL){
+	if( CycleJacobian != nullptr){
 		rowNum = CycleJacobian->size1 + numCollisions;
 		colNum = m_protein->m_spanning_tree->getNumDOFs();
 	}
@@ -708,7 +708,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 		colNum = m_protein->m_spanning_tree->getNumDOFs();
 	}
 
-	if(ClashAvoidingJacobian==NULL){
+	if(ClashAvoidingJacobian==nullptr){
     ClashAvoidingJacobian = gsl_matrix_calloc(rowNum,colNum);
     JacobianSVD = new MKLSVD(ClashAvoidingJacobian);
 	}else if(ClashAvoidingJacobian->size1==rowNum && ClashAvoidingJacobian->size2==colNum){
@@ -839,7 +839,7 @@ gsl_matrix* Configuration::getCycleJacobian() const
 
 Nullspace* Configuration::getNullspace()
 {
-  if(nullspace==NULL){
+  if(nullspace==nullptr){
     computeCycleJacobianAndNullSpace();
   }
 

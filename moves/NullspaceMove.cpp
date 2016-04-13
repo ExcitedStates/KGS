@@ -69,5 +69,5 @@ Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gr
 
   gsl_vector_free(projected_gradient);
 
-  return NULL;
+  return nullptr;
 }

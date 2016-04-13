@@ -47,7 +47,7 @@ KinGraph::~KinGraph () {
 
 KinVertex* KinGraph::addVertex(Rigidbody* rb){
 	KinVertex* new_vertex = new KinVertex(rb);
-  if(rb!=NULL)
+  if(rb!=nullptr)
     Vertex_map[rb->id()] = new_vertex;
 
 	return new_vertex;
@@ -59,32 +59,32 @@ KinEdge* KinVertex::findEdge(KinVertex* v) const
     if( edge->EndVertex==v )
       return edge;
   }
-  return NULL;
+  return nullptr;
 }
 
 // Add a directed edge from rb_id1 to rb_id2
 KinEdge* KinGraph::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond * bond)
 {
-  if(bond!=NULL) {
+  if(bond!=nullptr) {
     //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
     Atom *atom2, *atom3, *atom4;
     Bond *bond_copy = new Bond(*bond);
     atom2 = bond_copy->Atom1;
     atom3 = bond_copy->Atom2;
-    atom4 = NULL;
+    atom4 = nullptr;
 
     // Find out the atom that covalently bonded to atom3 with smallest Id. It participates in the definition of the torsional angle.
     for (vector<Atom *>::iterator aitr = atom3->Cov_neighbor_list.begin();
          aitr != atom3->Cov_neighbor_list.end(); ++aitr) {
       if ((*aitr) == atom2) continue;
-      if (atom4 == NULL || (*aitr)->getId() < atom4->getId()) {
+      if (atom4 == nullptr || (*aitr)->getId() < atom4->getId()) {
         atom4 = *aitr;
       }
     }
     for (vector<Atom *>::iterator aitr = atom3->Hbond_neighbor_list.begin();
          aitr != atom3->Hbond_neighbor_list.end(); ++aitr) {
       if ((*aitr) == atom2) continue;
-      if (atom4 == NULL || (*aitr)->getId() < atom4->getId()) {
+      if (atom4 == nullptr || (*aitr)->getId() < atom4->getId()) {
         atom4 = *aitr;
       }
     }

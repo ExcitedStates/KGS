@@ -200,30 +200,30 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
     Atom* atom2 = pEdge->getBond()->Atom2;
     int atom_id1 = atom1->getId(); // due to the assertion of Bond, atom_id1 must be smaller than atom_id2
     int atom_id2 = atom2->getId();
-    Atom* atom3 = NULL;
+    Atom* atom3 = nullptr;
     for (vector<Atom*>::iterator aitr=atom1->Cov_neighbor_list.begin(); aitr!=atom1->Cov_neighbor_list.end(); ++aitr) {
       if ( (*aitr)->getId()==atom_id2 ) continue;
-      if ( atom3==NULL || (*aitr)->getId()<atom3->getId() ) {
+      if ( atom3==nullptr || (*aitr)->getId()<atom3->getId() ) {
         atom3 = *aitr;
       }
     }
     for (vector<Atom*>::iterator aitr=atom1->Hbond_neighbor_list.begin(); aitr!=atom1->Hbond_neighbor_list.end(); ++aitr) {
       if ( (*aitr)->getId()==atom_id2 ) continue;
-      if ( atom3==NULL ) { // || (*aitr)->getId()<atom3->getId()
+      if ( atom3==nullptr ) { // || (*aitr)->getId()<atom3->getId()
         //			log("dominik")<<"Using hbond neighbor for bond between "<<this->Atom1<<" and "<<this->Atom2<<endl;
         atom3 = *aitr;
       }
     }
-    Atom* atom4 = NULL;
+    Atom* atom4 = nullptr;
     for (vector<Atom*>::iterator aitr=atom2->Cov_neighbor_list.begin(); aitr!=atom2->Cov_neighbor_list.end(); ++aitr) {
       if ( (*aitr)->getId()==atom_id1 ) continue;
-      if ( atom4==NULL || (*aitr)->getId()<atom4->getId() ) {
+      if ( atom4==nullptr || (*aitr)->getId()<atom4->getId() ) {
         atom4 = *aitr;
       }
     }
     for (vector<Atom*>::iterator aitr=atom2->Hbond_neighbor_list.begin(); aitr!=atom2->Hbond_neighbor_list.end(); ++aitr) {
       if ( (*aitr)->getId()==atom_id1 ) continue;
-      if ( atom4==NULL ) { // || (*aitr)->getId()<atom4->getId()
+      if ( atom4==nullptr ) { // || (*aitr)->getId()<atom4->getId()
         atom4 = *aitr;
       }
     }

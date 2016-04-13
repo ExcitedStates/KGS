@@ -71,7 +71,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
     if (cur_node == root)
       break;
     else{
-      if(cur_node->m_parent==NULL){
+      if(cur_node->m_parent==nullptr){
         cerr<<"KinTree::findCommonAncestor("<<v1->m_rigidbody<<","<<v2->m_rigidbody<<") node has no m_parent: "<<cur_node->m_rigidbody<<endl;
         cerr<<"You might see this error because of multiple occupancy atoms in the structure"<<endl;
         exit(-1);
@@ -84,7 +84,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   //log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
   while ( !cur_node->Visited ) {
     //log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
-    if(cur_node->m_parent==NULL){
+    if(cur_node->m_parent==nullptr){
       cerr<<"KinTree::findCommonAncestor("<<v1->m_rigidbody<<","<<v2->m_rigidbody<<") node has no m_parent: "<<cur_node->m_rigidbody<<endl;
       cerr<<"You might see this error because of multiple occupancy atoms in the structure"<<endl;
       exit(-1);

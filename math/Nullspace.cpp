@@ -15,7 +15,7 @@ Nullspace::Nullspace(SVD * svd) :
     numCoordinatedDihedrals( 0 ),
     numRigidDihedrals( 0 ),
     numRigidHBonds( 0 ),
-    nullspaceBasis(NULL),
+    nullspaceBasis(nullptr),
     rigidAngles(gsl_vector_alloc(n)),
     rigidHBonds(gsl_vector_alloc(n))
 {
