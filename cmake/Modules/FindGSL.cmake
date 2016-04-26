@@ -151,7 +151,7 @@ ELSE(WIN32)
         GSL_LINK_DIRECTORIES
         GSL_DEFINITIONS
         )
-      MESSAGE(STATUS "Using GSL from ${GSL_PREFIX}")
+MESSAGE(STATUS "Found GSL: ${GSL_PREFIX}")
       
     ELSE(GSL_CONFIG)
       MESSAGE("FindGSL.cmake: gsl-config not found. Please set it manually. GSL_CONFIG=${GSL_CONFIG}")
