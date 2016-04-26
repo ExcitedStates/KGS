@@ -25,15 +25,16 @@
 */
 
 
-#ifndef KGS_MIXEDGRADIENT_H
-#define KGS_MIXEDGRADIENT_H
+#ifndef KGS_BLENDENDDIRECTION_H
+#define KGS_BLENDENDDIRECTION_H
 
 #include "directions/Direction.h"
 
-class MixedDirection: public Direction {
+class BlendedDirection: public Direction {
  public:
-  MixedDirection();
+  BlendedDirection();
   void addDirection(Direction* dir, double weight);
+  void changeWeight(int changeDir, double weight);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
@@ -45,4 +46,4 @@ class MixedDirection: public Direction {
 };
 
 
-#endif //KGS_MIXEDGRADIENT_H
+#endif //KGS_BLENDENDDIRECTION_H

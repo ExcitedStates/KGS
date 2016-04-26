@@ -84,7 +84,7 @@ double sugar_amplitude(Vector3& p0, Vector3& p1, Vector3& p2, Vector3& p3, Vecto
 int main( int argc, char* argv[] ){
     enableLogger("sugar");
 
-    log("sugar")<<"#    m_protein\t";
+    log("sugar")<<"#    m_molecule\t";
     log("sugar")<<"     residue\t";
     log("sugar")<<"       delta\t";
     log("sugar")<<"        tau0\t";

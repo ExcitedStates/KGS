@@ -174,3 +174,9 @@ void Nullspace::WriteMatricesToFiles(
   gsl_matrix_outtofile(svd->V, null_file);
   gsl_vector_outtofile(svd->S, sval_file);
 }
+
+gsl_matrix *Nullspace::getBasis() const {
+  return nullspaceBasis;
+}
+
+

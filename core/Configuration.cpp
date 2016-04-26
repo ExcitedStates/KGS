@@ -58,7 +58,7 @@ gsl_matrix* Configuration::ClashAvoidingJacobian = nullptr;
 Nullspace* Configuration::ClashAvoidingNullSpace = nullptr;
 
 Configuration::Configuration(Molecule * protein_):
-	m_protein(protein_),
+	m_molecule(protein_),
   nullspace(nullptr),
   m_parent(nullptr),
   m_treeDepth(0)
@@ -74,11 +74,11 @@ Configuration::Configuration(Molecule * protein_):
 	m_maxConstraintViolation = 99999;
 	m_numClusters            = 0;
 	m_minCollisionFactor     = 0;
-	m_usedClashPrevention		 = false;
-	m_clashFreeDofs					 = 0;
+	m_usedClashPrevention    = false;
+	m_clashFreeDofs          = m_molecule->m_spanning_tree->numDOFs;
 
 	// Set up DOF-values and set them to 0
-	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
+	m_numDOFs = m_molecule->m_spanning_tree->getNumDOFs();
 	m_dofs = new double[m_numDOFs];
 	m_dofs_global = nullptr;
 	m_sumProjSteps = new double[m_numDOFs];
@@ -89,7 +89,7 @@ Configuration::Configuration(Molecule * protein_):
 }
 
 Configuration::Configuration(Configuration* parent_):
-    m_protein(parent_->m_protein),
+    m_molecule(parent_->m_protein),
     m_parent(parent_),
     nullspace(nullptr),
     m_treeDepth(parent_->m_treeDepth +1)
@@ -106,12 +106,12 @@ Configuration::Configuration(Configuration* parent_):
   m_numClusters            = 0;
 	m_minCollisionFactor     = 0;
 	m_usedClashPrevention		 = false;
-	m_clashFreeDofs					 = 0;
+	m_clashFreeDofs					 = m_molecule->m_spanning_tree->num_DOFs;
 
   parent_->m_children.push_back(this);
 
   // Set up DOF-values and set them to 0
-  m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
+  m_numDOFs = m_molecule->m_spanning_tree->getNumDOFs();
   m_dofs = new double[m_numDOFs];
   m_dofs_global = nullptr;
   m_sumProjSteps = new double[m_numDOFs];
@@ -181,14 +181,14 @@ void Configuration::identifyBiggerRigidBodies(){
 	int j=0; //numbering for fixed dihedrals
 
 	//First, we set the constrained flag for the corresponding bonds
-	for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_protein->m_spanning_tree->CycleAnchorEdges.begin(); it!=
-																																																											 m_protein->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
+	for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanning_tree->CycleAnchorEdges.begin(); it!=
+																																																											 m_molecule->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
 
 		KinEdge* edge_ptr = it->first;
 		KinVertex* common_ancestor = it->second;
 
 		//Get corresponding rigidity information
-		//The m_protein hBonds are ordered in the same way as the rigid HBonds
+		//The m_molecule hBonds are ordered in the same way as the rigid HBonds
 		double val=gsl_vector_get(rigidHBonds,i);
 
 		if( val == 1 ){
@@ -300,7 +300,7 @@ void Configuration::identifyBiggerRigidBodies(){
 	//For graphical display, it might be helpful to assign a single bigger rb to each atom
 
 	//vector<Atom*>::iterator atomIt;
-	//for( auto const& atom: m_protein->atoms){
+	//for( auto const& atom: m_molecule->atoms){
   //  atom->m_assignedBiggerRB_id = atom->getBiggerRigidbody()->id();
 	//}
 
@@ -319,11 +319,11 @@ bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, un
 void Configuration::readBiggerSet(){
 
 	//Create disjoint set
-	DisjointSets ds(m_protein->atoms[m_protein->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+	DisjointSets ds(m_molecule->atoms[m_protein->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
 	//For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
-	for (int i=0;i< m_protein->size();i++){
-		Atom* atom = m_protein->atoms[i];
+	for (int i=0;i< m_molecule->size();i++){
+		Atom* atom = m_molecule->atoms[i];
 		if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
 			ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
 		}
@@ -331,7 +331,7 @@ void Configuration::readBiggerSet(){
 
 
 	//For each fixed or constrained bond (a1,a2) call Union(a1,a2)
-	for (list<Bond *>::iterator it= m_protein->Cov_bonds.begin(); it != m_protein->Cov_bonds.end(); ++it){
+	for (list<Bond *>::iterator it= m_molecule->Cov_bonds.begin(); it != m_protein->Cov_bonds.end(); ++it){
 		Bond * bond = *it;
 
 		///First, simply check if bond is constrained
@@ -342,7 +342,7 @@ void Configuration::readBiggerSet(){
 
 	///Also, do the same thing for the hydrogen bonds
 	///insert the h-bonds at the correct place
-	for (list<Hbond *>::iterator bit= m_protein->H_bonds.begin(); bit != m_protein->H_bonds.end(); ++bit){
+	for (list<Hbond *>::iterator bit= m_molecule->H_bonds.begin(); bit != m_protein->H_bonds.end(); ++bit){
 		Hbond * bond = *bit;
 		if( bond->constrained ){
 			ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
@@ -356,8 +356,8 @@ void Configuration::readBiggerSet(){
 	map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
 
 	//Map the set-ID's (first map entry) to RB-ID's (second map entry) and add bonded atoms to RBs.
-	for (int i=0;i< m_protein->size();i++){
-		Atom* atom = m_protein->atoms[i];
+	for (int i=0;i< m_molecule->size();i++){
+		Atom* atom = m_molecule->atoms[i];
 
 		//Map the set-id to the RB-id
 		int set_id = ds.FindSet(atom->getId());
@@ -405,9 +405,9 @@ void Configuration::updateGlobalTorsions(){
   }
   for(int i=0; i<m_numDOFs; ++i){
 //    m_dofs_global[i] = 0;
-    m_dofs_global[i] = m_protein->m_spanning_tree->getDOF(i)->getGlobalValue();
+    m_dofs_global[i] = m_molecule->m_spanning_tree->getDOF(i)->getGlobalValue();
   }
-  //for (vector<KinEdge*>::iterator itr= m_protein->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
+  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanning_tree->Edges.begin(); itr!= m_protein->m_spanning_tree->Edges.end(); ++itr) {
   //  KinEdge* pEdge = (*itr);
   //  int dof_id = pEdge->DOF_id;
   //  if (dof_id==-1)
@@ -432,7 +432,7 @@ Configuration* Configuration::clone() const {
 	if (m_parent) {
 		ret = new Configuration(m_parent);
 	}else{
-		ret = new Configuration(m_protein);
+		ret = new Configuration(m_molecule);
 	}
 
 	ret->m_id = m_id;
@@ -494,14 +494,14 @@ void Configuration::computeJacobians() {
   updateProtein();
 
 	// No cycles
-	if(m_protein->m_spanning_tree->CycleAnchorEdges.size() == 0) {
+	if(m_molecule->m_spanning_tree->CycleAnchorEdges.size() == 0) {
 		CycleJacobian = nullptr; //TODO: Memory leak
 		return;
 	}
 
-	int hBond_row_num = (m_protein->m_spanning_tree->CycleAnchorEdges).size();
+	int hBond_row_num = (m_molecule->m_spanning_tree->CycleAnchorEdges).size();
 	int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
-	int col_num = m_protein->m_spanning_tree->getNumCycleDOFs(); // number of DOFs in cycles
+	int col_num = m_molecule->m_spanning_tree->getNumCycleDOFs(); // number of DOFs in cycles
 
 	if(CycleJacobian==nullptr){
 		CycleJacobian = gsl_matrix_calloc(row_num,col_num);
@@ -528,7 +528,7 @@ void Configuration::computeJacobians() {
 
 	// for each cycle, fill in the Jacobian entries
 	int i=0;
-	for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_protein->m_spanning_tree->CycleAnchorEdges)
+	for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanning_tree->CycleAnchorEdges)
   {
 		// get end-effectors
 		KinEdge* edge_ptr = edge_vertex_pair.first;
@@ -579,29 +579,14 @@ void Configuration::computeJacobians() {
 			//int dof_id = p_edge->Cycle_DOF_id;
       int dof_id = p_edge->getDOF()->getCycleIndex();
 			if (dof_id!=-1) { // this edge is a DOF
-				//if(dof_id==20)
-				//	cout<<"KinEdge "<<p_edge<<endl;
 
-        /*
-				Atom* ea1 = p_edge->getBond()->Atom1;
-				Atom* ea2 = p_edge->getBond()->Atom2;
-
-				// Jacobian_entry is the derivative of the vertices of the hydrogen bond
-				// Now, we also have to calculate the derivatives of the other neighboring atoms!
-        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
-				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
-				Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
-				//Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2_prev);
-         */
         Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
         Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
-
 				Math3D::Vector3 jacobianEntryTrans=derivativeP1 + derivativeP2;
 				double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
 				double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
-//				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
 				gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
 				gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
 				gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
@@ -701,11 +686,11 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 	if( CycleJacobian != nullptr){
 		rowNum = CycleJacobian->size1 + numCollisions;
-		colNum = m_protein->m_spanning_tree->getNumDOFs();
+		colNum = m_molecule->m_spanning_tree->getNumDOFs();
 	}
 	else{
 		rowNum = numCollisions;
-		colNum = m_protein->m_spanning_tree->getNumDOFs();
+		colNum = m_molecule->m_spanning_tree->getNumDOFs();
 	}
 
 	if(ClashAvoidingJacobian==nullptr){
@@ -723,8 +708,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 	//Convert the cycle Jacobian to a full Jacobian
 	//Columns correspond to cycle_dof_ids
 	if(projectConstraints){
-//		for (vector<KinEdge*>::iterator eit=m_protein->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
-    for (auto const& edge: m_protein->m_spanning_tree->Edges){
+//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanning_tree->Edges.begin(); eit!=m_protein->m_spanning_tree->Edges.end(); ++eit) {
+    for (auto const& edge: m_molecule->m_spanning_tree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
 			if ( cycle_dof_id!=-1 ) {
@@ -759,7 +744,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 		//Vertices
 		KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
 		KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
-		KinVertex* common_ancestor = m_protein->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+		KinVertex* common_ancestor = m_molecule->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
 
 		// trace back until the common ancestor from vertex1
 		while ( vertex1 != common_ancestor ) {
@@ -818,18 +803,18 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 Molecule * Configuration::getProtein() const
 {
-	return m_protein;
+	return m_molecule;
 }
 
 Molecule * Configuration::updatedProtein()
 {
-	m_protein->SetConfiguration(this);
-	return m_protein;
+	m_molecule->SetConfiguration(this);
+	return m_molecule;
 }
 
 void Configuration::updateProtein()
 {
-	m_protein->SetConfiguration(this);
+	m_molecule->SetConfiguration(this);
 }
 
 gsl_matrix* Configuration::getCycleJacobian() const

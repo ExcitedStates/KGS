@@ -16,10 +16,10 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   // If atomsAlign is nullptr, align the entire m_protein
   if( atomsRMSD->empty() ) {
     //cout<<"Found no atoms to align .. using all."<<endl;
-    atomsRMSD = &(c1->getProtein()->atoms);//choose all atoms
+    atomsRMSD = &(c1->getMolecule()->atoms);//choose all atoms
   }
 
-  Molecule * protein = c1->updatedProtein();
+  Molecule * protein = c1->updatedMolecule();
   int atom_num = atomsRMSD->size();
   assert(atom_num>3);
   float* v1 = new float[atom_num*3];
@@ -39,7 +39,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     i+=3;
   }
 
-  protein=c2->updatedProtein();
+  protein= c2->updatedMolecule();
   i=0;
   for (vector<Atom*>::const_iterator it=atomsRMSD->begin(); it!=atomsRMSD->end(); ++it) {
     name = (*it)->getName();
@@ -71,7 +71,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
   // If atomsAlign is nullptr, align the entire m_protein
   if (atomsRMSD==nullptr) {
     cout<<"Found no atoms to align .. using all"<<endl;
-    atomsRMSD = &(c1->getProtein()->atoms);//choose all atoms
+    atomsRMSD = &(c1->getMolecule()->atoms);//choose all atoms
   }
 
   vector<Coordinate> p1_atoms;
@@ -83,7 +83,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
   std::string name;
   std::string chainName;
 
-  Molecule * p1 = c1->updatedProtein();
+  Molecule * p1 = c1->updatedMolecule();
   for (auto const& aIt : *atomsRMSD ) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
@@ -91,7 +91,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
     p1_atoms.push_back(p1->getAtom(chainName,resId, name)->m_Position);
   }
 
-  Molecule * p2 = c2->updatedProtein();
+  Molecule * p2 = c2->updatedMolecule();
   for (auto const& aIt : *atomsRMSD ) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
@@ -150,7 +150,7 @@ double RMSD::align(Molecule * other, Molecule * base) {
   // Call the rmsd procedure, v1 is base, v2 is mobile
   double diff = rmsd(v1,v2,atom_size,(float *) mtx.m);
 
-  // Transform position in m_protein other
+  // Transform position in m_molecule other
   float* v3 = new float[3];
   for (vector<Atom*>::iterator it=other->atoms.begin(); it != other->atoms.end(); ++it) {
     Coordinate pos = (*it)->m_Position;

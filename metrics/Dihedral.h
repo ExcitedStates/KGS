@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "metrics/Metric.h"
+#include "Metric.h"
 #include "core/Configuration.h"
 
 namespace metrics{

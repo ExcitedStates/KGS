@@ -49,7 +49,8 @@ class IO {
 	static void writeCovBonds (Molecule *protein, std::string output_file_name);
 	static void readCovBonds  (Molecule *protein, std::string input_file_name);
 	static void writeHbonds (Molecule * protein, std::string output_file_name);
-	static void readHbonds (Molecule *protein, std::string hbond_file_name);static void readAnnotations (Molecule *protein, std::string annotation_file_name);
+	static void readHbonds (Molecule *protein, std::string hbond_file_name);
+  static void readAnnotations (Molecule *protein, std::string annotation_file_name);
 	static void readHbonds_dssr(Molecule * protein, std::string dssrFile);
 	static void readHbonds_rnaview(Molecule * protein, std::string file, bool fillAnnotations);
 	static void readHbonds_first(Molecule * protein, std::string file);

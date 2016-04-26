@@ -7,7 +7,7 @@ using namespace std;
 
 NullspaceMove::NullspaceMove():
     m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-    m_decreaseSteps(SamplingOptions::getOptions()->decreaseSteps),
+    m_decreaseSteps(SamplingOptions::getOptions()->trialSteps),
     m_decreaseFactor(SamplingOptions::getOptions()->decreaseFactor),
     m_stepSize(SamplingOptions::getOptions()->stepSize)
 {
@@ -19,7 +19,7 @@ Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gr
   current->computeCycleJacobianAndNullSpace();
 
   // Get atom positions at current
-  Molecule *protein = current->updatedProtein();
+  Molecule *protein = current->updatedMolecule();
 
   double currNorm = gsl_vector_length(gradient);
   log("dominik") << "Norm of gradient: " << currNorm << endl;
@@ -48,7 +48,7 @@ Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gr
           min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
     }
 
-    if (new_q->updatedProtein()->inCollision()) {
+    if (new_q->updatedMolecule()->inCollision()) {
       log("dominik") << "Rejected!" << endl;
       m_movesRejected++;
 

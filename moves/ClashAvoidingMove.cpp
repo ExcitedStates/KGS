@@ -12,7 +12,7 @@ using namespace std;
 
 ClashAvoidingMove::ClashAvoidingMove() :
     m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
+    m_trialSteps(SamplingOptions::getOptions()->trialSteps),
     m_stepSize(SamplingOptions::getOptions()->stepSize),
     m_collisionCheck(SamplingOptions::getOptions()->collisionCheck)
 {
@@ -24,10 +24,11 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 //  current->computeJacobians();
 
   // Get atom positions at current
-  Molecule *protein = current->updatedProtein();
+  Molecule *protein = current->updatedMolecule();
 
   double currNorm = gsl_vector_length(gradient);
   log("dominik") << "Norm of gradient: " << currNorm << endl;
+  cout << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(protein->totalDofNum());
@@ -41,7 +42,13 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
+<<<<<<< .working
   new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
+||||||| .merge-left.r130
+  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->Cycle_DOF_num + new_q->getNullspace()->NullspaceSize();
+=======
+  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getMolecule()->m_spanning_tree->Cycle_DOF_num + new_q->getNullspace()->NullspaceSize();
+>>>>>>> .merge-right.r159
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -56,6 +63,9 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     //Scale max entry
     gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
 
+    currProjNorm = gsl_vector_length(projected_gradient);
+    cout<<"Norm of projected gradient: "<<currProjNorm<<endl;
+
     for (int i = 0; i < new_q->m_numDOFs; ++i) {
       new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i); //added as m_transformation always starts from original coordinates
       new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
@@ -63,7 +73,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     }
 
     // The new configuration is valid only if it is collision-free
-    if (new_q->updatedProtein()->inCollision()) {
+    if (new_q->updatedMolecule()->inCollision()) {
       log("dominik") << "Rejected!" << endl;
       m_movesRejected++;
 
@@ -74,12 +84,12 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
         Atom* atom1=prev_coll.first;
         log("dominik")<<"Prev coll: "<<prev_coll.first->getId()<<" "<<prev_coll.first->getName()<<" "<<prev_coll.second->getId()<<" "<<prev_coll.second->getName()<<endl;
       }
-      for(auto const& coll: allCollisions){
+      for(auto const& coll: allCollisions){//collisions from this trial
         Atom* atom1=coll.first;
         log("dominik")<<"Curr coll: "<<coll.first<<" "<<coll.first->getName()<<" "<<coll.second<<" "<<coll.second->getName()<<endl;
       }
 
-      for(auto const& prev_coll: previousCollisions){
+      for(auto const& prev_coll: previousCollisions){//combine collisions
         auto ait = allCollisions.find(prev_coll);
         if(ait==allCollisions.end()){
           allCollisions.insert(prev_coll);
@@ -87,18 +97,14 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       }
 
       //Now we have the set of collisions we use as additional constraints in the new Jacobian
-      current->updateProtein();
+      current->updateMolecule();
 
-      if(!usedClashJacobian) {
+      if(!usedClashJacobian) {//first clash-avoiding trial, recompute Jacobian matrices
         current->computeJacobians();
         usedClashJacobian = true; //flag to recompute Jacobian
       }
 
-
-//      m_searchDirection->computeClashFree(gradient,projected_gradient,current_q,allCollisions,firstTime);
-//      current->ComputeClashAvoidingJacobianAndNullSpace(allCollisions,firstTime,SamplingOptions::getOptions()->projectConstraints);//clash-free nullspace
-
-      bool projectConstraints = SamplingOptions::getOptions()->projectConstraints;
+      bool projectConstraints = SamplingOptions::getOptions()->projectConstraints;//also use h-bond constraints
       gsl_matrix* clashAvoidingJacobian = computeClashAvoidingJacobian( current, allCollisions,projectConstraints);
       SVD* clashAvoidingSVD  = new MKLSVD(clashAvoidingJacobian);
       Nullspace* clashAvoidingNullSpace = new Nullspace(clashAvoidingSVD);
@@ -121,7 +127,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
       //Enthalpy and entropy computation
       log("dominik")<<"Length of all collisions: "<<allCollisions.size()<<endl;
-      pair<double,double> enthalpyVals=new_q->getProtein()->vdwEnergy(&allCollisions,m_collisionCheck);
+      pair<double,double> enthalpyVals= new_q->getMolecule()->vdwEnergy(&allCollisions,m_collisionCheck);
       new_q->m_vdwEnergy = enthalpyVals.first;
       new_q->m_deltaH = enthalpyVals.second - new_q->m_vdwEnergy;
 
@@ -153,7 +159,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   if(projectConstraints){
     map<unsigned int, KinVertex*>::iterator vit;
 
-    for(auto const& edge: conf->getProtein()->m_spanning_tree->Edges){
+    for(auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -189,7 +195,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
     //Vertices
     KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
     KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
-    KinVertex* common_ancestor = conf->getProtein()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex* common_ancestor = conf->getMolecule()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {
@@ -199,7 +205,8 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+        //Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+        Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
         gsl_matrix_set(ret,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
@@ -222,10 +229,12 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
-            p_edge->getBond()->Atom1->m_Position,
-            p_edge->getBond()->Atom2->m_Position,
-            p2); //b
+//        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
+//            p_edge->getBond()->Atom1->m_Position,
+//            p_edge->getBond()->Atom2->m_Position,
+//            p2); //b
+        Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
+
         double jacobianEntryClash = - dot(clashNormal, derivativeP2);
 
         gsl_matrix_set(ret,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set

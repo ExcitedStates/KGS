@@ -40,11 +40,11 @@ int main( int argc, char* argv[] ){
   SamplingOptions& options = *(SamplingOptions::getOptions());
 
   string out_path = options.workingDirectory;
-  string name = options.moleculeName;
   //string pdb_file = path + protein_name + ".pdb";
 
   Molecule * protein = new Molecule();
   IO::readPdb( protein, options.initialStructureFile, options.extraCovBonds );
+  string name = protein->getName();
 
   if(options.hydrogenbondMethod=="user")
     IO::readHbonds( protein, options.hydrogenbondFile );
@@ -54,7 +54,7 @@ int main( int argc, char* argv[] ){
   IO::readRigidbody( protein );
   protein->buildSpanningTree();
 //	if(options.hydrogenbondMethod!="user")
-//		writeHBondPML(m_protein, argv[1]);
+//		writeHBondPML(m_molecule, argv[1]);
 
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->atoms.size() << " atoms" << endl;

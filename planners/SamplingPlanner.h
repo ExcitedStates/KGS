@@ -4,6 +4,7 @@
 #include "SamplingOptions.h"
 #include "core/Configuration.h"
 #include "moves/Move.h"
+#include "metrics/Metric.h"
 
 /**
  * The superclass for all sampling planners.
@@ -13,7 +14,7 @@
  */
 class SamplingPlanner{
  public:
-  SamplingPlanner(Move& move);
+  SamplingPlanner(Move& move, metrics::Metric& metric);
 
   virtual ~SamplingPlanner() = 0;
 
@@ -24,18 +25,20 @@ class SamplingPlanner{
 
   /** Return a reference to the list of all generated samples */
   virtual ConfigurationList& Samples() = 0;
-
+  
   /**
    * Depending on the options, either the sample at the end of the longest path
    * or the sample nearest to the goal conformation is chosen, and the path from
    * initial to this sample is written to a file.
    */
-  void createTrajectory();
+  virtual void createTrajectory();
 
  protected:
 
   /** The class that performs conformational perturbations. */
   Move& move;
+
+  metrics::Metric& m_metric;   ///< Metric used to measure distances between samples
 
   void writeNewSample(Configuration* conf, Configuration* ref, int sample_num);
 

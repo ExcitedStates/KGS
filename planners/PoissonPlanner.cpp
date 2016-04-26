@@ -43,8 +43,8 @@
 
 using namespace std;
 
-PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move):
-	SamplingPlanner(move),
+PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& metric):
+	SamplingPlanner(move,metric),
   stop_after(SamplingOptions::getOptions()->samplesToGenerate),
   max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
   m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
@@ -52,16 +52,12 @@ PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move):
   protein(protein)
 {
   m_root = new Configuration( protein );
-  m_root->updateProtein();
+  m_root->updateMolecule();
   m_root->computeCycleJacobianAndNullSpace();
   m_root->m_id = 0;
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
   updateMaxDists(m_root,m_root);
-
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
-  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
-
 }
 
 PoissonPlanner::~PoissonPlanner() {
@@ -103,19 +99,19 @@ void PoissonPlanner::GenerateSamples()
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
-      double dist = metric->distance(pert, seed);
+      double dist = m_metric.distance(pert, seed);
       //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       while(dist<m_lilRad || dist>m_bigRad){
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
-        dist = metric->distance(pert, seed);
+        dist = m_metric.distance(pert, seed);
         //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
 
       //If clashing just continue
-      if( pert->updatedProtein()->inCollision() ) {
+      if(pert->updatedMolecule()->inCollision() ) {
         rejected_clash++;
         delete pert;
         //log("samplingStatus")<<" - rejected from clash)"<<endl;
@@ -127,14 +123,14 @@ void PoissonPlanner::GenerateSamples()
       bool too_close_to_existing = false;
       if(m_checkAll) {
         for (auto const &v: all_samples) {
-          if (metric->distance(pert, v) < m_lilRad) {
+          if (m_metric.distance(pert, v) < m_lilRad) {
             too_close_to_existing = true;
             break;
           }
         }
       }else{
         for (auto const &v: nearSeed) {
-          if (metric->distance(pert, v) < m_lilRad) {
+          if (m_metric.distance(pert, v) < m_lilRad) {
             too_close_to_existing = true;
             break;
           }
@@ -152,10 +148,10 @@ void PoissonPlanner::GenerateSamples()
       open_samples.push_back(pert);
       all_samples.push_back(pert);
       writeNewSample(pert, all_samples.front(), sample_num);
-      pert->m_distanceToIni    = metric->distance(pert,all_samples.front());
-      pert->m_distanceToParent = metric->distance(pert,seed);
+      pert->m_distanceToIni    = m_metric.distance(pert,all_samples.front());
+      pert->m_distanceToParent = m_metric.distance(pert,seed);
 
-      log("samplingStatus") << "> New structure: "<<SamplingOptions::getOptions()->moleculeName<<"_new_"<<sample_num<<".pdb";
+      log("samplingStatus") << "> New structure: "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
       log("samplingStatus") << " .. initial dist.: "<< setprecision(6)<<pert->m_distanceToIni;
       log("samplingStatus") << endl;
 
@@ -186,7 +182,7 @@ double PoissonPlanner::memo_distance(Configuration* c1, Configuration* c2)
   auto it = m_distances.find({c1,c2});
   if( it!=m_distances.end() ) return it->second;
 
-  double dist = metric->distance(c1,c2); //Expensive
+  double dist = m_metric.distance(c1,c2); //Expensive
   m_distances[{c1,c2}] = dist;
   m_distances[{c2,c1}] = dist;
 

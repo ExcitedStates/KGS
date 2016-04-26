@@ -42,11 +42,12 @@ void KinVertex::print() const {
 
 void KinVertex::forwardPropagate()
 {
-  transformAtoms();
-
   for(auto const& edge: m_edges){
     edge->forwardPropagate();
   }
+
+  //Apply transformation AFTER propagation. This is important.
+  transformAtoms();
 }
 
 void KinVertex::transformAtoms()

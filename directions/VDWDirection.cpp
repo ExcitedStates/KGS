@@ -39,7 +39,7 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
 {
   gsl_vector_set_all(ret, 0.0);
 
-  Molecule * protein = conf->updatedProtein();
+  Molecule * protein = conf->updatedMolecule();
   gsl_matrix* atomJacobian1 = gsl_matrix_calloc(3,protein->totalDofNum());
   gsl_matrix* atomJacobian2 = gsl_matrix_calloc(3,protein->totalDofNum());
   gsl_vector* p12 = gsl_vector_calloc(3);
@@ -91,16 +91,17 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
 
 }
 void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
-  Molecule * protein = atom->getResidue()->getChain()->getProtein();
+  Molecule * protein = atom->getResidue()->getChain()->getMolecule();
   //KinVertex *vertex = protein->getRigidbodyGraphVertex(atom);
   KinVertex *vertex = atom->getRigidbody()->getVertex();
   while (vertex->m_parent!=nullptr) {
     KinEdge* edge = vertex->m_parent->findEdge(vertex);
     int dof_id = edge->getDOF()->getIndex();
-    Bond * bond_ptr = edge->getBond();
-    Coordinate bp1 = bond_ptr->Atom1->m_Position;
-    Coordinate bp2 = bond_ptr->Atom2->m_Position;
-    Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
+//    Bond * bond_ptr = edge->getBond();
+//    Coordinate bp1 = bond_ptr->Atom1->m_Position;
+//    Coordinate bp2 = bond_ptr->Atom2->m_Position;
+//    Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
+    Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_Position);
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
     gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);

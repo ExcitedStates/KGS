@@ -11,7 +11,7 @@ RebuildMove::RebuildMove():
 
 Configuration* RebuildMove::performMove(Configuration* current, gsl_vector*)
 {
-	Molecule * m_protein = current->updatedProtein();
+	Molecule * m_protein = current->updatedMolecule();
 
 	//Find random free segment
 	int freeCount = 0, i, j;

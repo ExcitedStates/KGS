@@ -29,15 +29,15 @@ extern double selectNodeTime;
 
 
 
-DihedralRRT::DihedralRRT(Molecule *protein, Move& move, Direction& direction):
-	SamplingPlanner(move),
+DihedralRRT::DihedralRRT(Molecule *protein, Move& move, metrics::Metric& metric, Direction& direction):
+	SamplingPlanner(move,metric),
 	m_max_distance(SamplingOptions::getOptions()->explorationRadius),
   direction(direction)
 {
 	m_protein = protein;
 	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
 	Configuration *pSmp = new Configuration(m_protein);
-	pSmp->updateProtein();
+  pSmp->updateMolecule();
   pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
@@ -49,10 +49,6 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, Direction& direction):
 		cerr<<"Metric option rmsd incompatible with planning strategy dihedralRRT. Please use dihedral m_metric."<<endl;
 		exit(-1);
 	}
-	if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
-
-	//RMSD for observation purposes
-	rmsdMetric = new metrics::RMSD();
 
 	m_deform_mag = 0.25;
 	m_rand_radius = 2;
@@ -95,7 +91,7 @@ void DihedralRRT::GenerateSamples(){
 
 		if( SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik")<<"Generating new target, getting new seed"<<endl;
-			pTarget = GenerateRandConf(); // used in selection ONLY if no m_target m_protein specified
+			pTarget = GenerateRandConf(); // used in selection ONLY if no m_target m_molecule specified
 			createNewTarget = false;
 			pClosestSmp = SelectNodeFromBuckets(pTarget);
 			double end_time = timer.getTimeNow();
@@ -108,12 +104,12 @@ void DihedralRRT::GenerateSamples(){
     direction.gradient(pClosestSmp, nullptr, gradient);
 		pNewSmp = move.move(pClosestSmp, gradient);
 
-		if( !pNewSmp->updatedProtein()->inCollision() ) {
+		if( !pNewSmp->updatedMolecule()->inCollision() ) {
 			++sample_id;
 			m_numSamples=sample_id;
 
-			pNewSmp->m_distanceToIni = metric->distance(pNewSmp,m_samples.front());
-			pNewSmp->m_distanceToParent = metric->distance(pNewSmp,pClosestSmp);
+			pNewSmp->m_distanceToIni = m_metric.distance(pNewSmp,m_samples.front());
+			pNewSmp->m_distanceToParent = m_metric.distance(pNewSmp,pClosestSmp);
       pNewSmp->m_id = sample_id;
 
 			writeNewSample(pNewSmp, m_samples.front(), sample_id);
@@ -121,13 +117,13 @@ void DihedralRRT::GenerateSamples(){
 			if (pNewSmp->m_treeDepth > max_depth)
 				max_depth = pNewSmp->m_treeDepth;
 
-			double distToRandGoal = metric->distance(pNewSmp,pTarget);
+			double distToRandGoal = m_metric.distance(pNewSmp,pTarget);
 
 			//log("samplingStatus") << "> New structure: newpdb_"<<sample_id<<".pdb .. RMSD to initial: "<< pNewSmp->m_rmsd_initial<<endl;
-			log("samplingStatus") << "> New structure: " << SamplingOptions::getOptions()->moleculeName<<"_new_" << sample_id << ".pdb";
+			log("samplingStatus") << "> New structure: " << m_protein->getName()<<"_new_" << sample_id << ".pdb";
 			log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << pNewSmp->m_distanceToIni;
 			log("samplingStatus") << " .. Distance to current target: " << setprecision(3) << distToRandGoal;
-			log("samplingStatus") << " .. Null-space dimension: " << pNewSmp->getNullspace()->NullspaceSize()<<endl;
+			log("samplingStatus") << " .. accessible dofs: "<<pNewSmp->m_clashFreeDofs<<endl<<endl;
 
 			if(distToRandGoal <= MOV_DIH_THRESHOLD){//current target reached
 				delete pTarget;
@@ -182,7 +178,7 @@ Configuration *DihedralRRT::SelectNodeFromBuckets (Configuration *pTarget) {
 
 	for (list<Configuration*>::iterator iter=m_samples.begin(); iter!=m_samples.end(); ++iter) {
 		pSmp = *iter;
-		distance = metric->distance(pSmp,pTarget);
+		distance = m_metric.distance(pSmp,pTarget);
 		if (distance < min_distance) {
 			min_distance = distance;
 			pMinSmp = pSmp;

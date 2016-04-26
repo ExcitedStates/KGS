@@ -23,7 +23,7 @@ namespace metrics{
 			exit(-1);
 		}
 
-		Molecule * m_protein = c1->getProtein();
+		Molecule * m_protein = c1->getMolecule();
 
 		int count = 0;
 		double distance=0.0, distanceRel=0.0;

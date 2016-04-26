@@ -117,14 +117,14 @@ class Configuration
   std::map<unsigned int, Rigidbody*> m_biggerRBMap;  // TODO: What is the int? Cluster-idx?
   std::vector< std::pair<int, unsigned int> > m_sortedRBs; // TODO: Sorted on what? What does the integers refer to?
 
-  int m_numClusters;            ///< Number of rigid clusters (super rigid bodies)
-  int m_maxIndex;               ///< Index of largest cluster
-  int m_maxSize;                ///< Size of largest cluster
-  int m_clashFreeDofs;          ///< Number of clash-free dofs (for post-processing)
+  int m_numClusters;             ///< Number of rigid clusters (super rigid bodies)
+  int m_maxIndex;                ///< Index of largest cluster
+  int m_maxSize;                 ///< Size of largest cluster
+  int m_clashFreeDofs;           ///< Number of clash-free dofs (for post-processing)
 
-  Molecule * updatedProtein();    ///< Update the atom-positions to reflect this configuration and return the m_protein
-  Molecule * getProtein() const;  ///< Return the associated m_protein
-  void updateProtein();         ///< Update the atom-positions to reflect this configuration
+  Molecule * updatedMolecule();  ///< Update the atom-positions to reflect this configuration and return the molecule
+  Molecule * getMolecule() const;///< Return the associated molecule
+  void updateMolecule();         ///< Update the atom-positions to reflect this configuration
 
   /** Return the cycle jacobian. Assumes that computeJacobians has been called on this configuration last */
   gsl_matrix* getCycleJacobian() const;
@@ -138,8 +138,8 @@ class Configuration
  protected:
 
   double *m_dofs_global;                 ///< DOF-values in a global system (not relative to Atom::reference_position)
-  Molecule * const m_protein;            ///< The m_protein related to the configuration
-  Configuration * const m_parent;        ///< The m_parent-configuration this configuration was generated from
+  Molecule * const m_molecule;           ///< The molecule related to the configuration
+  Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from
   ConfigurationList m_children;          ///< List of child-configurations
 
   // Jacobian matrix of all the cycles of rigid bodies

@@ -15,7 +15,7 @@ GlobalTranslateDOF::GlobalTranslateDOF(const KinEdge* edge, int axis):
 Math3D::Vector3 GlobalTranslateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 ret(0,0,0);
-  ret[m_axis]=1;
+  ret[m_axis]=1.0;
   return std::move( ret );
 }
 
@@ -39,3 +39,4 @@ void GlobalTranslateDOF::updateEndVertexTransformation()
 
   m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * tr;
 }
+

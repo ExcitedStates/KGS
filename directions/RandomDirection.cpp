@@ -35,8 +35,9 @@
 #include "math.h" //dPi
 #include "math/MathUtility.h"
 
-RandomDirection::RandomDirection(double maxRotation):
-    m_maxRotation(maxRotation)
+RandomDirection::RandomDirection(std::vector<int> residueNetwork, double maxRotation):
+    m_maxRotation(maxRotation),
+    m_residueNetwork(residueNetwork)
 { }
 
 
@@ -44,20 +45,22 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
 {
   //TODO: It shouldn't be necessary to go through m_edges of the tree ...
   //TODO: Just set all entries in ret to random values (?)
-  Molecule * protein = conf->getProtein();
+  Molecule * protein = conf->getMolecule();
   double absMax = 0.0;
   for (auto const& edge: protein->m_spanning_tree->Edges) {
+
     int dofId = edge->getDOF()->getIndex();
     double newVal = RandomAngleUniform(Math3D::dPi);
+    if(edge->StartVertex->m_rigidbody==nullptr)
+      newVal = 0.0;
     absMax = std::max(absMax, std::fabs(newVal));
 
     //ToDo: adapt to sampling options selectionMoving etc
-    const std::vector<int> &res_network = SamplingOptions::getOptions()->residueNetwork;
-    if (res_network.empty()) {
+    if (m_residueNetwork.empty()) {
       gsl_vector_set(ret, dofId, newVal);
     } else {
       int resId = edge->getBond()->Atom1->getResidue()->getId();
-      if (std::find(res_network.begin(), res_network.end(), resId) != res_network.end()) {
+      if (std::find(m_residueNetwork.begin(), m_residueNetwork.end(), resId) != m_residueNetwork.end()) {
         gsl_vector_set(ret, dofId, newVal);
       }
     }

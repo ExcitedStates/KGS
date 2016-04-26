@@ -28,30 +28,44 @@
 #include <gsl/gsl_vector_double.h>
 #include <assert.h>
 #include <gsl/gsl_blas.h>
-#include "MixedDirection.h"
+#include "math/gsl_helpers.h"
+#include "BlendedDirection.h"
 
-MixedDirection::MixedDirection():
+BlendedDirection::BlendedDirection():
     m_totalWeight(0)
 { }
 
-void MixedDirection::addDirection(Direction* dir, double weight)
+void BlendedDirection::addDirection(Direction* dir, double weight)
 {
   m_directions.push_back(dir);
   m_weights.push_back(weight);
   m_totalWeight+=weight;
 }
 
-void MixedDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
+void BlendedDirection::changeWeight(int dirCount, double weight)
+{
+      m_totalWeight -= m_weights[dirCount];
+      m_weights[dirCount] = weight;
+      m_totalWeight += weight;
+}
+
+void BlendedDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
 {
   assert(!m_directions.empty());
 
   m_directions[0]->gradient(conf,target,ret);
-  //std::cout<<"MixedDirection::computeGradient - rand norm: "<<gsl_blas_dnrm2(ret)<<std::endl;
+  double magnitude = gsl_vector_length(ret);
+  //std::cout<<"BlendedDirection::computeGradient - rand norm: "<<gsl_blas_dnrm2(ret)<<std::endl;
 
   gsl_vector* tmp = gsl_vector_calloc(ret->size);
   for(size_t i=1;i<m_directions.size();i++){
     m_directions[i]->gradient(conf,target,tmp);
-    gsl_vector_add(ret,tmp);
+    gsl_vector_scale(tmp,magnitude);
+
+    for (int entry=0; entry < ret->size; ++entry){
+      double val = m_weights[i] * gsl_vector_get(tmp,entry) + m_weights[0] * gsl_vector_get(ret,entry);
+      gsl_vector_set(ret,i,formatRangeRadian(val));
+    }
   }
 
 }

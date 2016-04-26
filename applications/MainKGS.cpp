@@ -20,11 +20,14 @@
 #include <moves/NullspaceMove.h>
 #include <moves/ClashAvoidingMove.h>
 #include "moves/CompositeMove.h"
+#include <metrics/Metric.h>
+#include <metrics/Dihedral.h>
+#include <metrics/RMSD.h>
 #include <directions/RandomDirection.h>
 #include <directions/DihedralDirection.h>
 #include <directions/MSDDirection.h>
 #include <directions/LSNullspaceDirection.h>
-
+#include <directions/BlendedDirection.h>
 
 using namespace std;
 
@@ -117,12 +120,17 @@ void randomSampling(SamplingOptions& options){
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
-//	m_protein.m_spanning_tree->print();
+//	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+
+  //Initialize metric
+  metrics::Metric* metric;
+  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
+  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
 
   //Initialize move
   Move* move;
@@ -148,33 +156,33 @@ void randomSampling(SamplingOptions& options){
 
   //Initialize planner
   SamplingPlanner* planner;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move );
+  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
+  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
+  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move,*metric );
   else{
     cerr<<"Unknown planner option specified!"<<endl;
     exit(-1);
   }
 
-  log("samplingStatus")<<"Sampling ...\n";
-  CTKTimer timer;
-  timer.Reset();
-  double start_time = timer.LastElapsedTime();
-
   log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
 
   if(options.saveData > 1){
-    string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";
+    string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
     IO::writeQ(&protein, protein.m_conf, out);
   }
 
   log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
   log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
-  //log()<<m_protein.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_protein.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
-  //log()<<m_protein.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
+  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
   log()<<" and " << (protein.m_conf->getNullspace()->NumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+
+  log("samplingStatus")<<"Sampling ...\n";
+  CTKTimer timer;
+  timer.Reset();
+  double start_time = timer.LastElapsedTime();
 
   //Start exploring
   planner->GenerateSamples();
@@ -237,7 +245,7 @@ void targetedSampling(SamplingOptions& options){
   Molecule * target = new Molecule();
   IO::readPdb( target, target_file, options.extraCovBonds,&protein);
 
-  //makes sure we have the same hydrogen bonds in target and m_protein (m_protein hbonds is adapted as well)
+  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(&protein);
   // Check for collision
   target->Initial_collisions = target->getAllCollisions();
@@ -253,6 +261,7 @@ void targetedSampling(SamplingOptions& options){
 
   options.setResidueNetwork(&protein);
   options.setAtomSets(&protein,target);
+
   //Alignment and spanning trees with possibly best root
   if(options.alignIni){
     target->alignReferencePositionsTo(&protein);//backup the aligned configuration
@@ -263,7 +272,7 @@ void targetedSampling(SamplingOptions& options){
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
-//	m_protein.m_spanning_tree->print();
+//	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
@@ -280,16 +289,10 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
-  if(options.saveData > 0){
-    std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
-    IO::writeBondLengthsAndAngles(target, out);
-    if(options.saveData > 1){
-      out = options.workingDirectory + "output/" + protein.getName() + "_q_target.txt";
-      IO::writeQ(target,target->m_conf, out);
-      out = options.workingDirectory + "output/" + protein.getName() + "_q_iniTarget.txt";
-      IO::writeQ(target,protein.m_conf, out);
-    }
-  }
+  //Initialize metric
+  metrics::Metric* metric;
+  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
+  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
 
   //Initialize move
   Move* move;
@@ -301,52 +304,76 @@ void targetedSampling(SamplingOptions& options){
     move = new NullspaceMove();
   }
 
-
   //Initialize direction
   Direction* direction;
-
+  bool blendedDir = false;
   if(options.gradient == 0)
     direction = new RandomDirection();
-  else if(options.gradient <= 2)
+  else if(options.gradient == 1)
     direction = new DihedralDirection();
-  else if(options.gradient <= 4)
+  else if(options.gradient == 2){
+    BlendedDirection* m_direction = new BlendedDirection();
+    m_direction->addDirection(new DihedralDirection(),0);
+    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    direction = m_direction;
+    blendedDir = true;
+  }
+  else if(options.gradient == 3)
     direction = new MSDDirection();
+  else if(options.gradient == 4){
+    BlendedDirection* m_direction = new BlendedDirection();
+    m_direction->addDirection(new MSDDirection(),0);
+    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    direction = m_direction;
+    blendedDir = true;
+  }
   else if(options.gradient <= 5)
     direction = new LSNullspaceDirection();
 
-
   //Initialize planner
   SamplingPlanner* planner;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move );
-  else if(options.planner_string=="dccrrt")       planner = new BidirectionalMovingFront(&protein, *move, *direction, target );
+  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
+  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
+  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move, *metric);
+  else if(options.planner_string=="dccrrt")       planner = new BidirectionalMovingFront(&protein, *move, *metric, *direction, target, blendedDir);
   else{
     cerr<<"Unknown planner option specified!"<<endl;
     exit(-1);
   }
 
-
-  log("samplingStatus")<<"Sampling ...\n";
-  CTKTimer timer;
-  timer.Reset();
-  double start_time = timer.LastElapsedTime();
+  if(options.saveData > 0){
+    std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
+    IO::writeBondLengthsAndAngles(target, out);
+    if(options.saveData > 1){
+      out = options.workingDirectory + "output/" + protein.getName() + "_q_target.txt";
+      IO::writeQ(target,target->m_conf, out);
+      out = options.workingDirectory + "output/" + protein.getName() + "_q_iniTarget.txt";
+      IO::writeQ(target,protein.m_conf, out);
+    }
 
   log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
   log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
 
   if(options.saveData > 1){
-    string out = options.workingDirectory + "output/" + options.moleculeName + "_q_0.txt";
+    string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
     IO::writeQ(&protein, protein.m_conf, out);
   }
 
   log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
   log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
-  //log()<<m_protein.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_protein.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
-  //log()<<m_protein.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
+  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
   log()<<" and " << (protein.m_conf->getNullspace()->NumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+
+
+  log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf);
+
+  log("samplingStatus")<<"Sampling ...\n";
+  CTKTimer timer;
+  timer.Reset();
+  double start_time = timer.LastElapsedTime();
 
   //Start exploring
   planner->GenerateSamples();
@@ -367,9 +394,11 @@ void targetedSampling(SamplingOptions& options){
 
 
   if(options.saveData > 0){
+    log("samplingStatus")<<"Creating trajectory"<<endl;
+  }
     planner->createTrajectory();
   }
-
+  log("samplingStatus")<<"Done"<<endl;
   //Clean up
   delete planner;
   delete target;

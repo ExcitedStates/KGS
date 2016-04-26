@@ -15,16 +15,18 @@
 #include <iomanip>
 #include <stack>
 #include <IO.h>
+#include <directions/BlendedDirection.h>
 
 using namespace std;
 
 extern double selectNodeTime;
 
-BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& move, Direction& direction, Molecule * target):
-    SamplingPlanner(move),
+BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& move, metrics::Metric& metric, Direction& direction, Molecule * target,bool blendedDir):
+    SamplingPlanner(move,metric),
     m_protein(protein),
     direction(direction),
     m_target(target),
+    m_isBlended(blendedDir),
     stopAfter(SamplingOptions::getOptions()->samplesToGenerate),
     m_frontSize(SamplingOptions::getOptions()->frontSize)
 {
@@ -33,25 +35,22 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
     exit(-1);
   }
   m_fwdRoot = new Configuration( m_protein );
-  m_fwdRoot->updateProtein();
+  m_fwdRoot->updateMolecule();
   m_fwdRoot->computeCycleJacobianAndNullSpace();
   m_fwdRoot->m_vdwEnergy = (m_protein->vdwEnergy(&(m_protein->Initial_collisions),SamplingOptions::getOptions()->collisionCheck)).second;
   m_fwdSamples.push_back( m_fwdRoot );
   m_fwdFront.push_back( m_fwdRoot );
 
   m_revRoot = new Configuration( m_target );
-  m_revRoot->updateProtein();
+  m_revRoot->updateMolecule();
   m_revRoot->computeCycleJacobianAndNullSpace();
   m_revRoot->m_id = 1;
   m_revRoot->m_vdwEnergy = (m_target->vdwEnergy( &(m_target->Initial_collisions),SamplingOptions::getOptions()->collisionCheck)).second;
   m_revSamples.push_back( m_revRoot );
   m_revFront.push_back( m_revRoot );
 
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  m_metric = new metrics::RMSD();
-  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	m_metric = new metrics::Dihedral();
-
   //closest configs and distance measures
-  m_minDistance = m_metric->distance(m_fwdRoot,m_revRoot);
+  m_minDistance = m_metric.distance(m_fwdRoot,m_revRoot);
   m_closestFwdSample = m_fwdRoot;
   m_closestRevSample =  m_revRoot;
   m_currentGlobalTarget = m_revRoot;//target configuration for this iteration
@@ -78,10 +77,20 @@ BidirectionalMovingFront::~BidirectionalMovingFront() {
   }
 }
 
+ConfigurationList& BidirectionalMovingFront::Samples(){
+
+  ConfigurationList& allSamples = m_fwdSamples;
+  allSamples.merge(m_revSamples);
+  return allSamples;
+}
+
 void BidirectionalMovingFront::GenerateSamples() {
 
   static int numSamples = 0, failedTrials = 0, totalTrials = 0;
   static double accept_ratio;
+
+  int samplesTillSwap = SamplingOptions::getOptions()->switchAfter;
+  bool swapped = false;
 
   Configuration *qTarget = nullptr, *qSeed, *qNew = nullptr; //this qTarget is either global or random and can change for each sample
 
@@ -92,9 +101,9 @@ void BidirectionalMovingFront::GenerateSamples() {
     double start_time = timer.getTimeNow();
 
     if (SamplingOptions::getOptions()->sampleRandom || qNew == nullptr ||
-        m_addedToFront == false) {//create new target and compute closest seed
+        m_addedToFront == false || swapped == true) {//create new target and compute closest seed
       log("dominik") << "Generating new target" << endl;
-
+      swapped=false;
       if (qTarget != nullptr) {//prevent leakage, delete existing target configuration from previous round
         delete qTarget;
       }
@@ -113,10 +122,16 @@ void BidirectionalMovingFront::GenerateSamples() {
     log("dominik") << "Using sample " << qTarget->m_id << " as target" << endl;
 
     gsl_vector* gradient = gsl_vector_alloc(m_protein->totalDofNum());
+
+    if(m_isBlended){
+      BlendedDirection& blendedDir = reinterpret_cast<BlendedDirection&>(direction);
+      blendedDir.changeWeight(0,double(numSamples)/double(stopAfter) );
+      blendedDir.changeWeight(1,1.0 - double(numSamples)/double(stopAfter) );
+    }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
     qNew = move.move(qSeed, gradient); //Perform move
 
-    if(qNew->updatedProtein()->inCollision() ){
+    if(qNew->updatedMolecule()->inCollision() ){
       failedTrials++;
       totalTrials++;
       delete qNew;
@@ -129,6 +144,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       m_protein->checkCycleClosure(qNew);
 
       numSamples++;
+      samplesTillSwap--;
       gsl_vector_free(gradient);
 
       //Push-back in forward tree
@@ -140,15 +156,21 @@ void BidirectionalMovingFront::GenerateSamples() {
       //Check if front needs to be updated
       updateFwdFront(qNew);
 
-      //Enthalpy and entropy computation, currently in move
+      //Enthalpy and entropy computation
 //      log("dominik")<<"Length of all collisions: "<<allCollisions.size()<<endl;
-//      pair<double,double> enthalpyVals=m_protein->vdwEnergy(&allCollisions,m_options.collisionCheck);
-//      new_q->m_vdw = enthalpyVals.first;
-//      new_q->m_deltaH = enthalpyVals.second - new_q->m_vdw;
+//      pair<double,double> enthalpyVals=m_molecule->vdwEnergy(&allCollisions,m_options.collisionCheck);
+//      qNew->m_vdw = enthalpyVals.first;
+//      qNew->m_deltaH = enthalpyVals.second - new_q->m_vdw;
 
-      log("samplingStatus") << "> New structure: "<<SamplingOptions::getOptions()->moleculeName<<"_new_"<<numSamples<<".pdb"<<endl;
-      log()<<"Distance to target: "<<qNew->m_distanceToTarget<<", accessible dofs: "<<qNew->m_clashFreeDofs<<endl;
-      log()<<"Current shortest distance between both trees at configs "<<m_closestFwdSample->m_id <<" and "<<m_closestRevSample->m_id<<", Distance: "<<m_minDistance<<endl;
+      qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(SamplingOptions::getOptions()->collisionCheck);
+
+      log("dominik") << "> New structure: "<<qNew->getMolecule()->getName()<<"_new_"<<numSamples<<".pdb, accessible dofs: "<<qNew->m_clashFreeDofs<<endl<<endl;
+
+      log("samplingStatus") << "> New structure: " << qNew->getMolecule()->getName()<<"_new_" << numSamples << ".pdb";
+      log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << qNew->m_distanceToIni;
+      log("samplingStatus") << " .. Distance to moving-front target: " << setprecision(3) << qNew->m_paretoFrontDistance;
+      log("samplingStatus") << " .. accessible dofs: "<<qNew->m_clashFreeDofs<<endl;
+      log("samplingStatus")<<"Current shortest distance between both trees at configs "<<m_closestFwdSample->m_id <<" and "<<m_closestRevSample->m_id<<", Distance: "<<m_minDistance<<endl;
 
       writeNewSample(qNew, m_fwdRoot,qNew->m_id);
 
@@ -156,6 +178,11 @@ void BidirectionalMovingFront::GenerateSamples() {
       if(m_minDistance < SamplingOptions::getOptions()->convergeDistance){
         log()<<"Reached target, not creating more samples!"<<" distance: "<<m_minDistance<<endl;
         break;
+      }
+      if(samplesTillSwap==0){
+        swapFwdRev();
+        samplesTillSwap = SamplingOptions::getOptions()->switchAfter;
+        swapped = true;
       }
     }
   }
@@ -194,12 +221,12 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
   double alignVal;
 
   //Distance to target root
-  m_revRoot->updateProtein(); //go back to original, initial target and compute distance
+  m_revRoot->updateMolecule(); //go back to original, initial target and compute distance
   if(SamplingOptions::getOptions()->alignAlways){
     alignVal = metrics::RMSD::align(m_target, m_protein);
     qNew->m_distanceToTarget = metrics::RMSD::distance_noOptimization(qNew,m_revRoot);
   }else{
-    qNew->m_distanceToTarget = m_metric->distance(qNew,m_revRoot);
+    qNew->m_distanceToTarget = m_metric.distance(qNew,m_revRoot);
   }
 
   //Distance to own root
@@ -207,23 +234,20 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
     qNew->m_distanceToIni = metrics::RMSD::distance_noOptimization(qNew, m_fwdRoot);
   }
   else{
-    qNew->m_distanceToIni = m_metric->distance(qNew, m_fwdRoot);
+    qNew->m_distanceToIni = m_metric.distance(qNew, m_fwdRoot);
   }
   //Distance to parents
-  if(qNew->getParent()!= nullptr && qNew->getParent()->getParent() != nullptr) {
-    double distToParent = m_metric->distance(qNew, qNew->getParent());
-//    double distToParentsParent = m_metric->distance(qNew,qNew->getParent()->getParent());
-    qNew->m_distanceToParent = distToParent;
+  if(qNew->getParent()!= nullptr ) {
+    qNew->m_distanceToParent = m_metric.distance(qNew, qNew->getParent());
   }
 
-  m_closestRevSample->updateProtein();//Distance to closest sample from opposing tree
+  m_closestRevSample->updateMolecule();//Distance to closest sample from opposing tree
 
   if(SamplingOptions::getOptions()->alignAlways){
     alignVal = metrics::RMSD::align(m_target, m_protein);
     qNew->m_paretoFrontDistance = metrics::RMSD::distance_noOptimization(qNew,m_closestRevSample);
   }else{
-    qNew->m_paretoFrontDistance = m_metric->distance(qNew,m_closestRevSample);
-
+    qNew->m_paretoFrontDistance = m_metric.distance(qNew,m_closestRevSample);
   }
 
   if( qNew->m_paretoFrontDistance < m_minDistance){//update current shortest configs
@@ -255,7 +279,7 @@ Configuration* BidirectionalMovingFront::GenerateRandConf() {
     pTarget->m_id = -1; //invalid ID, identify non-sampled coonformations
   }
 
-  pTarget->updateProtein();
+  pTarget->updateMolecule();
 
   return pTarget;
 }
@@ -276,16 +300,16 @@ Configuration* BidirectionalMovingFront::SelectSeed (Configuration *pTarget) {
     dihSet="RESMOV";
   }
 
-  pTarget->updatedProtein();//update target protein
+  pTarget->updatedMolecule();//update target protein
 
   for (list<Configuration*>::iterator iter=m_fwdFront.begin(); iter!=m_fwdFront.end(); ++iter) {
     pSmp = *iter;
     if(SamplingOptions::getOptions()->alignAlways){
-      double alignVal = metrics::RMSD::align(m_target, pSmp->updatedProtein());
-      distance = m_metric->distance(pSmp,m_target->m_conf);
+      double alignVal = metrics::RMSD::align(m_target, pSmp->updatedMolecule());
+      distance = m_metric.distance(pSmp,m_target->m_conf);
     }
     else{
-      distance = m_metric->distance(pSmp,m_target->m_conf);
+      distance = m_metric.distance(pSmp,m_target->m_conf);
     }
     if (distance < minDistance) {
       minDistance = distance;
@@ -312,13 +336,9 @@ void BidirectionalMovingFront::swapFwdRev(){
     }
     i++;
   }
-  if(cit == m_fwdFront.end() ){
-    cerr<<"No valid target sample"<<endl;
-    exit(-1);
-  }
   //This will be the target for the next round
   log("dominik")<<"Using sample "<<pSmp->m_id<<" as current global target!"<<endl;
-  pSmp->updateProtein();
+  pSmp->updateMolecule();
   m_currentGlobalTarget = pSmp;
 
   //Switch directions
@@ -333,15 +353,15 @@ void BidirectionalMovingFront::swapFwdRev(){
 
 void BidirectionalMovingFront::createTrajectory(){
 
-  m_closestFwdSample->updateProtein();
-  m_closestRevSample->updateProtein();
+  m_closestFwdSample->updateMolecule();
+  m_closestRevSample->updateMolecule();
   log()<<"The forward trajectory ends at sample "<<m_closestFwdSample->m_id<<endl;
   log()<<"The reverse trajectory ends at sample "<<m_closestRevSample->m_id<<endl;
 
   SamplingOptions& options = *(SamplingOptions::getOptions());
 
   const string& out_path = options.workingDirectory;
-  const string& name = options.moleculeName;
+  const string& name = m_protein->getName();
 
   string out_collPdb = out_path + "output/" + name + "_path.pdb";
   ///save pyMol movie script

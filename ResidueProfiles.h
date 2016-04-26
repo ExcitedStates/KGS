@@ -1318,6 +1318,21 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"DT","C7","H72"},
     {"DT","C7","H73"},
     {"MG","MG","MG"},
+    
+    //Non-standard residues and ligands
+    {"CSO","N","CA"},
+    {"CSO","CA","HA"},
+    {"CSO","CA","CB"},
+    {"CSO","CA","C"},
+    {"CSO","CB","SG"},
+    {"CSO","CB","HB"},
+    {"CSO","CB","HB1"},
+    {"CSO","CB","HB2"},
+    {"CSO","CB","HB3"},
+    {"CSO","SG","OD"},
+    {"CSO","OD","HD"},
+    {"CSO","C","O"},
+    {"CSO","-C","N"},
     {"END", "",""}//Must always be LAST
 };
 
@@ -1539,43 +1554,14 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"PRO","CG","CD"},
     {"PRO","CD","N"},
 
-    //Makes sure that C-O bonds are rigid
-    {"URE","C","O"},
-    {"ACE","C","O"},
-    {"ALA","C","O"},
-    {"GLY","C","O"},
-    {"SER","C","O"},
-    {"THR","C","O"},
-    {"LEU","C","O"},
-    {"ILE","C","O"},
-    {"VAL","C","O"},
-    {"ASN","C","O"},
-    {"GLN","C","O"},
-    {"ARG","C","O"},
-    {"HIS","C","O"},
-    {"HIE","C","O"},
-    {"HIP","C","O"},
-    {"HSD","C","O"},
-    {"HSE","C","O"},
-    {"HSP","C","O"},
-    {"TRP","C","O"},
-    {"PHE","C","O"},
-    {"TYR","C","O"},
-    {"GLU","C","O"},
-    {"ASP","C","O"},
-    {"LYS","C","O"},
-    {"ORN","C","O"},
-    {"DAB","C","O"},
-    {"LYN","C","O"},
-    {"PRO","C","O"},
-    {"CYS","C","O"},
-    {"CYX","C","O"},
-    {"CYS2","C","O"},
-    {"MET","C","O"},
-    {"ASH","C","O"},
-    {"GLH","C","O"},
-    {"CYS","C","O"},
-
+    //Todo: Terminal bonds to OT, OXT etc.
+    
+    //Non-standard residues / ligands
+    {"CSO","-C","N"},
+    
+    //Non-standard residues: C-O bonds
+    {"CSO","C","O"},
+    
     {"END","",""}//Must always be LAST
 };
 

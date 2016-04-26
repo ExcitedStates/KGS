@@ -8,8 +8,9 @@ using namespace std;
 
 double selectNodeTime = 0;
 
-SamplingPlanner::SamplingPlanner(Move& move):
-	move(move)
+SamplingPlanner::SamplingPlanner(Move& move, metrics::Metric& metric):
+	move(move),
+	m_metric(metric)
 {
 
 }
@@ -40,12 +41,12 @@ void SamplingPlanner::createTrajectory(){
 				}
 			}
 	//}
-	//m_protein->SetConfiguration(pSmp);
-	Molecule * m_protein = pSmp->updatedProtein();
+	//m_molecule->SetConfiguration(pSmp);
+	Molecule * m_protein = pSmp->updatedMolecule();
   SamplingOptions& options = *(SamplingOptions::getOptions());
 
 	const string& out_path = options.workingDirectory;
-	const string& name = options.moleculeName;
+	const string& name = m_protein->getName();
 
 	string out_collPdb = out_path + "output/" + name + "_path.pdb";
 	///save pyMol movie script
@@ -57,18 +58,18 @@ void SamplingPlanner::createTrajectory(){
 void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, int sample_num)
 {
 	const string& out_path = SamplingOptions::getOptions()->workingDirectory;
-	const string& name = SamplingOptions::getOptions()->moleculeName;
+	const string& name = conf->getMolecule()->getName();
 	string out_file = out_path+"output/"+name+"_new_"+std::to_string(sample_num)+".pdb";
 
 	if(SamplingOptions::getOptions()->saveData > 0){
 
-		Molecule * protein = conf->updatedProtein();
+		Molecule * protein = conf->updatedMolecule();
 		IO::writePdb(protein, out_file);
 	}
 
 
 	if(SamplingOptions::getOptions()->saveData > 1){
-		Molecule * protein = conf->updatedProtein();
+		Molecule * protein = conf->updatedMolecule();
 
 		string out_q = out_path+"output/"+name+"_q_"+std::to_string(sample_num)+".txt";
 
@@ -77,7 +78,7 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 
 
 	if(SamplingOptions::getOptions()->saveData > 3){
-		Molecule * protein = conf->updatedProtein();
+		Molecule * protein = conf->updatedMolecule();
 
 		// Save Jacobian and Nullspace to file
 		string outJac=out_path + "output/" +  name + "_jac_" +

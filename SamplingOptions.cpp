@@ -44,7 +44,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		if(arg=="--scaleToRadius"){                 scaleToRadius = Util::stob(argv[++i]);              continue; }
 		if(arg=="--gradient" || arg=="-g"){         gradient = atoi(argv[++i]);                         continue; }
 		if(arg=="--collisionFactor" || arg=="-c"){  collisionFactor = atof(argv[++i]);                  continue; }
-		if(arg=="--decreaseSteps" ){                decreaseSteps = atoi(argv[++i]);                    continue; }
+		if(arg=="--trialSteps" ){                trialSteps = atoi(argv[++i]);                    continue; }
 		if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                   continue; }
 		if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
 		if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
@@ -163,9 +163,6 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
     workingDirectory = pdb_file.substr(0, nameSplit + 1);
     log("so")<<"Changing working directory to "<<workingDirectory<<" using initial"<<endl;
   }
-	moleculeName = pdb_file.substr(nameSplit+1);
-	int pos = moleculeName.rfind(".pdb");
-	if(pos!=string::npos) moleculeName = moleculeName.substr(0,pos);
 
   //Check target structure
   if(targetStructureFile.empty()){
@@ -203,8 +200,6 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 void SamplingOptions::initializeVariables(){
 	initialStructureFile    = "";
 	targetStructureFile     = "";
-	moleculeName 						= "";
-	targetName 							= "";
 	annotationFile          = "";
 	hydrogenbondFile        = "";
 	hydrogenbondMethod      = "";
@@ -214,7 +209,7 @@ void SamplingOptions::initializeVariables(){
 	sampleRandom            = true;
 	gradient                = 0;
 	collisionFactor         = 0.75;
-	decreaseSteps           = 0;
+	trialSteps 							= 0;
 	decreaseFactor          = 0.5;
 	stepSize                = 1.0;
 	maxRotation             = 3.1415/18;
@@ -260,12 +255,12 @@ void SamplingOptions::print(){
 	log("so")<<"\t--sampleRandom "<<sampleRandom<<endl;
 	log("so")<<"\t--gradient "<<gradient<<endl;
 	log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
-	log("so")<<"\t--decreaseSteps "<<decreaseSteps<<endl;
+	log("so")<<"\t--trialSteps "<< trialSteps <<endl;
 	log("so")<<"\t--decreaseFactor "<<decreaseFactor<<endl;
 	log("so")<<"\t--stepSize "<<stepSize<<endl;
 	log("so")<<"\t--maxRotation "<<maxRotation<<endl;
   log("so")<<"\t--rejectsBeforeClose "<<poisson_max_rejects_before_close<<endl;
-	log("so")<<"\t--m_metric "<<metric_string<<endl;
+	log("so")<<"\t--metric "<<metric_string<<endl;
 	log("so")<<"\t--planner "<<planner_string<<endl;
 	log("so")<<"\t--rebuildLength "<<rebuild_fragment_length<<endl;
 	log("so")<<"\t--rebuildFrequency "<<rebuild_frequency<<endl;
@@ -327,7 +322,7 @@ void SamplingOptions::printUsage(char* pname){
 	log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
 	log("so")<<"checking for collisions. The default is 0.75."<<endl;
 
-	//log("so")<<"\t--decreaseSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
+	//log("so")<<"\t--trialSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
 	//log("so")<<"decrease the stepsize. Default is 1."<<endl;
 
 	//log("so")<<"\t--decreaseFactor <real number> \t: If a non-colliding structure can not be found, decrease the stepsize ";
@@ -376,7 +371,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--selectionMoving <string of residue selection of molecule, e.g. \"resid 10 to 25 30 35 to 40\"> \t: Specifies the residues of the molecule that are used to determine the gradient."<<endl;
 
-	log("so")<<"\t--root <integer>\t: The rigid body id for the root. Choose -1 to select the closest rigid body between m_protein and target."<<endl;
+	log("so")<<"\t--root <integer>\t: The rigid body id for the root. Choose -1 to select the closest rigid body between m_molecule and target."<<endl;
 
 	log("so")<<"\t--projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
 
@@ -450,7 +445,7 @@ void SamplingOptions::setResidueNetwork(const Molecule * protein){//uses the sel
 void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 	//Here, we define the atom sets used to calculate a gradient, rmsd, or alignment.
 	//If no input option is specified, then we use all atoms states in "atomsToChoose"
-	//In case a target is present, only atoms are used from the selection that are present in both m_protein structures
+	//In case a target is present, only atoms are used from the selection that are present in both m_molecule structures
 
 	//Within the user-provided selection of residues, we choose <selectAtoms> atoms (user-provided string, default "heavy")
 

@@ -47,15 +47,15 @@ const double MOV_DIH_THRESHOLD = 0.001;
 extern double selectNodeTime;
 
 
-RRTPlanner::RRTPlanner(Molecule *protein, Move& move, Direction& direction):
-	SamplingPlanner(move),
-  direction(direction),
+RRTPlanner::RRTPlanner(Molecule *protein, Move& move, metrics::Metric& metric, Direction& direction):
+	SamplingPlanner(move,metric),
 	m_protein(protein),
+  direction(direction),
 	m_max_distance(SamplingOptions::getOptions()->explorationRadius)
 {
 	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();//Edges.size();
 	Configuration *pSmp = new Configuration(m_protein);
-	pSmp->updateProtein();
+  pSmp->updateMolecule();
   pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
@@ -63,9 +63,6 @@ RRTPlanner::RRTPlanner(Molecule *protein, Move& move, Direction& direction):
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;
 	pSmp->m_id = 0; // root
-	if(SamplingOptions::getOptions()->metric_string=="rmsd") 		metric = new metrics::RMSD();
-	if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
-	rmsdMetric = new metrics::RMSD();
 
 	m_deform_mag = 0.25;
 	m_rand_radius = 2;
@@ -100,7 +97,7 @@ RRTPlanner::~RRTPlanner(){
 
 void RRTPlanner::GenerateSamples() {
 	string out_path = SamplingOptions::getOptions()->workingDirectory;
-	string name = SamplingOptions::getOptions()->moleculeName;
+	string name = m_protein->getName();
 	int nBatch = SamplingOptions::getOptions()->samplesToGenerate;
 
 	int sample_id = 0, max_depth = 0, failed_trials = 0, total_trials = 0;
@@ -120,9 +117,10 @@ void RRTPlanner::GenerateSamples() {
 
 		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik") << "Generating new target, getting new seed" << endl;
-			pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
 			createNewTarget = false;
+      pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
 			pClosestSmp = SelectNodeFromBuckets(pTarget);
+      delete pTarget;
 			//pClosestSmp = SelectNodeFromBuckets(pTarget,nBatch);
 			double end_time = timer.getTimeNow();
 			selectNodeTime += end_time - start_time;
@@ -135,11 +133,11 @@ void RRTPlanner::GenerateSamples() {
 		pNewSmp = move.move(pClosestSmp, gradient);
 
 		if (pNewSmp != nullptr) {
-			if (!pNewSmp->updatedProtein()->inCollision()) {
+			if (!pNewSmp->updatedMolecule()->inCollision()) {
 				++sample_id;
 				m_numSamples = sample_id;
-				pNewSmp->m_distanceToIni = metric->distance(pNewSmp, m_samples.front());
-				pNewSmp->m_distanceToParent = metric->distance(pNewSmp, pClosestSmp);
+				pNewSmp->m_distanceToIni = m_metric.distance(pNewSmp, m_samples.front());
+				pNewSmp->m_distanceToParent = m_metric.distance(pNewSmp, pClosestSmp);
         pNewSmp->m_id = sample_id;
 				m_samples.push_back(pNewSmp);
 
@@ -159,7 +157,7 @@ void RRTPlanner::GenerateSamples() {
 				if (pNewSmp->m_treeDepth > max_depth)
 					max_depth = pNewSmp->m_treeDepth;
 
-				double distToRandGoal = metric->distance(pNewSmp, pTarget);
+				double distToRandGoal = m_metric.distance(pNewSmp, pTarget);
 
 				//log("samplingStatus") << "> New structure: newpdb_"<<sample_id<<".pdb .. RMSD to initial: "<< pNewSmp->m_rmsd_initial<<endl;
 				//log("samplingStatus") << "> New structure: "<<name<<"_new_"<<sample_id<<".pdb .. Distance to initial: "<< setprecision(6)<<pNewSmp->m_distanceToIni<<" .. Distance to current target: "<< setprecision(3)<<distToRandGoal<<" .. Null-space dimension: "<<pNewSmp->CycleNullSpace->nullspaceSize<<endl;
@@ -210,7 +208,7 @@ Configuration* RRTPlanner::GenerateRandConf() {
 	}
 
 	pNewSmp->m_id = -1;
-	pNewSmp->updateProtein();
+  pNewSmp->updateMolecule();
 	pNewSmp->updateGlobalTorsions();
 	return pNewSmp;
 }
@@ -233,7 +231,7 @@ Configuration *RRTPlanner::SelectNodeFromBuckets (Configuration *pTarget) {
 				continue;
 			}
 			// Using closest to random
-			distance = metric->distance(pSmp,pTarget);
+			distance = m_metric.distance(pSmp,pTarget);
 
 			if (distance<min_distance) {
 				min_distance = distance;

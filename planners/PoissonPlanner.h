@@ -54,7 +54,7 @@ class Configuration;
  */
 class PoissonPlanner : public SamplingPlanner{
  public:
-  PoissonPlanner(Molecule *, Move&);
+  PoissonPlanner(Molecule *, Move&, metrics::Metric&);
   ~PoissonPlanner();
 
   void GenerateSamples();
@@ -68,9 +68,6 @@ class PoissonPlanner : public SamplingPlanner{
   const int max_rejects_before_close; ///< Number perturbations that are tried before a sample is 'closed'
   const double m_bigRad;              ///< Largest allowed step-size
   const double m_lilRad;              ///< Smallest allowed distance between any two samples
-
-	metrics::Metric* metric;            ///< Metric used to measure distances between samples
-
 
   ConfigurationList open_samples;     ///< Non-closed samples
   ConfigurationList closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations

@@ -31,7 +31,7 @@ void TorsionDOF::updateEndVertexTransformation()
   Math3D::Vector3 axis = p2-p1;
   axis.inplaceNormalize();
 
-  Math3D::RigidTransform localMat, m1, m2, m3;
+  Math3D::RigidTransform m1, m2, m3;
   m1.setIdentity();
   m2.setIdentity();
   m3.setIdentity();

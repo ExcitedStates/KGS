@@ -15,7 +15,7 @@ GlobalRotateDOF::GlobalRotateDOF(const KinEdge* edge, int axis):
 Math3D::Vector3 GlobalRotateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 axis(0,0,0);
-  axis[m_axis]=1;
+  axis[m_axis]=1.0;
   return std::move( Math3D::cross( axis, coord ) );
 }
 
@@ -43,3 +43,4 @@ void GlobalRotateDOF::updateEndVertexTransformation()
 
   m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * tr;
 }
+

@@ -103,7 +103,7 @@ void Selection::selectionWords( vector<string> selectionWords ) {
 }
 //---------------------------------------------------------
 /*
- * Parses a [RESIDUE ID] selection and returns a vector of corresponding residues in m_protein.
+ * Parses a [RESIDUE ID] selection and returns a vector of corresponding residues in m_molecule.
  * Assumes the selection starts with either "resid" or "not" followed by [ranges of] resids ("resid 1 to 123 145 200 300 to 400").
  * TODO: Rough parsing, need to develop a more elegant routine (keywords, boolean and/or/not, etc).
  */
@@ -157,7 +157,7 @@ Selection::getSelectedResidues( const Molecule *protein ) const {
 }
 //---------------------------------------------------------
 /*
- * Parses a [ATOM NAME] selection and returns a vector of corresponding atoms in m_protein.
+ * Parses a [ATOM NAME] selection and returns a vector of corresponding atoms in m_molecule.
  * Assumes the selection starts with either "name" or "not" followed by atom names ("name CA N").
  * TODO: Rough parsing, need to develop a more elegant routine (keywords, boolean and/or/not, etc).
  */
@@ -169,7 +169,7 @@ Selection::getSelectedAtoms( const Molecule *protein )
 }
 //---------------------------------------------------------
 /*
- * Parses a [ATOM NAME] selection and returns a vector of corresponding atoms in input m_protein residues.
+ * Parses a [ATOM NAME] selection and returns a vector of corresponding atoms in input m_molecule residues.
  * Assumes the selection starts with either "name" or "not" followed by atom names ("name CA N").
  * TODO: Rough parsing, need to develop a more elegant routine (keywords, boolean and/or/not, etc).
  */

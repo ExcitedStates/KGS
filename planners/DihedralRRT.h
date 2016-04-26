@@ -28,7 +28,7 @@ class Configuration;
 
 class DihedralRRT : public SamplingPlanner{
 public:
-	DihedralRRT(Molecule *, Move&, Direction&);
+	DihedralRRT(Molecule *, Move&, metrics::Metric&, Direction&);
 	~DihedralRRT();
 
 	void GenerateSamples();
@@ -42,11 +42,7 @@ protected:
 	Configuration* GenerateRandConf();
 	Configuration* SelectNodeFromBuckets(Configuration *pTarget);
 
-	metrics::Metric* metric;
-	metrics::Metric* rmsdMetric;
-
   Direction& direction;
-
 
 public:
 	Molecule *m_protein;

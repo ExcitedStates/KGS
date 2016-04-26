@@ -50,7 +50,7 @@ class Configuration;
 class RRTPlanner: public SamplingPlanner
 {
 public: 
-	RRTPlanner(Molecule *, Move& move, Direction& direction);
+	RRTPlanner(Molecule *, Move& move, metrics::Metric& metric, Direction& direction);
 	~RRTPlanner();
 
 	void GenerateSamples();
@@ -66,9 +66,6 @@ protected:
 
 	unsigned int m_current_max_bucket_id;
 	std::list<Configuration*> distance_buckets[MAX_BUCKET_NUM];
-
-	metrics::Metric* metric;
-	metrics::Metric* rmsdMetric;
 
   Direction& direction;
 

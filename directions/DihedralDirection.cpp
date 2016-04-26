@@ -40,7 +40,7 @@ void DihedralDirection::setTarget(Configuration* conf)
 
 void DihedralDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
 {
-  Molecule * protein = conf->updatedProtein();
+  Molecule * protein = conf->updatedMolecule();
   const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
   bool allResidues = resNetwork.size() == 0 ? true:false;
 

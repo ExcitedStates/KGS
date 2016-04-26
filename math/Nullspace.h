@@ -52,7 +52,8 @@ class Nullspace {
   /** Return the underlying matrix. */
   gsl_matrix* Matrix() const{ return svd->matrix; }
 
-  gsl_matrix* getBasis() const{ return nullspaceBasis; }
+  /** Return the basis of the nullspace as columns of a matrix */
+  gsl_matrix *getBasis() const;
 
   /**
    * Returns true iff the angle specified by the argument is rigidified.
@@ -67,7 +68,7 @@ class Nullspace {
 
 
 
- private:
+private:
   SVD* svd;                    ///< SVD underlying this nullspace
   int nullspaceSize;           ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)

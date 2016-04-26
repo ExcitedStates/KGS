@@ -93,7 +93,7 @@ void HbondIdentifier::identify_hbonds (Molecule *protein) {
 			double ang_D_A_AA = (*neighbor_itr)->m_Position.getAngle( donor->m_Position, AA->m_Position);
 			if ( ang_D_A_AA<=90 ) continue;
 			
-			// create the Hbond object and insert into m_protein
+			// create the Hbond object and insert into m_molecule
 			//int h_id = (*atom_itr)->getId();
 			//int a_id = (*neighbor_itr)->getId();
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << "\t" << (*atom_itr)->getName() << " " << (*neighbor_itr)->getName() << " " << dist_H_A << " " << dist_D_A << " " << ang_D_H_A << " " << ang_H_A_AA << " " << ang_D_A_AA << endl;

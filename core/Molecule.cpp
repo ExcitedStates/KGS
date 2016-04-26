@@ -270,7 +270,7 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 
 //---------------------------------------------------------
 /*
- * Get a list of colliding atoms in the current m_protein configuration.
+ * Get a list of colliding atoms in the current protein configuration.
  */
 std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const {
   //log() << "InfogetAllCollisions)\t Obtaining a list of atom pair collisions in current m_protein structure..." << endl;
@@ -378,10 +378,10 @@ void Molecule::buildSpanningTree() {
   int dofId = 0;
   std::set<KinVertex*> visitedVertices;
 
-  //Initialize breadth-first-queue with all the first rigid bodies of chains
+  //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
   list<KinVertex*> queue;
   for(auto const& chain: chains) {
-    //Add first vertex to queue
+    //Add first vertex in chain to queue
     Residue* firstRes = chain->getResidues()[0];
     Atom* firstAtom = firstRes->getAtoms().front();
     KinVertex* firstVertex = firstAtom->getRigidbody()->getVertex();
@@ -397,6 +397,7 @@ void Molecule::buildSpanningTree() {
     KinEdge* e1 = m_spanning_tree->addEdgeDirected(m_spanning_tree->root, v2, nullptr);
     KinEdge* e2 = m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
     KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
+//    KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, firstVertex, nullptr);
     KinEdge* e4 = m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
     KinEdge* e5 = m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
     KinEdge* e6 = m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);
@@ -404,9 +405,12 @@ void Molecule::buildSpanningTree() {
     e1->setDOF(new GlobalRotateDOF(e1,0));
     e2->setDOF(new GlobalRotateDOF(e2,1));
     e3->setDOF(new GlobalRotateDOF(e3,2));
-    e4->setDOF(new GlobalTranslateDOF(e4, 0));
-    e5->setDOF(new GlobalTranslateDOF(e5, 1));
-    e6->setDOF(new GlobalTranslateDOF(e6, 2));
+    e4->setDOF(new GlobalTranslateDOF(e4,0));
+    e5->setDOF(new GlobalTranslateDOF(e5,1));
+    e6->setDOF(new GlobalTranslateDOF(e6,2));
+    //e4->setDOF(new GlobalTranslateDOF(e4, 0));
+    //e5->setDOF(new GlobalTranslateDOF(e5, 1));
+    //e6->setDOF(new GlobalTranslateDOF(e6, 2));
   }
 
   //Perform breadth-first-search from all queue vertices and construct KinEdges
@@ -426,12 +430,12 @@ void Molecule::buildSpanningTree() {
         continue;
 
       if ( bond->isHbond() ) {
-        // if it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
+        // If it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
         KinEdge *h_edge = new KinEdge(current_vertex,bonded_vertex,(Hbond*)bond);//TODO: Might be a problem. Idx changed from -1 to 0
         cycleEdges.push_back(h_edge);
-      }else {
 
-        // if it's a covalent bond, add it into the tree m_edges
+      }else {
+        // If it's a covalent bond, add it into the tree m_edges
         queue.push_back(bonded_vertex);
         KinEdge* edge = m_spanning_tree->addEdgeDirected(current_vertex,bonded_vertex,bond);
         edge->setDOF(new TorsionDOF(edge));
@@ -559,10 +563,11 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
       parent = vertex;
     KinEdge* edge = parent->findEdge(vertex);
     int dof_id = edge->getDOF()->getIndex();
-    Bond * bond_ptr = edge->getBond();
-    Coordinate bp1 = bond_ptr->Atom1->m_Position;
-    Coordinate bp2 = bond_ptr->Atom2->m_Position;
-    Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
+    //Bond * bond_ptr = edge->getBond();
+    //Coordinate bp1 = bond_ptr->Atom1->m_Position;
+    //Coordinate bp2 = bond_ptr->Atom2->m_Position;
+    //Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
+    Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_Position);
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
     gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);
@@ -653,6 +658,17 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
 
   for (vector<Atom*>::const_iterator it=atoms.begin(); it!=atoms.end(); ++it) {
     (*it)->m_referencePosition = (*it)->m_Position;
+  }
+}
+
+void Molecule::translateReferencePositionsToRoot(Molecule * base)
+{
+  Coordinate& thisRoot = m_spanning_tree->root->Rb_ptr->Atoms[0]->m_referencePosition;
+  Coordinate& thatRoot = base->m_spanning_tree->root->Rb_ptr->Atoms[0]->m_referencePosition;
+  Math3D::Vector3 diff = thatRoot-thisRoot;
+
+  for(auto const& atom: atoms){
+    atom->m_referencePosition+=diff;
   }
 }
 
@@ -1195,8 +1211,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
         int dof = find(recloseDOFs.begin(), recloseDOFs.end(), e->getDOF()->getIndex())-recloseDOFs.begin();
         //log("debugRas")<<"DOF: "<<dof<<endl;
         if(dof<recloseDOFs.size()){ // Continue if the edge is not in the recloseDOFs
-          Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom1->m_Position);
-          Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom2->m_Position);
+          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom1->m_Position);
+          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom2->m_Position);
+          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom1->m_Position);
+          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom2->m_Position);
           gsl_matrix_set(J, c*6+0, dof, v1[0]);
           gsl_matrix_set(J, c*6+1, dof, v1[1]);
           gsl_matrix_set(J, c*6+2, dof, v1[2]);
@@ -1251,13 +1269,9 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
       }
     }
     for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
-      //j(*eit)->getBond()->Atom1->m_bPositionModified = false;
-      //(*eit)->getBond()->Atom2->m_bPositionModified = false;
       (*eit)->getBond()->Atom1->m_Position = (*eit)->getBond()->Atom1->m_referencePosition;
       (*eit)->getBond()->Atom2->m_Position = (*eit)->getBond()->Atom2->m_referencePosition;
     }
-    //entry->getBond()->Atom1->m_bPositionModified = false;
-    //entry->getBond()->Atom2->m_bPositionModified = false;
     entry->getBond()->Atom1->m_Position = entry->getBond()->Atom1->m_referencePosition;
     entry->getBond()->Atom2->m_Position = entry->getBond()->Atom2->m_referencePosition;
 

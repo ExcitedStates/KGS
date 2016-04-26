@@ -44,14 +44,14 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 {
   //Gradient is the vector to be filled, gradientMethod decides whether blending with randomized entries takes place
   //atom_selection defines the atoms considered for the distance gradient
-  Molecule * protein = conf->updatedProtein();
-  Molecule * target = c_target->updatedProtein();
+  Molecule * protein = conf->updatedMolecule();
+  Molecule * target = c_target->updatedMolecule();
   if(target==nullptr){
     std::cerr<<"MSDDirection::computeGradient - Target not set"<<std::endl;
     exit(-1);
   }
   if(target==protein){
-    std::cerr<<"MSDDirection::computeGradient - Source and target m_protein must differ"<<std::endl;
+    std::cerr<<"MSDDirection::computeGradient - Source and target m_molecule must differ"<<std::endl;
     exit(-1);
   }
 
@@ -103,18 +103,18 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
       if(atom == atom1 || atom == atom2)
         continue;
       //Check selection
-      if (atom_selection=="CA" && ( atom->getName()!="CA" || atom->getName()!="C1'") )
-        continue;
-      else if (atom_selection=="BACKBONE" && ( atom->getName()!="N" || atom->getName()!="C" || atom->getName()!="CA" || atom->getName()!="O" ||
-                                               atom->getName()!="C1'" || atom->getName()!="C2'" || atom->getName()!="C3'" || atom->getName()!="C4'" || atom->getName()!="C5'" || atom->getName()!="O5'" || atom->getName()!="O3'" || atom->getName()!="P" )
-          )
-        continue;
+//      if (atom_selection=="CA" && ( atom->getName()!="CA" || atom->getName()!="C1'") )
+//        continue;
+//      else if (atom_selection=="BACKBONE" && ( atom->getName()!="N" || atom->getName()!="C" || atom->getName()!="CA" || atom->getName()!="O" ||
+//                                               atom->getName()!="C1'" || atom->getName()!="C2'" || atom->getName()!="C3'" || atom->getName()!="C4'" || atom->getName()!="C5'" || atom->getName()!="O5'" || atom->getName()!="O3'" || atom->getName()!="P" )
+//          )
+//        continue;
       else if (atom_selection=="HEAVY" && !atom->isHeavyAtom())
         continue;
-      else if (atom_selection=="RES" && find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() )//Atom not in residue selection
-        continue;
-      else if (atom_selection=="RESCA" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || atom->getName()!="CA" || atom->getName()!="C4'" ) )//C_alpha atom not in residue selection
-        continue;
+//      else if (atom_selection=="RES" && find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() )//Atom not in residue selection
+//        continue;
+//      else if (atom_selection=="RESCA" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || atom->getName()!="CA" || atom->getName()!="C4'" ) )//C_alpha atom not in residue selection
+//        continue;
       else if (atom_selection=="RESHEAVY" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || !atom->isHeavyAtom() ))//HEAVY atom not in residue selection
         continue;
       else{//all atoms

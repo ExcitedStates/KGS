@@ -33,12 +33,12 @@ class Configuration;
 
 class BidirectionalMovingFront : public SamplingPlanner{
  public:
-  BidirectionalMovingFront(Molecule * protein, Move& move, Direction& direction, Molecule * target);
+  BidirectionalMovingFront(Molecule * protein, Move& move, metrics::Metric& metric, Direction& direction, Molecule * target, bool blendedDirection);
   ~BidirectionalMovingFront();
 
   void GenerateSamples();
 
-  ConfigurationList& Samples(){ return m_fwdSamples; }
+  ConfigurationList& Samples();
 
   ConfigurationList& getFwdSamples(){ return m_fwdSamples; }
   ConfigurationList& getRevSamples(){ return m_revSamples; }
@@ -53,9 +53,6 @@ class BidirectionalMovingFront : public SamplingPlanner{
 
   void setClosestConfigRMSD();
 
-  //metrics::Metric* m_metric;
-  metrics::Metric* rmsdMetric;
-
   Direction& direction;
 
  private:
@@ -69,8 +66,6 @@ class BidirectionalMovingFront : public SamplingPlanner{
   Molecule *m_protein;
   Molecule *m_target;
 
-  metrics::Metric* m_metric;            ///< Metric used to measure distances between samples
-
   Configuration* m_fwdRoot;
   Configuration* m_revRoot;
 
@@ -83,12 +78,13 @@ class BidirectionalMovingFront : public SamplingPlanner{
   Configuration* m_closestFwdSample; // own configuration
   Configuration* m_closestRevSample; //closest target configuration
 
-  int m_sample_id;
   int m_max_depth;
   double m_minDistance;
 
   bool m_addedToFront;
   int m_frontSize;
+
+  bool m_isBlended;
 
   int m_nCDCall = 0;
   int m_nMetricsCall = 0;

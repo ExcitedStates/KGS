@@ -36,12 +36,19 @@
 
 
 class LSNullspaceDirection: public Direction {
- public:
+public:
   LSNullspaceDirection();
 
- private:
+private:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
+  void fillmatrices(Configuration* current_q, Configuration* pTarget);
+  void clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein);
+  gsl_matrix* determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition);
+
+
+  static gsl_matrix* m_TargetJacobian;
+  static gsl_matrix* m_TargetPosition;
 
 };
 

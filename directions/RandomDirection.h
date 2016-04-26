@@ -38,13 +38,14 @@
  */
 class RandomDirection: public Direction {
  public:
-  RandomDirection(double maxRotation=0.1745);
+  RandomDirection(std::vector<int> residueNetwork={}, double maxRotation=0.1745);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
  private:
   const double m_maxRotation;
+  const std::vector<int> m_residueNetwork;
 };
 
 

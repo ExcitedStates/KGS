@@ -29,7 +29,7 @@ add_library( libKGS
 		Color.h
 		core/Configuration.h
 		core/Coordinate.h
-		CTKTimer.h
+                CTKTimer.h
 		DisjointSets.h
 		core/Grid.h
 		HbondIdentifier.h
@@ -81,7 +81,7 @@ add_library( libKGS
 		Color.cpp
 		core/Configuration.cpp
 		core/Coordinate.cpp
-		CTKTimer.cpp
+                CTKTimer.cpp
 		DisjointSets.cpp
 		core/Grid.cpp
 		HbondIdentifier.cpp
@@ -123,7 +123,7 @@ add_library( libKGS
 		directions/VDWDirection.cpp
 		metrics/Dihedral.cpp
 		metrics/RMSD.cpp
-		math3d/primitives.cpp
+                math3d/primitives.cpp
 
 		math/GSLSVD.cpp
 		math/GSLSVD.h
@@ -137,10 +137,10 @@ add_library( libKGS
 		loopclosure/ExactIK.h
 		core/dofs/DOF.cpp
 		core/dofs/DOF.h
-        core/dofs/TorsionDOF.cpp
-        core/dofs/TorsionDOF.h
-        core/dofs/GlobalTranslateDOF.cpp
-        core/dofs/GlobalTranslateDOF.h
+                core/dofs/TorsionDOF.cpp
+                core/dofs/TorsionDOF.h
+                core/dofs/GlobalTranslateDOF.cpp
+                core/dofs/GlobalTranslateDOF.h
 		core/dofs/GlobalRotateDOF.cpp
 		core/dofs/GlobalRotateDOF.h
 		core/graph/KinEdge.cpp
@@ -158,7 +158,7 @@ find_package(GSL)
 if( NOT ${GSL_FOUND})
 	message(STATUS "GSL not found, downloading and compiling from source")
 
-	include(ExternalProject)
+    include(ExternalProject)
 	set(GSLVersion 2.1)
 	ExternalProject_Add(GSL
 			PREFIX extern/GSL
@@ -170,7 +170,7 @@ if( NOT ${GSL_FOUND})
 	set(GSL_LIBRARY_DIR ${CMAKE_BINARY_DIR}/extern/lib/ )
 	set(GSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extern/include/)
 	set(GSL_LIBRARIES -lgsl -lgslcblas -lm)
-	add_dependencies(libKGS GSL)
+    add_dependencies(libKGS GSL)
 endif()
 link_directories(   ${GSL_LIBRARY_DIR} )
 include_directories(${GSL_INCLUDE_DIR} )

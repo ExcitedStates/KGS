@@ -78,6 +78,7 @@ class Molecule {
 	void backupAtomIndex(); 
 	void restoreAtomIndex ();
 	void alignReferencePositionsTo(Molecule * base);
+        void translateReferencePositionsToRoot(Molecule * base);
 	
 	void SetConfiguration(Configuration *q);
 	int countOriginalDofs () const;

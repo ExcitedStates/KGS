@@ -14,11 +14,6 @@ class SamplingOptions
 
   /** The working directory */
   std::string workingDirectory;
-  /** Molecule name */
-  std::string moleculeName;
-  /** Target name */
-  std::string targetName;
-
   /** File-path for the initial structure. */
   std::string initialStructureFile;
   /** File-path for all initial structures. */
@@ -45,14 +40,14 @@ class SamplingOptions
         der Waals radii. */
   double collisionFactor;
   /** If a non-colliding structure can not be found, try this many times to decrease the stepsize */
-  int decreaseSteps;
+  int trialSteps;
   /** If a non-colliding structure can not be found, decrease the stepsize by this factor */
   double decreaseFactor;
   /** The largest allowable change in torsion angle */
   double maxRotation;
   /** step size factor*/
   double stepSize;
-  /** Desired norm of step to next sample, can be decreased during collision with decreaseSteps and decreaseFactor */
+  /** Desired norm of step to next sample, can be decreased during collision with trialSteps and decreaseFactor */
   bool flexibleRibose;
   /** Desired m_metric */
   std::string metric_string;
