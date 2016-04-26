@@ -44,7 +44,7 @@ int main( int argc, char* argv[] ) {
 
   Configuration* conf = new Configuration(&protein);
 
-  IO::writePdb(conf->updatedProtein(), "/Users/rfonseca/Downloads/test1.pdb");
+  IO::writePdb(conf->updatedMolecule(), "/Users/rfonseca/Downloads/test1.pdb");
 
   gsl_vector* gradient = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
   gsl_vector_set(gradient, 2, 0.01);
@@ -55,7 +55,7 @@ int main( int argc, char* argv[] ) {
       cerr<<"ERROR .. new conf is null"<<endl;
       continue;
     }
-    IO::writePdb(cNew->updatedProtein(), "/Users/rfonseca/Downloads/test"+std::to_string(i)+".pdb");
+    IO::writePdb(cNew->updatedMolecule(), "/Users/rfonseca/Downloads/test"+std::to_string(i)+".pdb");
     conf = cNew;
 
   }

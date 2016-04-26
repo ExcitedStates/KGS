@@ -38,21 +38,21 @@ Chain::Chain (): Name("UNKNOWN")
 {
 }
 
-Chain::Chain(const string& name, Molecule * parent_protein):
-		Name(name)
+Chain::Chain(const string& name, Molecule * parent_molecule):
+    Name(name),
+    m_molecule(parent_molecule)
 {
-	Parent_protein = parent_protein;
 }
 
 Chain::~Chain() {
-	// delete all residues
-	for (vector<Residue*>::iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
-		delete (*it);
-	}
+  // delete all residues
+  for (vector<Residue*>::iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
+    delete (*it);
+  }
 }
 
 const string& Chain::getName () const {
-	return Name;
+  return Name;
 }
 
 Atom* Chain::addAtom (const std::string& resName,
@@ -61,11 +61,11 @@ Atom* Chain::addAtom (const std::string& resName,
                      const int& atomId,
                      const Coordinate& position )
 {
-	Residue* res = getResidue(resId);
-	if (res == nullptr) { // this is a new residue
-		res = addResidue(resName,resId);
-	}
-	return res->addAtom(atomName, atomId, position);
+  Residue* res = getResidue(resId);
+  if (res == nullptr) { // this is a new residue
+    res = addResidue(resName,resId);
+  }
+  return res->addAtom(atomName, atomId, position);
 }
 
 std::vector<Residue*>& Chain::getResidues()
@@ -74,44 +74,44 @@ std::vector<Residue*>& Chain::getResidues()
 }
 
 Residue* Chain::getResidue (int res_id){
-	for (vector<Residue*>::iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
-		if ((*it)->getId() == res_id) {
-			return (*it);
-		}
-	}
-	return nullptr;
+  for (vector<Residue*>::iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
+    if ((*it)->getId() == res_id) {
+      return (*it);
+    }
+  }
+  return nullptr;
 }
 
 Residue* Chain::addResidue (const string& resName, const int& resId) {
-	Residue* res = new Residue(resName,resId,this);
-	Residue_list.push_back(res);
-	if (Residue_list.size()>1) { // there are at least 2 residues
-		Residue* previous_res = Residue_list.at(Residue_list.size()-2);
-		previous_res->setNextResidue(res);
-	}
-	return res;
+  Residue* res = new Residue(resName,resId,this);
+  Residue_list.push_back(res);
+  if (Residue_list.size()>1) { // there are at least 2 residues
+    Residue* previous_res = Residue_list.at(Residue_list.size()-2);
+    previous_res->setNextResidue(res);
+  }
+  return res;
 }
 
-Molecule * Chain::getProtein() const {
-	return Parent_protein;
+Molecule * Chain::getMolecule() const {
+  return m_molecule;
 }
 
 void Chain::printSummaryInfo() const {
-	cout << "Chain " << Name << endl;
-	for (vector<Residue*>::const_iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
-		(*it)->printSummaryInfo();
-	}
+  cout << "Chain " << Name << endl;
+  for (vector<Residue*>::const_iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
+    (*it)->printSummaryInfo();
+  }
 }
 
 void Chain::print() const {
-	cout << "Chain " << Name << endl;
-	for (vector<Residue*>::const_iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
-		cout<<"\t";
-		(*it)->print();
-	}
+  cout << "Chain " << Name << endl;
+  for (vector<Residue*>::const_iterator it=Residue_list.begin(); it!=Residue_list.end(); ++it) {
+    cout<<"\t";
+    (*it)->print();
+  }
 }
 
 int Chain::size () const {
-	return Residue_list.size();
+  return Residue_list.size();
 }
 

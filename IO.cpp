@@ -567,24 +567,24 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     log("dominik")<<"Configurations don't have same dof number, not writing a q file."<<endl;
     return;
   }
-  //
+
   //Keep track of changes (in magnitude)
-  vector<Edge*>::iterator eit;
-  for (eit = protein->m_spanning_tree->Edges.begin(); eit != protein->m_spanning_tree->Edges.end(); eit++){
-    int dof_id = (*eit)->DOF_id;
-    int resId = (*eit)->getBond()->Atom1->getResidue()->getId();
-    int cycleDOF_id = (*eit)->Cycle_DOF_id;
+  for (auto const& edge: protein->m_spanning_tree->Edges){
+
+    int dof_id = edge->getDOF()->getIndex();
+    int resId = edge->getBond()->Atom1->getResidue()->getId();
+    int cycleDOF_id = edge->getDOF()->getCycleIndex();
     bool onBackbone=false;
-    if( (*eit)->getBond()->Atom1->isBackboneAtom() && (*eit)->getBond()->Atom2->isBackboneAtom())
+    if( edge->getBond()->Atom1->isBackboneAtom() && edge->getBond()->Atom2->isBackboneAtom())
       onBackbone = true;
     int second = 1;
     if(cycleDOF_id == -1)
       second = 0;
-    //else if(gsl_vector_get(m_molecule->m_conf->CycleNullSpace->m_rigidAngles,cycleDOF_id)==1)
     else if( protein->m_conf->getNullspace()->IsAngleRigid(cycleDOF_id) )
       second = 2;
     double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsions(dof_id) - referenceConf->getGlobalTorsions(dof_id));
-    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" "<<protein->m_conf->m_sumProjSteps[dof_id]<<" "<<onBackbone<<endl;
+    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" ";
+    myfile <<protein->m_conf->m_sumProjSteps[dof_id]<<" "<<onBackbone<<endl;
   }
   myfile.close();
 }

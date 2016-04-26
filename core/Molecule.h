@@ -98,6 +98,8 @@ class Molecule {
 
 	gsl_vector* vdwGradient ();
 	std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
+	double vdwEnergy (std::string collisionCheck);//compute vdw energy
+
 
 	Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
 	Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);

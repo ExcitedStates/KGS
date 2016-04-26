@@ -663,8 +663,8 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
 {
-  Coordinate& thisRoot = m_spanning_tree->root->Rb_ptr->Atoms[0]->m_referencePosition;
-  Coordinate& thatRoot = base->m_spanning_tree->root->Rb_ptr->Atoms[0]->m_referencePosition;
+  Coordinate& thisRoot = m_spanning_tree->root->m_rigidbody->Atoms[0]->m_referencePosition;
+  Coordinate& thatRoot = base->m_spanning_tree->root->m_rigidbody->Atoms[0]->m_referencePosition;
   Math3D::Vector3 diff = thatRoot-thisRoot;
 
   for(auto const& atom: atoms){
@@ -846,6 +846,50 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
   }
   return make_pair(energy, collFreeEnergy);
 }
+
+double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw energy, excluding covalently bonded atoms,
+  // atoms in the same rigid body, and atoms we don't check clashes for
+
+  double energy=0, d_12, ratio, vdw_r1, vdw_d12, epsilon1, epsilon_12;
+  set< pair<Atom*,Atom*> >::iterator mit;
+  // for each atom, look for it's neighbors.
+  //For each such neighbor, compute U(R_ab)=epsilon_ij*(vdw_r12/r_12)^12-2*(VDW_R0/r_12)^6) and sum up everything.
+  // CHARMM: http://www.charmmtutorial.org/index.php/The_Energy_Function#Energy_calculation
+  for (vector<Atom*>::const_iterator ait=atoms.begin(); ait!=atoms.end(); ++ait) {
+    Atom* atom1 = *ait;
+    if(!(atom1->isCollisionCheckAtom(collisionCheck)) ){//we only use atoms that are also used for clash detection
+      continue;
+    }
+    vdw_r1 = atom1->getRadius();
+    epsilon1 = atom1->getEpsilon();
+    vector<Atom*> neighbors = Atom_pos_index->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
+      Atom* atom2 = *ait2;
+
+      if (!(atom2->isCollisionCheckAtom(collisionCheck)) || atom1->inSameRigidbody(atom2))
+        continue;//we only use atoms that are also used for clash detection (otherwise they can be too close)
+
+      //Check initial collisions --> always excluded
+      pair<Atom*,Atom*> collision_pair = make_pair(atom1,atom2);
+//      set< pair<Atom*,Atom*>,int >::const_iterator mit=Initial_collisions.find(collision_pair);
+      auto mit = Initial_collisions.find(collision_pair);
+      if ( mit!=Initial_collisions.end() )//ignore initial collision atoms
+        continue;
+
+      d_12 = atom1->distanceTo(atom2);
+      vdw_d12 = vdw_r1 + atom2->getRadius(); // from CHARMM: Todo: do we need the arithmetic mean or the sum?
+      ratio = vdw_d12/d_12;
+      epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
+      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
+
+      //Full enthalpy including atoms in clash constraints
+      energy += atomContribution;
+    }
+  }
+  return energy;
+}
+
+
 
 ///Create a set of hbonds from the hbond list of another protein
 void Molecule::setToHbondIntersection (Molecule * p2) {

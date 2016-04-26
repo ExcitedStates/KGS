@@ -33,8 +33,8 @@
 #include <math/MKLSVD.h>
 
 #include "LSNullspaceDirection.h"
-#include "Molecule.h"
-#include "Chain.h"
+#include "core/Molecule.h"
+#include "core/Chain.h"
 
 
 using namespace std;
@@ -60,27 +60,10 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
   int dof=protein->totalDofNum();
   gsl_matrix* fullN = gsl_matrix_calloc(dof,N->size2+dof-N->size1);
   gsl_matrix_set_zero(fullN);
-  map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
   int fulldof=0;
-  for (vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); vit++){
-    if( (*vit).second->isRibose ){
-      SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-      int dof_id = v->DOF_id;
-      int cycle_dof_id = v->Cycle_DOF_id;
-      if ( cycle_dof_id!=-1 ) {
-        for( int i=0; i!=N->size2; i++){
-          gsl_matrix_set(fullN, dof_id,i, gsl_matrix_get(N,cycle_dof_id,i));
-        }
-      }
-      else{
-        gsl_matrix_set(fullN, dof_id,N->size2+fulldof, 1);
-        fulldof+=1;
-      }
-    }
-  }
-  for (vector<Edge*>::iterator eit=protein->m_spanning_tree->Edges.begin(); eit!=protein->m_spanning_tree->Edges.end(); ++eit) {
-    int dof_id = (*eit)->DOF_id;
-    int cycle_dof_id = (*eit)->Cycle_DOF_id;
+  for (auto const& edge: protein->m_spanning_tree->Edges) {
+    int dof_id = edge->getDOF()->getIndex();
+    int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
       for( int i=0; i!=N->size2; i++){
         gsl_matrix_set(fullN, dof_id,i, gsl_matrix_get(N,cycle_dof_id,i));
@@ -128,40 +111,28 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration*
       //log("dominik")<<"Specified target atom does not exist!"<<endl;
       continue;//skip the non-existing atom
     }
-    RigidbodyGraphVertex* currVertex = atom->getRigidbody()->getVertex();
+    KinVertex* currVertex = atom->getRigidbody()->getVertex();
     gsl_matrix_set(m_TargetPosition,i*3+0,0,aTarget->m_Position.x-p.x);
     gsl_matrix_set(m_TargetPosition,i*3+1,0,aTarget->m_Position.y-p.y);
     gsl_matrix_set(m_TargetPosition,i*3+2,0,aTarget->m_Position.z-p.z);
     //       cout<<gsl_matrix_get(m_TargetPosition,i*3+0,0)<<" px "<<p.x<<" Tx "<<aTarget->Position.x<<gsl_matrix_get(m_TargetPosition,i*3+1,0)<<" "<<gsl_matrix_get(m_TargetPosition,i*3+2,0)<<" ";
     // trace back until the root from currVertex
     //while ( currVertex != protein->m_spanning_tree->Root ) {
-    while ( currVertex->Parent != NULL){
+    while ( currVertex->m_parent != NULL){
 //      Edge* p_edge = currVertex->Parent->Edges.find(currVertex->VertexId)->second;
-      Edge* p_edge = currVertex->Parent->findEdge(currVertex);
+      KinEdge* p_edge = currVertex->m_parent->findEdge(currVertex);
 
-      if(currVertex->Parent->isRibose) {//RFonseca
-        cout<<"In sugar vertex!"<<endl;
-        SugarVertex* v = reinterpret_cast<SugarVertex*>(currVertex->Parent);
-        int dof_id = v->DOF_id;
-        if(dof_id!=-1){
-          Vector3 derivativeP = v->computeJacobianEntry(p_edge, current_q->m_dofs, p);
-
-          gsl_matrix_set(m_TargetJacobian,i*3+0,dof_id,derivativeP.x);
-          gsl_matrix_set(m_TargetJacobian,i*3+1,dof_id,derivativeP.y);
-          gsl_matrix_set(m_TargetJacobian,i*3+2,dof_id,derivativeP.z);
-        }
-      }
-
-      int dof_id = p_edge->DOF_id;
+      //int dof_id = p_edge->DOF_id;
+      int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DO
         Atom* ea1 = p_edge->getBond()->Atom1;
         Atom* ea2 = p_edge->getBond()->Atom2;
-        Vector3 derivativeP = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p);
+        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p);
         gsl_matrix_set(m_TargetJacobian,i*3+0,dof_id,derivativeP.x);
         gsl_matrix_set(m_TargetJacobian,i*3+1,dof_id,derivativeP.y);
         gsl_matrix_set(m_TargetJacobian,i*3+2,dof_id,derivativeP.z);
       }
-      currVertex = currVertex->Parent;
+      currVertex = currVertex->m_parent;
     }
     i++;
   }
@@ -175,7 +146,7 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
   // gsl_matrix* inv=svd2->pseudoInverse();
 
   gsl_vector* S=svd2->S;
-  gsl_matrix* V=svd2->V_t;
+  gsl_matrix* V=svd2->V;
   gsl_matrix* U=svd2->U;
   gsl_matrix* Ut=gsl_matrix_trans(U);
   gsl_matrix* Tbis=gsl_matrix_mul(Ut,TargetPosition);

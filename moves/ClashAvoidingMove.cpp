@@ -42,13 +42,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
-<<<<<<< .working
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
-||||||| .merge-left.r130
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getProtein()->m_spanning_tree->Cycle_DOF_num + new_q->getNullspace()->NullspaceSize();
-=======
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getMolecule()->m_spanning_tree->Cycle_DOF_num + new_q->getNullspace()->NullspaceSize();
->>>>>>> .merge-right.r159
+  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -150,7 +144,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Therefore, we use the full set of dihedrals to determine this matrix!
 
   int rowNum = conf->getCycleJacobian()->size1 + numCollisions;
-  int colNum = conf->getProtein()->m_spanning_tree->getNumDOFs();
+  int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 

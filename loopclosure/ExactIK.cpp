@@ -64,8 +64,8 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     cout<<"ENDMDL"<<endl;
   }
 
-  Configuration* parent = res1->getChain()->getProtein()->m_conf;
-  if(parent==nullptr) parent = new Configuration(res1->getChain()->getProtein());
+  Configuration* parent = res1->getChain()->getMolecule()->m_conf;
+  if(parent==nullptr) parent = new Configuration(res1->getChain()->getMolecule());
   vector<Configuration*> ret;
 
   for(int i=0;i<n_soln;i++){
@@ -114,7 +114,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     double newPsi3 = TorsionalAngle(_N3, A3->m_Position, C3->m_Position, N4->m_Position);
     double delPsi3 = newPsi3 - oldPsi3;
 
-    for(auto const& edge: parent->getProtein()->m_spanning_tree->Edges){
+    for(auto const& edge: parent->getMolecule()->m_spanning_tree->Edges){
       if(edge->getBond()->Atom1==N1) child->m_dofs[edge->getDOF()->getIndex()] += delPhi1;
       if(edge->getBond()->Atom1==A1) child->m_dofs[edge->getDOF()->getIndex()] += delPsi1;
       if(edge->getBond()->Atom1==N2) child->m_dofs[edge->getDOF()->getIndex()] += delPhi2;
@@ -157,7 +157,7 @@ bool ExactIK::validRebuildLoop(const Residue* res1, const Residue* res2, const R
   if(res3->getAtom("N")==nullptr) return false;
 
   //Check for constraints between res1 and res3
-  for(auto const& edge: res1->getChain()->getProtein()->m_spanning_tree->Edges){
+  for(auto const& edge: res1->getChain()->getMolecule()->m_spanning_tree->Edges){
     Bond* bond = edge->getBond();
     //TODO: check for constraints
   }

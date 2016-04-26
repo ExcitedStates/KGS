@@ -29,7 +29,7 @@ add_library( libKGS
 		Color.h
 		core/Configuration.h
 		core/Coordinate.h
-                CTKTimer.h
+        CTKTimer.h
 		DisjointSets.h
 		core/Grid.h
 		HbondIdentifier.h
@@ -65,7 +65,7 @@ add_library( libKGS
 		moves/RebuildMove.h
 		moves/ClashAvoidingMove.h
 		directions/Direction.h
-		directions/MixedDirection.h
+		directions/BlendedDirection.h
 		directions/RandomDirection.h
 		directions/DihedralDirection.h
 		directions/MSDDirection.h
@@ -77,11 +77,11 @@ add_library( libKGS
 
 
 		core/Atom.cpp
-		core/Chain.cpp
-		Color.cpp
-		core/Configuration.cpp
-		core/Coordinate.cpp
-                CTKTimer.cpp
+        core/Chain.cpp
+        Color.cpp
+        core/Configuration.cpp
+        core/Coordinate.cpp
+        CTKTimer.cpp
 		DisjointSets.cpp
 		core/Grid.cpp
 		HbondIdentifier.cpp
@@ -115,7 +115,7 @@ add_library( libKGS
 		moves/RebuildMove.cpp
 		moves/ClashAvoidingMove.cpp
 		directions/Direction.cpp
-		directions/MixedDirection.cpp
+		directions/BlendedDirection.cpp
 		directions/RandomDirection.cpp
 		directions/DihedralDirection.cpp
 		directions/MSDDirection.cpp
@@ -123,7 +123,7 @@ add_library( libKGS
 		directions/VDWDirection.cpp
 		metrics/Dihedral.cpp
 		metrics/RMSD.cpp
-                math3d/primitives.cpp
+        math3d/primitives.cpp
 
 		math/GSLSVD.cpp
 		math/GSLSVD.h
@@ -135,12 +135,12 @@ add_library( libKGS
 		math/Nullspace.h
 		loopclosure/ExactIK.cpp
 		loopclosure/ExactIK.h
-		core/dofs/DOF.cpp
-		core/dofs/DOF.h
-                core/dofs/TorsionDOF.cpp
-                core/dofs/TorsionDOF.h
-                core/dofs/GlobalTranslateDOF.cpp
-                core/dofs/GlobalTranslateDOF.h
+        core/dofs/DOF.cpp
+        core/dofs/DOF.h
+        core/dofs/TorsionDOF.cpp
+        core/dofs/TorsionDOF.h
+        core/dofs/GlobalTranslateDOF.cpp
+        core/dofs/GlobalTranslateDOF.h
 		core/dofs/GlobalRotateDOF.cpp
 		core/dofs/GlobalRotateDOF.h
 		core/graph/KinEdge.cpp

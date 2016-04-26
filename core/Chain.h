@@ -53,14 +53,14 @@ class Chain {
 
 	std::vector<Residue*>& getResidues();
   Residue* getResidue (int res_id);
-	Molecule * getProtein() const;
+	Molecule * getMolecule() const;
 	int size () const;
 	void printSummaryInfo() const;
 	void print() const;
 
  private:
 	std::vector<Residue*> Residue_list;
-	Molecule * Parent_protein;
+	Molecule * m_molecule;
 	const std::string Name;
 
   Residue* addResidue (const std::string& res_name, const int& res_id);
