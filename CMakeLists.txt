@@ -153,8 +153,9 @@ add_library( libKGS
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
-#find_package(GSL)
+find_package(GSL REQUIRED)
 #if( NOT ${GSL_FOUND})
 #	message(STATUS "GSL not found, downloading and compiling from source")
 #
@@ -171,17 +172,16 @@ set_target_properties( libKGS PROPERTIES PREFIX "" )
 #	set(GSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extern/include/)
 #    add_dependencies(libKGS GSL)
 #endif()
-set(GSL_LIBRARIES -lgsl -lgslcblas -lm)
+#set(GSL_LIBRARIES -lgsl -lgslcblas -lm)
+message("GSL_LIBRARIES:   ${GSL_LIBRARIES}" )
 message("GSL_LIBRARY_DIR: ${GSL_LIBRARY_DIR}" )
 message("GSL_INCLUDE_DIR: ${GSL_INCLUDE_DIR}" )
-message("GSL_LIBRARIES:   ${GSL_LIBRARIES}" )
 link_directories(   ${GSL_LIBRARY_DIR} )
 include_directories(${GSL_INCLUDE_DIR} )
 #link_libraries( gsl gslcblas m )
 
 
 # Attempt to find MKL
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 find_package(MKL REQUIRED)
 if(${MKL_FOUND})
 	include_directories(${MKL_INCLUDE_DIR})
