@@ -59,7 +59,7 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 {
 	const string& out_path = SamplingOptions::getOptions()->workingDirectory;
 	const string& name = conf->getMolecule()->getName();
-	string out_file = out_path+"output/"+name+"_new_"+std::to_string(sample_num)+".pdb";
+	string out_file = out_path+"output/"+name+"_new_"+std::to_string(static_cast<long long>(sample_num))+".pdb";
 
 	if(SamplingOptions::getOptions()->saveData > 0){
 
@@ -71,7 +71,7 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 	if(SamplingOptions::getOptions()->saveData > 1){
 		Molecule * protein = conf->updatedMolecule();
 
-		string out_q = out_path+"output/"+name+"_q_"+std::to_string(sample_num)+".txt";
+		string out_q = out_path+"output/"+name+"_q_"+std::to_string(static_cast<long long>(sample_num))+".txt";
 
 		IO::writeQ(protein, ref, out_q);
 	}
@@ -82,27 +82,27 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 
 		// Save Jacobian and Nullspace to file
 		string outJac=out_path + "output/" +  name + "_jac_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 		string outNull=out_path + "output/" +  name + "_nullSpace_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 		// Save singular values
 		string outSing=out_path + "output/" +  name + "_singVals_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 		// Save pyMol coloring script
 		string pyMol=out_path + "output/" +  name + "_pyMol_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".pml";
 		string rbFile=out_path + "output/" +  name + "_RBs_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 		string covFile=out_path + "output/" +  name + "_covBonds_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 		string statFile=out_path + "output/" +  name + "_stats_" +
-			std::to_string(sample_num)
+			std::to_string(static_cast<long long>(sample_num))
 			+ ".txt";
 
 		IO::writePyMolScript(protein, out_file, pyMol);

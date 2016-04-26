@@ -55,7 +55,7 @@ int main( int argc, char* argv[] ) {
       cerr<<"ERROR .. new conf is null"<<endl;
       continue;
     }
-    IO::writePdb(cNew->updatedMolecule(), "/Users/rfonseca/Downloads/test"+std::to_string(i)+".pdb");
+    IO::writePdb(cNew->updatedMolecule(), "/Users/rfonseca/Downloads/test"+std::to_string(static_cast<long long>(i))+".pdb");
     conf = cNew;
 
   }

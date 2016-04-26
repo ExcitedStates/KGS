@@ -154,24 +154,27 @@ add_library( libKGS
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
 
-find_package(GSL)
-if( NOT ${GSL_FOUND})
-	message(STATUS "GSL not found, downloading and compiling from source")
-
-    include(ExternalProject)
-	set(GSLVersion 2.1)
-	ExternalProject_Add(GSL
-			PREFIX extern/GSL
-			URL ftp://ftp.gnu.org/gnu/gsl/gsl-${GSLVersion}.tar.gz
-			CONFIGURE_COMMAND ./configure --prefix=${CMAKE_BINARY_DIR}/extern --enable-shared=no --with-pic=yes
-			BUILD_COMMAND           make -j8
-			INSTALL_COMMAND         make install
-			BUILD_IN_SOURCE 1)
-	set(GSL_LIBRARY_DIR ${CMAKE_BINARY_DIR}/extern/lib/ )
-	set(GSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extern/include/)
-	set(GSL_LIBRARIES -lgsl -lgslcblas -lm)
-    add_dependencies(libKGS GSL)
-endif()
+#find_package(GSL)
+#if( NOT ${GSL_FOUND})
+#	message(STATUS "GSL not found, downloading and compiling from source")
+#
+#    include(ExternalProject)
+#	set(GSLVersion 2.1)
+#	ExternalProject_Add(GSL
+#			PREFIX extern/GSL
+#			URL ftp://ftp.gnu.org/gnu/gsl/gsl-${GSLVersion}.tar.gz
+#			CONFIGURE_COMMAND ./configure --prefix=${CMAKE_BINARY_DIR}/extern --enable-shared=no --with-pic=yes
+#			BUILD_COMMAND           make -j8
+#			INSTALL_COMMAND         make install
+#			BUILD_IN_SOURCE 1)
+#	set(GSL_LIBRARY_DIR ${CMAKE_BINARY_DIR}/extern/lib/ )
+#	set(GSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extern/include/)
+#    add_dependencies(libKGS GSL)
+#endif()
+set(GSL_LIBRARIES -lgsl -lgslcblas -lm)
+message("GSL_LIBRARY_DIR: ${GSL_LIBRARY_DIR}" )
+message("GSL_INCLUDE_DIR: ${GSL_INCLUDE_DIR}" )
+message("GSL_LIBRARIES:   ${GSL_LIBRARIES}" )
 link_directories(   ${GSL_LIBRARY_DIR} )
 include_directories(${GSL_INCLUDE_DIR} )
 #link_libraries( gsl gslcblas m )

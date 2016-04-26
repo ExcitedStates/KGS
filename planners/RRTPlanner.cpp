@@ -118,9 +118,8 @@ void RRTPlanner::GenerateSamples() {
 		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik") << "Generating new target, getting new seed" << endl;
 			createNewTarget = false;
-      pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
+			pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
 			pClosestSmp = SelectNodeFromBuckets(pTarget);
-      delete pTarget;
 			//pClosestSmp = SelectNodeFromBuckets(pTarget,nBatch);
 			double end_time = timer.getTimeNow();
 			selectNodeTime += end_time - start_time;
@@ -138,7 +137,7 @@ void RRTPlanner::GenerateSamples() {
 				m_numSamples = sample_id;
 				pNewSmp->m_distanceToIni = m_metric.distance(pNewSmp, m_samples.front());
 				pNewSmp->m_distanceToParent = m_metric.distance(pNewSmp, pClosestSmp);
-        pNewSmp->m_id = sample_id;
+				pNewSmp->m_id = sample_id;
 				m_samples.push_back(pNewSmp);
 
 				// Put pNewSmp in the appropriate bucket
@@ -164,8 +163,8 @@ void RRTPlanner::GenerateSamples() {
 				log("samplingStatus") << "> New structure: " << name << "_new_" << sample_id << ".pdb";
 				log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << pNewSmp->m_distanceToIni;
 				log("samplingStatus") << " .. Distance to current target: " << setprecision(3) << distToRandGoal;
-        //TODO: Dont just calculate nullspace for this
-        log("samplingStatus") << " .. Null-space dimension: " << pNewSmp->getNullspace()->NullspaceSize();
+				//TODO: Dont just calculate nullspace for this
+				log("samplingStatus") << " .. Null-space dimension: " << pNewSmp->getNullspace()->NullspaceSize();
 				log("samplingStatus") << endl;
 
 				if (distToRandGoal <= MOV_DIH_THRESHOLD) {//current target reached
@@ -187,7 +186,7 @@ void RRTPlanner::GenerateSamples() {
 			}
 		}
 	}
-  gsl_vector_free(gradient);
+	gsl_vector_free(gradient);
 }
 
 Configuration* RRTPlanner::GenerateRandConf() {

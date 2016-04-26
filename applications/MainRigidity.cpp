@@ -72,7 +72,7 @@ int main( int argc, char* argv[] ){
 
   int sample_id = 1;
   string out_file = out_path + "output/" + name + "_new_" +
-                    std::to_string(sample_id)
+                    std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".pdb";
   if(options.saveData > 0){
@@ -82,11 +82,11 @@ int main( int argc, char* argv[] ){
   if(options.saveData > 1){
     ///save pyMol coloring script
     string pyMol=out_path + "output/" +  name + "_pyMol_" +
-                 std::to_string(sample_id)
+                 std::to_string((long long)sample_id)
                  //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                  + ".pml";
     string statFile=out_path + "output/" +  name + "_stats_" +
-                    std::to_string(sample_id)
+                    std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".txt";
     ///Write pyMol script
@@ -97,24 +97,24 @@ int main( int argc, char* argv[] ){
     if(options.saveData > 2){
       ///save Jacobian and Nullspace to file
       string outJac=out_path + "output/" +  name + "_jac_" +
-                    std::to_string(sample_id)
+                    std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".txt";
       string outNull=out_path + "output/" +  name + "_nullSpace_" +
-                     std::to_string(sample_id)
+                     std::to_string((long long)sample_id)
                      //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                      + ".txt";
       ///save singular values
       string outSing=out_path + "output/" +  name + "_singVals_" +
-                     std::to_string(sample_id)
+                     std::to_string((long long)sample_id)
                      //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                      + ".txt";
       string rbFile=out_path + "output/" +  name + "_RBs_" +
-                    std::to_string(sample_id)
+                    std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".txt";
       string covFile=out_path + "output/" +  name + "_covBonds_" +
-                     std::to_string(sample_id)
+                     std::to_string((long long)sample_id)
                      //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                      + ".txt";
 

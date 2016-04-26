@@ -64,6 +64,10 @@ Configuration::Configuration(Molecule * protein_):
   m_treeDepth(0)
 {
   assert(m_molecule!=nullptr);
+  if(m_molecule==NULL){
+	  std::cerr<<"Configuration(.. 1) - molecule is NULL"<<std::endl;
+  }
+
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
   m_distanceToTarget       = 99999;
@@ -96,6 +100,9 @@ Configuration::Configuration(Configuration* parent_):
     m_treeDepth(parent_->m_treeDepth +1)
 {
   assert(m_molecule!=nullptr);
+  if(m_molecule==NULL){
+	  std::cerr<<"Configuration(..) - molecule is NULL"<<std::endl;
+  }
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
   m_distanceToTarget       = 99999;

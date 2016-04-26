@@ -42,6 +42,6 @@ int main( int argc, char* argv[] ) {
 
   cout<<rebuiltConfs.size()<<" rebuilt configurations"<<endl;
   for(size_t i=0;i<rebuiltConfs.size(); i++){
-    IO::writePdb(rebuiltConfs[i]->updatedMolecule(), "/Users/rfonseca/Downloads/rebuilt_"+std::to_string(i)+".pdb");
+    IO::writePdb(rebuiltConfs[i]->updatedMolecule(), "/Users/rfonseca/Downloads/rebuilt_"+std::to_string((long long)i)+".pdb");
   }
 }
