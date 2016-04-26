@@ -25,14 +25,15 @@
 
 
 */
+#include "LSNullspaceDirection.h"
 
 #include <map>
-#include <SamplingOptions.h>
 #include <cassert>
-#include <JacobianRelated.h>
-#include <math/MKLSVD.h>
 
-#include "LSNullspaceDirection.h"
+#include "SamplingOptions.h"
+#include "math/SVD.h"
+#include "math/gsl_helpers.h"
+
 #include "core/Molecule.h"
 #include "core/Chain.h"
 
@@ -142,7 +143,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration*
 gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition){
 
   gsl_matrix* Mn = gsl_matrix_mul(targetJacobian,N);
-  SVD* svd2 = new MKLSVD(Mn);
+  SVD* svd2 = SVD::createSVD(Mn);//new MKLSVD(Mn);
   // gsl_matrix* inv=svd2->pseudoInverse();
 
   gsl_vector* S=svd2->S;

@@ -84,13 +84,5 @@ void ComputeNullSpace(gsl_matrix* Jac, NullSpaceRet* Ret);
 //void ProjectOnNullSpace (NullSpaceRet* nullspace, gsl_vector *e, gsl_vector *to_project, gsl_vector *after_project);
 void TorsionUpdate(NullSpaceRet* nullspace, gsl_vector *e, double lambda, gsl_vector *dTheta);
 
-gsl_matrix* gsl_matrix_trans(gsl_matrix* A);
-gsl_matrix* gsl_matrix_mul(gsl_matrix* A, gsl_matrix* B);
-gsl_vector* gsl_matrix_vector_mul(gsl_matrix* A, gsl_vector* v);
-gsl_matrix* pca (gsl_matrix* sample_matrix);
-gsl_vector* RandomUnitVectorInNullSpace (NullSpaceRet* nullspace);
-gsl_vector* RandomUnitVector (int size);
-double frobenius_norm (const gsl_matrix *m);
-
 #endif
 

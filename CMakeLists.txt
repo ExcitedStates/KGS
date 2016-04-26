@@ -34,7 +34,7 @@ add_library( libKGS
 		core/Grid.h
 		HbondIdentifier.h
 		IO.h
-		JacobianRelated.h
+		#JacobianRelated.h
 		Logger.h
 		math/MathUtility.h
 		core/Molecule.h
@@ -86,7 +86,7 @@ add_library( libKGS
 		core/Grid.cpp
 		HbondIdentifier.cpp
 		IO.cpp
-		JacobianRelated.cpp
+		#JacobianRelated.cpp
 		Logger.cpp
 		math/MathUtility.cpp
 		core/Molecule.cpp
@@ -184,7 +184,7 @@ if(${MKL_FOUND})
 	include_directories(${MKL_INCLUDE_DIR})
 	#list(APPEND CMAKE_EXE_LINKER_FLAGS -lmkl_intel_lp64)
 	link_libraries( mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread )
-	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_COMPILER -D__INTEL_MKL" )
+	#SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths

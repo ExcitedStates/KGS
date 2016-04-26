@@ -100,7 +100,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
       bool projectConstraints = SamplingOptions::getOptions()->projectConstraints;//also use h-bond constraints
       gsl_matrix* clashAvoidingJacobian = computeClashAvoidingJacobian( current, allCollisions,projectConstraints);
-      SVD* clashAvoidingSVD  = new MKLSVD(clashAvoidingJacobian);
+      SVD* clashAvoidingSVD  = SVD::createSVD(clashAvoidingJacobian);//new MKLSVD(clashAvoidingJacobian);
       Nullspace* clashAvoidingNullSpace = new Nullspace(clashAvoidingSVD);
       clashAvoidingNullSpace->UpdateFromMatrix();
       clashAvoidingNullSpace->ProjectOnNullSpace(projected_gradient, projected_gradient);

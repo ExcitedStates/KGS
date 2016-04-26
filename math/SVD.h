@@ -21,15 +21,19 @@ class SVD{
  protected:
   const int m, n; ///< Dimensions of matrix
 
-public:
+  /** Decomposes M into U*S*V^t.  */
+  SVD(gsl_matrix* M);
+ public:
 
   gsl_matrix * const matrix;  //TODO: Make private
   gsl_matrix * const U;       //TODO: Make private
   gsl_matrix * const V;       //TODO: Make private
   gsl_vector * const S;       //TODO: Make private
 
-  /** Decomposes M into U*S*V^t. */
-  SVD(gsl_matrix* M);
+  /** Constructs an SVD object. If MKL is available it will be an MKLSVD and if GSL
+   * is available it will be GSLSVD
+   */
+  static SVD* createSVD(gsl_matrix* M);
 
   virtual ~SVD();
 

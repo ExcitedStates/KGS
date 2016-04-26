@@ -514,13 +514,13 @@ void Configuration::computeJacobians() {
 
   if(CycleJacobian==nullptr){
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
-    JacobianSVD = new MKLSVD(CycleJacobian);
+    JacobianSVD = SVD::createSVD(CycleJacobian);//new MKLSVD(CycleJacobian);
   }else if(CycleJacobian->size1==row_num && CycleJacobian->size2==col_num){
     gsl_matrix_set_zero(CycleJacobian);
   }else{
     gsl_matrix_free(CycleJacobian);
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
-    JacobianSVD = new MKLSVD(CycleJacobian);
+    JacobianSVD = SVD::createSVD(CycleJacobian);//new MKLSVD(CycleJacobian);
   }
 
   ///HBond Jacobian
@@ -704,14 +704,14 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
   if(ClashAvoidingJacobian==nullptr){
     ClashAvoidingJacobian = gsl_matrix_calloc(rowNum,colNum);
-    JacobianSVD = new MKLSVD(ClashAvoidingJacobian);
+    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new MKLSVD(ClashAvoidingJacobian);
   }else if(ClashAvoidingJacobian->size1==rowNum && ClashAvoidingJacobian->size2==colNum){
     gsl_matrix_set_zero(ClashAvoidingJacobian);
   }else{
     gsl_matrix_free(ClashAvoidingJacobian);
     ClashAvoidingJacobian = gsl_matrix_calloc(rowNum,colNum);
     delete JacobianSVD;
-    JacobianSVD = new MKLSVD(ClashAvoidingJacobian);
+    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new MKLSVD(ClashAvoidingJacobian);
   }
 
   //Convert the cycle Jacobian to a full Jacobian
