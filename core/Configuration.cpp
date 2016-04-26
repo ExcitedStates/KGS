@@ -63,6 +63,7 @@ Configuration::Configuration(Molecule * protein_):
   m_parent(nullptr),
   m_treeDepth(0)
 {
+  assert(m_molecule!=nullptr);
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
   m_distanceToTarget       = 99999;
@@ -94,6 +95,7 @@ Configuration::Configuration(Configuration* parent_):
     nullspace(nullptr),
     m_treeDepth(parent_->m_treeDepth +1)
 {
+  assert(m_molecule!=nullptr);
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
   m_distanceToTarget       = 99999;
