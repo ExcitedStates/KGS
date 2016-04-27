@@ -30,12 +30,19 @@ void gsl_vector_scale_to_length(gsl_vector* ret, double length);
  * If the values of all components are less than `maxComponent` no scaling is performed. */
 void gsl_vector_scale_max_component(gsl_vector* v, double maxComponent);
 
+/** Make a copy of the vector */
+gsl_vector* gsl_vector_copy(gsl_vector*);
 
 gsl_matrix* gsl_matrix_trans(gsl_matrix* A);
+
 gsl_matrix* gsl_matrix_mul(gsl_matrix* A, gsl_matrix* B);
+
 gsl_vector* gsl_matrix_vector_mul(gsl_matrix* A, gsl_vector* v);
+
 gsl_matrix* pca (gsl_matrix* sample_matrix);
+
 gsl_vector* RandomUnitVector (int size);
+
 double frobenius_norm (const gsl_matrix *m);
 
 

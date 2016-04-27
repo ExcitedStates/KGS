@@ -74,6 +74,7 @@ void PoissonPlanner::GenerateSamples()
 {
   Direction* direction = new RandomDirection();
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
+  double origStepSize = move.getStepSize();
 
   int sample_num = 0;
   int rejected_clash     = 0;
@@ -94,7 +95,7 @@ void PoissonPlanner::GenerateSamples()
     //Make max_rejects_before_close attempts at perturbing it
     size_t attempt;
     for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
-
+      move.setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       Configuration *pert = move.move(seed, gradient); //Perform move
 
@@ -104,9 +105,11 @@ void PoissonPlanner::GenerateSamples()
       while(dist<m_lilRad || dist>m_bigRad){
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
+        move.setStepSize(move.getStepSize()*gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
         dist = m_metric.distance(pert, seed);
+        cout<<"PoissonPlanner - stepSize: "<<move.getStepSize()<<", dist: "<<dist<<endl;
         //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
 

@@ -8,6 +8,7 @@
 #include <gsl/gsl_blas.h>
 #include <assert.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_vector_double.h>
 
 #include "Logger.h"
 #include "MathUtility.h"
@@ -103,6 +104,12 @@ gsl_matrix* gsl_matrix_trans(gsl_matrix* A){
       gsl_matrix_set(ret,j,i, gsl_matrix_get(A, i,j));
     }
   }
+  return ret;
+}
+
+gsl_vector* gsl_vector_copy(gsl_vector* v){
+  gsl_vector* ret = gsl_vector_alloc(v->size);
+  gsl_vector_memcpy(ret, v);
   return ret;
 }
 

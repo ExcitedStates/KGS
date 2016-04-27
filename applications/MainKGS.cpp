@@ -28,6 +28,7 @@
 #include <directions/MSDDirection.h>
 #include <directions/LSNullspaceDirection.h>
 #include <directions/BlendedDirection.h>
+#include <moves/DecreaseStepMove.h>
 
 using namespace std;
 
@@ -139,8 +140,13 @@ void randomSampling(SamplingOptions& options){
     move = new ClashAvoidingMove();
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove();
+    move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
   }
+  if(options.decreaseSteps>0){
+    log("samplingStatus")<<" .. with decrease-steps"<<endl;
+    move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
+  }
+  move->setStepSize(options.stepSize);
 
   //Initialize direction
   Direction* direction;
@@ -301,8 +307,13 @@ void targetedSampling(SamplingOptions& options){
     move = new ClashAvoidingMove();
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove();
+    move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
   }
+  if(options.decreaseSteps>0){
+    log("samplingStatus")<<" .. with decrease-steps"<<endl;
+    move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
+  }
+  move->setStepSize(options.stepSize);
 
   //Initialize direction
   Direction* direction;

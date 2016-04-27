@@ -17,7 +17,7 @@ CompositeMove::CompositeMove():
 		addMove( new RebuildMove(), SamplingOptions::getOptions()->rebuild_frequency );
 	}
 
-	addMove( new NullspaceMove(), nullspace_move_frequency );
+	addMove( new NullspaceMove(SamplingOptions::getOptions()->maxRotation), nullspace_move_frequency );
 }
 CompositeMove::~CompositeMove()
 {

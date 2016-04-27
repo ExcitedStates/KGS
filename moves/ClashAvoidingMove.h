@@ -27,7 +27,6 @@ class ClashAvoidingMove : public Move
   gsl_matrix* computeClashAvoidingJacobian(Configuration* conf, std::set< std::pair<Atom*,Atom*> >& allCollisions, bool projectConstraints);
   const double m_maxRotation;
   const int m_trialSteps;
-  const double m_stepSize;
   const std::string m_collisionCheck;
 };
 

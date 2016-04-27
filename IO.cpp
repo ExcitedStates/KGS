@@ -537,7 +537,7 @@ void IO::writePdb (Molecule * protein, string output_file_name) {
     output<<"REMARK\tMax violation = "<<setprecision(3)<<protein->m_conf->m_maxConstraintViolation<<endl;
     output<<"REMARK\tClash prevention = "<<setprecision(3)<<protein->m_conf->m_usedClashPrevention<<endl;
     output<<"REMARK\tClash free dofs = "<<setprecision(3)<<protein->m_conf->m_clashFreeDofs<<endl;
-    output<<"REMARK\tOverall dofs = "<<setprecision(3)<<protein->m_conf->m_numDOFs<<endl;
+    output<<"REMARK\tOverall dofs = "<<setprecision(3)<<protein->m_conf->getNumDOFs()<<endl;
     output<<"REMARK\tMin collision factor = "<<setprecision(3)<<protein->m_conf->m_minCollisionFactor<<endl;
     output<<"REMARK\tVdw energy = "<<setprecision(6)<<protein->m_conf->m_vdwEnergy<<endl;
   }
@@ -563,7 +563,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     cerr<<"Cannot write to "<<myfile_s<<endl;
     exit(-1);
   }
-  if(protein->m_conf->m_numDOFs != referenceConf->m_numDOFs){
+  if(protein->m_conf->getNumDOFs() != referenceConf->getNumDOFs()){
     log("dominik")<<"Configurations don't have same dof number, not writing a q file."<<endl;
     return;
   }
@@ -584,7 +584,8 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
       second = 2;
     double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsions(dof_id) - referenceConf->getGlobalTorsions(dof_id));
     myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" ";
-    myfile <<protein->m_conf->m_sumProjSteps[dof_id]<<" "<<onBackbone<<endl;
+    //myfile <<protein->m_conf->m_sumProjSteps[dof_id];
+    myfile<<" "<<onBackbone<<endl;
   }
   myfile.close();
 }

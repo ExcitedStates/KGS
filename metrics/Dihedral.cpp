@@ -12,9 +12,9 @@ namespace metrics{
 
 	double Dihedral::distance(Configuration* c1, Configuration* c2)
 	{
-		int DOF = c1->m_numDOFs;
+		int DOF = c1->getNumDOFs();
 
-		if(DOF != c2->m_numDOFs){
+		if(DOF != c2->getNumDOFs()){
 			cerr<<"Configurations to compare do not have the same number of m_dofs!"<<endl;
 			exit(-1);
 		}

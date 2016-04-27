@@ -12,8 +12,7 @@ using namespace std;
 
 ClashAvoidingMove::ClashAvoidingMove() :
     m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-    m_trialSteps(SamplingOptions::getOptions()->trialSteps),
-    m_stepSize(SamplingOptions::getOptions()->stepSize),
+    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
     m_collisionCheck(SamplingOptions::getOptions()->collisionCheck)
 {
   m_movesAccepted = 0;
@@ -36,13 +35,16 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   //clash prevention technique
   bool usedClashJacobian = false;
-//  map< pair<int, int>, pair<Atom*,Atom*> > allCollisions, previousCollisions;
-//  map< pair<int, int>, pair<Atom*,Atom*> >::iterator ait, mit;
   set< pair<Atom*,Atom*> > allCollisions, previousCollisions;
 
   // Create new configuration
-  Configuration* new_q = new Configuration(current);
-  new_q->m_clashFreeDofs = new_q->m_numDOFs - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
+  //Configuration* new_q = new Configuration(current);
+  //new_q->m_clashFreeDofs =
+  //      new_q->getNumDOFs()
+  //    - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs()
+  //    + new_q->getNullspace()->NullspaceSize();
+  Configuration* new_q;
+  int clashAvoidingDOFs = -1;
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -59,11 +61,12 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
     currProjNorm = gsl_vector_length(projected_gradient);
     cout<<"Norm of projected gradient: "<<currProjNorm<<endl;
+    cout<<"Step-size: "<<m_stepSize<<", "<<min(m_stepSize, currNorm)<<endl;
 
-    for (int i = 0; i < new_q->m_numDOFs; ++i) {
-      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i); //added as m_transformation always starts from original coordinates
-      new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
-//			log("dominik") <<"New q: "<<new_q->m_f[i]<<endl;
+    new_q = new Configuration(current);
+    for (int i = 0; i < new_q->getNumDOFs(); ++i) {
+      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i);
+      //new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
     }
 
     // The new configuration is valid only if it is collision-free
@@ -83,7 +86,8 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
         log("dominik")<<"Curr coll: "<<coll.first<<" "<<coll.first->getName()<<" "<<coll.second<<" "<<coll.second->getName()<<endl;
       }
 
-      for(auto const& prev_coll: previousCollisions){//combine collisions
+      //Combine collisions
+      for(auto const& prev_coll: previousCollisions){
         auto ait = allCollisions.find(prev_coll);
         if(ait==allCollisions.end()){
           allCollisions.insert(prev_coll);
@@ -100,15 +104,19 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
       bool projectConstraints = SamplingOptions::getOptions()->projectConstraints;//also use h-bond constraints
       gsl_matrix* clashAvoidingJacobian = computeClashAvoidingJacobian( current, allCollisions,projectConstraints);
-      SVD* clashAvoidingSVD  = SVD::createSVD(clashAvoidingJacobian);//new MKLSVD(clashAvoidingJacobian);
+      SVD* clashAvoidingSVD = SVD::createSVD(clashAvoidingJacobian);//new MKLSVD(clashAvoidingJacobian);
       Nullspace* clashAvoidingNullSpace = new Nullspace(clashAvoidingSVD);
       clashAvoidingNullSpace->UpdateFromMatrix();
       clashAvoidingNullSpace->ProjectOnNullSpace(projected_gradient, projected_gradient);
 
-      new_q->m_usedClashPrevention = true;
-      new_q->m_clashFreeDofs = clashAvoidingNullSpace->NullspaceSize();
+      //new_q->m_usedClashPrevention = true;
+      //new_q->m_clashFreeDofs = clashAvoidingNullSpace->NullspaceSize();
+      clashAvoidingDOFs = clashAvoidingNullSpace->NullspaceSize();
 
       log("dominik")<<"New nullspace dimension: "<<clashAvoidingNullSpace->NullspaceSize()<<endl;
+
+      if(trialStep<m_trialSteps)
+        delete new_q;
 
       delete clashAvoidingNullSpace;
       delete clashAvoidingSVD;
@@ -119,6 +127,12 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     } else {//collision free
       m_movesAccepted++;
 
+      if(clashAvoidingDOFs>=0) {
+        new_q->m_usedClashPrevention=clashAvoidingDOFs>=0;
+        new_q->m_clashFreeDofs=clashAvoidingDOFs;
+      }
+
+      //TODO: Enthalphy and energy computations are not the responsibility of the move. This should go somewhere else
       //Enthalpy and entropy computation
       log("dominik")<<"Length of all collisions: "<<allCollisions.size()<<endl;
       pair<double,double> enthalpyVals= new_q->getMolecule()->vdwEnergy(&allCollisions,m_collisionCheck);

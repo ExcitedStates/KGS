@@ -1,5 +1,5 @@
-#ifndef nullptrSPACEMOVE_H_
-#define nullptrSPACEMOVE_H_
+#ifndef NULLSPACEMOVE_H_
+#define NULLSPACEMOVE_H_
 
 #include <vector>
 
@@ -15,17 +15,15 @@
 class NullspaceMove: public Move
 {
  public:
-  NullspaceMove();
+  NullspaceMove(double maxRotation);
 
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
 
  private:
   const double m_maxRotation;
-  const int m_decreaseSteps;
-  const int m_decreaseFactor;
-  const double m_stepSize;
-  
-
+  //const int m_decreaseSteps;
+  //const int m_decreaseFactor;
+  //const double m_stepSize;
 };
 #endif

@@ -273,7 +273,7 @@ Configuration* BidirectionalMovingFront::GenerateRandConf() {
   else{
     pTarget = new Configuration(m_revRoot);
     log("dominik")<<"Using random target"<<endl;
-    for (int i=0; i<pTarget->m_numDOFs; ++i) {
+    for (int i=0; i<pTarget->getNumDOFs(); ++i) {
       pTarget->m_dofs[i]=Math3D::dPi*RandomN1P1();
     }
     pTarget->m_id = -1; //invalid ID, identify non-sampled coonformations

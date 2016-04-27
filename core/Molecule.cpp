@@ -698,7 +698,7 @@ void Molecule::SetConfiguration(Configuration *q){
 
 // set the positions of atoms at configuration q (according to the spanning tree)
 void Molecule::_SetConfiguration(Configuration *q ){
-  assert(m_spanning_tree->getNumDOFs()==q->m_numDOFs);
+  assert(this==q->getMolecule());
 
   for(size_t id=0 ; id<m_spanning_tree->getNumDOFs(); ++id){
     m_spanning_tree->getDOF(id)->setValue(q->m_dofs[id]);

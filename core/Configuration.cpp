@@ -83,13 +83,12 @@ Configuration::Configuration(Molecule * protein_):
   m_clashFreeDofs          = m_molecule->m_spanning_tree->getNumDOFs();
 
   // Set up DOF-values and set them to 0
-  m_numDOFs = m_molecule->m_spanning_tree->getNumDOFs();
-  m_dofs = new double[m_numDOFs];
+  m_dofs = new double[getNumDOFs()];
   m_dofs_global = nullptr;
-  m_sumProjSteps = new double[m_numDOFs];
-  for(int i=0; i<m_numDOFs; ++i){
+  //m_sumProjSteps = new double[getNumDOFs()];
+  for(int i=0; i<getNumDOFs(); ++i){
     m_dofs[i] = 0;
-    m_sumProjSteps[i]=0;
+    //m_sumProjSteps[i]=0;
   }
 }
 
@@ -120,13 +119,12 @@ Configuration::Configuration(Configuration* parent_):
   parent_->m_children.push_back(this);
 
   // Set up DOF-values and set them to 0
-  m_numDOFs = m_molecule->m_spanning_tree->getNumDOFs();
-  m_dofs = new double[m_numDOFs];
+  m_dofs = new double[getNumDOFs()];
   m_dofs_global = nullptr;
-  m_sumProjSteps = new double[m_numDOFs];
-  for(int i=0; i<m_numDOFs; ++i){
+  //m_sumProjSteps = new double[getNumDOFs()];
+  for(int i=0; i<getNumDOFs(); ++i){
     m_dofs[i] = 0;
-    m_sumProjSteps[i]=0;
+    //m_sumProjSteps[i]=0;
   }
 }
 
@@ -136,8 +134,8 @@ Configuration::~Configuration(){
     delete[] m_dofs;
   if(m_dofs_global != nullptr)
     delete[] m_dofs_global;
-  if( m_sumProjSteps != nullptr)
-    delete[] m_sumProjSteps;
+  //if( m_sumProjSteps != nullptr)
+  //  delete[] m_sumProjSteps;
 
   //m_biggerRBMap.clear();
   for(auto const& rbPair: m_biggerRBMap)
@@ -410,9 +408,9 @@ void Configuration::readBiggerSet(){
 //------------------------------------------------------
 void Configuration::updateGlobalTorsions(){
   if(m_dofs_global == nullptr){
-    m_dofs_global = new double[m_numDOFs];
+    m_dofs_global = new double[getNumDOFs()];
   }
-  for(int i=0; i<m_numDOFs; ++i){
+  for(int i=0; i<getNumDOFs(); ++i){
 //    m_dofs_global[i] = 0;
     m_dofs_global[i] = m_molecule->m_spanning_tree->getDOF(i)->getGlobalValue();
   }
@@ -433,6 +431,9 @@ double* Configuration::getGlobalTorsions() const{
   return m_dofs_global;
 }
 
+unsigned int Configuration::getNumDOFs() const {
+  return m_molecule->m_spanning_tree->getNumDOFs();
+}
 
 Configuration* Configuration::clone() const {
 
@@ -446,16 +447,15 @@ Configuration* Configuration::clone() const {
 
   ret->m_id = m_id;
   ret->m_vdwEnergy = m_vdwEnergy;
-  ret->m_numDOFs = m_numDOFs;
 
-  for(int i=0; i <m_numDOFs; ++i){
+  for(int i=0; i <getNumDOFs(); ++i){
     ret->m_dofs[i]        = m_dofs[i];
   }
   if(getGlobalTorsions()!=nullptr){
-    ret->m_dofs_global = new double[m_numDOFs];
-    for(int i=0; i<m_numDOFs; ++i) {
+    ret->m_dofs_global = new double[getNumDOFs()];
+    for(int i=0; i<getNumDOFs(); ++i) {
       ret->m_dofs_global[i]  = m_dofs_global[i];
-      ret->m_sumProjSteps[i] = m_sumProjSteps[i];
+      //ret->m_sumProjSteps[i] = m_sumProjSteps[i];
     }
   }else{
     ret->m_dofs_global = nullptr;
@@ -467,30 +467,30 @@ Configuration* Configuration::clone() const {
 void Configuration::Normalize(){
   double s = 0;
 
-  for(int i=0; i <m_numDOFs; ++i)
+  for(int i=0; i <getNumDOFs(); ++i)
     s += m_dofs[i] * m_dofs[i];
 
   s = sqrt(s);
-  for(int i=0; i < m_numDOFs; ++i)
+  for(int i=0; i < getNumDOFs(); ++i)
     m_dofs[i] /= s;
 }
 //---------------------------------------------------------
 double Configuration::Length(){
   double s = 0;
 
-  for(int i=0; i < m_numDOFs; ++i)
+  for(int i=0; i < getNumDOFs(); ++i)
     s += m_dofs[i] * m_dofs[i];
 
   return sqrt(s);
 }
 //---------------------------------------------------------
 void Configuration::SetAll(double v){
-  for(int i=0; i < m_numDOFs; ++i)
+  for(int i=0; i < getNumDOFs(); ++i)
     m_dofs[i] = v;
 }
 
 void Configuration::Print () {
-  for (int i=0; i < m_numDOFs; ++i){
+  for (int i=0; i < getNumDOFs(); ++i){
     cout << "Relative: " << m_dofs[i] << " ";
     cout << "Global: " << m_dofs_global[i] << " ";
   }

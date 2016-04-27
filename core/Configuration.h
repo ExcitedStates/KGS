@@ -62,9 +62,9 @@ typedef std::vector<Configuration*> ConfigurationArray;
 class Configuration
 {
  public:
-  int m_numDOFs;                    ///< Number of DOFs
+  //int m_numDOFs;                    ///< Number of DOFs
   double *m_dofs;                    ///< DOF-values (relative to Atom::m_referencePosition)
-  double *m_sumProjSteps;          //TODO: What is this?
+  //double *m_sumProjSteps;          //TODO: What is this?
 
   /** Construct a configuration with all DOF-values set to 0 and no m_parent. */
   Configuration(Molecule * protein);
@@ -77,6 +77,8 @@ class Configuration
   void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
   double getGlobalTorsions(int i) const; ///< Get a global DOF-value
   double* getGlobalTorsions() const;     ///< Get global DOF-value array
+
+  unsigned int getNumDOFs() const;
 
   /** Set the specified dof to the global torsion value. Convenient function for
    * calculating difference between reference torsion and val. */

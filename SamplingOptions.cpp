@@ -44,7 +44,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		if(arg=="--scaleToRadius"){                 scaleToRadius = Util::stob(argv[++i]);              continue; }
 		if(arg=="--gradient" || arg=="-g"){         gradient = atoi(argv[++i]);                         continue; }
 		if(arg=="--collisionFactor" || arg=="-c"){  collisionFactor = atof(argv[++i]);                  continue; }
-		if(arg=="--trialSteps" ){                trialSteps = atoi(argv[++i]);                    continue; }
+		if(arg=="--decreaseSteps" ){                decreaseSteps = atoi(argv[++i]);                    continue; }
 		if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                   continue; }
 		if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
 		if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
@@ -209,7 +209,7 @@ void SamplingOptions::initializeVariables(){
 	sampleRandom            = true;
 	gradient                = 0;
 	collisionFactor         = 0.75;
-	trialSteps 							= 0;
+	decreaseSteps 							= 0;
 	decreaseFactor          = 0.5;
 	stepSize                = 1.0;
 	maxRotation             = 3.1415/18;
@@ -255,7 +255,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--sampleRandom "<<sampleRandom<<endl;
 	log("so")<<"\t--gradient "<<gradient<<endl;
 	log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
-	log("so")<<"\t--trialSteps "<< trialSteps <<endl;
+	log("so")<<"\t--decreaseSteps "<< decreaseSteps <<endl;
 	log("so")<<"\t--decreaseFactor "<<decreaseFactor<<endl;
 	log("so")<<"\t--stepSize "<<stepSize<<endl;
 	log("so")<<"\t--maxRotation "<<maxRotation<<endl;
@@ -322,7 +322,7 @@ void SamplingOptions::printUsage(char* pname){
 	log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
 	log("so")<<"checking for collisions. The default is 0.75."<<endl;
 
-	//log("so")<<"\t--trialSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
+	//log("so")<<"\t--decreaseSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
 	//log("so")<<"decrease the stepsize. Default is 1."<<endl;
 
 	//log("so")<<"\t--decreaseFactor <real number> \t: If a non-colliding structure can not be found, decrease the stepsize ";

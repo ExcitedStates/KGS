@@ -149,7 +149,7 @@ add_library( libKGS
 		core/graph/KinVertex.h
 		core/graph/KinTree.cpp
 		core/graph/KinTree.h
-		)
+		moves/DecreaseStepMove.cpp moves/DecreaseStepMove.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

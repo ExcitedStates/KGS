@@ -70,7 +70,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
 
   for(int i=0;i<n_soln;i++){
     Configuration* child = new Configuration(parent);
-    for(int d=0;d<parent->m_numDOFs;d++)
+    for(int d=0;d<parent->getNumDOFs();d++)
       child->m_dofs[d] = parent->m_dofs[d];
 
     Atom* C0 = res1->getLastResidue()->getAtom("C");

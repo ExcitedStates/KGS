@@ -39,7 +39,7 @@ using namespace std;
 
 void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
 {
-  int n = q->m_numDOFs;
+  int n = q->getNumDOFs();
   int i;
 
   for(i=0; i<n; ++i)
