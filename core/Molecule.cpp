@@ -912,9 +912,9 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
       count1++;
     }
     else{
-      cout<<"Could not find specified hbond in other protein: ";
+      cout<<"Could not find specified hbond atoms in other protein: ";
       cout<<hBond->Hatom->getResidue()->getId()<<" "<<hBond->Hatom->getName()<<", "<<hBond->Acceptor->getResidue()->getId()<<" "<<hBond->Acceptor->getName();
-      cout<<" Deleting to make the same set!"<<endl;
+      cout<<" Deleting to make hbond sets match!"<<endl;
       Atom* hAtom = hBond->Hatom;
       Atom* acceptor = hBond->Acceptor;
       hAtom->removeHbond(hBond);

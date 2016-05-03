@@ -51,6 +51,7 @@ PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& 
   m_lilRad(m_bigRad/2),
   protein(protein)
 {
+  cout<<"PoissonPlanner::PoissonPlanner - stopafter: "<<stop_after<<endl;
   m_root = new Configuration( protein );
   m_root->updateMolecule();
   m_root->computeCycleJacobianAndNullSpace();
@@ -72,6 +73,7 @@ PoissonPlanner::~PoissonPlanner() {
 
 void PoissonPlanner::GenerateSamples()
 {
+  cout<<"PoissonPlanner::GenerateSamples()"<<endl;
   Direction* direction = new RandomDirection();
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
   double origStepSize = move.getStepSize();
@@ -95,6 +97,7 @@ void PoissonPlanner::GenerateSamples()
     //Make max_rejects_before_close attempts at perturbing it
     size_t attempt;
     for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
+      cout<<"PoissonPlanner::GenerateSamples() - attempt "<<attempt<<endl;
       move.setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       Configuration *pert = move.move(seed, gradient); //Perform move
@@ -102,14 +105,16 @@ void PoissonPlanner::GenerateSamples()
       // Scale gradient so move is in Poisson disc
       double dist = m_metric.distance(pert, seed);
       //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
+      cout<<"PoissonPlanner - dist: "<<dist<<", lil: "<<m_lilRad<<", big: "<<m_bigRad<<endl;
       while(dist<m_lilRad || dist>m_bigRad){
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
+        cout<<"PoissonPlanner - scaling up/down by "<<gradientScale<<endl;
         gsl_vector_scale(gradient, gradientScale);
-        move.setStepSize(move.getStepSize()*gradientScale);
+        //move.setStepSize(move.getStepSize()*gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
         dist = m_metric.distance(pert, seed);
-        cout<<"PoissonPlanner - stepSize: "<<move.getStepSize()<<", dist: "<<dist<<endl;
+        cout<<"PoissonPlanner -  dist is now: "<<dist<<endl;
         //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
 

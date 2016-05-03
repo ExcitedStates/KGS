@@ -184,7 +184,7 @@ if(${MKL_FOUND})
 	include_directories(${MKL_INCLUDE_DIR})
 	#list(APPEND CMAKE_EXE_LINKER_FLAGS -lmkl_intel_lp64)
 	link_libraries( mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread )
-	#SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
+	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths
@@ -197,6 +197,7 @@ add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd		    applications/MainRmsd.cpp )
 add_executable( testik		    applications/MainTestExactIK.cpp )
 add_executable( mytest  	    applications/MainTest.cpp )
+add_executable( transition  	applications/MainTransition.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
@@ -205,6 +206,7 @@ target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd			    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( testik		    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( mytest  		    libKGS ${GSL_LIBRARIES} )
+target_link_libraries( transition 	    libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 

@@ -145,7 +145,7 @@ Configuration::~Configuration(){
   if(nullspace)
     delete nullspace;
 
-  if( m_parent !=nullptr )
+  if( m_parent!=nullptr )
     m_parent->m_children.remove(this);
 }
 

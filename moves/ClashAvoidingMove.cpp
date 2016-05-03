@@ -6,6 +6,7 @@
 
 #include <math/gsl_helpers.h>
 #include <math/MKLSVD.h>
+#include <gsl/gsl_vector_double.h>
 #include "Logger.h"
 
 using namespace std;
@@ -21,13 +22,16 @@ ClashAvoidingMove::ClashAvoidingMove() :
 
 Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
 //  current->computeJacobians();
+  cout<<"ClashAvoidingMove::performMove(..)"<<endl;
 
   // Get atom positions at current
   Molecule *protein = current->updatedMolecule();
 
   double currNorm = gsl_vector_length(gradient);
+  double targetNorm = currNorm;//*m_stepSize;
+
   log("dominik") << "Norm of gradient: " << currNorm << endl;
-  cout << "Norm of gradient: " << currNorm << endl;
+  //cout << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(protein->totalDofNum());
@@ -52,22 +56,26 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     double currProjNorm = gsl_vector_length(projected_gradient);
     log("dominik")<<"Norm of projected gradient: "<<currProjNorm<<endl;
 
-    // Normalize projected_gradient
-    if (currProjNorm > 0.001)
-      gsl_vector_normalize(projected_gradient);
+    //// Normalize projected_gradient
+    //if (currProjNorm > 0.001)
+    //  gsl_vector_normalize(projected_gradient);
 
     //Scale max entry
-    gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
-
+    //gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
+    //cout<<"Norm of projected gradient (before scaling by stepSize): "<<currProjNorm<<endl;
+    gsl_vector_scale(projected_gradient, targetNorm/currProjNorm);
     currProjNorm = gsl_vector_length(projected_gradient);
-    cout<<"Norm of projected gradient: "<<currProjNorm<<endl;
-    cout<<"Step-size: "<<m_stepSize<<", "<<min(m_stepSize, currNorm)<<endl;
+    //cout<<"Norm of projected gradient (after scaling by stepSize): "<<currProjNorm<<endl;
 
     new_q = new Configuration(current);
-    for (int i = 0; i < new_q->getNumDOFs(); ++i) {
-      new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i);
-      //new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
-    }
+    std::copy(
+        projected_gradient->data,
+        projected_gradient->data+new_q->getNumDOFs(),
+        new_q->m_dofs );
+    //for (int i = 0; i < new_q->getNumDOFs(); ++i) {
+    //  new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i);
+    //  //new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];
+    //}
 
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
@@ -115,8 +123,10 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
       log("dominik")<<"New nullspace dimension: "<<clashAvoidingNullSpace->NullspaceSize()<<endl;
 
-      if(trialStep<m_trialSteps)
+      if(trialStep<m_trialSteps) {
         delete new_q;
+        new_q = nullptr;
+      }
 
       delete clashAvoidingNullSpace;
       delete clashAvoidingSVD;

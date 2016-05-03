@@ -18,6 +18,22 @@
 using namespace std;
 
 int main( int argc, char* argv[] ) {
+
+  double* arrsrc = (double*)malloc(10);
+  double* arrdst = (double*)malloc(10);
+  for(int i=0;i<10;i++){
+    arrsrc[i] = i*1.1;
+  }
+  memcpy(arrdst, arrsrc, sizeof(double)*10);
+  //std::copy(arrsrc, arrsrc+10, arrdst);
+
+  for(int i=0;i<10;i++){
+    cout<<arrdst[i]<<endl;
+  }
+
+
+  if(true)
+    return 0;
   std::string prg = argv[0];
   argc=9;
   argv = new char *[argc];
