@@ -121,7 +121,7 @@ void BidirectionalMovingFront::GenerateSamples() {
     log("dominik") << "Using sample " << qSeed->m_id << " as base" << endl;
     log("dominik") << "Using sample " << qTarget->m_id << " as target" << endl;
 
-    gsl_vector* gradient = gsl_vector_alloc(m_protein->totalDofNum());
+    gsl_vector* gradient = gsl_vector_calloc(m_protein->totalDofNum());
 
     if(m_isBlended){
       BlendedDirection& blendedDir = reinterpret_cast<BlendedDirection&>(direction);
@@ -129,9 +129,13 @@ void BidirectionalMovingFront::GenerateSamples() {
       blendedDir.changeWeight(1,1.0 - double(numSamples)/double(stopAfter) );
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
+
+    cout<<"BidiMovingFront::GenerateSamples(..) - Before move"<<endl;
     qNew = move.move(qSeed, gradient); //Perform move
+    cout<<"BidiMovingFront::GenerateSamples(..) - After move"<<endl;
 
     if(qNew->updatedMolecule()->inCollision() ){
+      cout<<"BidiMovingFront::GenerateSamples(..) - Collision. Swapping direction"<<endl;
       failedTrials++;
       totalTrials++;
       delete qNew;
@@ -140,6 +144,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       swapFwdRev();
     }
     else{//collision-free
+      cout<<"BidiMovingFront::GenerateSamples(..) - No collision. Updating"<<endl;
       //Potentially reject new config if large violations?
       m_protein->checkCycleClosure(qNew);
 
@@ -187,7 +192,7 @@ void BidirectionalMovingFront::GenerateSamples() {
     }
   }
 
-  log() << endl << "Max tree depth (excluding the root) = " << m_max_depth << endl;
+  log() << endl << "Max tree depth (excluding the m_root) = " << m_max_depth << endl;
   log() << "failed " << failedTrials << " times due to collision." << endl;
 
 }
@@ -220,7 +225,7 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
 
   double alignVal;
 
-  //Distance to target root
+  //Distance to target m_root
   m_revRoot->updateMolecule(); //go back to original, initial target and compute distance
   if(SamplingOptions::getOptions()->alignAlways){
     alignVal = metrics::RMSD::align(m_target, m_protein);
@@ -229,7 +234,7 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
     qNew->m_distanceToTarget = m_metric.distance(qNew,m_revRoot);
   }
 
-  //Distance to own root
+  //Distance to own m_root
   if(SamplingOptions::getOptions()->alignAlways) {
     qNew->m_distanceToIni = metrics::RMSD::distance_noOptimization(qNew, m_fwdRoot);
   }

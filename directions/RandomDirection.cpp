@@ -55,7 +55,7 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
       newVal = 0.0;
     absMax = std::max(absMax, std::fabs(newVal));
 
-    //ToDo: adapt to sampling options selectionMoving etc
+    //TODO: adapt to sampling options selectionMoving etc
     if (m_residueNetwork.empty()) {
       gsl_vector_set(ret, dofId, newVal);
     } else {

@@ -53,14 +53,14 @@ int DisjointSets::FindSet(int elementId) const
 
   Node* curNode;
 
-  // Find the root element that represents the set which `elementId` belongs to
+  // Find the m_root element that represents the set which `elementId` belongs to
   curNode = m_nodes[elementId];
   while(curNode->parent != nullptr)
     curNode = curNode->parent;
   Node* root = curNode;
 
-  // Walk to the root, updating the parents of `elementId`. Make those elements the direct
-  // m_children of `root`. This optimizes the tree for future FindSet invokations.
+  // Walk to the m_root, updating the parents of `elementId`. Make those elements the direct
+  // m_children of `m_root`. This optimizes the tree for future FindSet invokations.
   curNode = m_nodes[elementId];
   while(curNode != root)
   {

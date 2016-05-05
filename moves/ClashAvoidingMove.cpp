@@ -23,6 +23,11 @@ ClashAvoidingMove::ClashAvoidingMove() :
 Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
 //  current->computeJacobians();
   cout<<"ClashAvoidingMove::performMove(..)"<<endl;
+  cout<<"gradient: ";
+  for(int i=0;i<10;i++)
+    cout<<gsl_vector_get(gradient, i)<<" ";
+  cout<<endl;
+  //gsl_vector_cout(gradient);
 
   // Get atom positions at current
   Molecule *protein = current->updatedMolecule();
@@ -52,6 +57,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
+    cout<<"> Trial "<<trialStep<<endl;
 
     double currProjNorm = gsl_vector_length(projected_gradient);
     log("dominik")<<"Norm of projected gradient: "<<currProjNorm<<endl;
@@ -65,13 +71,19 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     //cout<<"Norm of projected gradient (before scaling by stepSize): "<<currProjNorm<<endl;
     gsl_vector_scale(projected_gradient, targetNorm/currProjNorm);
     currProjNorm = gsl_vector_length(projected_gradient);
-    //cout<<"Norm of projected gradient (after scaling by stepSize): "<<currProjNorm<<endl;
+    cout<<"Norm of projected gradient (after scaling by stepSize): "<<currProjNorm<<endl;
 
     new_q = new Configuration(current);
     std::copy(
         projected_gradient->data,
         projected_gradient->data+new_q->getNumDOFs(),
         new_q->m_dofs );
+
+    for(int i=0;i<10;i++)
+      cout<<new_q->m_dofs[i]<<" ";
+    cout<<endl;
+
+    //gsl_vector_cout(projected_gradient);
     //for (int i = 0; i < new_q->getNumDOFs(); ++i) {
     //  new_q->m_dofs[i] = current->m_dofs[i] + min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i);
     //  //new_q->m_sumProjSteps[i] = min(m_stepSize, currNorm) * gsl_vector_get(projected_gradient, i) + current->m_sumProjSteps[i];

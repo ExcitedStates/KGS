@@ -45,8 +45,8 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
   for(i=0; i<n; ++i)
     ms[i].setIdentity();
 
-  ///	KinVertex *root = pTree->Vertex_map.begin()->second;
-  KinVertex *root = pTree->root;
+  ///	KinVertex *m_root = pTree->Vertex_map.begin()->second;
+  KinVertex *root = pTree->m_root;
   KinVertex *node, *newNode;
   KinEdge *pEdge;
   Vector3 vec;
@@ -57,8 +57,8 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
   queue.push_back(root);
   root->m_transformation.setIdentity();
 
-  // ms[0].setIdentity(); // the global matrix for the root
-  // log("debug") << root->id << endl;
+  // ms[0].setIdentity(); // the global matrix for the m_root
+  // log("debug") << m_root->id << endl;
   while(queue.size()>0)
   {
     node = queue.front();
@@ -115,7 +115,7 @@ void Confvec2MatrixGlobal(KinTree *pTree, Configuration *q, RigidTransform *ms)
 }
 
 /**
-  Update a local set of transformations defined by subVerts and starting at the specified root vertex
+  Update a local set of transformations defined by subVerts and starting at the specified m_root vertex
   */
 void Confvec2MatrixLocal (KinVertex *root, Configuration *q, RigidTransform *ms, vector<KinVertex*> subVerts)
 {

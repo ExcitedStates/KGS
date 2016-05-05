@@ -27,32 +27,30 @@
 #include "DihedralDirection.h"
 
 #include <SamplingOptions.h>
+#include <cassert>
 #include "core/Molecule.h"
 
-DihedralDirection::DihedralDirection():
-    m_target(nullptr)
+DihedralDirection::DihedralDirection()
 {}
 
-void DihedralDirection::setTarget(Configuration* conf)
-{
-  m_target = conf;
-}
 
 void DihedralDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
 {
+  assert(target!=nullptr);
   Molecule * protein = conf->updatedMolecule();
   const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
   bool allResidues = resNetwork.size() == 0 ? true:false;
 
-  if(m_target->getGlobalTorsions() == nullptr){
+  if(target->getGlobalTorsions() == nullptr){
     std::cerr<<"DihedralDirection::computeGradient - No global torsions, please calculate them first!"<<std::endl;
     exit(-1);
   }
 
   for (auto const& edge: protein->m_spanning_tree->Edges){
+    if(edge->getBond()==nullptr) continue;
     int dofId = edge->getDOF()->getIndex();
     int resId = edge->getBond()->Atom1->getResidue()->getId();
-    double angle_diff = m_target->getGlobalTorsions(dofId) - conf->getGlobalTorsions(dofId);
+    double angle_diff = target->getGlobalTorsions(dofId) - conf->getGlobalTorsions(dofId);
     angle_diff = formatRangeRadian(angle_diff);
 
     if(allResidues){//gradient for all residues

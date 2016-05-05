@@ -34,13 +34,8 @@ class DihedralDirection: public Direction {
  public:
   DihedralDirection();
 
-  void setTarget(Configuration* conf);
-
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
-
- private:
-  Configuration* m_target;
 
 };
 

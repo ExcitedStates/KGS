@@ -54,7 +54,7 @@ class Residue {
   const Chain* getChain () const;
   void printSummaryInfo() const;
   void print() const;
-  Residue* getLastResidue() const;
+  Residue* getPrevResidue() const;
   Residue* getNextResidue() const;
   std::string getName () const;
   std::string getProperName () const;
@@ -70,10 +70,10 @@ class Residue {
  private:
   const std::string Name;
   const int Id;
-  const Chain* Parent_chain;
+  const Chain* m_parentChain;
   std::string SSE_type;
-  Residue* Last_residue;
-  Residue* Next_residue;
+  Residue* m_prevResidue;
+  Residue* m_nextResidue;
   //std::map<std::string,Atom*> name_to_atom_map;
   std::list<Atom*> m_atoms;
 

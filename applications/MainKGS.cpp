@@ -116,10 +116,13 @@ void randomSampling(SamplingOptions& options){
 
   options.setResidueNetwork(&protein);
 
-//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root);//Todo: adapt this to usage without target
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  cout<<"MainKGS .. spanning tree:"<<endl;
+  enableLogger("default");
+  protein.m_spanning_tree->print();
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -269,13 +272,13 @@ void targetedSampling(SamplingOptions& options){
   options.setResidueNetwork(&protein);
   options.setAtomSets(&protein,target);
 
-  //Alignment and spanning trees with possibly best root
+  //Alignment and spanning trees with possibly best m_root
   if(options.alignIni){
     target->alignReferencePositionsTo(&protein);//backup the aligned configuration
   }
 
   //Build rigid body tree for protein
-//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.root, target);
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root, target);
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
@@ -287,7 +290,7 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Build rigid body tree for target
-//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.root, &protein);
+//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   target->buildSpanningTree();
   log("samplingStatus")<<"Target has:"<<endl;

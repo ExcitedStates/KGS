@@ -117,7 +117,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration*
     gsl_matrix_set(m_TargetPosition,i*3+1,0,aTarget->m_Position.y-p.y);
     gsl_matrix_set(m_TargetPosition,i*3+2,0,aTarget->m_Position.z-p.z);
     //       cout<<gsl_matrix_get(m_TargetPosition,i*3+0,0)<<" px "<<p.x<<" Tx "<<aTarget->Position.x<<gsl_matrix_get(m_TargetPosition,i*3+1,0)<<" "<<gsl_matrix_get(m_TargetPosition,i*3+2,0)<<" ";
-    // trace back until the root from currVertex
+    // trace back until the m_root from currVertex
     //while ( currVertex != protein->m_spanning_tree->Root ) {
     while ( currVertex->m_parent != NULL){
 //      Edge* p_edge = currVertex->Parent->Edges.find(currVertex->VertexId)->second;

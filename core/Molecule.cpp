@@ -315,18 +315,18 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   unsigned int maxId = Rigidbody_map_by_id.size();
   if(rootRBId >= 0){//user-specified, or standard choice of rb id == 0
     if(rootRBId > maxId){
-      cout<<"User-specified root id "<<bestId<<" out of bounds. Choosing standard Id."<<endl;
+      cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard Id."<<endl;
       return bestId;
     }
-    cout<<"Choosing user-specified rigid body id "<<rootRBId<<" as root."<<endl;
+    cout<<"Choosing user-specified rigid body id "<<rootRBId<<" as m_root."<<endl;
     return (unsigned int)rootRBId;
   }
   else {
     if( target == nullptr ){
-      cout<<"No target to determine best root, choosing standard root id 0"<<endl;
+      cout<<"No target to determine best m_root, choosing standard m_root id 0"<<endl;
       return bestId;
     }
-    //Check the rmsd between individual vertices and choose the closest pair as root
+    //Check the rmsd between individual vertices and choose the closest pair as m_root
     double bestSum = 9999;
     for (map<unsigned int,Rigidbody*>::iterator rbit=Rigidbody_map_by_id.begin(); rbit!=Rigidbody_map_by_id.end(); ++rbit) {
       vector<Atom*> *atomsRMSD = &(rbit->second->Atoms);
@@ -355,7 +355,7 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
         }
       }
     }
-    cout<<"Choosing rigid body id "<<bestId<<" as root. Root RB rmsd: "<<bestSum<<endl;
+    cout<<"Choosing rigid body id "<<bestId<<" as m_root. Root RB rmsd: "<<bestSum<<endl;
     return bestId;
   }
 }
@@ -371,14 +371,14 @@ void Molecule::buildSpanningTree() {
     m_spanning_tree->addVertex(rb);
   }
 
-  m_spanning_tree->root = m_spanning_tree->addVertex(nullptr);
+  m_spanning_tree->m_root = m_spanning_tree->addVertex(nullptr);
   size_t numVertices = Rigidbody_map_by_id.size();
 
   list<KinEdge*> cycleEdges;
   int dofId = 0;
   std::set<KinVertex*> visitedVertices;
 
-  //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
+  //Initialize chain-roots but adding them to the queue and setting up edges from the super-m_root
   list<KinVertex*> queue;
   for(auto const& chain: chains) {
     //Add first vertex in chain to queue
@@ -387,14 +387,14 @@ void Molecule::buildSpanningTree() {
     KinVertex* firstVertex = firstAtom->getRigidbody()->getVertex();
     queue.push_back(firstVertex);
 
-    //Connect to super-root
+    //Connect to super-m_root
     KinVertex* v2 = m_spanning_tree->addVertex(nullptr);
     KinVertex* v3 = m_spanning_tree->addVertex(nullptr);
     KinVertex* v4 = m_spanning_tree->addVertex(nullptr);
     KinVertex* v5 = m_spanning_tree->addVertex(nullptr);
     KinVertex* v6 = m_spanning_tree->addVertex(nullptr);
 
-    KinEdge* e1 = m_spanning_tree->addEdgeDirected(m_spanning_tree->root, v2, nullptr);
+    KinEdge* e1 = m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
     KinEdge* e2 = m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
     KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
 //    KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, firstVertex, nullptr);
@@ -509,7 +509,7 @@ void Molecule::buildSpanningTree() {
   m_spanning_tree->m_sortedVertices.push_back(make_pair( currId, currVertex ));
   visited[currId] = true;
 
-//  while( currVertex != m_spanning_tree->root){
+//  while( currVertex != m_spanning_tree->m_root){
   while( currVertex->m_rigidbody != nullptr){
     KinVertex *parent = currVertex->m_parent;
 
@@ -555,7 +555,7 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
   gsl_matrix* jacobian = *j_addr;
   KinVertex *vertex = atom->getRigidbody()->getVertex();
   atom->printSummaryInfo();
-  while (vertex!=m_spanning_tree->root) {
+  while (vertex!=m_spanning_tree->m_root) {
     KinVertex *parent;
     if ( vertex->m_parent!=nullptr )
       parent = vertex->m_parent;
@@ -663,8 +663,8 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
 {
-  Coordinate& thisRoot = m_spanning_tree->root->m_rigidbody->Atoms[0]->m_referencePosition;
-  Coordinate& thatRoot = base->m_spanning_tree->root->m_rigidbody->Atoms[0]->m_referencePosition;
+  Coordinate& thisRoot = m_spanning_tree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
+  Coordinate& thatRoot = base->m_spanning_tree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
   Math3D::Vector3 diff = thatRoot-thisRoot;
 
   for(auto const& atom: atoms){
@@ -704,7 +704,7 @@ void Molecule::_SetConfiguration(Configuration *q ){
     m_spanning_tree->getDOF(id)->setValue(q->m_dofs[id]);
   }
 
-  KinVertex *root = m_spanning_tree->root;
+  KinVertex *root = m_spanning_tree->m_root;
   root->forwardPropagate();
 
   indexAtoms();
@@ -713,13 +713,13 @@ void Molecule::_SetConfiguration(Configuration *q ){
 
 /**
   Set the positions of atoms only within subVerts so they correspond to configuration q.
-  Assumes root is member of subVerts.
+  Assumes m_root is member of subVerts.
   */
 void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVertex*>& subVerts){//, bool usePosition2){
   m_conf = q;
 
   // assume the base vector is 0
-//  Confvec2MatrixLocal(root, q, m_Transformation, subVerts);
+//  Confvec2MatrixLocal(m_root, q, m_Transformation, subVerts);
   cerr<<"Molecule::_SetConfiguration(Configuration*,KinVertex*,vector<KinVertex*>) - This function is outdated. To be removed.";
   exit(-1);
 
@@ -1120,7 +1120,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
   //int resi = entry->getBond()->Atom1->getResidue()->getId();
 
-  //Collect m_edges with endpoints in subgraph and choose the covalent edge nearest to the root
+  //Collect m_edges with endpoints in subgraph and choose the covalent edge nearest to the m_root
   vector<KinEdge*> boundary;
   for(vector<KinEdge*>::iterator eit = m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); eit++){
     KinEdge* e = *eit;

@@ -31,161 +31,233 @@
 #include "core/Chain.h"
 
 #include <stack>
+#include <gsl/gsl_vector_double.h>
 
 using namespace std;
 
 MSDDirection::MSDDirection():
     m_preprocessedTree(nullptr)
 {
-//  collectVerticesPostorder(tree->root);
 }
 
-void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target, gsl_vector* ret)
-{
+void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target, gsl_vector* ret) {
   //Gradient is the vector to be filled, gradientMethod decides whether blending with randomized entries takes place
   //atom_selection defines the atoms considered for the distance gradient
-  Molecule * protein = conf->updatedMolecule();
-  Molecule * target = c_target->updatedMolecule();
-  if(target==nullptr){
-    std::cerr<<"MSDDirection::computeGradient - Target not set"<<std::endl;
+  Molecule *protein=conf->updatedMolecule();
+  Molecule *target=c_target->updatedMolecule();
+  if( target == nullptr ) {
+    std::cerr << "MSDDirection::computeGradient - Target not set" << std::endl;
     exit(-1);
   }
-  if(target==protein){
-    std::cerr<<"MSDDirection::computeGradient - Source and target m_molecule must differ"<<std::endl;
+  if( target == protein ) {
+    std::cerr << "MSDDirection::computeGradient - Source and target m_molecule must differ" << std::endl;
     exit(-1);
   }
 
   SamplingOptions *options;
-  options = SamplingOptions::getOptions();
-  if(options->alignAlways){
+  options=SamplingOptions::getOptions();
+  if( options->alignAlways ) {
     metrics::RMSD::align(target, protein);
   }
 
   //TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
-  const vector<int>& resNetwork = options->residueNetwork;
-  bool allResidues = resNetwork.size() == 0 ? true:false;
+  const vector<int> &resNetwork=options->residueNetwork;
+  bool allResidues=resNetwork.size() == 0 ? true : false;
   string atom_selection="HEAVY"; // "CA" "ALL" "BACKBONE" "RES" "RESCA" "HEAVY" "RESHEAVY"
-  if(!allResidues){
+  if( !allResidues ) {
     atom_selection="RESHEAVY";
   }
 
-  //Ensure that m_sortedVertices is filled with vertices from `protein`.
-  if(m_preprocessedTree==nullptr || protein->m_spanning_tree!=m_preprocessedTree){
-    m_sortedVertices.clear();
-    collectVerticesPostorder(protein->m_spanning_tree->root);
-    m_preprocessedTree = protein->m_spanning_tree;
+  vector<double> gradient(ret->size, 0.0);
+  vector<int> counts(ret->size, 0);
+
+  for( auto const &atom: protein->atoms ) {
+    //Filter atoms
+    if( atom_selection == "HEAVY" && !atom->isHeavyAtom()) continue;
+    if( atom_selection == "RESHEAVY" && ( !atom->isHeavyAtom() || //HEAVY atom not in residue selection
+                                          find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) ==
+                                          resNetwork.end()))
+      continue;
+
+    //get corresponding target atom (if existing) - not based on ID
+    Atom *aTarget=target->getAtom(atom->getResidue()->getChain()->getName(),
+                                  atom->getResidue()->getId(),
+                                  atom->getName());
+    if( aTarget==nullptr ) continue;
+
+    Math3D::Vector3 diff = aTarget->m_Position - atom->m_Position;
+
+    //Compute gradient contribution all the way to the root
+    KinVertex* v = atom->getRigidbody()->getVertex();
+    while(v!=protein->m_spanning_tree->m_root){
+      KinEdge* parentEdge = v->m_parent->findEdge(v);
+      int dof_id = parentEdge->getDOF()->getIndex();
+      Math3D::Vector3 deriv = parentEdge->getDOF()->getDerivative(atom->m_Position);
+
+      gradient[dof_id] += deriv.dot(diff);
+      counts[dof_id]++;
+
+      v = v->m_parent;
+    }
   }
 
-  Math3D::Vector3 f, g, zeros(0.0);
-  stack<Math3D::Vector3> stackF, stackG;
-  int count=0;
+  //Scaling with appropriate pre-factor from derivative of MSD
+  for(int i=0;i<ret->size;i++){
+    if(counts[i]>0)
+      gradient[i] *= 2.0 / counts[i];
+  }
+  std::copy(&gradient[0], &gradient[ret->size], ret->data);
+  //double factor = 2.0 / count;
+  //gsl_vector_scale(ret, factor);
+}
 
-  //Now we compute the MSD gradient with a "fast" implementation based on Abé's paper from 1984
+/* //This all assumes dihedral DOFs only. With other types of DOFs we need a more straightforward approach
+void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target, gsl_vector* ret)
+{
+//Gradient is the vector to be filled, gradientMethod decides whether blending with randomized entries takes place
+//atom_selection defines the atoms considered for the distance gradient
+Molecule * protein = conf->updatedMolecule();
+Molecule * target = c_target->updatedMolecule();
+if(target==nullptr){
+  std::cerr<<"MSDDirection::computeGradient - Target not set"<<std::endl;
+  exit(-1);
+}
+if(target==protein){
+  std::cerr<<"MSDDirection::computeGradient - Source and target m_molecule must differ"<<std::endl;
+  exit(-1);
+}
+
+SamplingOptions *options;
+options = SamplingOptions::getOptions();
+if(options->alignAlways){
+  metrics::RMSD::align(target, protein);
+}
+
+//TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
+const vector<int>& resNetwork = options->residueNetwork;
+bool allResidues = resNetwork.size() == 0 ? true:false;
+string atom_selection="HEAVY"; // "CA" "ALL" "BACKBONE" "RES" "RESCA" "HEAVY" "RESHEAVY"
+if(!allResidues){
+  atom_selection="RESHEAVY";
+}
+
+//Ensure that m_sortedVertices is filled with vertices from `protein`.
+if(m_preprocessedTree==nullptr || protein->m_spanning_tree!=m_preprocessedTree){
+  m_sortedVertices.clear();
+  collectVerticesPostorder(protein->m_spanning_tree->m_root);
+  m_preprocessedTree = protein->m_spanning_tree;
+}
+
+Math3D::Vector3 f, g, zeros(0.0);
+stack<Math3D::Vector3> stackF, stackG;
+int count=0;
+
+//Now we compute the MSD gradient with a "fast" implementation based on Abé's paper from 1984
 //  for ( vit = orderedVertices->begin(); vit != orderedVertices->end(); vit++ ){//traverse tree by vertices starting at the final leaves
-  for ( KinVertex* const& currVertex: m_sortedVertices ){
-    //traverse tree by vertices in a bottom-up fashion (starting at leaves)
+for ( KinVertex* const& currVertex: m_sortedVertices ){
+  //traverse tree by vertices in a bottom-up fashion (starting at leaves)
 
-    //KinVertex *currVertex = vit->second;
-    if(currVertex == protein->m_spanning_tree->root)
-      break;
+  //KinVertex *currVertex = vit->second;
+  if(currVertex == protein->m_spanning_tree->m_root)
+    break;
 
-    KinEdge* currEdge = currVertex->m_parent->findEdge(currVertex);
-    Bond * bond_ptr = currEdge->getBond();
-    Atom* atom1 = bond_ptr->Atom1;
-    Atom* atom2 = bond_ptr->Atom2;
+  KinEdge* currEdge = currVertex->m_parent->findEdge(currVertex);
+  Bond * bond_ptr = currEdge->getBond();
+  Atom* atom1 = bond_ptr->Atom1;
+  Atom* atom2 = bond_ptr->Atom2;
 
-    f.setZero();
-    g.setZero();
+  f.setZero();
+  g.setZero();
 
-    for (vector<Atom*>::iterator ait=currVertex->m_rigidbody->Atoms.begin(); ait!=currVertex->m_rigidbody->Atoms.end(); ait++ ){
-      Atom* atom = *ait;
-      //Don't include the bond atoms in the calculation, not necessary
-      if(atom == atom1 || atom == atom2)
-        continue;
-      //Check selection
+  for (vector<Atom*>::iterator ait=currVertex->m_rigidbody->Atoms.begin(); ait!=currVertex->m_rigidbody->Atoms.end(); ait++ ){
+    Atom* atom = *ait;
+    //Don't include the bond atoms in the calculation, not necessary
+    if(atom == atom1 || atom == atom2)
+      continue;
+    //Check selection
 //      if (atom_selection=="CA" && ( atom->getName()!="CA" || atom->getName()!="C1'") )
 //        continue;
 //      else if (atom_selection=="BACKBONE" && ( atom->getName()!="N" || atom->getName()!="C" || atom->getName()!="CA" || atom->getName()!="O" ||
 //                                               atom->getName()!="C1'" || atom->getName()!="C2'" || atom->getName()!="C3'" || atom->getName()!="C4'" || atom->getName()!="C5'" || atom->getName()!="O5'" || atom->getName()!="O3'" || atom->getName()!="P" )
 //          )
 //        continue;
-      else if (atom_selection=="HEAVY" && !atom->isHeavyAtom())
-        continue;
+    else if (atom_selection=="HEAVY" && !atom->isHeavyAtom())
+      continue;
 //      else if (atom_selection=="RES" && find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() )//Atom not in residue selection
 //        continue;
 //      else if (atom_selection=="RESCA" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || atom->getName()!="CA" || atom->getName()!="C4'" ) )//C_alpha atom not in residue selection
 //        continue;
-      else if (atom_selection=="RESHEAVY" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || !atom->isHeavyAtom() ))//HEAVY atom not in residue selection
-        continue;
-      else{//all atoms
-        //get corresponding target atom (if existing), not based on ID's anymore
-        Atom* aTarget = target->getAtom(atom->getResidue()->getChain()->getName(),
-                                        atom->getResidue()->getId(),
-                                        atom->getName() );
-        if(aTarget == nullptr ){//|| aTarget->getResidue()->getProperName() != atom->getResidue()->getProperName()){
-          continue;//skip the non-existing atom
-        }
-        Math3D::Vector3 distance = aTarget->m_Position - atom->m_Position;
-        if(distance != zeros ){
-          g += distance;
-          Math3D::Vector3 crossP = cross(aTarget->m_Position,atom->m_Position);
-          f += crossP;
-          ++count;
-        }
+    else if (atom_selection=="RESHEAVY" && ( find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) == resNetwork.end() || !atom->isHeavyAtom() ))//HEAVY atom not in residue selection
+      continue;
+    else{//all atoms
+      //get corresponding target atom (if existing), not based on ID's anymore
+      Atom* aTarget = target->getAtom(atom->getResidue()->getChain()->getName(),
+                                      atom->getResidue()->getId(),
+                                      atom->getName() );
+      if(aTarget == nullptr ){//|| aTarget->getResidue()->getProperName() != atom->getResidue()->getProperName()){
+        continue;//skip the non-existing atom
       }
-    }
-    if( currVertex->m_edges.size() == 0){//push on stack
-      stackF.push(f);
-      stackG.push(g);
-    }
-    else if(currVertex->m_edges.size() == 1){//add with correct existing stack entry
-      stackF.top() += f;
-      stackG.top() += g;
-    }
-    else{
-      for(int i=2; i <= currVertex->m_edges.size(); i++){
-        //add two and pop for each edge if equal or more than 2
-        //this is necessary as we specify h-bonds as additional covalent bonds (stack is not limited to three as in Abé's paper)
-        f += stackF.top();
-        stackF.pop();
-        stackF.top() += f;
-        f.setZero();
-
-        g += stackG.top();
-        stackG.pop();
-        stackG.top() += g;
-        g.setZero();
+      Math3D::Vector3 distance = aTarget->m_Position - atom->m_Position;
+      if(distance != zeros ){
+        g += distance;
+        Math3D::Vector3 crossP = cross(aTarget->m_Position,atom->m_Position);
+        f += crossP;
+        ++count;
       }
-    }
-    //Check that only "active" m_edges are used in the gradient, where a torsion can be defined properly
-    //Inactive m_edges are currently disabled (see IO read rigid body), so not necessary
-    Atom* atom3 = nullptr;
-    vector<Atom*>::iterator ait;
-    for (ait=atom1->Cov_neighbor_list.begin(); ait!=atom1->Cov_neighbor_list.end(); ++ait) {
-      if ( (*ait)->getId()==atom2->getId() ) continue;
-      if ( atom3==nullptr || (*ait)->getId()<atom3->getId() ) {
-        atom3 = *ait;
-      }
-    }
-    Atom* atom4 = nullptr;
-    for (ait=atom2->Cov_neighbor_list.begin(); ait!=atom2->Cov_neighbor_list.end(); ++ait) {
-      if ( (*ait)->getId()==atom2->getId() ) continue;
-      if ( atom4==nullptr || (*ait)->getId()<atom4->getId() ) {
-        atom4 = *ait;
-      }
-    }
-    if(atom3 != nullptr && atom4 != nullptr){
-      Math3D::Vector3 r_i = atom2->m_Position - atom1->m_Position;
-      r_i.setNormalized(r_i);
-      Math3D::Vector3 rp_cross = cross(r_i,atom1->m_Position);
-
-      double deltaQ_i = -r_i.dot(stackF.top() ) - rp_cross.dot( stackG.top() ); //final formula without pre-factor
-      gsl_vector_set(ret, currEdge->getDOF()->getIndex(), deltaQ_i);
-    }
-    else{
-      cerr<<"Found inactive torsion"<<endl;
     }
   }
+  if( currVertex->m_edges.size() == 0){//push on stack
+    stackF.push(f);
+    stackG.push(g);
+  }
+  else if(currVertex->m_edges.size() == 1){//add with correct existing stack entry
+    stackF.top() += f;
+    stackG.top() += g;
+  }
+  else{
+    for(int i=2; i <= currVertex->m_edges.size(); i++){
+      //add two and pop for each edge if equal or more than 2
+      //this is necessary as we specify h-bonds as additional covalent bonds (stack is not limited to three as in Abé's paper)
+      f += stackF.top();
+      stackF.pop();
+      stackF.top() += f;
+      f.setZero();
+
+      g += stackG.top();
+      stackG.pop();
+      stackG.top() += g;
+      g.setZero();
+    }
+  }
+  //Check that only "active" m_edges are used in the gradient, where a torsion can be defined properly
+  //Inactive m_edges are currently disabled (see IO read rigid body), so not necessary
+  Atom* atom3 = nullptr;
+  vector<Atom*>::iterator ait;
+  for (ait=atom1->Cov_neighbor_list.begin(); ait!=atom1->Cov_neighbor_list.end(); ++ait) {
+    if ( (*ait)->getId()==atom2->getId() ) continue;
+    if ( atom3==nullptr || (*ait)->getId()<atom3->getId() ) {
+      atom3 = *ait;
+    }
+  }
+  Atom* atom4 = nullptr;
+  for (ait=atom2->Cov_neighbor_list.begin(); ait!=atom2->Cov_neighbor_list.end(); ++ait) {
+    if ( (*ait)->getId()==atom2->getId() ) continue;
+    if ( atom4==nullptr || (*ait)->getId()<atom4->getId() ) {
+      atom4 = *ait;
+    }
+  }
+  if(atom3 != nullptr && atom4 != nullptr){
+    Math3D::Vector3 r_i = atom2->m_Position - atom1->m_Position;
+    r_i.setNormalized(r_i);
+    Math3D::Vector3 rp_cross = cross(r_i,atom1->m_Position);
+
+    double deltaQ_i = -r_i.dot(stackF.top() ) - rp_cross.dot( stackG.top() ); //final formula without pre-factor
+    gsl_vector_set(ret, currEdge->getDOF()->getIndex(), deltaQ_i);
+  }
+  else{
+    cerr<<"Found inactive torsion"<<endl;
+  }
+}
 
   double factor = 2.0 / count;
   gsl_vector_scale(ret, factor);//scaling with appropriate pre-factor from derivative of MSD
@@ -194,6 +266,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
   }
 
 }
+ */
 
 void MSDDirection::collectVerticesPostorder(KinVertex* v)
 {

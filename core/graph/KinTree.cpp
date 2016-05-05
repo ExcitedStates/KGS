@@ -18,7 +18,7 @@ void KinTree::print() const {
   // breadth-first-traverse
   log() << "Breadth-first-traversal of the tree:" << endl;
   queue<KinVertex*> node_queue;
-  node_queue.push(root);
+  node_queue.push(m_root);
   while ( node_queue.size()>0 ) {
     // get the first element in the queue
     KinVertex *cur_node = node_queue.front();
@@ -63,12 +63,12 @@ void KinTree::print() const {
 }
 
 KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
-  // traverse from v1 to root, and mark every vertex along the way to be Visited
+  // traverse from v1 to m_root, and mark every vertex along the way to be Visited
   KinVertex *cur_node = v1;
   do {
     cur_node->Visited = true;
     //log("debug")<<"Cur node [1] : "<<cur_node->m_rigidbody<<endl;
-    if (cur_node == root)
+    if (cur_node == m_root)
       break;
     else{
       if(cur_node->m_parent==nullptr){
@@ -79,7 +79,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
       cur_node = cur_node->m_parent;
     }
   } while (true);
-  // traverse from v2 to root, and stop until meeting a Visited vertex
+  // traverse from v2 to m_root, and stop until meeting a Visited vertex
   cur_node = v2;
   //log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
   while ( !cur_node->Visited ) {
@@ -97,7 +97,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   cur_node = v1;
   do {
     cur_node->Visited = false;
-    if (cur_node == root)
+    if (cur_node == m_root)
       break;
     else
       cur_node = cur_node->m_parent;
@@ -107,7 +107,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
 
 void KinTree::collectDOFs()
 {
-  collectDOFs(root);
+  collectDOFs(m_root);
 }
 
 void KinTree::collectDOFs(KinVertex* v)

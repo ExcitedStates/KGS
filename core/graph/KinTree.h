@@ -13,7 +13,7 @@
 class KinTree: public KinGraph
 {
  public:
-  KinVertex *root;
+  KinVertex *m_root;
   std::vector< std::pair<KinEdge*,KinVertex*> > CycleAnchorEdges; // pair<edge,common anchor>; each edge closes a cycle
 //  int m_numCycleDOFs; // total number of DOFs in the cycles
 

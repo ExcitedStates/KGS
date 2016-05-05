@@ -357,7 +357,7 @@ Notes: crossproduct is at right angles to the two vectors.
   }
 
   /*
-     Denman-Beavers square root iteration
+     Denman-Beavers square m_root iteration
      */
   void mtx_root(MATRIX *mtx)
   {

@@ -94,7 +94,7 @@ class SamplingOptions
   std::string selectionAlign;
   /** Specifies the residues of the molecule that will undergo RMSD alignment during sampling. */
   std::string selectionMoving;
-  /** The root rigid body id. */
+  /** The m_root rigid body id. */
   int root;
   /** Whether or not to project the gradient onto the constraint manifold. */
   bool projectConstraints;

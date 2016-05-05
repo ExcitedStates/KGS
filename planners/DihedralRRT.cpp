@@ -44,7 +44,7 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, metrics::Metric& metric,
 	m_target = nullptr;
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;
-	pSmp->m_id = 0; // root
+	pSmp->m_id = 0; // m_root
 	if(SamplingOptions::getOptions()->metric_string=="rmsd"){
 		cerr<<"Metric option rmsd incompatible with planning strategy dihedralRRT. Please use dihedral m_metric."<<endl;
 		exit(-1);
@@ -89,9 +89,9 @@ void DihedralRRT::GenerateSamples(){
 		CTKTimer timer;
 		double start_time = timer.getTimeNow();
 
-		if( SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
+		if( SamplingOptions::getOptions()->sampleRandom || pTarget == nullptr || createNewTarget) {
 			log("dominik")<<"Generating new target, getting new seed"<<endl;
-			pTarget = GenerateRandConf(); // used in selection ONLY if no m_target m_molecule specified
+			pTarget = GenerateRandConf(); // used in selection ONLY if no target molecule specified
 			createNewTarget = false;
 			pClosestSmp = SelectNodeFromBuckets(pTarget);
 			double end_time = timer.getTimeNow();
@@ -101,7 +101,7 @@ void DihedralRRT::GenerateSamples(){
 			pClosestSmp = m_samples.back();
 		}
 
-    direction.gradient(pClosestSmp, nullptr, gradient);
+    direction.gradient(pClosestSmp, pTarget, gradient);
 		pNewSmp = move.move(pClosestSmp, gradient);
 
 		if( !pNewSmp->updatedMolecule()->inCollision() ) {

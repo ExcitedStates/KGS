@@ -51,7 +51,7 @@ bool sugar_valid2(Vector3& p0, Vector3& p1, Vector3& p2, Vector3& p3, Vector3& p
 	Vector3 S2 = p4 + n*S2off;
 	double l = (S1-S2).length();
 	double r1 = sin(CTK_PI-angles[2])*dists[2];
-	double r2 = ( dists[3]*dists[3] - S2off*S2off );//Still need to take the square root
+	double r2 = ( dists[3]*dists[3] - S2off*S2off );//Still need to take the square m_root
 	if( r2<0 ) return false;
 	r2 = sqrt(r2);
 	if(r1+r2<l) return false;

@@ -32,6 +32,16 @@ void KinVertex::addEdge (KinEdge *edge) {
   m_edges.push_back( edge );
 }
 
+KinEdge* KinVertex::findEdge(const KinVertex* v) const
+{
+  for(auto const& edge: m_edges){
+    if( edge->EndVertex==v )
+      return edge;
+  }
+  return nullptr;
+}
+
+
 void KinVertex::print() const {
   log() << "KinVertex";
   if(m_rigidbody)

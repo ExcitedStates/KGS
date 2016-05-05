@@ -16,7 +16,7 @@ Math3D::Vector3 GlobalTranslateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 ret(0,0,0);
   ret[m_axis]=1.0;
-  return std::move( ret );
+  return ret;
 }
 
 double GlobalTranslateDOF::getGlobalValue() const

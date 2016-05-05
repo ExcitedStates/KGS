@@ -16,7 +16,7 @@ Math3D::Vector3 GlobalRotateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 axis(0,0,0);
   axis[m_axis]=1.0;
-  return std::move( Math3D::cross( axis, coord ) );
+  return Math3D::cross( axis, coord ) ;
 }
 
 double GlobalRotateDOF::getGlobalValue() const

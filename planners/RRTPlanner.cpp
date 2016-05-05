@@ -62,7 +62,7 @@ RRTPlanner::RRTPlanner(Molecule *protein, Move& move, metrics::Metric& metric, D
 	m_target = nullptr;
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;
-	pSmp->m_id = 0; // root
+	pSmp->m_id = 0; // m_root
 
 	m_deform_mag = 0.25;
 	m_rand_radius = 2;
@@ -118,8 +118,9 @@ void RRTPlanner::GenerateSamples() {
 		if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
 			log("dominik") << "Generating new target, getting new seed" << endl;
 			createNewTarget = false;
-			pTarget = GenerateRandConf();//used in selection ONLY if no m_target m_protein specified
+			pTarget = GenerateRandConf();//used in selection ONLY if no target molecule is specified
 			pClosestSmp = SelectNodeFromBuckets(pTarget);
+      log("dominik") << " .. picked sample " << pClosestSmp->m_id<< endl;
 			//pClosestSmp = SelectNodeFromBuckets(pTarget,nBatch);
 			double end_time = timer.getTimeNow();
 			selectNodeTime += end_time - start_time;
@@ -128,7 +129,16 @@ void RRTPlanner::GenerateSamples() {
 			pClosestSmp = m_samples.back();
 		}
 
-		direction.gradient(pClosestSmp, nullptr, gradient);
+		if(SamplingOptions::getOptions()->gradient==1 )
+			direction.gradient(pClosestSmp, pTarget, gradient);
+		else
+      direction.gradient(pClosestSmp, nullptr, gradient);
+
+    cout<<"RRTPlanner::GenerateSamples - gradient:"<<endl;
+    for(int i=0;i<10;i++)
+      cout<<gsl_vector_get(gradient, i)<<" ";
+    cout<<endl;
+
 		pNewSmp = move.move(pClosestSmp, gradient);
 
 		if (pNewSmp != nullptr) {

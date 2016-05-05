@@ -68,7 +68,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
 		if(arg=="--selectionAlign"){                selectionAlign = argv[++i];                         continue; }
 		if(arg=="--selectionMoving"){               selectionMoving = argv[++i];                        continue; }
-		if(arg=="--root"){                          root = atoi(argv[++i]);                             continue; }
+		if(arg=="--m_root"){                          root = atoi(argv[++i]);                             continue; }
     if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
 		if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
 		if(arg=="--frontSize"){                     frontSize = atoi(argv[++i]);                        continue; }
@@ -278,7 +278,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--preventClashes "<<preventClashes<<endl;
 	log("so")<<"\t--selectionAlign "<<selectionAlign<<endl;
 	log("so")<<"\t--selectionMoving "<<selectionMoving<<endl;
-	log("so")<<"\t--root "<<root<<endl;
+	log("so")<<"\t--m_root "<<root<<endl;
 	log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
 	log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
 	log("so")<<"\t--frontSize "<<frontSize<<endl;
@@ -371,7 +371,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--selectionMoving <string of residue selection of molecule, e.g. \"resid 10 to 25 30 35 to 40\"> \t: Specifies the residues of the molecule that are used to determine the gradient."<<endl;
 
-	log("so")<<"\t--root <integer>\t: The rigid body id for the root. Choose -1 to select the closest rigid body between m_molecule and target."<<endl;
+	log("so")<<"\t--m_root <integer>\t: The rigid body id for the m_root. Choose -1 to select the closest rigid body between m_molecule and target."<<endl;
 
 	log("so")<<"\t--projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
 

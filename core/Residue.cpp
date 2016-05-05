@@ -37,27 +37,27 @@ using namespace std;
 Residue::Residue(const string& name, const int& id, const Chain* parent_chain, const string& sse_type):
     Name(name),
     Id(id),
-    Parent_chain(parent_chain),
+    m_parentChain(parent_chain),
     SSE_type(sse_type)
 {
-  Last_residue = nullptr;
-  Next_residue = nullptr;
+  m_prevResidue = nullptr;
+  m_nextResidue = nullptr;
 }
 
 Residue::~Residue() {
 }
 
 void Residue::setLastResidue(Residue* last) {
-	Last_residue = last;
+	m_prevResidue = last;
 	if (last!=nullptr) {
-		last->Next_residue = this;
+		last->m_nextResidue = this;
 	}
 }
 
 void Residue::setNextResidue(Residue* next) {
-	Next_residue = next;
+	m_nextResidue = next;
 	if (next!=nullptr) {
-		next->Last_residue = this;
+		next->m_prevResidue = this;
 	}
 }
 
@@ -104,15 +104,15 @@ std::list<Atom*>& Residue::getAtoms(){
 }
 
 const Chain* Residue::getChain() const{
-	return Parent_chain;
+	return m_parentChain;
 }
 
-Residue* Residue::getLastResidue () const {
-	return Last_residue;
+Residue* Residue::getPrevResidue() const {
+	return m_prevResidue;
 }
 
 Residue* Residue::getNextResidue () const {
-	return Next_residue;
+	return m_nextResidue;
 }
 
 string Residue::getName () const {

@@ -53,15 +53,6 @@ KinVertex* KinGraph::addVertex(Rigidbody* rb){
 	return new_vertex;
 }
 
-KinEdge* KinVertex::findEdge(KinVertex* v) const
-{
-  for(auto const& edge: m_edges){
-    if( edge->EndVertex==v )
-      return edge;
-  }
-  return nullptr;
-}
-
 // Add a directed edge from rb_id1 to rb_id2
 KinEdge* KinGraph::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond * bond)
 {

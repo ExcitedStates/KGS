@@ -140,7 +140,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
         Residue* res2 = cur_res;
         if (atom_name1[0]=='-') {
           atom_name1 = Util::trim(atom_name1,'-');
-          res1 = cur_res->getLastResidue();
+          res1 =cur_res->getPrevResidue();
         }
         else if (atom_name1.at(0)=='+') {
           atom_name1 = Util::trim(atom_name1,'+');
@@ -148,7 +148,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
         }
         if (atom_name2.at(0)=='-') {
           atom_name2 = Util::trim(atom_name2,'-');
-          res2 = cur_res->getLastResidue();
+          res2 =cur_res->getPrevResidue();
         }
         else if (atom_name2.at(0)=='+') {
           atom_name2 = Util::trim(atom_name2,'+');
@@ -604,6 +604,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   ofstream output1(edgeFile.c_str());
   for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanning_tree->Edges.begin(); edge_itr!=molecule->m_spanning_tree->Edges.end(); ++edge_itr) {
     Bond* bond = (*edge_itr)->getBond();
+    if(bond==nullptr) continue;
     Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
     output1 << bondVec.norm() << endl;
   }

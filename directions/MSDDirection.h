@@ -42,7 +42,7 @@ class MSDDirection: public Direction {
   /** Build the `m_sortedVertices`. */
   void collectVerticesPostorder(KinVertex*);
 
-  /** A preprocessed list of all vertices (except the root) sorted according to a post-order traversal of the tree. */
+  /** A preprocessed list of all vertices (except the m_root) sorted according to a post-order traversal of the tree. */
   std::list< KinVertex* > m_sortedVertices;
 
   KinTree* m_preprocessedTree;

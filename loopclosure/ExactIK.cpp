@@ -73,7 +73,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     for(int d=0;d<parent->getNumDOFs();d++)
       child->m_dofs[d] = parent->m_dofs[d];
 
-    Atom* C0 = res1->getLastResidue()->getAtom("C");
+    Atom* C0 =res1->getPrevResidue()->getAtom("C");
     Atom* N1 = res1->getAtom( "N");
     Atom* A1 = res1->getAtom("CA");
     Atom* C1 = res1->getAtom( "C");
@@ -1402,7 +1402,7 @@ void ExactIK::solve_sturm(int *p_order, int *n_root, double *poly_coeffs, double
   if (PRINT_LEVEL > 0)
   {
     if (nroots == 1) {
-      printf("\n1 distinct real root at x = %f\n", roots[0]);
+      printf("\n1 distinct real m_root at x = %f\n", roots[0]);
     } else {
       printf("\n%d distinct real roots for x: \n", nroots);
 
@@ -1651,7 +1651,7 @@ void ExactIK::sbisect(int np, poly *sseq, double min, double max, int atmin, int
 
     //      printf("try hard way\n");
     /*
-     * if we get here we have to evaluate the root the hard
+     * if we get here we have to evaluate the m_root the hard
      * way by using the Sturm sequence.
      */
     for (its = 0; its < MAXIT; its++)
@@ -1691,7 +1691,7 @@ void ExactIK::sbisect(int np, poly *sseq, double min, double max, int atmin, int
   }
 
   /*
-   * more than one root in the interval, we have to bisect...
+   * more than one m_root in the interval, we have to bisect...
    */
 
   for (its = 0; its < MAXIT; its++)
@@ -1748,9 +1748,9 @@ double ExactIK::evalpoly(int ord, double *coef, double x)
 /*
  * modrf
  *
- *	uses the modified regula-falsi method to evaluate the root
+ *	uses the modified regula-falsi method to evaluate the m_root
  * in interval [a,b] of the polynomial described in coef. The
- * root is returned is returned in *val. The routine returns zero
+ * m_root is returned is returned in *val. The routine returns zero
  * if it can't converge.
  */
 int ExactIK::modrf(int ord, double *coef, double	a, double b, double *val)
