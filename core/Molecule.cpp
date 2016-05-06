@@ -397,7 +397,6 @@ void Molecule::buildSpanningTree() {
     KinEdge* e1 = m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
     KinEdge* e2 = m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
     KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
-//    KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, firstVertex, nullptr);
     KinEdge* e4 = m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
     KinEdge* e5 = m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
     KinEdge* e6 = m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);

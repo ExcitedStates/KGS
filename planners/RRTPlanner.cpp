@@ -29,6 +29,7 @@ IN THE SOFTWARE.
 
 #include <iomanip>
 #include <stack>
+#include <math/gsl_helpers.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -134,10 +135,12 @@ void RRTPlanner::GenerateSamples() {
 		else
       direction.gradient(pClosestSmp, nullptr, gradient);
 
-    cout<<"RRTPlanner::GenerateSamples - gradient:"<<endl;
-    for(int i=0;i<10;i++)
-      cout<<gsl_vector_get(gradient, i)<<" ";
-    cout<<endl;
+    //cout<<"RRTPlanner::GenerateSamples - gradient:"<<endl;
+    //for(int i=0;i<10;i++)
+    //  cout<<gsl_vector_get(gradient, i)<<" ";
+    //cout<<endl;
+    gsl_vector_scale(gradient, SamplingOptions::getOptions()->stepSize);
+    gsl_vector_scale_max_component(gradient, SamplingOptions::getOptions()->maxRotation);
 
 		pNewSmp = move.move(pClosestSmp, gradient);
 

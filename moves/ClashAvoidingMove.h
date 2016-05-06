@@ -24,10 +24,20 @@ class ClashAvoidingMove : public Move
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
 
  private:
-  gsl_matrix* computeClashAvoidingJacobian(Configuration* conf, std::set< std::pair<Atom*,Atom*> >& allCollisions, bool projectConstraints);
+  gsl_vector* projectOnClashNullspace(Configuration *conf,
+                                      gsl_vector *gradient,
+                                      std::set<std::pair<Atom *, Atom *> > &collisions);
+
+  gsl_matrix* computeClashAvoidingJacobian( Configuration* conf,
+                                            std::map<int,int>& constrainedDofMap,
+                                            std::set< std::pair<Atom*,Atom*> >& collisions);
+
+  /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
+  std::map<int,int> collectConstrainedDofMap(Configuration* conf, std::set< std::pair<Atom*,Atom*> >& allCollisions);
   const double m_maxRotation;
   const int m_trialSteps;
-  const std::string m_collisionCheck;
+  const bool m_projectConstraints;
+  const std::string m_collisionCheckAtomTypes;
 };
 
 

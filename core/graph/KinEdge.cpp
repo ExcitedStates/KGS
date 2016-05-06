@@ -26,24 +26,23 @@ void KinEdge::setDOF(DOF* dof) {
 }
 
 void KinEdge::print () const {
-//  log() << "(" << StartVertex->id << "," << EndVertex->id;
-  log() << ",[" << m_bond->Atom1->getResidue()->getId()<<m_bond->Atom1->getName() << ",";
-  log() << m_bond->Atom2->getResidue()->getId() << m_bond->Atom2->getName() << "]";
-  log() << ",[" << m_bond->Atom1->getId() << "," << m_bond->Atom2->getId() << ",";
-  log() << (m_bond->BondType=="HB"?"HB":"CV") << "]"<<endl;
-//  log() << ",DOF_id=" << DOF_id << ",Cycle_DOF_id=" << Cycle_DOF_id << ")" << endl;
+  if(m_bond==nullptr)
+    log()<<"KinEdge[global]"<<endl;
+  else {
+    log() << "KinEdge[" << m_bond->Atom1->getResidue()->getId() << m_bond->Atom1->getName() << ",";
+    log() << m_bond->Atom2->getResidue()->getId() << m_bond->Atom2->getName()<<",";
+    log() << "ID" << m_bond->Atom1->getId() << ",ID" << m_bond->Atom2->getId() << ",";
+    log() << (m_bond->BondType == "HB" ? "HB" : "CV") << "]" << endl;
+  }
 }
 
 void KinEdge::printVerbose() const{
   log() << "\t KinEdge: " << endl;
-//  log() << "\t\t StartVertex: " << StartVertex->id << "  EndVertex: " << EndVertex->id << endl;
   log() << "\t\t StartVertex: " << (StartVertex->m_rigidbody->isMainchainRb()?"isOnMainchain":"isNOTonMainchain") << endl;
-  //log() << "\t\t Direction: Res1_ID Atom1_Name Atom1_ID ---------> Res2_ID Atom2_Name Atom2_ID " << endl;
   log() << "\t\t Direction: " << m_bond->Atom1->getResidue()->getId() << " " << m_bond->Atom1->getId() << " " << m_bond->Atom1->getName() <<
   "\t ---------> \t"
   << m_bond->Atom2->getResidue()->getId() << " " << m_bond->Atom2->getId() << " " << m_bond->Atom2->getName() << endl;
   log() << "\t\t Bond type: " << (m_bond->BondType=="HB"?"HB":"CV") << ", " << endl;
-//  log() << "\t\t DOF_id= " << DOF_id << "  Cycle_DOF_id= " << Cycle_DOF_id << endl;
   log() << "---------------------------" << endl;
 }
 

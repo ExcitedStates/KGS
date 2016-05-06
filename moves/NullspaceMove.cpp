@@ -27,11 +27,10 @@ Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gr
   double currProjNorm = gsl_vector_length(projected_gradient);
   log("dominik") << "Norm of projected gradient: " << currProjNorm << endl;
 
-  // Normalize projected_gradient
-  if (currProjNorm > 0.001)
-    gsl_vector_normalize(projected_gradient);
-
-  gsl_vector_scale_max_component(projected_gradient, m_maxRotation);
+  //// Normalize projected_gradient
+  //if (currProjNorm > 0.001)
+  //  gsl_vector_normalize(projected_gradient);
+  //gsl_vector_scale_max_component(projected_gradient, m_maxRotation);
 
   Configuration *new_q = new Configuration(current);
 

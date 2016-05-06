@@ -121,15 +121,13 @@ void randomSampling(SamplingOptions& options){
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
   cout<<"MainKGS .. spanning tree:"<<endl;
-  enableLogger("default");
-  protein.m_spanning_tree->print();
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein.atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize metric
   metrics::Metric* metric;

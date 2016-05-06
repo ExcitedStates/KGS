@@ -54,7 +54,7 @@ add_library( libKGS
 		planners/BidirectionalMovingFront.h
 		Selection.h
 		SiteID.h
-		core/Transformation.h
+		#core/Transformation.h
 		Util.h
 		KGSExceptions.h
 		freeMKL.h
@@ -104,7 +104,7 @@ add_library( libKGS
 		planners/PoissonPlanner.cpp
 		planners/BidirectionalMovingFront.cpp
 		Selection.cpp
-		core/Transformation.cpp
+		#core/Transformation.cpp
 		Util.cpp
 		KGSExceptions.cpp
 		freeMKL.cpp

@@ -134,7 +134,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		log("so")<<"No target structure file supplied, random sampling."<<endl<<endl;
 	}
 
-	//Check for valid m_metric
+	//Check for valid metric
 	std::transform(metric_string.begin(), metric_string.end(), metric_string.begin(), ::tolower);
 	if(metric_string!="dihedral" && metric_string!="rmsd"){
 		cerr<<"Invalid --m_metric option: "<<metric_string<<". Must be either 'dihedral' or 'rmsd'."<<endl;
@@ -151,6 +151,9 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		exit(-1);
 	}
 
+  //Ensure that decreaseSteps>0 if preventClashes set
+  if(preventClashes && decreaseSteps==0)
+    decreaseSteps=5;
 
 	//Set workingDirectory and moleculeName using the initialStructureFile.
 	char* tmp = realpath(initialStructureFile.c_str(), nullptr);
@@ -209,7 +212,7 @@ void SamplingOptions::initializeVariables(){
 	sampleRandom            = true;
 	gradient                = 0;
 	collisionFactor         = 0.75;
-	decreaseSteps 							= 0;
+	decreaseSteps 					= 0;
 	decreaseFactor          = 0.5;
 	stepSize                = 1.0;
 	maxRotation             = 3.1415/18;

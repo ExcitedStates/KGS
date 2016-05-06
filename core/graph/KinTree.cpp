@@ -47,13 +47,19 @@ void KinTree::print() const {
     int length = 1;
     log() << "Left cycle:";
     for (cur=start; cur!=pit->second; cur=cur->m_parent) {
-      log() << " " << cur->m_rigidbody->id();
+      if(cur->m_rigidbody==nullptr)
+        log() << " global";
+      else
+        log() << " " << cur->m_rigidbody->id();
       ++length;
     }
     log() << endl;
     log() << "Right cycle:";
     for (cur=end; cur!=pit->second; cur=cur->m_parent) {
-      log() << " " << cur->m_rigidbody->id();
+      if(cur->m_rigidbody==nullptr)
+        log() << " global";
+      else
+        log() << " " << cur->m_rigidbody->id();
       ++length;
     }
     log() << endl;

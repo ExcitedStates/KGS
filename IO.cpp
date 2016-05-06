@@ -570,6 +570,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
 
   //Keep track of changes (in magnitude)
   for (auto const& edge: protein->m_spanning_tree->Edges){
+    if(edge->getBond()==nullptr) continue;
 
     int dof_id = edge->getDOF()->getIndex();
     int resId = edge->getBond()->Atom1->getResidue()->getId();
