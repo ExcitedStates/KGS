@@ -93,7 +93,6 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
     } else {//collision free
       log("dominik") << "Accepted!" << endl;
-      cout<<"ClashAvoidingMove::performMove - accepted"<<endl;
       m_movesAccepted++;
 
       return new_q;

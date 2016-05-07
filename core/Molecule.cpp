@@ -55,6 +55,7 @@
 #include <core/dofs/GlobalTranslateDOF.h>
 #include <core/dofs/TorsionDOF.h>
 #include <cmath>
+#include <math/gsl_helpers.h>
 
 const double VDW_SIGMA = 0.2; // sigma = 0.2 kcal/mol
 const double VDW_R0 = 3.5; // r_0 = 3.5A
@@ -616,7 +617,6 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
     //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
     gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
-    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
     for (auto const& edge: m_spanning_tree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
@@ -624,12 +624,15 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
         gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
       }
     }
-    // Project onto the null space
-    //cout<<"Molecule::ProjectOnCycleNullSpace(..) .. "<<to_proj_short->size<<endl;;
 
-    //m_conf->CycleNullSpace->ProjectOnNullSpace(to_proj_short,after_proj_short);
-    //New version
+    // Project onto the null space
+    double normBefore = gsl_vector_length(to_proj_short);
+    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
     m_conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
+    double normAfter = gsl_vector_length(after_proj_short);
+
+    //Scale projected gradient to same norm as unprojected
+    gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     // Convert back to full length DOFs vector
     for( auto const& edge:m_spanning_tree->Edges){
@@ -646,7 +649,10 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     gsl_vector_free(after_proj_short);
   }
   else {
+    double normBefore = gsl_vector_length(to_project);
     m_conf->getNullspace()->ProjectOnNullSpace(to_project, after_project);
+    double normAfter = gsl_vector_length(after_project);
+    gsl_vector_scale(after_project, normBefore/normAfter);
   }
 }
 
