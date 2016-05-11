@@ -16,8 +16,7 @@ SamplingOptions::SamplingOptions(){
 	initializeVariables();
 }
 
-SamplingOptions::SamplingOptions(int argc, char* argv[]):
-        extraCovBonds()
+SamplingOptions::SamplingOptions(int argc, char* argv[])
 {
 	initializeVariables();
 
@@ -77,7 +76,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 		if(arg.at(0)=='-'){
 			cerr<<"Unknown option: "<<arg<<endl<<endl;
 			enableLogger("so");
-			printUsage(argv[-1]);
+			printUsage(argv[0]);
 			exit(-1);
 		}
 	}
@@ -86,7 +85,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 	if( hydrogenbondMethod!="user" && hydrogenbondMethod!="dssr" && hydrogenbondMethod!="rnaview" && hydrogenbondMethod!="first" && hydrogenbondMethod!="FIRST" && hydrogenbondMethod!="vadar" ){
 		enableLogger("so");
 		cerr<<"Error: The hbond method ("<<hydrogenbondMethod<<") is not valid"<<endl;
-		printUsage(argv[-1]);
+		printUsage(argv[0]);
 		exit(-1);
 	}
 	if( hydrogenbondFile.empty() ){
@@ -114,7 +113,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[]):
 			log("so")<<"the vadar server (vadar.wishartlab.com) that has been edited so every line has this format (multiple spaces not important) ";
 			log("so")<<"'92A     C      73A    N               1.91'"<<endl;
 		}else{
-			printUsage(argv[-1]);
+			printUsage(argv[0]);
 			log("so")<<"No recognizable hbondMethod was specified ("<<hydrogenbondMethod<<")."<<endl;
 			exit(-1);
 		}

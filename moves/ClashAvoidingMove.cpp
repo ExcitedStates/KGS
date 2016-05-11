@@ -104,12 +104,15 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 }
 
 map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, set< std::pair<Atom*,Atom*> >& allCollisions){
+  //Associates general dof ids with constrained dof ids
   map<int,int> ret;
+
   //First add all cycle-DOFs
   for(auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
-    if(cycle_dof_id>=0 && ret.count(cycle_dof_id)==0)
-      ret[cycle_dof_id] = edge->getDOF()->getIndex();
+    int dof_id = edge->getDOF()->getIndex();
+    if(cycle_dof_id>=0 && ret.count(dof_id)==0)
+      ret[dof_id] = cycle_dof_id;
   }
 
   int nextidx = conf->getMolecule()->m_spanning_tree->getNumCycleDOFs();
@@ -124,9 +127,9 @@ map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, se
     while (vertex1 != common_ancestor) {
       KinEdge* p_edge = vertex1->m_parent->findEdge(vertex1);
 
-      int cycle_dof_id = p_edge->getDOF()->getCycleIndex();
-      if(cycle_dof_id<0)//if its a cycle-DOF it will already be in ret
-        ret[nextidx++] = p_edge->getDOF()->getIndex();
+      int dof_id = p_edge->getDOF()->getIndex();
+      if(ret.count(dof_id))
+        ret[dof_id] = nextidx++;
 
       vertex1 = vertex1->m_parent;
     }
@@ -135,9 +138,9 @@ map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, se
     while (vertex2 != common_ancestor) {
       KinEdge* p_edge = vertex2->m_parent->findEdge(vertex2);
 
-      int cycle_dof_id = p_edge->getDOF()->getCycleIndex();
-      if(cycle_dof_id<0)//if its a cycle-DOF it will already be in ret
-        ret[nextidx++] = p_edge->getDOF()->getIndex();
+      int dof_id = p_edge->getDOF()->getIndex();
+      if(ret.count(dof_id))
+        ret[dof_id] = nextidx++;
 
       vertex2 = vertex2->m_parent;
     }
@@ -155,13 +158,13 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
 
   //Transfer the parts of the gradient that are in clash or constraint cycles.
   gsl_vector* reducedGradient = gsl_vector_alloc(constrainedDofMap.size());
-  for(auto const& clash_general_pair: constrainedDofMap){
-    double generalValue = gsl_vector_get(gradient, clash_general_pair.second);
-    gsl_vector_set(reducedGradient, clash_general_pair.first, generalValue);
+  for(auto const& general_clash_pair: constrainedDofMap){
+    double generalValue = gsl_vector_get(gradient, general_clash_pair.first);
+    gsl_vector_set(reducedGradient, general_clash_pair.second, generalValue);
   }
 
   //Compute clash-avoiding jacobian, svd, and nullspace
-  gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap, collisions);
+  gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap.size(), collisions);
   SVD* clashSVD = SVD::createSVD(clashJac);//new MKLSVD(clashAvoidingJacobian);
   Nullspace* clashNullSpace = new Nullspace(clashSVD);
   clashNullSpace->UpdateFromMatrix();
@@ -176,9 +179,9 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
 
   //Transfer to general dofs again
   gsl_vector* ret = gsl_vector_copy(gradient);
-  for(auto const& clash_general_pair: constrainedDofMap){
-    double constrainedValue = gsl_vector_get(reducedGradient, clash_general_pair.first);
-    gsl_vector_set(ret, clash_general_pair.second, constrainedValue);
+  for(auto const& general_clash_pair: constrainedDofMap){
+    double constrainedValue = gsl_vector_get(reducedGradient, general_clash_pair.second);
+    gsl_vector_set(ret, general_clash_pair.first, constrainedValue);
   }
 
   //Clean up
@@ -192,7 +195,7 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
 
 gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
     Configuration* conf,
-    map<int,int>& constrainedDofMap,
+    int constrainedDofs,
     set< std::pair<Atom*,Atom*> >& collisions
 )
 {
@@ -207,7 +210,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
   //int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
 
   //No longer uses all dihedrals as it messes with scaling
-  int colNum = constrainedDofMap.size();
+  int colNum = constrainedDofs;
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 
