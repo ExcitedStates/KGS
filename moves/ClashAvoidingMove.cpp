@@ -128,7 +128,7 @@ map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, se
       KinEdge* p_edge = vertex1->m_parent->findEdge(vertex1);
 
       int dof_id = p_edge->getDOF()->getIndex();
-      if(ret.count(dof_id))
+      if(ret.count(dof_id)==0)
         ret[dof_id] = nextidx++;
 
       vertex1 = vertex1->m_parent;
@@ -139,7 +139,7 @@ map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, se
       KinEdge* p_edge = vertex2->m_parent->findEdge(vertex2);
 
       int dof_id = p_edge->getDOF()->getIndex();
-      if(ret.count(dof_id))
+      if(ret.count(dof_id)==0)
         ret[dof_id] = nextidx++;
 
       vertex2 = vertex2->m_parent;
@@ -154,6 +154,7 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
     set<std::pair<Atom *, Atom *> > &collisions
 ){
 
+  //Associates general dof ids with constrained dof ids.
   map<int,int> constrainedDofMap = collectConstrainedDofMap(conf, collisions);
 
   //Transfer the parts of the gradient that are in clash or constraint cycles.
@@ -164,7 +165,7 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
   }
 
   //Compute clash-avoiding jacobian, svd, and nullspace
-  gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap.size(), collisions);
+  gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap, collisions);
   SVD* clashSVD = SVD::createSVD(clashJac);//new MKLSVD(clashAvoidingJacobian);
   Nullspace* clashNullSpace = new Nullspace(clashSVD);
   clashNullSpace->UpdateFromMatrix();
@@ -195,7 +196,7 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
 
 gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
     Configuration* conf,
-    int constrainedDofs,
+    map<int,int>& dofMap,
     set< std::pair<Atom*,Atom*> >& collisions
 )
 {
@@ -210,7 +211,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
   //int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
 
   //No longer uses all dihedrals as it messes with scaling
-  int colNum = constrainedDofs;
+  int colNum = dofMap.size();
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 
@@ -260,13 +261,14 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
       KinVertex* parent = vertex1->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex1);
 
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id<0) dof_id = idx++;
+      //Locate constrained dof id
+      int dof_id = p_edge->getDOF()->getIndex();
+      int constrained_dof_id = dofMap[dof_id];
 
       Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
       double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
-      gsl_matrix_set(ret,r,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
+      gsl_matrix_set(ret,r,constrained_dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
 
       vertex1 = parent;
     }
@@ -276,14 +278,14 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
       KinVertex* parent = vertex2->m_parent;
       KinEdge* p_edge = parent->findEdge(vertex2);
 
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id<0) dof_id = idx++;
+      int dof_id = p_edge->getDOF()->getIndex();
+      int constrained_dof_id = dofMap[dof_id];
 
       Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
 
       double jacobianEntryClash = - dot(clashNormal, derivativeP2);
 
-      gsl_matrix_set(ret,r,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
+      gsl_matrix_set(ret,r,constrained_dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
 
       vertex2 = parent;
     }

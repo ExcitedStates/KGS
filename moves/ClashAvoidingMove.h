@@ -29,7 +29,7 @@ class ClashAvoidingMove : public Move
                                       std::set<std::pair<Atom *, Atom *> > &collisions);
 
   gsl_matrix* computeClashAvoidingJacobian( Configuration* conf,
-                                            int constrainedDofs,
+                                            std::map<int,int>& dofMap,
                                             std::set< std::pair<Atom*,Atom*> >& collisions);
 
   /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
