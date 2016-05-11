@@ -297,6 +297,8 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
+  target->SetConfiguration(new Configuration(target));
+
   //Initialize metric
   metrics::Metric* metric;
   if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();

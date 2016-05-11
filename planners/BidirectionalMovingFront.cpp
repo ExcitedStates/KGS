@@ -130,12 +130,9 @@ void BidirectionalMovingFront::GenerateSamples() {
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
 
-    cout<<"BidiMovingFront::GenerateSamples(..) - Before move"<<endl;
     qNew = move.move(qSeed, gradient); //Perform move
-    cout<<"BidiMovingFront::GenerateSamples(..) - After move"<<endl;
 
     if(qNew->updatedMolecule()->inCollision() ){
-      cout<<"BidiMovingFront::GenerateSamples(..) - Collision. Swapping direction"<<endl;
       failedTrials++;
       totalTrials++;
       delete qNew;
@@ -144,7 +141,6 @@ void BidirectionalMovingFront::GenerateSamples() {
       swapFwdRev();
     }
     else{//collision-free
-      cout<<"BidiMovingFront::GenerateSamples(..) - No collision. Updating"<<endl;
       //Potentially reject new config if large violations?
       m_protein->checkCycleClosure(qNew);
 
