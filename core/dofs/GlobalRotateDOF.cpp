@@ -26,6 +26,11 @@ double GlobalRotateDOF::getGlobalValue() const
   return 0;
 }
 
+double GlobalRotateDOF::getMaxValue() const
+{
+  return 0.01;
+}
+
 void GlobalRotateDOF::updateEndVertexTransformation()
 {
   //if( std::fabs(m_value)<0.000001 ) {

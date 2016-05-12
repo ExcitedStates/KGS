@@ -19,6 +19,11 @@ double TorsionDOF::getGlobalValue() const
   return 0;
 }
 
+double TorsionDOF::getMaxValue() const
+{
+  return 0.01;
+}
+
 void TorsionDOF::updateEndVertexTransformation()
 {
   //if( std::fabs(m_value)<0.000001 ) {

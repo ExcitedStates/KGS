@@ -32,8 +32,8 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <vector>
-#include <math/Nullspace.h>
 
+#include "math/Nullspace.h"
 #include "core/graph/KinGraph.h"
 
 class Molecule;

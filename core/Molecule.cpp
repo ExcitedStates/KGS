@@ -362,7 +362,6 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
 }
 
 void Molecule::buildSpanningTree() {
-  unsigned int rootRBId = 0;
   //log() << "In buildSpanningTree" << endl;
   m_spanning_tree = new KinTree();
 
@@ -379,11 +378,11 @@ void Molecule::buildSpanningTree() {
   int dofId = 0;
   std::set<KinVertex*> visitedVertices;
 
-  //Initialize chain-roots but adding them to the queue and setting up edges from the super-m_root
+  //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
   list<KinVertex*> queue;
   for(auto const& chain: chains) {
     //Add first vertex in chain to queue
-    Residue* firstRes = chain->getResidues()[0];
+    Residue* firstRes = chain->getResidues()[71];
     Atom* firstAtom = firstRes->getAtoms().front();
     KinVertex* firstVertex = firstAtom->getRigidbody()->getVertex();
     queue.push_back(firstVertex);

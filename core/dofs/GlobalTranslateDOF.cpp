@@ -15,7 +15,7 @@ GlobalTranslateDOF::GlobalTranslateDOF(const KinEdge* edge, int axis):
 Math3D::Vector3 GlobalTranslateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 ret(0,0,0);
-  ret[m_axis]=1.0;
+  ret[m_axis]=1;
   return ret;
 }
 
@@ -24,6 +24,11 @@ double GlobalTranslateDOF::getGlobalValue() const
   //TODO: Implement
 //  std::cerr<<"GlobalTranslateDOF::getGlobalValue not implemented"<<std::endl;
   return 0;
+}
+
+double GlobalTranslateDOF::getMaxValue() const
+{
+  return 5.0;
 }
 
 void GlobalTranslateDOF::updateEndVertexTransformation()

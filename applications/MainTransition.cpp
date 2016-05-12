@@ -2,33 +2,25 @@
 #include <string>
 #include <iostream>
 #include <list>
+#include "core/Configuration.h"
 #include "core/Molecule.h"
 #include "core/Chain.h"
 #include "core/Grid.h"
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "RunFirst.h"
 #include "Logger.h"
 
-#include "planners/SamplingPlanner.h"
-#include "planners/RRTPlanner.h"
-#include "planners/DihedralRRT.h"
-#include "planners/PoissonPlanner.h"
-#include "planners/BidirectionalMovingFront.h"
-#include <moves/RawMove.h>
 #include <moves/NullspaceMove.h>
 #include <moves/ClashAvoidingMove.h>
-#include "moves/CompositeMove.h"
-#include <metrics/Metric.h>
 #include <metrics/Dihedral.h>
-#include <metrics/RMSD.h>
 #include <directions/RandomDirection.h>
 #include <directions/DihedralDirection.h>
 #include <directions/MSDDirection.h>
 #include <directions/LSNullspaceDirection.h>
 #include <directions/BlendedDirection.h>
 #include <moves/DecreaseStepMove.h>
+#include <math/gsl_helpers.h>
 
 using namespace std;
 
@@ -36,20 +28,11 @@ extern double jacobianTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 
-void randomSampling(SamplingOptions& options); ///< randomized exploration without target structure
-void targetedSampling(SamplingOptions& options); ///< directed/randomized exploration with target structure
+void scale_gradient(gsl_vector* gradient, Molecule* mol);
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
   enableLogger("samplingStatus");
-
-  ofstream reportStream;
-  reportStream.open("kgs_report.log");
-  enableLogger("report", reportStream);
-
-  ofstream plannerStream;
-  plannerStream.open("kgs_planner.log");
-  enableLogger("dominik", plannerStream);
 
   //SamplingOptions options(argc,argv);
   SamplingOptions::createOptions(argc, argv);
@@ -69,6 +52,7 @@ int main( int argc, char* argv[] ) {
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   log() << "Molecule has " << protein.atoms.size() << " atoms\n";
+  cout<<"main - 3"<<endl;
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(&protein, options.annotationFile);
@@ -90,6 +74,7 @@ int main( int argc, char* argv[] ) {
   for(auto const& coll: protein.Initial_collisions){
     log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
   }
+  cout<<"main - 4"<<endl;
 
   // Do the same for the target
   string target_file = options.targetStructureFile;
@@ -106,18 +91,10 @@ int main( int argc, char* argv[] ) {
   IO::readRigidbody( &protein );
   IO::readRigidbody( target );
 
-  options.setResidueNetwork(&protein);
-  options.setAtomSets(&protein,target);
-
-  //Alignment and spanning trees with possibly best m_root
-  if(options.alignIni){
-    target->alignReferencePositionsTo(&protein);//backup the aligned configuration
-  }
-
-  //Build rigid body tree for protein
-//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root, target);
-//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  target->buildSpanningTree();
+  (new Configuration(&protein))->updatedMolecule();
+  (new Configuration(target))->updatedMolecule();
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -129,7 +106,6 @@ int main( int argc, char* argv[] ) {
   //Build rigid body tree for target
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
-  target->buildSpanningTree();
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->Initial_collisions.size()<<" initial collisions"<<endl;
@@ -183,16 +159,6 @@ int main( int argc, char* argv[] ) {
   else if(options.gradient <= 5)
     direction = new LSNullspaceDirection();
 
-  //Initialize planner
-  SamplingPlanner* planner;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move, *metric);
-  else if(options.planner_string=="dccrrt")       planner = new BidirectionalMovingFront(&protein, *move, *metric, *direction, target, blendedDir);
-  else{
-    cerr<<"Unknown planner option specified!"<<endl;
-    exit(-1);
-  }
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
@@ -228,13 +194,27 @@ int main( int argc, char* argv[] ) {
     timer.Reset();
     double start_time = timer.LastElapsedTime();
 
-    //Start exploring
-    planner->GenerateSamples();
+    gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
+    Configuration* target_conf = new Configuration(target);
+    ConfigurationList samples;
+    samples.push_back(new Configuration(&protein));
+    for(int i=0;i<options.samplesToGenerate;i++){
+      cout<<"Iteration "<<i<<endl;
+      Configuration* seed = samples.back();
+      direction->gradient(seed, target_conf, gradient);
+      //gsl_vector_scale_max_component(gradient, options.maxRotation);
+      scale_gradient(gradient, &protein);
+      gsl_vector_scale(gradient, options.stepSize);
+      Configuration* new_conf = move->move(seed, gradient);
+      IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string(i)+".pdb");
+      samples.push_back(new_conf);
+    }
+
+
 
     //Print final status
     double end_time = timer.ElapsedTime();
-    ConfigurationList m_samples = planner->Samples();
-    log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
+    log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(samples.size()-1)<<" valid samples\n";
     log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
     log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
     log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
@@ -249,18 +229,29 @@ int main( int argc, char* argv[] ) {
     if(options.saveData > 0){
       log("samplingStatus")<<"Creating trajectory"<<endl;
     }
-    planner->createTrajectory();
   }
   log("samplingStatus")<<"Done"<<endl;
   //Clean up
-  delete planner;
   delete target;
   delete direction;
 
-  reportStream.close();
-  plannerStream.close();
 
   return 0;
 }
 
+
+void scale_gradient(gsl_vector* gradient, Molecule* mol)
+{
+  double factor = 1.0;
+
+  for(int i=0;i<mol->m_spanning_tree->getNumDOFs();i++){
+    DOF* dof = mol->m_spanning_tree->getDOF(i);
+    int idx = dof->getIndex();
+    double val = gsl_vector_get(gradient, idx);
+    double maxval = dof->getMaxValue();
+    if(fabs(maxval/val)<factor)
+      factor = fabs(maxval/val);
+  }
+  gsl_vector_scale(gradient, factor);
+}
 

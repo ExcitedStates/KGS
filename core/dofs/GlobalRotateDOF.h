@@ -16,6 +16,7 @@ class GlobalRotateDOF: public DOF {
 
   double getGlobalValue() const;
 
+  double getMaxValue() const;
  protected:
 
   void updateEndVertexTransformation();

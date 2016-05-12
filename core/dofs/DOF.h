@@ -38,6 +38,8 @@ class DOF {
    */
   double getValue() const;
 
+  virtual double getMaxValue() const = 0;
+
   /**
    * Get the global value of this DOF.
    */
