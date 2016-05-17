@@ -431,14 +431,11 @@ SamplingOptions* SamplingOptions::createOptions()
 void SamplingOptions::setResidueNetwork(const Molecule * protein){//uses the selectionMoving and stores a "residueNetwork" list of ints
 	//Determine if only certain residues shall be perturbed
 	string selGradient = selectionMoving;
-	Selection gradientSelection;
-	vector<Atom*> atomsGradient;
 	if(selGradient != ""){
 		Selection gradientSelection(selGradient);
 		vector<Residue*> residuesGradient = gradientSelection.getSelectedResidues(protein);
-		for(vector<Residue*>::iterator ita = residuesGradient.begin(); ita != residuesGradient.end(); ++ita){
-			residueNetwork.push_back( (*ita)->getId() );
-//			log("dominik")<<"l "<<(*ita)->getId()<<endl;
+		for(auto const& residue: residuesGradient){
+			residueNetwork.push_back( residue->getId() );
 		}
 		log("dominik")<<" Number of residues for gradient = "<<residueNetwork.size()<<endl;
 	}

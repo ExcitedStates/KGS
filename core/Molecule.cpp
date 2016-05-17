@@ -274,14 +274,11 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
  * Get a list of colliding atoms in the current protein configuration.
  */
 std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const {
-  //log() << "InfogetAllCollisions)\t Obtaining a list of atom pair collisions in current m_protein structure..." << endl;
   set< pair<Atom*,Atom*>> collisions;
-  for (vector<Atom*>::const_iterator itr= atoms.begin(); itr != atoms.end(); ++itr) {
-    if( (*itr)->isCollisionCheckAtom( collisionCheckAtoms ) ) {
-      Atom *atom = *itr;
-      vector<Atom *> colliding_atoms = Atom_pos_index->getAllCollisions(*itr, Initial_collisions, collisionCheckAtoms);
-      for (vector<Atom *>::const_iterator citr = colliding_atoms.begin(); citr != colliding_atoms.end(); ++citr) {
-        Atom *colliding_atom = *citr;
+  for (auto const& atom: atoms) {
+    if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
+      vector<Atom *> colliding_atoms = Atom_pos_index->getAllCollisions(atom, Initial_collisions, collisionCheckAtoms);
+      for (auto const& colliding_atom : colliding_atoms) {
         pair<Atom *, Atom *> collision_pair = make_pair(atom, colliding_atom);
         collisions.insert(collision_pair);
       }
@@ -375,7 +372,6 @@ void Molecule::buildSpanningTree() {
   size_t numVertices = Rigidbody_map_by_id.size();
 
   list<KinEdge*> cycleEdges;
-  int dofId = 0;
   std::set<KinVertex*> visitedVertices;
 
   //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
@@ -407,9 +403,6 @@ void Molecule::buildSpanningTree() {
     e4->setDOF(new GlobalTranslateDOF(e4,0));
     e5->setDOF(new GlobalTranslateDOF(e5,1));
     e6->setDOF(new GlobalTranslateDOF(e6,2));
-    //e4->setDOF(new GlobalTranslateDOF(e4, 0));
-    //e5->setDOF(new GlobalTranslateDOF(e5, 1));
-    //e6->setDOF(new GlobalTranslateDOF(e6, 2));
   }
 
   //Perform breadth-first-search from all queue vertices and construct KinEdges

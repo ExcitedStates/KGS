@@ -413,6 +413,162 @@ void IO::readRigidbody (Molecule * protein) {
 
     Atom* a1 = bond->Atom1;
     Atom* a2 = bond->Atom2;
+    //If the residue containing a1 (R1) precedes the one containing a2 (R2) there are four patterns in
+    //FIXED_BOND_PROFILES that can match: R1_a1_+a2, R1_+a2_a1, R2_-a1_a2 and R2_a2_-a1. Since atom names
+    //were ordered in the previous loop, however, we only have to check R1_+a2_a1 and R2_-a1_a2.
+    string query1, query2;
+    if(  a1->getResidue()->getNextResidue() == a2->getResidue()  ){
+      query1 = a1->getResidue()->getName()+"_+"+a2->getName()+"_"+a1->getName();
+      query2 = a2->getResidue()->getName()+"_-"+a1->getName()+"_"+a2->getName();
+    }else if(  a2->getResidue()->getNextResidue() == a1->getResidue()  ){
+      query1 = a1->getResidue()->getName()+"_+"+a1->getName()+"_"+a2->getName();
+      query2 = a2->getResidue()->getName()+"_-"+a2->getName()+"_"+a1->getName();
+    }else{
+      //If a1 and a2 are in the same residue simply put the lexicographically smallest name first.
+      if(a1->getName()<a2->getName())
+        query1 = a1->getResidue()->getName()+"_"+a1->getName()+"_"+a2->getName();
+      else
+        query1 = a1->getResidue()->getName()+"_"+a2->getName()+"_"+a1->getName();
+    }
+    //log("debugRas")<<bond<<" .. query: "<<query1<<" ("<<query2<<")"<<endl;
+
+    if(fixedBonds.find(query1)!=fixedBonds.end() || fixedBonds.find(query2)!=fixedBonds.end()){
+      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      ///Set the number of bars to six for all these bonds!
+      (*it)->Bars = 6;
+    }
+  }
+
+
+  int c=0;
+  map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
+
+  //Map the set-ID's to RB-ID's and add bonded atoms to RBs.
+  for (int i=0;i<protein->size();i++){
+    Atom* atom = protein->atoms[i];
+
+    //Map the set-id to the RB-id
+    int set_id = ds.FindSet(atom->getId());
+    int body_id;
+    if(idMap.find(set_id)!=idMap.end()) body_id = idMap.find(set_id)->second;
+    else {
+      body_id = c++;
+      idMap.insert( make_pair(set_id, body_id) );
+    }
+    //If the set containing a1 is not a rigid body: create one
+    if ( protein->Rigidbody_map_by_id.find(body_id)==protein->Rigidbody_map_by_id.end() ) {
+      Rigidbody* new_rb = new Rigidbody(body_id);
+      protein->Rigidbody_map_by_id.insert( make_pair(body_id,new_rb) );
+    }
+    Rigidbody* rb = protein->Rigidbody_map_by_id.find(body_id)->second;
+    if (!rb->containsAtom(atom)) rb->addAtom(atom);
+
+  }
+
+  //Delete small RBs and sort atoms within each RB
+  map<unsigned int, Rigidbody*>::iterator it = protein->Rigidbody_map_by_id.begin();
+  while ( it!=protein->Rigidbody_map_by_id.end() ) {
+    Rigidbody *rb = it->second;
+    if ( rb->Atoms.size() <= 0 ) {
+      cerr << "Error: rigid body " << rb->id() << " has no atoms." << endl;
+      protein->Rigidbody_map_by_id.erase(it++);
+      delete rb;
+    }
+    else { // sort atom ids
+#ifndef WIN32 // Liangjun Zhang's tmp code
+      vector<Atom*>::iterator sit = rb->Atoms.begin();
+      vector<Atom*>::iterator eit = rb->Atoms.end();
+
+      sort(sit,eit,Atom::compare);
+#endif
+      // Determine if Rigidbody is on Mainchain
+      rb->setMainchainRb();
+      ++it;
+    }
+  }
+
+  //Store bonds in rigid bodies
+  for (list<Bond *>::iterator bit=protein->Cov_bonds.begin(); bit != protein->Cov_bonds.end(); ++bit) {
+    Bond* bond = *bit;
+    //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
+    int setId1 = ds.FindSet((*bit)->Atom1->getId());
+    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    int setId2 = ds.FindSet((*bit)->Atom2->getId());
+    if(setId1!=setId2)
+      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+  }
+  for (list<Hbond *>::iterator bit=protein->H_bonds.begin(); bit != protein->H_bonds.end(); ++bit) {
+    int setId1 = ds.FindSet((*bit)->Atom1->getId());
+    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    int setId2 = ds.FindSet((*bit)->Atom2->getId());
+    if(setId1!=setId2)
+      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+  }
+
+
+}
+
+void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
+  //Create disjoint set
+  DisjointSets ds(protein->atoms[protein->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+
+  //For each atom not in a residue in movingResidues call Union (rigidifies everything not in movingResidues)
+  for(auto const& chain: protein->chains) {
+    Atom* lastAtom = nullptr;
+    for (auto const& res: chain->getResidues()) {
+      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
+        continue; //Skip residue if its in movingResidues
+
+      for (Atom *const &res_atom: res->getAtoms()){
+        if(lastAtom==nullptr) {
+          lastAtom = res_atom;
+          continue;
+        }
+        ds.Union(lastAtom->getId(), res_atom->getId());
+      }
+    }
+  }
+
+  //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
+  for (int i=0;i<protein->size();i++){
+    Atom* atom = protein->atoms[i];
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+      ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
+      //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
+    }
+  }
+
+  //Create a map to determine if a covalent bond is fixed
+  set<string> fixedBonds;
+  for(int rp=0;;rp++){
+    if(strcmp(FIXED_BOND_PROFILES[rp][0],"END")==0) break;
+    string tmp(FIXED_BOND_PROFILES[rp][0]);
+    tmp+="_";
+    string atomName1(FIXED_BOND_PROFILES[rp][1]);
+    string atomName2(FIXED_BOND_PROFILES[rp][2]);
+    if(atomName1<atomName2)	tmp+=atomName1+"_"+atomName2;
+    else					tmp+=atomName2+"_"+atomName1;
+    //log("debugRas")<<"Inserting "<<tmp<<endl;;
+    fixedBonds.insert(tmp);
+  }
+
+  //For each fixed bond (a1,a2) call Union(a1,a2)
+  for (list<Bond *>::iterator it=protein->Cov_bonds.begin(); it != protein->Cov_bonds.end(); ++it){
+    Bond * bond = *it;
+
+    ///****************************************
+    ///UPDATED: we use two ways for now to identify locked bonds!
+    ///The isLocked/isPeptide bond check in Bond and the profiles
+    ///As for some profiles, it can be either locked or rotatable!
+
+    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
+      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      continue;
+    }
+
+    Atom* a1 = bond->Atom1;
+    Atom* a2 = bond->Atom2;
     //If the residue containing a1 (R1) precedes the one containing a2 (R2) there are four patterns in 
     //FIXED_BOND_PROFILES that can match: R1_a1_+a2, R1_+a2_a1, R2_-a1_a2 and R2_a2_-a1. Since atom names
     //were ordered in the previous loop, however, we only have to check R1_+a2_a1 and R2_-a1_a2. 

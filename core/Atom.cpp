@@ -329,7 +329,7 @@ bool Atom::isHeavyAtom () const {
 	return (getType() != "H");
 }
 
-//---------------------------------------------------------
+
 bool Atom::isCollisionCheckAtom (string collisionCheckAtoms ) const {
 	if( collisionCheckAtoms == "backbone" )
 		return isBackboneAtom();

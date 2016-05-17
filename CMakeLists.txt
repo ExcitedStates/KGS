@@ -198,7 +198,7 @@ add_executable( rmsd		    applications/MainRmsd.cpp )
 add_executable( testik		    applications/MainTestExactIK.cpp )
 add_executable( mytest  	    applications/MainTest.cpp )
 add_executable( transition  	applications/MainTransition.cpp )
-add_executable( loopexplroe  	applications/MainLoopExplore.cpp )
+add_executable( loopexplore  	applications/MainLoopExplore.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )

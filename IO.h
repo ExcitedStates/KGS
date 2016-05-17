@@ -43,6 +43,7 @@ class IO {
 	static void readPdb (Molecule * protein, std::string pdb_file, std::vector<std::string> &hbondsAsCov, Molecule * reference = nullptr);
 	static void readDssp (Molecule * protein, std::string dssp_file);
 	static void readRigidbody (Molecule * protein);
+  static void readRigidbody (Molecule * protein, std::vector<int>& movingResidues);
 	static void writePdb (Molecule * protein, std::string output_file_name);
 	static void writePyMolScript(Molecule * protein, std::string pdb_file, std::string output_file_name);
   static void writeBondLengthsAndAngles (Molecule *molecule, std::string output_file_name);
