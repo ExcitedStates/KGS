@@ -6,15 +6,21 @@ using namespace std;
 
 namespace metrics{
 
-RMSD::RMSD()
+RMSD::RMSD():
+  m_atomsRMSD(nullptr)
+{}
+
+RMSD::RMSD(vector<Atom*>* atomsRMSD):
+  m_atomsRMSD(atomsRMSD)
 {}
 
 double RMSD::distance(Configuration* c1, Configuration* c2)
 {
-  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
+//  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
+  std::vector<Atom*>* atomsRMSD = m_atomsRMSD;
 
   // If atomsAlign is nullptr, align the entire m_protein
-  if( atomsRMSD->empty() ) {
+  if( atomsRMSD==nullptr || atomsRMSD->empty() ) {
     //cout<<"Found no atoms to align .. using all."<<endl;
     atomsRMSD = &(c1->getMolecule()->atoms);//choose all atoms
   }
@@ -28,27 +34,27 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   int resId;
   string name, chainName;
   unsigned int i=0;
-  for (vector<Atom*>::const_iterator it=atomsRMSD->begin(); it!=atomsRMSD->end(); ++it) {
-    name = (*it)->getName();
-    chainName = (*it)->getResidue()->getChain()->getName();
-    resId = (*it)->getResidue()->getId();
-    Atom* atom = protein->getAtom(chainName,resId, name);
-    v1[i]=atom->m_Position.x;
-    v1[i+1]=atom->m_Position.y;
-    v1[i+2]=atom->m_Position.z;
+  for (auto const& atom: *atomsRMSD){
+    name = atom->getName();
+    chainName = atom->getResidue()->getChain()->getName();
+    resId = atom->getResidue()->getId();
+    Atom* a1 = protein->getAtom(chainName,resId, name);
+    v1[i]=a1->m_Position.x;
+    v1[i+1]=a1->m_Position.y;
+    v1[i+2]=a1->m_Position.z;
     i+=3;
   }
 
   protein= c2->updatedMolecule();
   i=0;
-  for (vector<Atom*>::const_iterator it=atomsRMSD->begin(); it!=atomsRMSD->end(); ++it) {
-    name = (*it)->getName();
-    chainName = (*it)->getResidue()->getChain()->getName();
-    resId = (*it)->getResidue()->getId();
-    Atom* atom = protein->getAtom(chainName,resId, name);
-    v2[i]=atom->m_Position.x;
-    v2[i+1]=atom->m_Position.y;
-    v2[i+2]=atom->m_Position.z;
+  for (auto const& atom: *atomsRMSD) {
+    name = atom->getName();
+    chainName = atom->getResidue()->getChain()->getName();
+    resId = atom->getResidue()->getId();
+    Atom* a2 = protein->getAtom(chainName,resId, name);
+    v2[i]=a2->m_Position.x;
+    v2[i+1]=a2->m_Position.y;
+    v2[i+2]=a2->m_Position.z;
     i+=3;
   }
 

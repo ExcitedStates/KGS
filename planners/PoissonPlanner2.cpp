@@ -26,7 +26,7 @@
 
 */
 
-#include "PoissonPlanner.h"
+#include "PoissonPlanner2.h"
 
 #include <iomanip>
 #include <stack>
@@ -37,13 +37,10 @@
 #include "core/Chain.h"
 #include "Logger.h"
 #include "core/Transformation.h"
-#include "CTKTimer.h"
-#include "metrics/RMSD.h"
-#include "metrics/Dihedral.h"
 
 using namespace std;
 
-PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& metric):
+PoissonPlanner2::PoissonPlanner2(Molecule * protein, Move& move, metrics::Metric& metric):
 	SamplingPlanner(move,metric),
   stop_after(SamplingOptions::getOptions()->samplesToGenerate),
   max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
@@ -51,17 +48,17 @@ PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& 
   m_lilRad(m_bigRad/2),
   protein(protein)
 {
-  //cout<<"PoissonPlanner::PoissonPlanner - stopafter: "<<stop_after<<endl;
+  //cout<<"PoissonPlanner2::PoissonPlanner2 - stopafter: "<<stop_after<<endl;
   m_root = new Configuration( protein );
-  m_root->updateMolecule();
-  m_root->computeCycleJacobianAndNullSpace();
+//  m_root->updateMolecule();
+//  m_root->computeCycleJacobianAndNullSpace();
   m_root->m_id = 0;
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
-  updateMaxDists(m_root,m_root);
+  updateMaxDists(m_root);
 }
 
-PoissonPlanner::~PoissonPlanner() {
+PoissonPlanner2::~PoissonPlanner2() {
   Configuration *pSmp;
   for (auto iter=all_samples.begin(); iter!=all_samples.end(); iter++) {
     pSmp = *iter;
@@ -71,9 +68,9 @@ PoissonPlanner::~PoissonPlanner() {
 
 
 
-void PoissonPlanner::GenerateSamples()
+void PoissonPlanner2::GenerateSamples()
 {
-  //cout<<"PoissonPlanner::GenerateSamples()"<<endl;
+  //cout<<"PoissonPlanner2::GenerateSamples()"<<endl;
   Direction* direction = new RandomDirection();
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
   double origStepSize = move.getStepSize();
@@ -97,27 +94,23 @@ void PoissonPlanner::GenerateSamples()
     //Make max_rejects_before_close attempts at perturbing it
     size_t attempt;
     for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
-      //cout<<"PoissonPlanner::GenerateSamples() - attempt "<<attempt<<endl;
+      //cout<<"PoissonPlanner2::GenerateSamples() - attempt "<<attempt<<endl;
       move.setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
       double dist = m_metric.distance(pert, seed);
-      //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
-      //cout<<"PoissonPlanner - dist: "<<dist<<", lil: "<<m_lilRad<<", big: "<<m_bigRad<<endl;
+//      log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       int scaleAttempts = 0;
       while( dist<m_lilRad || dist>m_bigRad){
         if(++scaleAttempts==5) break;
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
-        //cout<<"PoissonPlanner - scaling up/down by "<<gradientScale<<endl;
         gsl_vector_scale(gradient, gradientScale);
-        //move.setStepSize(move.getStepSize()*gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
         dist = m_metric.distance(pert, seed);
-        //cout<<"PoissonPlanner -  dist is now: "<<dist<<endl;
-        //log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
+//        log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
 
       if(scaleAttempts==5){
@@ -129,32 +122,26 @@ void PoissonPlanner::GenerateSamples()
       if(pert->updatedMolecule()->inCollision() ) {
         rejected_clash++;
         delete pert;
-        //log("samplingStatus")<<" - rejected from clash)"<<endl;
+//        log("samplingStatus")<<" - rejected from clash"<<endl;
         continue;
       }
 
 
       //Check if close to existing
       bool too_close_to_existing = false;
-      if(m_checkAll) {
-        for (auto const &v: all_samples) {
-          if (m_metric.distance(pert, v) < m_lilRad) {
-            too_close_to_existing = true;
-            break;
-          }
-        }
-      }else{
-        for (auto const &v: nearSeed) {
-          if (m_metric.distance(pert, v) < m_lilRad) {
-            too_close_to_existing = true;
-            break;
-          }
+//      for (auto const &v: all_samples) {
+      for (auto const &v: nearSeed) {
+        double dist = m_metric.distance(pert, v);
+//        log("samplingStatus")<<" - dist "<<dist<<" > "<<m_lilRad<<" ?"<<endl;
+        if (dist < m_lilRad) {
+          too_close_to_existing = true;
+          break;
         }
       }
       if (too_close_to_existing) {
         rejected_collision++;
         delete pert;
-        //log("samplingStatus")<<" - rejected from collision"<<endl;
+//        log("samplingStatus")<<" - rejected from collision"<<endl;
         continue;
       }
 
@@ -162,27 +149,26 @@ void PoissonPlanner::GenerateSamples()
       pert->m_id = sample_num;
       open_samples.push_back(pert);
       all_samples.push_back(pert);
-      writeNewSample(pert, all_samples.front(), sample_num);
       pert->m_distanceToIni    = m_metric.distance(pert,all_samples.front());
       pert->m_distanceToParent = m_metric.distance(pert,seed);
+      updateMaxDists(pert);
+      writeNewSample(pert, all_samples.front(), sample_num);
 
-      log("samplingStatus") << "> New structure: "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
-      log("samplingStatus") << " .. initial dist.: "<< setprecision(6)<<pert->m_distanceToIni;
+      log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
+      log("samplingStatus") << " .. initial dist.: "<< setprecision(3)<<pert->m_distanceToIni;
+      log("samplingStatus") << " .. seed dist.: "<< setprecision(3)<<pert->m_distanceToParent;
       log("samplingStatus") << endl;
 
       sample_num++;
-      break;
     }
 
-    //If loop is not terminated with a break it means the seed should be closed
-    if(attempt==max_rejects_before_close){
-      open_samples.erase(it);
-      closed_samples.push_back(seed);
-    }
+    open_samples.erase(it);
+    closed_samples.push_back(seed);
   }
   log("samplingStatus")<<"Poisson-planner: "<<open_samples.size()<<" open samples and ";
-  log("samplingStatus")<<closed_samples.size()<<" closed samples on termination"<<endl;
-  log("samplingStatus")<<"Poisson-planner: Rejects from clash: "<<rejected_clash<<endl;
+  log("samplingStatus")<<closed_samples.size()<<" closed samples on termination ";
+  log("samplingStatus")<<"("<<all_samples.size()<<" total)"<<endl;
+  log("samplingStatus")<<"Poisson-planner: Rejects from clash:          "<<rejected_clash<<endl;
   log("samplingStatus")<<"Poisson-planner: Rejects from tree-collision: "<<rejected_collision<<endl;
 
   gsl_vector_free(gradient);
@@ -190,7 +176,7 @@ void PoissonPlanner::GenerateSamples()
 
 }
 
-double PoissonPlanner::memo_distance(Configuration* c1, Configuration* c2)
+double PoissonPlanner2::memo_distance(Configuration* c1, Configuration* c2)
 {
   if(c1==c2) return 0.0;
 
@@ -204,7 +190,7 @@ double PoissonPlanner::memo_distance(Configuration* c1, Configuration* c2)
   return dist;
 }
 
-void PoissonPlanner::collectPossibleChildCollisions(
+void PoissonPlanner2::collectPossibleChildCollisions(
     Configuration* conf,
     std::vector<Configuration*>& ret
 )
@@ -212,7 +198,7 @@ void PoissonPlanner::collectPossibleChildCollisions(
   collectPossibleChildCollisions(conf, ret, m_root);
 }
 
-void PoissonPlanner::collectPossibleChildCollisions(
+void PoissonPlanner2::collectPossibleChildCollisions(
     Configuration* conf,
     std::vector<Configuration*>& ret,
     Configuration* v
@@ -229,15 +215,15 @@ void PoissonPlanner::collectPossibleChildCollisions(
 
 }
 
-void PoissonPlanner::updateMaxDists(Configuration* newConf)
+void PoissonPlanner2::updateMaxDists(Configuration* newConf)
 {
   updateMaxDists(newConf, newConf);
 }
-void PoissonPlanner::updateMaxDists(Configuration* v, Configuration* newConf)
+void PoissonPlanner2::updateMaxDists(Configuration* v, Configuration* newConf)
 {
   double d = memo_distance(v,newConf);
   if( d>m_maxDist[v] ) m_maxDist[v] = d;
 
-  if(v->getParent())
-    updateMaxDists(v->getParent(), newConf);
+  Configuration* parent = v->getParent();
+  if(parent!=nullptr) updateMaxDists(parent, newConf);
 }

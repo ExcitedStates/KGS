@@ -200,7 +200,8 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
   double normAfter = gsl_vector_length(reducedGradient);
 
   //Scale so the length matches the one before
-  gsl_vector_scale(reducedGradient, normBefore/normAfter);
+  if(normAfter>0.00000001)
+    gsl_vector_scale(reducedGradient, normBefore/normAfter);
 
   //Transfer to general dofs again
   gsl_vector* ret = gsl_vector_copy(gradient);

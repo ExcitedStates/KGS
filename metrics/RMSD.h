@@ -20,6 +20,7 @@ namespace metrics{
 class RMSD: public Metric{
  public:
   RMSD();
+  RMSD(std::vector<Atom*>* atomsRMSD);
 
   double distance(Configuration*, Configuration*);
   static double distance_noOptimization(Configuration *c1, Configuration *c2);
@@ -27,6 +28,7 @@ class RMSD: public Metric{
   static double align(Molecule * other, Molecule * base);
 
  private:
+  std::vector<Atom*>* m_atomsRMSD;
 
 };
 

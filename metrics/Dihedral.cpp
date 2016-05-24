@@ -18,10 +18,10 @@ namespace metrics{
 			cerr<<"Configurations to compare do not have the same number of m_dofs!"<<endl;
 			exit(-1);
 		}
-		if(c1->getGlobalTorsions()== nullptr || c2->getGlobalTorsions()== nullptr){
-			cerr<<"Need to set configuration and determine global torsions first!"<<endl;
-			exit(-1);
-		}
+		//if(c1->getGlobalTorsions()== nullptr || c2->getGlobalTorsions()== nullptr){
+		//	cerr<<"Need to set configuration and determine global torsions first!"<<endl;
+		//	exit(-1);
+		//}
 
 		Molecule * m_protein = c1->getMolecule();
 
@@ -29,25 +29,25 @@ namespace metrics{
 		double distance=0.0, distanceRel=0.0;
     for(KinEdge*& edge: m_protein->m_spanning_tree->Edges){
 			int dofId = edge->getDOF()->getIndex();
-			double angle_diff = c2->getGlobalTorsions(dofId)-c1->getGlobalTorsions(dofId);
-			angle_diff = formatRangeRadian(angle_diff);
+			//double angle_diff = c2->getGlobalTorsions(dofId)-c1->getGlobalTorsions(dofId);
+			//angle_diff = formatRangeRadian(angle_diff);
 			double diff_rel = formatRangeRadian(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
 			if(atom_selection=="MOV"){
 				int cycle_dof_id = edge->getDOF()->getCycleIndex();
 				bool locked = edge->getBond()->constrained;
 				if( cycle_dof_id == -1 ){//free dihedral, always moveable
-					distance += angle_diff*angle_diff;
+					//distance += angle_diff*angle_diff;
 					distanceRel += diff_rel*diff_rel;
 					count++;
 				}
 				else if (!locked ) {
-					distance += angle_diff*angle_diff;
+					//distance += angle_diff*angle_diff;
 					distanceRel += diff_rel*diff_rel;
 					count++;
 				}
 			}
 			else{
-				distance += angle_diff*angle_diff;
+				//distance += angle_diff*angle_diff;
 				distanceRel += diff_rel*diff_rel;
 				count++;
 			}

@@ -75,7 +75,6 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
 
   // Nullspace dimension
   gsl_vector* currentRow = gsl_vector_alloc(n);
-  double val=0.0;
 
   gsl_vector_set_zero(rigidAngles);
   gsl_vector_set_zero(rigidHBonds);
@@ -88,7 +87,7 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
     gsl_matrix_get_row(currentRow,svd->V,i);
 
     for(int j=n-nullspaceSize; j<n; j++){
-      val = fabs( gsl_vector_get(currentRow,j) );
+      double val = fabs( gsl_vector_get(currentRow,j) );
       if( val > RIGID_TOL ){
         moving = true;
       }
@@ -113,8 +112,15 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
 
   // Now, check the hydrogen Bonds for rigidity
   int numHBonds = HBondJacobian->size1;
-  gsl_matrix* hBondNullspace = gsl_matrix_alloc(numHBonds,nullspaceSize);
-  gsl_vector* currentHBondRow = gsl_vector_alloc(nullspaceSize);
+  gsl_matrix* hBondNullspace;// = gsl_matrix_alloc(numHBonds,nullspaceSize);
+  gsl_vector* currentHBondRow;// = gsl_vector_alloc(nullspaceSize);
+  if(nullspaceSize==0){
+    hBondNullspace = gsl_matrix_calloc(numHBonds,1);
+    currentHBondRow = gsl_vector_calloc(1);
+  }else{
+    hBondNullspace = gsl_matrix_alloc(numHBonds,nullspaceSize);
+    currentHBondRow = gsl_vector_alloc(nullspaceSize);
+  }
 
   ///Calculate the "In-Nullspace" Rotation of the hBonds
   //gsl_matrix_view nullspaceBasis = gsl_matrix_submatrix(svd->V,0,svd->V->size2-nullspaceSize,n,nullspaceSize); //Matrix, top-left element, num rows, num cols
@@ -147,6 +153,11 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
 }
 
 void Nullspace::ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const {
+
+  if(nullspaceSize==0){
+    gsl_vector_set_zero(after_project);
+    return;
+  }
 
   //The projection equation is:   after_project = N * N^T * to_project
   //Dimensions are: [n x 1] = [n x (n-r) ] [(n-r) x n] [n x 1]

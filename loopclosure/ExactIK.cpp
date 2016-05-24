@@ -157,10 +157,12 @@ bool ExactIK::validRebuildLoop(const Residue* res1, const Residue* res2, const R
   if(res3->getAtom("N")==nullptr) return false;
 
   //Check for constraints between res1 and res3
-  for(auto const& edge: res1->getChain()->getMolecule()->m_spanning_tree->Edges){
-    Bond* bond = edge->getBond();
-    //TODO: check for constraints
-  }
+//  for(auto const& edge: res1->getChain()->getMolecule()->m_spanning_tree->Edges){
+//    Bond* bond = edge->getBond();
+//    TODO: check for constraints
+//  }
+
+  return true;
 }
 
 void ExactIK::initializeIKParams(

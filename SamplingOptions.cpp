@@ -145,6 +145,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 	if( planner_string!="dihedralrrt" &&
       planner_string!="binnedrrt" &&
 			planner_string!="dccrrt" &&
+      planner_string!="poisson2" &&
       planner_string!="poisson"){
 		cerr<<"Invalid --planner option: "<<planner_string<<endl;
 		exit(-1);
@@ -200,45 +201,45 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 
 
 void SamplingOptions::initializeVariables(){
-	initialStructureFile    = "";
-	targetStructureFile     = "";
-	annotationFile          = "";
-	hydrogenbondFile        = "";
-	hydrogenbondMethod      = "";
-	samplesToGenerate       = 10;
-	explorationRadius       = 5.0;
-  scaleToRadius           = false;
-	sampleRandom            = true;
-	gradient                = 0;
-	collisionFactor         = 0.75;
-	decreaseSteps 					= 0;
-	decreaseFactor          = 0.5;
-	stepSize                = 1.0;
-	maxRotation             = 3.1415/18;
+  initialStructureFile      = "";
+  targetStructureFile       = "";
+  annotationFile            = "";
+  hydrogenbondFile          = "";
+  hydrogenbondMethod        = "";
+  samplesToGenerate         = 10;
+  explorationRadius         = 5.0;
+  scaleToRadius             = false;
+  sampleRandom              = true;
+  gradient                  = 0;
+  collisionFactor           = 0.75;
+  decreaseSteps             = 0;
+  decreaseFactor            = 0.5;
+  stepSize                  = 1.0;
+  maxRotation               = 3.1415/18;
   poisson_max_rejects_before_close = 10;
-	metric_string           = "rmsd";
-	planner_string          = "binnedRRT";
-	rebuild_fragment_length = 0;
-	rebuild_frequency       = 0.0;
- rebuildInitialStructures = 0;
- rebuildAggression        = 0;
- flexibleRibose           = false;
- seed                     =  418;
- saveData                 =  0;
- sampleReverse            = false;
- biasToTarget             = 0.0;
- convergeDistance         = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
- alignAlways              = false;
- alignIni                 = false;
- selectAtoms              = "heavy";
- preventClashes           = false;
- selectionAlign           = "";
- selectionMoving          = "";
- root                     = 0;
- projectConstraints       = true;
- collisionCheck           = "all";
- frontSize                = 50;
- switchAfter              = 20000;
+  metric_string             = "rmsd";
+  planner_string            = "binnedRRT";
+  rebuild_fragment_length   = 0;
+  rebuild_frequency         = 0.0;
+  rebuildInitialStructures  = 0;
+  rebuildAggression         = 0;
+  flexibleRibose            = false;
+  seed                      =  418;
+  saveData                  =  0;
+  sampleReverse             = false;
+  biasToTarget              = 0.0;
+  convergeDistance          = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
+  alignAlways               = false;
+  alignIni                  = false;
+  selectAtoms               = "heavy";
+  preventClashes            = false;
+  selectionAlign            = "";
+  selectionMoving           = "";
+  root                      = 0;
+  projectConstraints        = true;
+  collisionCheck            = "all";
+  frontSize                 = 50;
+  switchAfter               = 20000;
 }
 
 void SamplingOptions::print(){

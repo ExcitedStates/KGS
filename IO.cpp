@@ -274,8 +274,8 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   }
 
   // Index m_molecule atoms
-  protein->indexAtoms();
-  protein->backupAtomIndex();
+//  protein->indexAtoms();
+//  protein->backupAtomIndex();
 
   //		m_molecule->printSummaryInfo();
 }

@@ -46,12 +46,12 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
   gsl_vector* p_temp = gsl_vector_calloc(protein->totalDofNum());
 
   for (auto const& atom1: protein->atoms) {
-    std::vector<Atom*> neighbors = protein->Atom_pos_index->getNeighboringAtomsVDW(atom1,      //atom
-                                                                                   true,       //neighborWithLargerId
-                                                                                   true,       //noCovBondNeighbor
-                                                                                   true,       //noSecondCovBondNeighbor
-                                                                                   true,       //noHbondNeighbor
-                                                                                   VDW_R_MAX); //radius
+    std::vector<Atom*> neighbors = protein->getGrid()->getNeighboringAtomsVDW(atom1,      //atom
+                                                                              true,       //neighborWithLargerId
+                                                                              true,       //noCovBondNeighbor
+                                                                              true,       //noSecondCovBondNeighbor
+                                                                              true,       //noHbondNeighbor
+                                                                              VDW_R_MAX); //radius
 
     computeAtomJacobian(atom1,atomJacobian1);
 

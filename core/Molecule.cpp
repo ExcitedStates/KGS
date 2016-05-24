@@ -67,13 +67,14 @@ using namespace std;
 
 Molecule::Molecule() {
   name_ = "UNKNOWN";
-  Atom_pos_index = nullptr;
-  backup_Atom_pos_index = nullptr;
+  m_grid = nullptr;
+//  m_backupGrid = nullptr;
   m_spanning_tree = nullptr;
   m_conf = nullptr;
   AtomJacobian1 = nullptr;
   AtomJacobian2 = nullptr;
   AtomJacobian3 = nullptr;
+  m_collisionFactor = 1.0;
 }
 
 Molecule::~Molecule() {
@@ -87,11 +88,12 @@ Molecule::~Molecule() {
     delete chain;
   }
 
-  // delete Atom_pos_index and backup_Atom_pos_index
-  if (Atom_pos_index!=nullptr)
-    delete Atom_pos_index;
-  if (backup_Atom_pos_index!=nullptr)
-    delete backup_Atom_pos_index;
+  // delete m_grid and m_backupGrid
+  if (m_grid!=nullptr)
+    delete m_grid;
+//  if (m_backupGrid!=nullptr)
+//    delete m_backupGrid;
+
   // delete all rigid bodies
   for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
     if ( it->second != nullptr )
@@ -221,37 +223,55 @@ int Molecule::size() const {
 
 void Molecule::updateAtom (int atom_id, Coordinate new_pos) {
   Atom* affected_atom = getAtom(atom_id);
-  Atom_pos_index->removeAtom(affected_atom);
+  m_grid->removeAtom(affected_atom);
   affected_atom->m_Position = new_pos;
-  Atom_pos_index->addAtom(affected_atom);
+  m_grid->addAtom(affected_atom);
 }
+
+
+Grid* Molecule::getGrid() {
+  if(m_grid==nullptr)
+    indexAtoms();
+  return m_grid;
+}
+
 
 void Molecule::indexAtoms () {
-  // Atom_pos_index is the current indexing
-  if (Atom_pos_index!=nullptr)
-    delete Atom_pos_index;
+  // m_grid is the current indexing
+  if (m_grid!=nullptr)
+    delete m_grid;
 
-  Atom_pos_index = new Grid(this, SamplingOptions::getOptions()->collisionFactor);
+//  m_grid = new Grid(this, SamplingOptions::getOptions()->collisionFactor);
+  m_grid = new Grid(this, m_collisionFactor);
 }
 
-void Molecule::backupAtomIndex () {
-  if (backup_Atom_pos_index!=nullptr)
-    delete backup_Atom_pos_index;
-  backup_Atom_pos_index = Atom_pos_index->deepClone();
+void Molecule::setCollisionFactor(double collisionFactor)
+{
+  m_collisionFactor = collisionFactor;
 }
 
-void Molecule::restoreAtomIndex () {
-  if (Atom_pos_index!=nullptr)
-    delete Atom_pos_index;
-  Atom_pos_index = backup_Atom_pos_index->deepClone();
-}
+//void Molecule::backupAtomIndex () {
+//  if (m_backupGrid!=nullptr)
+//    delete m_backupGrid;
+//
+//  m_backupGrid = m_grid->deepClone();
+//}
+
+//void Molecule::restoreAtomIndex () {
+//  if (m_grid!=nullptr)
+//    delete m_grid;
+//  if (m_backupGrid==nullptr)
+//    backupAtomIndex();
+//
+//  m_grid = m_backupGrid->deepClone();
+//}
 
 //---------------------------------------------------------
 bool Molecule::inCollision (string collisionCheckAtoms ) const {
 
   for (vector<Atom*>::const_iterator itr= atoms.begin(); itr != atoms.end(); ++itr)
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) )
-    if ( Atom_pos_index->inCollision(*itr, Initial_collisions, collisionCheckAtoms)  )
+    if ( m_grid->inCollision(*itr, Initial_collisions, collisionCheckAtoms)  )
       return true;
   return false;
 }
@@ -260,7 +280,7 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
   double minCollFactor = 10000;
   for (vector<Atom*>::const_iterator itr=atoms.begin(); itr!=atoms.end(); ++itr){
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) ){
-      double factor = Atom_pos_index->minFactorWithoutCollision(*itr, Initial_collisions, collisionCheckAtoms);
+      double factor = m_grid->minFactorWithoutCollision(*itr, Initial_collisions, collisionCheckAtoms);
       if(factor < minCollFactor){
         minCollFactor = factor;
       }
@@ -277,7 +297,7 @@ std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCh
   set< pair<Atom*,Atom*>> collisions;
   for (auto const& atom: atoms) {
     if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
-      vector<Atom *> colliding_atoms = Atom_pos_index->getAllCollisions(atom, Initial_collisions, collisionCheckAtoms);
+      vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, Initial_collisions, collisionCheckAtoms);
       for (auto const& colliding_atom : colliding_atoms) {
         pair<Atom *, Atom *> collision_pair = make_pair(atom, colliding_atom);
         collisions.insert(collision_pair);
@@ -624,7 +644,8 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
     double normAfter = gsl_vector_length(after_proj_short);
 
     //Scale projected gradient to same norm as unprojected
-    gsl_vector_scale(after_proj_short, normBefore/normAfter);
+    if(normAfter>0.0000001)
+      gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     // Convert back to full length DOFs vector
     for( auto const& edge:m_spanning_tree->Edges){
@@ -674,7 +695,11 @@ void Molecule::RestoreAtomPos(){
     a->m_Position = a->m_referencePosition;
 
   m_conf = nullptr;
-  restoreAtomIndex();
+
+  //restoreAtomIndex();
+  if(m_grid!=nullptr)
+    delete m_grid;
+
 }
 
 void Molecule::SetConfiguration(Configuration *q){
@@ -766,7 +791,7 @@ gsl_vector*Molecule::vdwGradient () { // minimize the L-J potential
     Atom* atom1 = *ait;
     computeAtomJacobian(atom1,&AtomJacobian1);
     log("debug") << "in Molecule::vdwGradient - after computeAtomJacobian(atom1,&AtomJacobian1);" << endl;
-    vector<Atom*> neighbors = Atom_pos_index->getNeighboringAtoms(atom1,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = m_grid->getNeighboringAtoms(atom1,true,true,true,VDW_R_MAX);
     // 2. For each such neighbor, compute dU(R_ab)/d(q)
     // The formula is -12*VDW_SIGMA*(VDW_R0^6*r_12^(-8)-VDW_R0^12*r_12^(-14))*(J1-J2)'(P1-P2)),
     // where ' is transpose.
@@ -810,7 +835,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = Atom_pos_index->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 
@@ -859,7 +884,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = Atom_pos_index->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 

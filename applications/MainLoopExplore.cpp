@@ -8,26 +8,21 @@
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "RunFirst.h"
 #include "Logger.h"
 
 #include "planners/SamplingPlanner.h"
 #include "planners/RRTPlanner.h"
 #include "planners/DihedralRRT.h"
 #include "planners/PoissonPlanner.h"
+#include "planners/PoissonPlanner2.h"
 #include "planners/BidirectionalMovingFront.h"
-#include <moves/RawMove.h>
 #include <moves/NullspaceMove.h>
 #include <moves/ClashAvoidingMove.h>
-#include "moves/CompositeMove.h"
-#include <metrics/Metric.h>
 #include <metrics/Dihedral.h>
-#include <metrics/RMSD.h>
 #include <directions/RandomDirection.h>
 #include <directions/DihedralDirection.h>
 #include <directions/MSDDirection.h>
 #include <directions/LSNullspaceDirection.h>
-#include <directions/BlendedDirection.h>
 #include <moves/DecreaseStepMove.h>
 
 using namespace std;
@@ -117,10 +112,11 @@ int main( int argc, char* argv[] ) {
 
   //Initialize planner
   SamplingPlanner* planner = nullptr;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
-  else if(options.planner_string.empty())         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move, *metric );
+  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
+  else if(options.planner_string.empty())         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
+  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(    &protein, *move, *metric, *direction );
+  else if(options.planner_string=="poisson")      planner = new PoissonPlanner( &protein, *move, *metric );
+  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(&protein, *move, *metric );
   else{
     cerr<<"Unknown --planner option specified!"<<endl;
     exit(-1);

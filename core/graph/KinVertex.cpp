@@ -62,7 +62,7 @@ void KinVertex::forwardPropagate()
 
 void KinVertex::transformAtoms()
 {
-  if(!m_rigidbody) return;
+  if(m_rigidbody==nullptr) return;
 
   for (auto const& atom: m_rigidbody->Atoms){
     Math3D::Vector3 newPos = m_transformation * atom->m_referencePosition;

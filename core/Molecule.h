@@ -46,98 +46,103 @@ class Configuration;
 
 class Molecule {
  public:
-	Molecule();
-	~Molecule();
-	void setName(std::string& name);
-	std::string getName() const;
+  Molecule();
+  ~Molecule();
+  void setName(std::string& name);
+  std::string getName() const;
 
-	Atom* addAtom(const std::string& chain_name,
+  Atom* addAtom(const std::string& chain_name,
                 const std::string& res_name,
                 const int& res_id,
                 const std::string& atomName,
                 const int& atomId,
                 const Coordinate& position );
 
-	Chain* getChain (const std::string& chainName);
-	Atom* getAtom (int atom_id);
+  Chain* getChain (const std::string& chainName);
+  Atom* getAtom (int atom_id);
   Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name);
 
   int getMinResidueNumber();
-	int getMaxResidueNumber();
-	void printAllAtoms () const;
-	int size() const;
-	int totalDofNum () const;
-	void printSummaryInfo() const;
-	void updateAtom (int atom_id, Coordinate new_pos);
-	void indexAtoms();
-	bool inCollision (std::string collisionCheckAtoms = "all" ) const;
-	std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
-	double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
-	void printAllCollisions () const;
-	bool hasCycle() const;
-	void backupAtomIndex(); 
-	void restoreAtomIndex ();
-	void alignReferencePositionsTo(Molecule * base);
-        void translateReferencePositionsToRoot(Molecule * base);
-	
-	void SetConfiguration(Configuration *q);
-	int countOriginalDofs () const;
-	Coordinate centerOfMass () const;
-	Coordinate centerOfGeometry () const;
-	void checkCycleClosure(Configuration *q);
-	
-	void addCovBond (Bond * bond);
-	void addHbond (Hbond * hb);
-	void setToHbondIntersection (Molecule * p2);
-	void buildSpanningTree();
+  int getMaxResidueNumber();
+  void printAllAtoms () const;
+  int size() const;
+  int totalDofNum () const;
+  void printSummaryInfo() const;
+  void updateAtom (int atom_id, Coordinate new_pos);
+  bool inCollision (std::string collisionCheckAtoms = "all" ) const;
+  std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
+  double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
+  void printAllCollisions () const;
+  bool hasCycle() const;
+//  void backupAtomIndex();
+//  void restoreAtomIndex ();
+  void alignReferencePositionsTo(Molecule * base);
+  void translateReferencePositionsToRoot(Molecule * base);
+  Grid* getGrid();
+  void setCollisionFactor(double collisionFactor);
+
+  void SetConfiguration(Configuration *q);
+  int countOriginalDofs () const;
+  Coordinate centerOfMass () const;
+  Coordinate centerOfGeometry () const;
+  void checkCycleClosure(Configuration *q);
+
+  void addCovBond (Bond * bond);
+  void addHbond (Hbond * hb);
+  void setToHbondIntersection (Molecule * p2);
+  void buildSpanningTree();
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
-	void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
+  void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
   gsl_vector* getEndEffectors();
-	void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
+  void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
 
-	gsl_vector* vdwGradient ();
-	std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
-	double vdwEnergy (std::string collisionCheck);//compute vdw energy
+  gsl_vector* vdwGradient ();
+  std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
+  double vdwEnergy (std::string collisionCheck);//compute vdw energy
 
 
-	Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
-	Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);
+  Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
+  Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);
 
-	std::vector<Atom*> atoms;
-	std::vector<Chain*> chains;
-	std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
-	Grid *Atom_pos_index;
-	Grid *backup_Atom_pos_index;
-	std::list<Bond *> Cov_bonds;
-	std::list<Hbond *> H_bonds; // To do: or it is better to use list<>?
-	std::set< std::pair<Atom*,Atom*> > Initial_collisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
+  std::vector<Atom*> atoms;
+  std::vector<Chain*> chains;
+  std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
+  std::list<Bond *> Cov_bonds;
+  std::list<Hbond *> H_bonds; // To do: or it is better to use list<>?
+  std::set< std::pair<Atom*,Atom*> > Initial_collisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
 
-	// Topology of rigid bodies
-	KinTree *m_spanning_tree;
-	Math3D::RigidTransform *m_Transformation; // cache: store the m_transformation of each rigid body group
+  // Topology of rigid bodies
+  KinTree *m_spanning_tree;
+  Math3D::RigidTransform *m_Transformation; // cache: store the m_transformation of each rigid body group
 
-	// Configuration
-	Configuration *m_conf;
-	Configuration *m_conf_backup;
+  // Configuration
+  Configuration *m_conf;
+  Configuration *m_conf_backup;
 
-	// Jacobian matrices containing all DOFs for updating atom positions
-	gsl_matrix* AtomJacobian1;
-	gsl_matrix* AtomJacobian2;
-	gsl_matrix* AtomJacobian3;
+  // Jacobian matrices containing all DOFs for updating atom positions
+  gsl_matrix* AtomJacobian1;
+  gsl_matrix* AtomJacobian2;
+  gsl_matrix* AtomJacobian3;
 
 
-	int* residueAnnotations;
+  int* residueAnnotations;
 
 
-private:
-	std::string name_;
-	void _SetConfiguration(Configuration *q); // set the positions of atoms at configuration q (according to the spanning tree)
-	void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
+ private:
+  std::string name_;
+  void _SetConfiguration(Configuration *q); // set the positions of atoms at configuration q (according to the spanning tree)
+  void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
 
   Chain* addChain (const std::string& chainName);
 
   void RestoreAtomPos();
+
+  void indexAtoms();
+  Grid *m_grid;
+//  Grid *m_backupGrid;
+
+  double m_collisionFactor;
 };
 
 #endif

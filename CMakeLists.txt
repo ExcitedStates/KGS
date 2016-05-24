@@ -51,6 +51,7 @@ add_library( libKGS
 		planners/DihedralRRT.h
 		planners/RRTPlanner.h
 		planners/PoissonPlanner.h
+        planners/PoissonPlanner2.h
 		planners/BidirectionalMovingFront.h
 		Selection.h
 		SiteID.h
@@ -102,6 +103,7 @@ add_library( libKGS
 		planners/DihedralRRT.cpp
 		planners/RRTPlanner.cpp
 		planners/PoissonPlanner.cpp
+        planners/PoissonPlanner2.cpp
 		planners/BidirectionalMovingFront.cpp
 		Selection.cpp
 		#core/Transformation.cpp

@@ -70,5 +70,5 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
     gsl_vector_scale(ret, m_maxRotation/absMax);
   }
 
-  gsl_vector_scale(ret, SamplingOptions::getOptions()->stepSize);
+  //gsl_vector_scale(ret, SamplingOptions::getOptions()->stepSize);
 }
