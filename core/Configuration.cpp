@@ -188,11 +188,14 @@ void Configuration::identifyBiggerRigidBodies(){
   int j=0; //numbering for fixed dihedrals
 
   //First, we set the constrained flag for the corresponding bonds
-  for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanning_tree->CycleAnchorEdges.begin(); it!=
-                                                                                                                       m_molecule->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
+  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanning_tree->CycleAnchorEdges.begin(); it!=
+  //      m_molecule->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
+  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanning_tree->CycleAnchorEdges) {
 
-    KinEdge* edge_ptr = it->first;
-    KinVertex* common_ancestor = it->second;
+    KinEdge* edge_ptr = pair_it.first;
+    KinVertex* common_ancestor = pair_it.second;
+//    KinEdge* edge_ptr = it->first;
+//    KinVertex* common_ancestor = it->second;
 
     //Get corresponding rigidity information
     //The m_molecule hBonds are ordered in the same way as the rigid HBonds
@@ -217,7 +220,7 @@ void Configuration::identifyBiggerRigidBodies(){
       int dof_id = p_edge->getDOF()->getCycleIndex();
       if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
 
-        double valDih=gsl_vector_get(rigidDihedrals,dof_id);
+        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
 
         if( valDih == 1 ) { //&& p_edge->getBond()->constrained == false){ //This cycle dof is constrained
           p_edge->getBond()->constrained=true;

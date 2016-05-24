@@ -128,7 +128,7 @@ string Molecule::getName () const {
   return name_;
 }
 
-Atom*Molecule::addAtom(
+Atom* Molecule::addAtom(
     const std::string& chainName,
     const std::string& resName,
     const int& resId,
@@ -137,11 +137,12 @@ Atom*Molecule::addAtom(
     const Coordinate& position )
 {
   Chain* chain = getChain(chainName);
-  if (chain==nullptr) { // this is a new chain
+  if (chain==nullptr)  // this is a new chain
     chain = addChain(chainName);
-  }
+
   Atom* ret = chain->addAtom(resName,resId, atomName, atomId, position);
   atoms.push_back(ret);
+
   return ret;
 }
 
@@ -241,6 +242,10 @@ void Molecule::indexAtoms () {
   if (m_grid!=nullptr)
     delete m_grid;
 
+  if(m_conf==nullptr) {
+    restoreAtomPos();
+  }
+
 //  m_grid = new Grid(this, SamplingOptions::getOptions()->collisionFactor);
   m_grid = new Grid(this, m_collisionFactor);
 }
@@ -271,7 +276,7 @@ bool Molecule::inCollision (string collisionCheckAtoms ) const {
 
   for (vector<Atom*>::const_iterator itr= atoms.begin(); itr != atoms.end(); ++itr)
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) )
-    if ( m_grid->inCollision(*itr, Initial_collisions, collisionCheckAtoms)  )
+    if ( m_grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
       return true;
   return false;
 }
@@ -280,7 +285,7 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
   double minCollFactor = 10000;
   for (vector<Atom*>::const_iterator itr=atoms.begin(); itr!=atoms.end(); ++itr){
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) ){
-      double factor = m_grid->minFactorWithoutCollision(*itr, Initial_collisions, collisionCheckAtoms);
+      double factor = m_grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
       if(factor < minCollFactor){
         minCollFactor = factor;
       }
@@ -293,11 +298,16 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 /*
  * Get a list of colliding atoms in the current protein configuration.
  */
-std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const {
+std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
+  if(m_conf==nullptr) {
+    cerr << "Molecule::getAllCollisions - No configuration set" << endl;
+    exit(-1);
+  }
+
   set< pair<Atom*,Atom*>> collisions;
   for (auto const& atom: atoms) {
     if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
-      vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, Initial_collisions, collisionCheckAtoms);
+      vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
       for (auto const& colliding_atom : colliding_atoms) {
         pair<Atom *, Atom *> collision_pair = make_pair(atom, colliding_atom);
         collisions.insert(collision_pair);
@@ -392,13 +402,12 @@ void Molecule::buildSpanningTree() {
   size_t numVertices = Rigidbody_map_by_id.size();
 
   list<KinEdge*> cycleEdges;
-  std::set<KinVertex*> visitedVertices;
 
   //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
   list<KinVertex*> queue;
   for(auto const& chain: chains) {
     //Add first vertex in chain to queue
-    Residue* firstRes = chain->getResidues()[71];
+    Residue* firstRes = chain->getResidues()[0];
     Atom* firstAtom = firstRes->getAtoms().front();
     KinVertex* firstVertex = firstAtom->getRigidbody()->getVertex();
     queue.push_back(firstVertex);
@@ -423,34 +432,59 @@ void Molecule::buildSpanningTree() {
     e4->setDOF(new GlobalTranslateDOF(e4,0));
     e5->setDOF(new GlobalTranslateDOF(e5,1));
     e6->setDOF(new GlobalTranslateDOF(e6,2));
+    log("debug")<<"Molecule::buildSpanningTree() - Connecting "<<firstAtom<<" to super-root using 6 dofs"<<endl;
   }
 
   //Perform breadth-first-search from all queue vertices and construct KinEdges
   //A variant of Prims algorithm is used to get the orientation of the tree correct in the first go
+  std::set<Bond*> visitedBonds;
+  std::set<KinVertex*> visitedVertices;
+
   while (!queue.empty()) {
+
     KinVertex* current_vertex = queue.front();
     queue.pop_front();
     visitedVertices.insert(current_vertex);
+    log("debug")<<"Molecule::buildSpanningTree() - Visiting vertex of size "<<current_vertex->m_rigidbody->Atoms.size()<<", "<<current_vertex->m_rigidbody->Bonds.size()<<" bonds"<<endl;
 
-    for (auto const& bond: current_vertex->m_rigidbody->Bonds) {
-      // Determine which other rb bond1 is connected to
+    for (Bond* const& bond: current_vertex->m_rigidbody->Bonds) {
+      // Determine which other rigid body bond is connected to
       KinVertex* bonded_vertex = bond->Atom2->getRigidbody()->getVertex();
       if(bonded_vertex==current_vertex)
         bonded_vertex = bond->Atom1->getRigidbody()->getVertex();
 
-      if(current_vertex==bonded_vertex || visitedVertices.count(bonded_vertex)>0)
+      if(current_vertex==bonded_vertex) {
+        log("debug")<<"Molecule::buildSpanningTree() - Bond connecting same rigid body "<<bond<<endl;
         continue;
+      }
+      //if(visitedVertices.count(bonded_vertex)>0){
+      if(visitedBonds.count(bond)>0){
+        log("debug")<<"Molecule::buildSpanningTree() - Already visited bond "<<bond<<endl;
+        continue;
+      }
+
+      visitedBonds.insert(bond);
 
       if ( bond->isHbond() ) {
         // If it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
-        KinEdge *h_edge = new KinEdge(current_vertex,bonded_vertex,(Hbond*)bond);//TODO: Might be a problem. Idx changed from -1 to 0
-        cycleEdges.push_back(h_edge);
+        KinEdge *edge = new KinEdge(current_vertex,bonded_vertex,bond);//TODO: Might be a problem. Idx changed from -1 to 0
+        cycleEdges.push_back(edge);
+        log("debug")<<"Molecule::buildSpanningTree() - Adding cycle-edge from h-bond "<<edge<<endl;
 
-      }else {
-        // If it's a covalent bond, add it into the tree m_edges
-        queue.push_back(bonded_vertex);
-        KinEdge* edge = m_spanning_tree->addEdgeDirected(current_vertex,bonded_vertex,bond);
-        edge->setDOF(new TorsionDOF(edge));
+      }else{
+        if(visitedVertices.count(bonded_vertex)>0){
+          KinEdge *edge = new KinEdge(current_vertex,bonded_vertex,bond);//TODO: Might be a problem. Idx changed from -1 to 0
+          cycleEdges.push_back(edge);
+          log("debug")<<"Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond "<<edge<<endl;
+
+        }else {
+          // If it's a covalent bond, add it into the tree m_edges
+          visitedVertices.insert(bonded_vertex);
+          queue.push_back(bonded_vertex);
+          KinEdge *edge=m_spanning_tree->addEdgeDirected(current_vertex, bonded_vertex, bond);
+          edge->setDOF(new TorsionDOF(edge));
+          log("debug") << "Molecule::buildSpanningTree() - Adding torsion-edge " << edge << endl;
+        }
       }
     }
   } // end while
@@ -670,7 +704,7 @@ void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *afte
 }
 
 void Molecule::alignReferencePositionsTo(Molecule * base){
-  this->RestoreAtomPos();
+  this->restoreAtomPos();
   //Align conformations
   metrics::RMSD::align(this,base);
 
@@ -690,7 +724,7 @@ void Molecule::translateReferencePositionsToRoot(Molecule * base)
   }
 }
 
-void Molecule::RestoreAtomPos(){
+void Molecule::restoreAtomPos(){
   for (auto const& a: atoms)
     a->m_Position = a->m_referencePosition;
 
@@ -705,7 +739,7 @@ void Molecule::RestoreAtomPos(){
 void Molecule::SetConfiguration(Configuration *q){
   if( m_conf==q) return;
 
-  RestoreAtomPos();
+  restoreAtomPos();
 
   m_conf = q;
   _SetConfiguration(q);
@@ -844,9 +878,9 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
 
       //Check initial collisions --> always excluded
       pair<Atom*,Atom*> collision_pair = make_pair(atom1,atom2);
-//      set< pair<Atom*,Atom*>,int >::const_iterator mit=Initial_collisions.find(collision_pair);
-      auto mit = Initial_collisions.find(collision_pair);
-      if ( mit!=Initial_collisions.end() )//ignore initial collision atoms
+//      set< pair<Atom*,Atom*>,int >::const_iterator mit=m_initialCollisions.find(collision_pair);
+      auto mit = m_initialCollisions.find(collision_pair);
+      if ( mit!=m_initialCollisions.end() )//ignore initial collision atoms
         continue;
 
       d_12 = atom1->distanceTo(atom2);
@@ -893,9 +927,9 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
 
       //Check initial collisions --> always excluded
       pair<Atom*,Atom*> collision_pair = make_pair(atom1,atom2);
-//      set< pair<Atom*,Atom*>,int >::const_iterator mit=Initial_collisions.find(collision_pair);
-      auto mit = Initial_collisions.find(collision_pair);
-      if ( mit!=Initial_collisions.end() )//ignore initial collision atoms
+//      set< pair<Atom*,Atom*>,int >::const_iterator mit=m_initialCollisions.find(collision_pair);
+      auto mit = m_initialCollisions.find(collision_pair);
+      if ( mit!=m_initialCollisions.end() )//ignore initial collision atoms
         continue;
 
       d_12 = atom1->distanceTo(atom2);
@@ -1115,7 +1149,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   //ret->Copy(cur);
   Configuration* ret = cur->clone();
 
-  //RestoreAtomPos(false);
+  //restoreAtomPos(false);
   SetConfiguration(ret);
   ret->computeCycleJacobianAndNullSpace();
 

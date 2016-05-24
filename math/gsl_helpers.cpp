@@ -194,7 +194,7 @@ gsl_matrix* pca (gsl_matrix* sample_matrix) {
 
 //gsl_vector* RandomUnitVectorInNullSpace (NullSpaceRet* nullspace) {
 //	//int dimension = nullspace->ns->size;
-//	int dimension = nullspace->nullspaceSize;
+//	int dimension = nullspace->m_nullspaceSize;
 //	gsl_vector* random_vector = gsl_vector_calloc(dimension);
 //	double *random_scaler = new double[dimension];
 //	for (int i=0; i<dimension; ++i) {

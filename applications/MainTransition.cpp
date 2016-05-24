@@ -69,8 +69,8 @@ int main( int argc, char* argv[] ) {
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
-  protein.Initial_collisions = protein.getAllCollisions();
-  for(auto const& coll: protein.Initial_collisions){
+  protein.m_initialCollisions = protein.getAllCollisions();
+  for(auto const& coll: protein.m_initialCollisions){
     log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
   }
   cout<<"main - 4"<<endl;
@@ -83,7 +83,7 @@ int main( int argc, char* argv[] ) {
   //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(&protein);
   // Check for collision
-  target->Initial_collisions = target->getAllCollisions();
+  target->m_initialCollisions = target->getAllCollisions();
 
   //Todo: fully delete FIRST from this software
   //Read the rigid body of the protein
@@ -98,7 +98,7 @@ int main( int argc, char* argv[] ) {
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein.atoms.size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
@@ -107,7 +107,7 @@ int main( int argc, char* argv[] ) {
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
-  log("samplingStatus")<<"> "<<target->Initial_collisions.size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<target->m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 

@@ -72,7 +72,8 @@ void KinEdge::forwardPropagate()
 
 
 ostream& operator<<(ostream& os, const KinEdge& e){
-  os<<"KinEdge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
+  //os<<"KinEdge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
+  os<<"KinEdge["<<e.getBond()->Atom1<<":"<<e.getBond()->Atom1->getId()<<", "<<e.getBond()->Atom2<<":"<<e.getBond()->Atom2->getId()<<"]";
   return os;
 }
 

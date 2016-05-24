@@ -40,7 +40,6 @@
 
 
 class Molecule;
-class Configuration;
 
 #define MAX_BUCKET_NUM 101
 #define NUM_BINS 100

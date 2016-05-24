@@ -51,7 +51,6 @@ PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& 
   m_lilRad(m_bigRad/2),
   protein(protein)
 {
-  //cout<<"PoissonPlanner::PoissonPlanner - stopafter: "<<stop_after<<endl;
   m_root = new Configuration( protein );
   m_root->updateMolecule();
   m_root->computeCycleJacobianAndNullSpace();

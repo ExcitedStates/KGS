@@ -39,6 +39,10 @@ int main( int argc, char* argv[] ) {
   reportStream.open("kgs_report.log");
   enableLogger("report", reportStream);
 
+  ofstream debugStream;
+  debugStream.open("kgs_debug.log");
+  enableLogger("debug", debugStream);
+
   ofstream plannerStream;
   plannerStream.open("kgs_planner.log");
   enableLogger("dominik", plannerStream);
@@ -62,19 +66,20 @@ int main( int argc, char* argv[] ) {
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   options.setResidueNetwork(&protein);
   IO::readHbonds( &protein, options.hydrogenbondFile );
-  protein.Initial_collisions = protein.getAllCollisions();
   IO::readRigidbody( &protein, options.residueNetwork );
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  protein.SetConfiguration(new Configuration(protein));
+  protein.m_initialCollisions = protein.getAllCollisions();
 
   if(options.selectionMoving.empty()){
-    cerr<<"Must supply --selectionMoving (e.g. \"resi 17-22 + resi 50-55\")"<<endl;
+    cerr<<"Must supply --selectionMoving (e.g. \"resi 17 to 22 and resi 50 to 55\")"<<endl;
     exit(-1);
   }
 
 
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein.atoms.size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein.Initial_collisions.size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 

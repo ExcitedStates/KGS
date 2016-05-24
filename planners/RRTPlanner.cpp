@@ -172,7 +172,7 @@ void RRTPlanner::GenerateSamples() {
 				double distToRandGoal = m_metric.distance(pNewSmp, pTarget);
 
 				//log("samplingStatus") << "> New structure: newpdb_"<<sample_id<<".pdb .. RMSD to initial: "<< pNewSmp->m_rmsd_initial<<endl;
-				//log("samplingStatus") << "> New structure: "<<name<<"_new_"<<sample_id<<".pdb .. Distance to initial: "<< setprecision(6)<<pNewSmp->m_distanceToIni<<" .. Distance to current target: "<< setprecision(3)<<distToRandGoal<<" .. Null-space dimension: "<<pNewSmp->CycleNullSpace->nullspaceSize<<endl;
+				//log("samplingStatus") << "> New structure: "<<name<<"_new_"<<sample_id<<".pdb .. Distance to initial: "<< setprecision(6)<<pNewSmp->m_distanceToIni<<" .. Distance to current target: "<< setprecision(3)<<distToRandGoal<<" .. Null-space dimension: "<<pNewSmp->CycleNullSpace->m_nullspaceSize<<endl;
 				log("samplingStatus") << "> New structure: " << name << "_new_" << sample_id << ".pdb";
 				log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << pNewSmp->m_distanceToIni;
 				log("samplingStatus") << " .. Distance to current target: " << setprecision(3) << distToRandGoal;

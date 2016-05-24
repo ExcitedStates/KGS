@@ -15,7 +15,7 @@ Nullspace::Nullspace(SVD * svd) :
     numCoordinatedDihedrals( 0 ),
     numRigidDihedrals( 0 ),
     numRigidHBonds( 0 ),
-    nullspaceBasis(nullptr),
+    m_nullspaceBasis(nullptr),
     rigidAngles(gsl_vector_alloc(n)),
     rigidHBonds(gsl_vector_alloc(n))
 {
@@ -23,8 +23,8 @@ Nullspace::Nullspace(SVD * svd) :
 
 Nullspace::~Nullspace ()
 {
-  if(nullspaceBasis)
-    gsl_matrix_free(nullspaceBasis);
+  if(m_nullspaceBasis)
+    gsl_matrix_free(m_nullspaceBasis);
 
   gsl_vector_free(rigidAngles);
   gsl_vector_free(rigidHBonds);
@@ -39,31 +39,31 @@ void Nullspace::UpdateFromMatrix()
   double maxSingularValue = gsl_vector_get(svd->S,0);
 
   //Case with m < n and all singular values non-zero
-  nullspaceSize = std::max( (int)(svd->V->size2 - svd->matrix->size1),0);
+  m_nullspaceSize = std::max( (int)(svd->V->size2 - svd->matrix->size1),0);
 
   for (int i=0; i<svd->S->size ; ++i){
     if ( gsl_vector_get(svd->S,i) / maxSingularValue < SINGVAL_TOL ) {
-      nullspaceSize = svd->V->size2-i;
+      m_nullspaceSize = svd->V->size2-i;
       break;
     }
   }
 
   //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
-  if(nullspaceBasis)
-    gsl_matrix_free(nullspaceBasis);
+  if(m_nullspaceBasis)
+    gsl_matrix_free(m_nullspaceBasis);
 
-  if(nullspaceSize > 0) {
+  if(m_nullspaceSize > 0) {
     gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
                                                                0,                               //Row
-                                                               svd->V->size2 - nullspaceSize, //Col
+                                                               svd->V->size2 - m_nullspaceSize, //Col
                                                                svd->V->size2,                 //Height
-                                                               nullspaceSize);                  //Width
+                                                               m_nullspaceSize);                  //Width
 
-    nullspaceBasis = gsl_matrix_calloc(svd->V->size2, nullspaceSize);
-    gsl_matrix_memcpy(nullspaceBasis, &nullspaceBasis_view.matrix);
+    m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
+    gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
   }
   else{
-    nullspaceBasis = gsl_matrix_calloc(svd->V->size2,1);//1-dim vector with zeros as entries
+    m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2,1);//1-dim vector with zeros as entries
   }
 }
 
@@ -86,7 +86,7 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
   for(int i=0; i<n; i++){
     gsl_matrix_get_row(currentRow,svd->V,i);
 
-    for(int j=n-nullspaceSize; j<n; j++){
+    for(int j=n-m_nullspaceSize; j<n; j++){
       double val = fabs( gsl_vector_get(currentRow,j) );
       if( val > RIGID_TOL ){
         moving = true;
@@ -114,18 +114,18 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
   int numHBonds = HBondJacobian->size1;
   gsl_matrix* hBondNullspace;// = gsl_matrix_alloc(numHBonds,nullspaceSize);
   gsl_vector* currentHBondRow;// = gsl_vector_alloc(nullspaceSize);
-  if(nullspaceSize==0){
+  if(m_nullspaceSize==0){
     hBondNullspace = gsl_matrix_calloc(numHBonds,1);
     currentHBondRow = gsl_vector_calloc(1);
   }else{
-    hBondNullspace = gsl_matrix_alloc(numHBonds,nullspaceSize);
-    currentHBondRow = gsl_vector_alloc(nullspaceSize);
+    hBondNullspace = gsl_matrix_alloc(numHBonds,m_nullspaceSize);
+    currentHBondRow = gsl_vector_alloc(m_nullspaceSize);
   }
 
   ///Calculate the "In-Nullspace" Rotation of the hBonds
-  //gsl_matrix_view nullspaceBasis = gsl_matrix_submatrix(svd->V,0,svd->V->size2-nullspaceSize,n,nullspaceSize); //Matrix, top-left element, num rows, num cols
-  //gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, &nullspaceBasis.matrix, 0.0, hBondNullspace);
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, nullspaceBasis, 0.0, hBondNullspace);
+  //gsl_matrix_view m_nullspaceBasis = gsl_matrix_submatrix(svd->V,0,svd->V->size2-m_nullspaceSize,n,m_nullspaceSize); //Matrix, top-left element, num rows, num cols
+  //gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, &m_nullspaceBasis.matrix, 0.0, hBondNullspace);
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, m_nullspaceBasis, 0.0, hBondNullspace);
 
   //Only for test analysis: write hBondNullspace=J_h*N to file
 //	string outNullH="KINARI_Comparison/output/hBondnullSpace.txt";
@@ -154,7 +154,7 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
 
 void Nullspace::ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const {
 
-  if(nullspaceSize==0){
+  if(m_nullspaceSize==0){
     gsl_vector_set_zero(after_project);
     return;
   }
@@ -165,9 +165,9 @@ void Nullspace::ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_pr
   //Computations: N * firstResult:	(n) * (n-r)  --> finalResult [n x 1]
   //Computations overall: 2*n*(n-r)
 
-  gsl_vector* firstResult = gsl_vector_alloc(nullspaceSize);
-  gsl_blas_dgemv (CblasTrans, 1.0, nullspaceBasis, to_project, 0.0, firstResult);
-  gsl_blas_dgemv (CblasNoTrans, 1.0, nullspaceBasis, firstResult, 0.0, after_project);
+  gsl_vector* firstResult = gsl_vector_alloc(m_nullspaceSize);
+  gsl_blas_dgemv (CblasTrans, 1.0, m_nullspaceBasis, to_project, 0.0, firstResult);
+  gsl_blas_dgemv (CblasNoTrans, 1.0, m_nullspaceBasis, firstResult, 0.0, after_project);
   gsl_vector_free(firstResult);
 
 
@@ -187,7 +187,7 @@ void Nullspace::WriteMatricesToFiles(
 }
 
 gsl_matrix *Nullspace::getBasis() const {
-  return nullspaceBasis;
+  return m_nullspaceBasis;
 }
 
 

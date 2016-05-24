@@ -110,7 +110,7 @@ class Molecule {
   std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
   std::list<Bond *> Cov_bonds;
   std::list<Hbond *> H_bonds; // To do: or it is better to use list<>?
-  std::set< std::pair<Atom*,Atom*> > Initial_collisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
+  std::set< std::pair<Atom*,Atom*> > m_initialCollisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
 
   // Topology of rigid bodies
   KinTree *m_spanning_tree;
@@ -136,7 +136,7 @@ class Molecule {
 
   Chain* addChain (const std::string& chainName);
 
-  void RestoreAtomPos();
+  void restoreAtomPos();
 
   void indexAtoms();
   Grid *m_grid;

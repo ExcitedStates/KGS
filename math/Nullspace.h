@@ -38,7 +38,7 @@ class Nullspace {
   void UpdateFromMatrix();
 
   /** Return the nullspace size */
-  int NullspaceSize() const { return nullspaceSize; }
+  int NullspaceSize() const { return m_nullspaceSize; }
 
   /** Return number of cycle DOFs */
   int NumDOFs() const { return n; }
@@ -70,10 +70,10 @@ class Nullspace {
 
 private:
   SVD* svd;                    ///< SVD underlying this nullspace
-  int nullspaceSize;           ///< Size of nullspace (rank of jacobian)
+  int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)
 
-  gsl_matrix* nullspaceBasis;  ///< Basis of the nullspace
+  gsl_matrix* m_nullspaceBasis;///< Basis of the nullspace
 
   gsl_vector* rigidAngles;     ///< Binary vector indicating which m_dofs are rigid
   gsl_vector* rigidHBonds;     ///< Binary vector indicating which h-bonds are rigid
