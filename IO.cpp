@@ -95,7 +95,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   while (!pdb.eof()) {
     getline(pdb,line);
     if (pdb.eof()) break;
-    if (line.substr(0,4)!="ATOM") // skip if it is not an ATOM line
+    if (line.substr(0,4)!="ATOM" && line.substr(0,6)!="HETATM") // skip if it is not an ATOM line
       continue;
     // chain info
     string chain_name = line.substr(21,1); // line[22]
@@ -129,8 +129,9 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 
       map< string, vector<CovBond> >::iterator profile_it=residue_profile.find(res_name);
       if (profile_it==residue_profile.end()) {
-        cerr << "No such residue (" << res_name << ") in profile." << endl;
-        exit(1);
+        cerr << "IO::readPdb - warning: Unknown residue " << res_name << ". Atoms will have fixed positions." << endl;
+        continue;
+        //exit(1);
       }
       vector<CovBond> bonds = profile_it->second;
       for (vector<CovBond>::iterator bond_it=bonds.begin(); bond_it!=bonds.end(); ++bond_it) {
@@ -227,8 +228,8 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 
     //Print warning if atom has no covalent neighbors
     if( (*ait)->Cov_neighbor_list.size()==0 ){
-      cerr<<"IO::readPdb - Error: Atom "<<(*ait)<<" has no covalent neighbors. Probably the atom-name isn't in the residue profiles"<<endl;
-      exit(-1);
+      cerr<<"IO::readPdb - warning: Atom "<<(*ait)<<" has no covalent neighbors. Probably the atom-name isn't in the residue profiles"<<endl;
+      //exit(-1);
     }
   }
 

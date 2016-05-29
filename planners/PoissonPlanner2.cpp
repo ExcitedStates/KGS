@@ -40,13 +40,14 @@
 
 using namespace std;
 
-PoissonPlanner2::PoissonPlanner2(Molecule * protein, Move& move, metrics::Metric& metric):
+PoissonPlanner2::PoissonPlanner2(Molecule * protein, Move& move, metrics::Metric& metric, bool ikBeforeClose):
 	SamplingPlanner(move,metric),
   stop_after(SamplingOptions::getOptions()->samplesToGenerate),
   max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
   m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
   m_lilRad(m_bigRad/2),
-  protein(protein)
+  protein(protein),
+  m_ikBeforeClose(ikBeforeClose)
 {
   //cout<<"PoissonPlanner2::PoissonPlanner2 - stopafter: "<<stop_after<<endl;
   m_root = new Configuration( protein );
@@ -56,6 +57,10 @@ PoissonPlanner2::PoissonPlanner2(Molecule * protein, Move& move, metrics::Metric
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
   updateMaxDists(m_root);
+
+  if(ikBeforeClose){
+
+  }
 }
 
 PoissonPlanner2::~PoissonPlanner2() {
@@ -84,6 +89,7 @@ void PoissonPlanner2::GenerateSamples()
     auto it = open_samples.begin();
     std::advance(it, rand()%open_samples.size());
     Configuration* seed = *it;
+    log("samplingStatus") << "Using configuration "<<seed->m_id<<" as seed. "<<open_samples.size()<<" open, "<<closed_samples.size()<<" closed samples"<<endl;
 
     vector<Configuration*> nearSeed;
     if(!m_checkAll) {
@@ -155,8 +161,8 @@ void PoissonPlanner2::GenerateSamples()
       writeNewSample(pert, all_samples.front(), sample_num);
 
       log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
-      log("samplingStatus") << " .. initial dist.: "<< setprecision(3)<<pert->m_distanceToIni;
-      log("samplingStatus") << " .. seed dist.: "<< setprecision(3)<<pert->m_distanceToParent;
+      log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
+      log("samplingStatus") << " .. seed dist: "<< setprecision(3)<<pert->m_distanceToParent;
       log("samplingStatus") << endl;
 
       sample_num++;

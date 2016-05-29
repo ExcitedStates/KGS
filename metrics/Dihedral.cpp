@@ -23,7 +23,14 @@ namespace metrics{
 		//	exit(-1);
 		//}
 
+
 		Molecule * m_protein = c1->getMolecule();
+    bool useGlobals = m_protein==c2->getMolecule();
+    if(useGlobals){
+      c1->updateGlobalTorsions();
+      c2->updateGlobalTorsions();
+    }
+
 
 		int count = 0;
 		double distance=0.0, distanceRel=0.0;

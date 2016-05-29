@@ -165,6 +165,18 @@ bool ExactIK::validRebuildLoop(const Residue* res1, const Residue* res2, const R
   return true;
 }
 
+vector< tuple<Residue*> > ExactIK::findAllValidTriples(Configuration* conf) const
+{
+  vector< tuple<Residue*> > ret;
+
+  Molecule* mol = conf->getMolecule();
+  for(auto const& chain: mol->chains){
+
+  }
+
+  return ret;
+}
+
 void ExactIK::initializeIKParams(
     const Residue* res1,
     const Residue* res2,

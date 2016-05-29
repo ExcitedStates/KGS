@@ -53,7 +53,7 @@ class Configuration;
  */
 class PoissonPlanner2 : public SamplingPlanner{
  public:
-  PoissonPlanner2(Molecule *, Move&, metrics::Metric&);
+  PoissonPlanner2(Molecule *, Move&, metrics::Metric&, bool ikBeforeClose=false);
   ~PoissonPlanner2();
 
   void GenerateSamples();
@@ -67,10 +67,13 @@ class PoissonPlanner2 : public SamplingPlanner{
   const int max_rejects_before_close; ///< Number perturbations that are tried before a sample is 'closed'
   const double m_bigRad;              ///< Largest allowed step-size
   const double m_lilRad;              ///< Smallest allowed distance between any two samples
+  const bool m_ikBeforeClose;         ///< Indicates whether to sample all exact IK solutions before closing a sample
 
   ConfigurationList open_samples;     ///< Non-closed samples
   ConfigurationList closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
   ConfigurationList all_samples;      ///< For convenience and return
+
+  std::vector< std::tuple<Residue*> > m_tripeptides; ///< Preprocessed residue triples for use in exact IK
 
 	Molecule * protein;
 

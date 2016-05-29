@@ -39,9 +39,9 @@ int main( int argc, char* argv[] ) {
   reportStream.open("kgs_report.log");
   enableLogger("report", reportStream);
 
-  ofstream debugStream;
-  debugStream.open("kgs_debug.log");
-  enableLogger("debug", debugStream);
+  //ofstream debugStream;
+  //debugStream.open("kgs_debug.log");
+  //enableLogger("debug", debugStream);
 
   ofstream plannerStream;
   plannerStream.open("kgs_planner.log");
@@ -62,13 +62,14 @@ int main( int argc, char* argv[] ) {
 
   string pdb_file = options.initialStructureFile;
   Molecule protein;
+  protein.setCollisionFactor(options.collisionFactor);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   options.setResidueNetwork(&protein);
   IO::readHbonds( &protein, options.hydrogenbondFile );
   IO::readRigidbody( &protein, options.residueNetwork );
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  protein.SetConfiguration(new Configuration(protein));
+  protein.SetConfiguration(new Configuration(&protein));
   protein.m_initialCollisions = protein.getAllCollisions();
 
   if(options.selectionMoving.empty()){

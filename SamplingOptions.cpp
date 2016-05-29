@@ -429,7 +429,8 @@ SamplingOptions* SamplingOptions::createOptions()
 }
 
 //Todo: remove, but check in directions for usage
-void SamplingOptions::setResidueNetwork(const Molecule * protein){//uses the selectionMoving and stores a "residueNetwork" list of ints
+//uses the selectionMoving and stores a "residueNetwork" list of ints
+void SamplingOptions::setResidueNetwork(const Molecule * protein){
 	//Determine if only certain residues shall be perturbed
 	string selGradient = selectionMoving;
 	if(selGradient != ""){

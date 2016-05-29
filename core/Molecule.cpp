@@ -79,18 +79,20 @@ Molecule::Molecule() {
 
 Molecule::~Molecule() {
   // delete all atoms
-  for (vector<Atom*>::iterator it=atoms.begin(); it != atoms.end(); ++it) {
+  for (vector<Atom *>::iterator it = atoms.begin(); it != atoms.end(); ++it) {
     delete (*it);
   }
 
   // delete all chains
-  for (auto const& chain: chains){
+  for (auto const &chain: chains) {
     delete chain;
   }
 
   // delete m_grid and m_backupGrid
-  if (m_grid!=nullptr)
+  if (m_grid != nullptr){
     delete m_grid;
+    m_grid = nullptr;
+  }
 //  if (m_backupGrid!=nullptr)
 //    delete m_backupGrid;
 
@@ -239,7 +241,7 @@ Grid* Molecule::getGrid() {
 
 void Molecule::indexAtoms () {
   // m_grid is the current indexing
-  if (m_grid!=nullptr)
+  if (m_grid != nullptr)
     delete m_grid;
 
   if(m_conf==nullptr) {
@@ -271,7 +273,7 @@ void Molecule::setCollisionFactor(double collisionFactor)
 //  m_grid = m_backupGrid->deepClone();
 //}
 
-//---------------------------------------------------------
+
 bool Molecule::inCollision (string collisionCheckAtoms ) const {
 
   for (vector<Atom*>::const_iterator itr= atoms.begin(); itr != atoms.end(); ++itr)
@@ -280,7 +282,7 @@ bool Molecule::inCollision (string collisionCheckAtoms ) const {
       return true;
   return false;
 }
-//---------------------------------------------------------
+
 double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
   double minCollFactor = 10000;
   for (vector<Atom*>::const_iterator itr=atoms.begin(); itr!=atoms.end(); ++itr){
@@ -399,7 +401,7 @@ void Molecule::buildSpanningTree() {
   }
 
   m_spanning_tree->m_root = m_spanning_tree->addVertex(nullptr);
-  size_t numVertices = Rigidbody_map_by_id.size();
+//  size_t numVertices = Rigidbody_map_by_id.size();
 
   list<KinEdge*> cycleEdges;
 
@@ -445,7 +447,7 @@ void Molecule::buildSpanningTree() {
     KinVertex* current_vertex = queue.front();
     queue.pop_front();
     visitedVertices.insert(current_vertex);
-    log("debug")<<"Molecule::buildSpanningTree() - Visiting vertex of size "<<current_vertex->m_rigidbody->Atoms.size()<<", "<<current_vertex->m_rigidbody->Bonds.size()<<" bonds"<<endl;
+    log("debug")<<"Molecule::buildSpanningTree() - Visiting vertex of size "<<current_vertex->m_rigidbody->Atoms.size()<<", rbID: "<<current_vertex->m_rigidbody->id()<<", "<<current_vertex->m_rigidbody->Bonds.size()<<" bonds"<<endl;
 
     for (Bond* const& bond: current_vertex->m_rigidbody->Bonds) {
       // Determine which other rigid body bond is connected to
@@ -731,8 +733,10 @@ void Molecule::restoreAtomPos(){
   m_conf = nullptr;
 
   //restoreAtomIndex();
-  if(m_grid!=nullptr)
+  if(m_grid!=nullptr) {
     delete m_grid;
+    m_grid = nullptr;
+  }
 
 }
 

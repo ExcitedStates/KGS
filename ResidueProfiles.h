@@ -179,8 +179,8 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"LEU","CB","HB3"}, //added for 3msw
     {"LEU","CB","CG"},
     {"LEU","CG","HG"},
-    //{"LEU","CG","CD1"},
-    //{"LEU","CG","CD2"},
+    {"LEU","CG","CD1"},
+    {"LEU","CG","CD2"},
     {"LEU","CD1","HD11"},
     {"LEU","CD1","HD12"},
     {"LEU","CD1","HD13"},
@@ -1347,6 +1347,8 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"LEU","CG","CD1"},
     {"LEU","CG","CD2"},
     {"ILE","-C","N"},
+    {"ILE","CB","CG2"},
+    {"ILE","CG1","CD1"},
     {"VAL","-C","N"},
     {"ASN","-C","N"},
     {"ASN","CG","OD1"}, //added
