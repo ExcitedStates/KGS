@@ -205,7 +205,7 @@ int main( int argc, char* argv[] ) {
       scale_gradient(gradient, &protein);
       gsl_vector_scale(gradient, options.stepSize);
       Configuration* new_conf = move->move(seed, gradient);
-      IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string(i)+".pdb");
+      IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string((long long)i)+".pdb");
       samples.push_back(new_conf);
     }
 

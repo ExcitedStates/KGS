@@ -18,7 +18,7 @@
 
 class ExactIK {
  public:
-  ExactIK(std::vector<Atom*>& atomsMoving);
+  //ExactIK(std::vector<Atom*>& atomsMoving);
 
   std::vector<Configuration*> rebuildLoop( const Residue* res1, const Residue* res2, const Residue* res3 );
 
@@ -26,7 +26,7 @@ class ExactIK {
 
   bool validRebuildLoop(const Residue* res1, const Residue* res2, const Residue* res3 ) const;
  private:
-  std::vector<Atom*>& atomsMoving;
+  //std::vector<Atom*>& atomsMoving;
 
   void initializeIKParams(
       const Residue* res1,
