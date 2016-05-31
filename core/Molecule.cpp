@@ -303,7 +303,7 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
   if(m_conf==nullptr) {
     cerr << "Molecule::getAllCollisions - No configuration set" << endl;
-    exit(-1);
+    throw "Molecule::getAllCollisions - No configuration set";
   }
 
   set< pair<Atom*,Atom*>> collisions;

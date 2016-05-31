@@ -88,6 +88,7 @@ void BidirectionalMovingFront::GenerateSamples() {
 
   static int numSamples = 0, failedTrials = 0, totalTrials = 0;
   static double accept_ratio;
+  double stepSize = SamplingOptions::getOptions()->stepSize;
 
   int samplesTillSwap = SamplingOptions::getOptions()->switchAfter;
   bool swapped = false;
@@ -129,7 +130,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       blendedDir.changeWeight(1,1.0 - double(numSamples)/double(stopAfter) );
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
-
+    gsl_vector_scale(gradient, stepSize);
     qNew = move.move(qSeed, gradient); //Perform move
 
     if(qNew->updatedMolecule()->inCollision() ){
@@ -233,10 +234,10 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
   //Distance to own m_root
   if(SamplingOptions::getOptions()->alignAlways) {
     qNew->m_distanceToIni = metrics::RMSD::distance_noOptimization(qNew, m_fwdRoot);
-  }
-  else{
+  }else{
     qNew->m_distanceToIni = m_metric.distance(qNew, m_fwdRoot);
   }
+
   //Distance to parents
   if(qNew->getParent()!= nullptr ) {
     qNew->m_distanceToParent = m_metric.distance(qNew, qNew->getParent());

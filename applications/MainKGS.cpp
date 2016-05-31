@@ -120,7 +120,7 @@ void randomSampling(SamplingOptions& options){
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  cout<<"MainKGS .. spanning tree:"<<endl;
+//  cout<<"MainKGS .. spanning tree:"<<endl;
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -241,13 +241,6 @@ void targetedSampling(SamplingOptions& options){
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
 
-  // Check for collision
-  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
-  protein.m_initialCollisions = protein.getAllCollisions();
-  for(auto const& coll: protein.m_initialCollisions){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
-  }
-
   // Do the same for the target
   string target_file = options.targetStructureFile;
   Molecule * target = new Molecule();
@@ -255,12 +248,6 @@ void targetedSampling(SamplingOptions& options){
 
   //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(&protein);
-  // Check for collision
-  target->m_initialCollisions = target->getAllCollisions();
-//    	for(mit=target->m_initialCollisions.begin(); mit != target->m_initialCollisions.end();mit++){
-//    		Atom* atom1=mit->second.first;
-//        	log("dominik")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
-//    	}
 
   //Todo: fully delete FIRST from this software
   //Read the rigid body of the protein
@@ -280,6 +267,14 @@ void targetedSampling(SamplingOptions& options){
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
 
+  // Check for collision
+  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
+  protein.SetConfiguration(new Configuration(&protein));
+  protein.m_initialCollisions = protein.getAllCollisions();
+  for(auto const& coll: protein.m_initialCollisions){
+    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+  }
+
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein.atoms.size() << " atoms" << endl;
@@ -298,6 +293,7 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
   target->SetConfiguration(new Configuration(target));
+  target->m_initialCollisions = target->getAllCollisions();
 
   //Initialize metric
   metrics::Metric* metric;
