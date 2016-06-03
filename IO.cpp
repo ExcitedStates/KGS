@@ -740,7 +740,8 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
       second = 0;
     else if( protein->m_conf->getNullspace()->IsAngleRigid(cycleDOF_id) )
       second = 2;
-    double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsions(dof_id) - referenceConf->getGlobalTorsions(dof_id));
+    double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsion(dof_id) -
+                                              referenceConf->getGlobalTorsion(dof_id));
     myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" ";
     //myfile <<protein->m_conf->m_sumProjSteps[dof_id];
     myfile<<" "<<onBackbone<<endl;
@@ -1392,7 +1393,6 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //Next configuration only if we haven't reached the last one yet!
       if( i < treeDepth){
 
-        ConfigurationList::iterator cit;
         for(auto const& cit: c->getChildren()){
           if(cit->m_id != path[i+1])
             continue;

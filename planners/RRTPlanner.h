@@ -54,7 +54,7 @@ public:
 
 	void GenerateSamples();
 
-	ConfigurationList& Samples(){ return m_samples; }
+	std::list<Configuration*>& Samples(){ return m_samples; }
 
 	double m_deform_mag;
 	double m_rand_radius;
@@ -78,8 +78,8 @@ public:
 	int m_numBuckets; //number of buckets
 
 	int m_numDOFs;
-	ConfigurationList m_samples;
-	ConfigurationArray m_path;
+	std::list<Configuration*> m_samples;
+	std::vector<Configuration*> m_path;
 
 	double m_top_min_rmsd;
 	int m_top_min_rmsd_id;

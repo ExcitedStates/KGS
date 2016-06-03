@@ -197,7 +197,7 @@ void randomSampling(SamplingOptions& options){
 
   //Print final status
   double end_time = timer.ElapsedTime();
-  ConfigurationList m_samples = planner->Samples();
+  std::list<Configuration*> m_samples = planner->Samples();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
   log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
@@ -392,7 +392,7 @@ void targetedSampling(SamplingOptions& options){
 
   //Print final status
   double end_time = timer.ElapsedTime();
-  ConfigurationList m_samples = planner->Samples();
+  std::list<Configuration*> m_samples = planner->Samples();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
   log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";

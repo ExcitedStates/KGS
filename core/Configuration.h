@@ -38,10 +38,6 @@
 #include "core/graph/KinGraph.h"
 
 class Molecule;
-class Configuration;
-
-typedef std::list<Configuration*> ConfigurationList;
-typedef std::vector<Configuration*> ConfigurationArray;
 
 
 /**
@@ -76,7 +72,7 @@ class Configuration
   ~Configuration();
 
   void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
-  double getGlobalTorsions(int i) const; ///< Get a global DOF-value
+  double getGlobalTorsion( int i ) const; ///< Get a global DOF-value
   double* getGlobalTorsions() const;     ///< Get global DOF-value array
 
   unsigned int getNumDOFs() const;
@@ -135,7 +131,7 @@ class Configuration
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
 
   Configuration* getParent();   ///< Access configuration that spawned this one
-  ConfigurationList& getChildren(); ///< Access child configurations
+  std::list<Configuration*>& getChildren(); ///< Access child configurations
 
   static Nullspace* ClashAvoidingNullSpace; //TODO: Make private (or even better put in ClashAvoidingMove).
  protected:
@@ -143,7 +139,7 @@ class Configuration
   double *m_dofs_global;                 ///< DOF-values in a global system (not relative to Atom::reference_position)
   Molecule * const m_molecule;           ///< The molecule related to the configuration
   Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from
-  ConfigurationList m_children;          ///< List of child-configurations
+  std::list<Configuration*> m_children;          ///< List of child-configurations
 
   // Jacobian matrix of all the cycles of rigid bodies
   static gsl_matrix* CycleJacobian; // column dimension is the number of DOFs; row dimension is 5 times the number of cycles because 2 atoms on each cycle-closing edge

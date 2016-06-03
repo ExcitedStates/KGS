@@ -24,7 +24,7 @@ class SamplingPlanner{
   virtual void GenerateSamples() = 0;
 
   /** Return a reference to the list of all generated samples */
-  virtual ConfigurationList& Samples() = 0;
+  virtual std::list<Configuration*>& Samples() = 0;
   
   /**
    * Depending on the options, either the sample at the end of the longest path

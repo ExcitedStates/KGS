@@ -40,7 +40,6 @@
 #include "planners/SamplingPlanner.h"
 
 class Molecule;
-class Configuration;
 
 
 /**
@@ -59,7 +58,7 @@ class PoissonPlanner : public SamplingPlanner{
 
   void GenerateSamples();
 
-	ConfigurationList& Samples(){ return all_samples; }
+	std::list<Configuration*>& Samples(){ return all_samples; }
 
   bool m_checkAll = false;
  private:
@@ -69,9 +68,9 @@ class PoissonPlanner : public SamplingPlanner{
   const double m_bigRad;              ///< Largest allowed step-size
   const double m_lilRad;              ///< Smallest allowed distance between any two samples
 
-  ConfigurationList open_samples;     ///< Non-closed samples
-  ConfigurationList closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
-  ConfigurationList all_samples;      ///< For convenience and return
+  std::list<Configuration*> open_samples;     ///< Non-closed samples
+  std::list<Configuration*> closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
+  std::list<Configuration*> all_samples;      ///< For convenience and return
 
 	Molecule * protein;
 

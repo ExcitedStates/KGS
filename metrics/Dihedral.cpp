@@ -1,6 +1,7 @@
 #include "metrics/Dihedral.h"
 #include "metrics/Metric.h"
 #include "core/Molecule.h"
+#include <math.h>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ namespace metrics{
 
 
 		Molecule * m_protein = c1->getMolecule();
-    bool useGlobals = m_protein==c2->getMolecule();
+    bool useGlobals = m_protein!=c2->getMolecule();
     if(useGlobals){
       c1->updateGlobalTorsions();
       c2->updateGlobalTorsions();
@@ -33,29 +34,31 @@ namespace metrics{
 
 
 		int count = 0;
-		double distance=0.0, distanceRel=0.0;
+		double distance=0.0;
     for(KinEdge*& edge: m_protein->m_spanning_tree->Edges){
 			int dofId = edge->getDOF()->getIndex();
-			//double angle_diff = c2->getGlobalTorsions(dofId)-c1->getGlobalTorsions(dofId);
-			//angle_diff = formatRangeRadian(angle_diff);
-			double diff_rel = formatRangeRadian(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
+			double angle_diff;
+			if(useGlobals) {
+        angle_diff = fabs(c2->getGlobalTorsion(dofId) - c1->getGlobalTorsion(dofId));
+        if(angle_diff>2*3.141592)
+          angle_diff = 2*3.141592 - angle_diff;
+      }
+      else           angle_diff = formatRangeRadian(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
+      cout<<"Dihedral::Distance - "<< c2->getGlobalTorsion(dofId)<<"-"<< c1->getGlobalTorsion(dofId)<<endl;
 			if(atom_selection=="MOV"){
 				int cycle_dof_id = edge->getDOF()->getCycleIndex();
 				bool locked = edge->getBond()->constrained;
 				if( cycle_dof_id == -1 ){//free dihedral, always moveable
-					//distance += angle_diff*angle_diff;
-					distanceRel += diff_rel*diff_rel;
+					distance += angle_diff*angle_diff;
 					count++;
 				}
 				else if (!locked ) {
-					//distance += angle_diff*angle_diff;
-					distanceRel += diff_rel*diff_rel;
+					distance += angle_diff*angle_diff;
 					count++;
 				}
 			}
 			else{
-				//distance += angle_diff*angle_diff;
-				distanceRel += diff_rel*diff_rel;
+				distance += angle_diff*angle_diff;
 				count++;
 			}
 //			if( Abs(angle_diff - diff_rel ) > 0.0001)
@@ -64,6 +67,6 @@ namespace metrics{
 
 //		cout<<"relative distance: "<<sqrt(distanceRel)<<" absolute distance: "<<sqrt(distance)<<endl;
 //		return sqrt(distance/count);
-		return sqrt(distanceRel/count);
+		return sqrt(distance/count);
 	}
 }

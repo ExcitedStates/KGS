@@ -195,7 +195,7 @@ int main( int argc, char* argv[] ) {
 
     gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
     Configuration* target_conf = new Configuration(target);
-    ConfigurationList samples;
+    std::list<Configuration*> samples;
     samples.push_back(new Configuration(&protein));
     for(int i=0;i<options.samplesToGenerate;i++){
       cout<<"Iteration "<<i<<endl;

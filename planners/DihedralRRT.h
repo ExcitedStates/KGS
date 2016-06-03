@@ -19,9 +19,6 @@
 #include "planners/SamplingPlanner.h"
 
 
-class Molecule;
-class Configuration;
-
 #define DEFAULT_MAX_RMSD 25
 
 
@@ -33,7 +30,7 @@ public:
 
 	void GenerateSamples();
 
-	ConfigurationList& Samples(){ return m_samples; }
+	std::list<Configuration*>& Samples(){ return m_samples; }
 
 	double m_deform_mag;
 	double m_rand_radius;
@@ -50,9 +47,9 @@ public:
 
 	double m_max_distance;
 
-	ConfigurationList m_samples;
+	std::list<Configuration*> m_samples;
 	int m_numDOFs;
-	ConfigurationArray m_path;
+	std::vector<Configuration*> m_path;
 
 	int m_nCDCall;
 	int m_nRMSDCall;

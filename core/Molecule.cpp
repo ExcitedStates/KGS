@@ -241,8 +241,10 @@ Grid* Molecule::getGrid() {
 
 void Molecule::indexAtoms () {
   // m_grid is the current indexing
-  if (m_grid != nullptr)
+  if (m_grid != nullptr){
     delete m_grid;
+    m_grid = nullptr;
+  }
 
   if(m_conf==nullptr) {
     restoreAtomPos();

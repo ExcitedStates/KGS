@@ -12,12 +12,10 @@
 
 #include "metrics/Metric.h"
 #include "SamplingOptions.h"
+#include "core/Molecule.h"
 #include "core/Configuration.h"
 #include "planners/SamplingPlanner.h"
 #include "directions/Direction.h"
-
-class Molecule;
-class Configuration;
 
 
 /**
@@ -38,12 +36,12 @@ class BidirectionalMovingFront : public SamplingPlanner{
 
   void GenerateSamples();
 
-  ConfigurationList& Samples();
+  std::list<Configuration*>& Samples();
 
-  ConfigurationList& getFwdSamples(){ return m_fwdSamples; }
-  ConfigurationList& getRevSamples(){ return m_revSamples; }
-  ConfigurationList& getFwdFront(){ return m_fwdFront; }
-  ConfigurationList& getRevFront(){ return m_revFront; }
+  std::list<Configuration*>& getFwdSamples(){ return m_fwdSamples; }
+  std::list<Configuration*>& getRevSamples(){ return m_revSamples; }
+  std::list<Configuration*>& getFwdFront(){ return m_fwdFront; }
+  std::list<Configuration*>& getRevFront(){ return m_revFront; }
 
   void createTrajectory(); ///< overwrites the parent function createTrajectory
 
@@ -69,10 +67,10 @@ class BidirectionalMovingFront : public SamplingPlanner{
   Configuration* m_fwdRoot;
   Configuration* m_revRoot;
 
-  ConfigurationList m_fwdSamples;     ///< all forward samples
-  ConfigurationList m_revSamples;   ///< all reverse samples
-  ConfigurationList m_fwdFront;      ///< forward moving front
-  ConfigurationList m_revFront;     ///< reverse moving front
+  std::list<Configuration*> m_fwdSamples;     ///< all forward samples
+  std::list<Configuration*> m_revSamples;   ///< all reverse samples
+  std::list<Configuration*> m_fwdFront;      ///< forward moving front
+  std::list<Configuration*> m_revFront;     ///< reverse moving front
 
   Configuration* m_currentGlobalTarget; // this is the target for this round
   Configuration* m_closestFwdSample; // own configuration

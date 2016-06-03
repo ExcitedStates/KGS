@@ -77,9 +77,9 @@ BidirectionalMovingFront::~BidirectionalMovingFront() {
   }
 }
 
-ConfigurationList& BidirectionalMovingFront::Samples(){
+std::list<Configuration*>& BidirectionalMovingFront::Samples(){
 
-  ConfigurationList& allSamples = m_fwdSamples;
+  std::list<Configuration*>& allSamples = m_fwdSamples;
   allSamples.merge(m_revSamples);
   return allSamples;
 }
@@ -196,7 +196,7 @@ void BidirectionalMovingFront::GenerateSamples() {
 
 void BidirectionalMovingFront::updateFwdFront(Configuration *qNew) {
 
-  ConfigurationList::iterator cit;
+  std::list<Configuration*>::iterator cit;
   int i=1;
   m_addedToFront = false;
 
@@ -325,7 +325,7 @@ Configuration* BidirectionalMovingFront::SelectSeed (Configuration *pTarget) {
 void BidirectionalMovingFront::swapFwdRev(){
 
   //Here, we set a sample from the existing forward front as target, and then switch search directions
-  ConfigurationList::iterator cit;
+  std::list<Configuration*>::iterator cit;
   Configuration *pSmp;
   log("dominik")<<"Size of pareto front: "<<m_fwdFront.size()<<endl;
   int randConf = rand() % (m_fwdFront.size()); //todo: change this to more often use the "best sample"

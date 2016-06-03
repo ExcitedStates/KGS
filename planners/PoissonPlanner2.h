@@ -40,7 +40,6 @@
 #include "planners/SamplingPlanner.h"
 
 class Molecule;
-class Configuration;
 
 
 /**
@@ -58,7 +57,7 @@ class PoissonPlanner2 : public SamplingPlanner{
 
   void GenerateSamples();
 
-	ConfigurationList& Samples(){ return all_samples; }
+	std::list<Configuration*>& Samples(){ return all_samples; }
 
   bool m_checkAll = false;
  private:
@@ -69,9 +68,9 @@ class PoissonPlanner2 : public SamplingPlanner{
   const double m_lilRad;              ///< Smallest allowed distance between any two samples
   const bool m_ikBeforeClose;         ///< Indicates whether to sample all exact IK solutions before closing a sample
 
-  ConfigurationList open_samples;     ///< Non-closed samples
-  ConfigurationList closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
-  ConfigurationList all_samples;      ///< For convenience and return
+  std::list<Configuration*> open_samples;     ///< Non-closed samples
+  std::list<Configuration*> closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
+  std::list<Configuration*> all_samples;      ///< For convenience and return
 
   std::vector< std::tuple<Residue*> > m_tripeptides; ///< Preprocessed residue triples for use in exact IK
 

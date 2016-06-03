@@ -44,8 +44,7 @@ Grid::Grid (Molecule * protein, double collisionFactor):
 	Min_x = 1000;
 	Min_y = 1000;
 	Min_z = 1000;
-	for (vector<Atom*>::iterator atom_itr=protein->atoms.begin(); atom_itr != protein->atoms.end(); ++atom_itr) {
-		Atom* atom = *atom_itr;
+	for (Atom* const& atom: protein->atoms) {
 		if (atom->m_Position.x<Min_x) Min_x = atom->m_Position.x;
 		if (atom->m_Position.y<Min_y) Min_y = atom->m_Position.y;
 		if (atom->m_Position.z<Min_z) Min_z = atom->m_Position.z;
@@ -57,14 +56,14 @@ Grid::Grid (Molecule * protein, double collisionFactor):
 	//									          << Min_y << "," << Max_y << ") ("
 	//										  << Min_z << "," << Max_z << ") (" << endl;
 
-	for (vector<Atom*>::iterator atom_itr=protein->atoms.begin(); atom_itr != protein->atoms.end(); ++atom_itr) {
-		addAtom( *atom_itr );
+	for (Atom* const& atom: protein->atoms) {
+		addAtom( atom );
 	}
 }
 
 Grid::~Grid () {
-	for (map<Coordinate,vector<Atom*>*,Coordinate_cmp>::iterator v_itr=Atom_map.begin(); v_itr!=Atom_map.end(); ++v_itr) {
-		delete v_itr->second;
+	for (auto const& coord_vec_pair: Atom_map) {
+		delete coord_vec_pair.second;
 	}
 }
 
@@ -82,10 +81,10 @@ Grid* Grid::deepClone () const {
 	grid_copy->Min_z = Min_z;
 
 	for (map<Coordinate,vector<Atom*>*,Coordinate_cmp>::const_iterator mit=Atom_map.begin(); mit!=Atom_map.end(); ++mit) {
-		vector<Atom*> *list = new vector<Atom*>;
+		vector<Atom*> *list = new vector<Atom*>();
 		for (vector<Atom*>::const_iterator vit=mit->second->begin(); vit!=mit->second->end(); ++vit)
 			list->push_back(*vit);
-		grid_copy->Atom_map.insert(make_pair(mit->first,list));
+		grid_copy->Atom_map[mit->first] = list;
 	}
 
 	return grid_copy;

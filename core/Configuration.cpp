@@ -61,6 +61,7 @@ Configuration::Configuration(Molecule * protein_):
   m_molecule(protein_),
   nullspace(nullptr),
   m_parent(nullptr),
+  m_dofs_global(nullptr),
   m_treeDepth(0)
 {
   assert(m_molecule!=nullptr);
@@ -84,7 +85,6 @@ Configuration::Configuration(Molecule * protein_):
 
   // Set up DOF-values and set them to 0
   m_dofs = new double[getNumDOFs()];
-  m_dofs_global = nullptr;
   //m_sumProjSteps = new double[getNumDOFs()];
   for(int i=0; i<getNumDOFs(); ++i){
     m_dofs[i] = 0;
@@ -95,6 +95,7 @@ Configuration::Configuration(Molecule * protein_):
 Configuration::Configuration(Configuration* parent_):
     m_molecule(parent_->m_molecule),
     m_parent(parent_),
+    m_dofs_global(nullptr),
     nullspace(nullptr),
     m_treeDepth(parent_->m_treeDepth +1)
 {
@@ -120,7 +121,6 @@ Configuration::Configuration(Configuration* parent_):
 
   // Set up DOF-values and set them to 0
   m_dofs = new double[getNumDOFs()];
-  m_dofs_global = nullptr;
   //m_sumProjSteps = new double[getNumDOFs()];
   for(int i=0; i<getNumDOFs(); ++i){
     m_dofs[i] = 0;
@@ -426,7 +426,7 @@ void Configuration::updateGlobalTorsions(){
   //}
 }
 //------------------------------------------------------
-double Configuration::getGlobalTorsions(int i) const{
+double Configuration::getGlobalTorsion( int i ) const{
   return m_dofs_global[i];
 }
 
@@ -848,7 +848,7 @@ Configuration* Configuration::getParent()
   return m_parent;
 }
 
-ConfigurationList& Configuration::getChildren()
+std::list<Configuration*>& Configuration::getChildren()
 {
   return m_children;
 }

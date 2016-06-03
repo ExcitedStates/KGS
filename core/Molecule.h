@@ -42,7 +42,6 @@ class Chain;
 class Grid;
 class Bond;
 class Hbond;
-class Configuration;
 
 class Molecule {
  public:

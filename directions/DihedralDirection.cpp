@@ -50,7 +50,7 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
     if(edge->getBond()==nullptr) continue;
     int dofId = edge->getDOF()->getIndex();
     int resId = edge->getBond()->Atom1->getResidue()->getId();
-    double angle_diff = target->getGlobalTorsions(dofId) - conf->getGlobalTorsions(dofId);
+    double angle_diff =target->getGlobalTorsion(dofId) - conf->getGlobalTorsion(dofId);
     angle_diff = formatRangeRadian(angle_diff);
 
     if(allResidues){//gradient for all residues
