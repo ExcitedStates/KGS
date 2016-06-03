@@ -1,6 +1,7 @@
 #include "metrics/Dihedral.h"
 #include "metrics/Metric.h"
 #include "core/Molecule.h"
+#include "math/gsl_helpers.h"
 #include <math.h>
 
 using namespace std;
@@ -16,7 +17,7 @@ namespace metrics{
 		int DOF = c1->getNumDOFs();
 
 		if(DOF != c2->getNumDOFs()){
-			cerr<<"Configurations to compare do not have the same number of m_dofs!"<<endl;
+			cerr<<"Configurations to compare do not have the same number of DOFs!"<<endl;
 			exit(-1);
 		}
 		//if(c1->getGlobalTorsions()== nullptr || c2->getGlobalTorsions()== nullptr){
@@ -40,25 +41,41 @@ namespace metrics{
 			double angle_diff;
 			if(useGlobals) {
         angle_diff = fabs(c2->getGlobalTorsion(dofId) - c1->getGlobalTorsion(dofId));
-        if(angle_diff>2*3.141592)
-          angle_diff = 2*3.141592 - angle_diff;
+        if(angle_diff>M_PI)
+          angle_diff = 2*M_PI - angle_diff;
+      }else{
+        angle_diff = fabs(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
+        if(angle_diff>M_PI)
+          angle_diff = 2*M_PI - angle_diff;
       }
-      else           angle_diff = formatRangeRadian(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
-      cout<<"Dihedral::Distance - "<< c2->getGlobalTorsion(dofId)<<"-"<< c1->getGlobalTorsion(dofId)<<endl;
+      //cout<<"DOFid: "<<dofId<<" , diff: "<<angle_diff<<endl;
+
+      //if(edge->getBond()) {
+      //  Atom *a=edge->getBond()->Atom1;
+      //  Atom *b=edge->getBond()->Atom2;
+      //  if( a->getResidue()->getId() == 16 && a->getName() == "CA" ) {
+      //    cout << "Dihedral::Distance - " << *a <<" - "<<*b<< " : " << angle_diff << endl;
+      //  }
+      //}
+
+//      cout<<"Dihedral::Distance - "<< c2->getGlobalTorsion(dofId)<<"-"<< c1->getGlobalTorsion(dofId)<<endl;
 			if(atom_selection=="MOV"){
 				int cycle_dof_id = edge->getDOF()->getCycleIndex();
 				bool locked = edge->getBond()->constrained;
 				if( cycle_dof_id == -1 ){//free dihedral, always moveable
 					distance += angle_diff*angle_diff;
-					count++;
+          if(angle_diff>0.0001)
+            count++;
 				}
 				else if (!locked ) {
 					distance += angle_diff*angle_diff;
+          if(angle_diff>0.0001)
 					count++;
 				}
 			}
 			else{
 				distance += angle_diff*angle_diff;
+        if(angle_diff>0.0001)
 				count++;
 			}
 //			if( Abs(angle_diff - diff_rel ) > 0.0001)

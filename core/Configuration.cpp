@@ -413,6 +413,7 @@ void Configuration::updateGlobalTorsions(){
   if(m_dofs_global == nullptr){
     m_dofs_global = new double[getNumDOFs()];
   }
+  updateMolecule();
   for(int i=0; i<getNumDOFs(); ++i){
 //    m_dofs_global[i] = 0;
     m_dofs_global[i] = m_molecule->m_spanning_tree->getDOF(i)->getGlobalValue();

@@ -106,6 +106,7 @@ void PoissonPlanner2::GenerateSamples()
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
+//      cout<<"PoissonPlanner2::GenerateSamples() - prescaling .. "<<endl;
       double dist = m_metric.distance(pert, seed);
 //      log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       int scaleAttempts = 0;
@@ -115,6 +116,7 @@ void PoissonPlanner2::GenerateSamples()
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
+//        cout<<"PoissonPlanner2::GenerateSamples() - attempting to put in poisson disk .. "<<endl;
         dist = m_metric.distance(pert, seed);
 //        log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
@@ -137,6 +139,7 @@ void PoissonPlanner2::GenerateSamples()
       bool too_close_to_existing = false;
 //      for (auto const &v: all_samples) {
       for (auto const &v: nearSeed) {
+//        cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. "<<endl;
         double dist = m_metric.distance(pert, v);
 //        log("samplingStatus")<<" - dist "<<dist<<" > "<<m_lilRad<<" ?"<<endl;
         if (dist < m_lilRad) {
@@ -155,10 +158,12 @@ void PoissonPlanner2::GenerateSamples()
       pert->m_id = sample_num;
       open_samples.push_back(pert);
       all_samples.push_back(pert);
-      pert->m_distanceToIni    = m_metric.distance(pert,all_samples.front());
+//      cout<<"PoissonPlanner2::GenerateSamples() - distance to init .. "<<endl;
+      pert->m_distanceToIni    = m_metric.distance(pert,m_root);
+//      cout<<"PoissonPlanner2::GenerateSamples() - distance to seed .. "<<endl;
       pert->m_distanceToParent = m_metric.distance(pert,seed);
       updateMaxDists(pert);
-      writeNewSample(pert, all_samples.front(), sample_num);
+      writeNewSample(pert, m_root, sample_num);
 
       log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
       log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
@@ -189,6 +194,7 @@ double PoissonPlanner2::memo_distance(Configuration* c1, Configuration* c2)
   auto it = m_distances.find({c1,c2});
   if( it!=m_distances.end() ) return it->second;
 
+//  cout<<"PoissonPlanner2::memo_distance()  .. "<<endl;
   double dist = m_metric.distance(c1,c2); //Expensive
   m_distances[{c1,c2}] = dist;
   m_distances[{c2,c1}] = dist;
