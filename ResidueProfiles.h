@@ -256,6 +256,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"VAL","C","OT"},
     {"VAL","C","OT1"},
     {"VAL","C","OT2"},
+    {"VAL","C","OXT"},
     {"VAL","C","O1"},
     {"VAL","C","O2"},
     {"VAL","-C","N"},
@@ -864,6 +865,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"PRO","C","OT"},
     {"PRO","C","OT1"},
     {"PRO","C","OT2"},
+    {"PRO","C","OXT"},
     {"PRO","C","O1"},
     {"PRO","C","O2"},
     {"PRO","-C","N"},
@@ -1318,7 +1320,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"DT","C7","H72"},
     {"DT","C7","H73"},
     {"MG","MG","MG"},
-    
+
     //Non-standard residues and ligands
     {"CSO","N","CA"},
     {"CSO","CA","HA"},
@@ -1339,16 +1341,16 @@ const char* const COV_BOND_PROFILES [][3] = {
 
 const char* const FIXED_BOND_PROFILES [][3] = {
     {"ALA","-C","N"},
-    {"ALA","CA","CB"},
+    {"ALA","CA","CB"}, //@Dominik: why is this rigid?
     {"GLY","-C","N"},
     {"SER","-C","N"},
     {"THR","-C","N"},
     {"LEU","-C","N"},
-    {"LEU","CG","CD1"},
-    {"LEU","CG","CD2"},
+    {"LEU","CG","CD1"}, //@Dominik: why is this rigid?
+    {"LEU","CG","CD2"}, //@Dominik: why is this rigid?
     {"ILE","-C","N"},
-    {"ILE","CB","CG2"},
-    {"ILE","CG1","CD1"},
+    {"ILE","CB","CG2"}, //@Dominik: why is this rigid?
+    {"ILE","CG1","CD1"}, //@Dominik: why is this rigid?
     {"VAL","-C","N"},
     {"ASN","-C","N"},
     {"ASN","CG","OD1"}, //added
@@ -1559,6 +1561,43 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"PRO","CB","CG"},
     {"PRO","CG","CD"},
     {"PRO","CD","N"},
+    
+    //Makes sure that C-O bonds are rigid
+	{"URE","C","O"},
+	{"ACE","C","O"},
+	{"ALA","C","O"},
+	{"GLY","C","O"},
+	{"SER","C","O"},
+	{"THR","C","O"},
+	{"LEU","C","O"},
+	{"ILE","C","O"},
+	{"VAL","C","O"},
+	{"ASN","C","O"},
+	{"GLN","C","O"},
+	{"ARG","C","O"},
+	{"HIS","C","O"},
+	{"HIE","C","O"},
+	{"HIP","C","O"},
+	{"HSD","C","O"},
+	{"HSE","C","O"},
+	{"HSP","C","O"},
+	{"TRP","C","O"},
+	{"PHE","C","O"},
+	{"TYR","C","O"},
+	{"GLU","C","O"},
+	{"ASP","C","O"},
+	{"LYS","C","O"},
+	{"ORN","C","O"},
+	{"DAB","C","O"},
+	{"LYN","C","O"},
+	{"PRO","C","O"},
+	{"CYS","C","O"},
+	{"CYX","C","O"},
+	{"CYS2","C","O"},
+	{"MET","C","O"},
+	{"ASH","C","O"},
+	{"GLH","C","O"},
+	{"CYS","C","O"},
 
     //Todo: Terminal bonds to OT, OXT etc.
     

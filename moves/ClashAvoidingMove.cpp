@@ -68,20 +68,22 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   gsl_vector *projected_gradient = gsl_vector_calloc(protein->totalDofNum());
   protein->ProjectOnCycleNullSpace(gradient, projected_gradient);
 
-  Configuration* new_q = new Configuration(current);
-  std::copy( projected_gradient->data, projected_gradient->data+projected_gradient->size, new_q->m_dofs );
+  Configuration *new_q = new Configuration(current);
+  std::copy(projected_gradient->data, projected_gradient->data + projected_gradient->size, new_q->m_dofs);
   gsl_vector_free(projected_gradient);
 
   //If no clash return
-  if(!new_q->updatedMolecule()->inCollision())
+  if (!new_q->updatedMolecule()->inCollision()) {
+    m_movesAccepted++;
     return new_q;
+  }
+  //Else we use the clash avoiding/preventing move
+  delete new_q; //added, otherwise memory leak with new definition below
 
   set< pair<Atom*,Atom*> > allCollisions, previousCollisions;
-  //int clashAvoidingDOFs = -1;
 
-  //If resulting structure is in collision try scaling down the gradient
+  //If resulting structure is in collision try for m_trialSteps times to avoid collision
   for (int trialStep = 0; trialStep < m_trialSteps; trialStep++) {
-    //cout<<"ClashAvoidingMove - trial: "<<trialStep<<" / "<<m_trialSteps<<endl;
 
     //get all collisions at this configuration
     allCollisions = protein->getAllCollisions(m_collisionCheckAtomTypes);
@@ -94,16 +96,8 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       }
     }
 
-    projected_gradient = projectOnClashNullspace(current, gradient, allCollisions);
-    double currProjNorm = gsl_vector_length(projected_gradient);
-    log("dominik")<<"Norm of projected gradient: "<<currProjNorm<<endl;
-    new_q = new Configuration(current);
-    std::copy(
-        projected_gradient->data,
-        projected_gradient->data+new_q->getNumDOFs(),
-        new_q->m_dofs );
-    gsl_vector_free(projected_gradient);
-
+    //This function overwrites necessary stuff in new_q
+    Configuration* new_q = projectOnClashNullspace(current, gradient, allCollisions);
 
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
@@ -172,7 +166,7 @@ map<int,int> ClashAvoidingMove::collectConstrainedDofMap(Configuration* conf, se
   return std::move(ret);
 }
 
-gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
+Configuration* ClashAvoidingMove::projectOnClashNullspace(
     Configuration *conf,
     gsl_vector *gradient,
     set<std::pair<Atom *, Atom *> > &collisions
@@ -189,6 +183,7 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
   }
 
   //Compute clash-avoiding jacobian, svd, and nullspace
+  //Todo: This could be optimized, we only have to compute the Jacobian the first time...
   gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap, collisions);
   SVD* clashSVD = SVD::createSVD(clashJac);//new MKLSVD(clashAvoidingJacobian);
   Nullspace* clashNullSpace = new Nullspace(clashSVD);
@@ -204,19 +199,33 @@ gsl_vector* ClashAvoidingMove::projectOnClashNullspace(
     gsl_vector_scale(reducedGradient, normBefore/normAfter);
 
   //Transfer to general dofs again
-  gsl_vector* ret = gsl_vector_copy(gradient);
+  gsl_vector* projected_gradient = gsl_vector_copy(gradient);
   for(auto const& general_clash_pair: constrainedDofMap){
     double constrainedValue = gsl_vector_get(reducedGradient, general_clash_pair.second);
-    gsl_vector_set(ret, general_clash_pair.first, constrainedValue);
+    gsl_vector_set(projected_gradient, general_clash_pair.first, constrainedValue);
   }
-
   //Clean up
   gsl_vector_free(reducedGradient);
   gsl_matrix_free(clashJac);
+
+  double currProjNorm = gsl_vector_length(projected_gradient);
+
+  Configuration* new_q = new Configuration(conf);
+//  log("dominik")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
+  std::copy(
+      projected_gradient->data,
+      projected_gradient->data+new_q->getNumDOFs(),
+      new_q->m_dofs );
+  gsl_vector_free(projected_gradient);
+
+  new_q->m_usedClashPrevention = true;
+  new_q->m_clashFreeDofs = new_q->getNumDOFs() - constrainedDofMap.size() + clashNullSpace->NullspaceSize();
+
+  //Clean up
   delete clashNullSpace;
   delete clashSVD;
 
-  return ret;
+  return new_q;
 }
 
 gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
@@ -229,7 +238,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
 
   //Clashes can occur also for previously free dihedrals!
   //Therefore, we use the full set of dihedrals to determine this matrix!
-
+  conf->updateMolecule();
   gsl_matrix* cycleJac = conf->getCycleJacobian();
   int numCollisions = collisions.size();
   int rowNum = cycleJac->size1 + numCollisions;

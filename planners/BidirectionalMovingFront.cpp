@@ -16,6 +16,8 @@
 #include <stack>
 #include <IO.h>
 #include <directions/BlendedDirection.h>
+#include <math/gsl_helpers.h>
+#include <gsl/gsl_vector_double.h>
 
 using namespace std;
 
@@ -131,6 +133,7 @@ void BidirectionalMovingFront::GenerateSamples() {
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
     gsl_vector_scale(gradient, stepSize);
+    cout<<"Gradient done, norm is "<<gsl_vector_length(gradient)<<endl;
     qNew = move.move(qSeed, gradient); //Perform move
 
     if(qNew->updatedMolecule()->inCollision() ){

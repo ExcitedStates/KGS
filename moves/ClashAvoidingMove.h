@@ -24,7 +24,7 @@ class ClashAvoidingMove : public Move
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
 
  private:
-  gsl_vector* projectOnClashNullspace(Configuration *conf,
+  Configuration* projectOnClashNullspace(Configuration *conf,
                                       gsl_vector *gradient,
                                       std::set<std::pair<Atom *, Atom *> > &collisions);
 

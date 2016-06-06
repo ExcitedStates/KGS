@@ -69,7 +69,8 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
   }
 
   vector<double> gradient(ret->size, 0.0);
-  vector<int> counts(ret->size, 0);
+//  vector<int> counts(ret->size, 0);
+  int count=0;
 
   for( auto const &atom: protein->atoms ) {
     //Filter atoms
@@ -95,16 +96,19 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
       Math3D::Vector3 deriv = parentEdge->getDOF()->getDerivative(atom->m_Position);
 
       gradient[dof_id] += deriv.dot(diff);
-      counts[dof_id]++;
+//      counts[dof_id]++;
 
       v = v->m_parent;
     }
+    count++;
   }
 
   //Scaling with appropriate pre-factor from derivative of MSD
   for(int i=0;i<ret->size;i++){
-    if(counts[i]>0)
-      gradient[i] *= 2.0 / counts[i];
+//    if(counts[i]>0)
+//      gradient[i] *= 2.0 / counts[i];
+    gradient[i] *= 2.0 / count;
+    gradient[i] = formatRangeRadian(gradient[i]);
   }
   std::copy(&gradient[0], &gradient[ret->size], ret->data);
   //double factor = 2.0 / count;

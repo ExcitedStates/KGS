@@ -818,47 +818,49 @@ int Molecule::totalDofNum () const {
   return m_spanning_tree->getNumDOFs();
 }
 
-gsl_vector*Molecule::vdwGradient () { // minimize the L-J potential
-  log("debug") << "in Molecule::vdwGradient" << endl;
-  gsl_vector* gradient = gsl_vector_calloc(totalDofNum());
-  gsl_vector* p12 = gsl_vector_calloc(3);
-  gsl_vector* p_temp = gsl_vector_calloc(totalDofNum());
-
-  // For each atom, look for it's neighbors which are not in the same rigid body and whose ID is bigger (to avoid double count). For each such neighbor, compute dU(R_ab)/d(delta_q).
-  // 1. For each atom, find it's neighbors which are not in the same rigid body
-  for (vector<Atom*>::iterator ait= atoms.begin(); ait != atoms.end(); ++ait) {
-    log("debug") << "in Molecule::vdwGradient - start 1st loop" << endl;
-    Atom* atom1 = *ait;
-    computeAtomJacobian(atom1,&AtomJacobian1);
-    log("debug") << "in Molecule::vdwGradient - after computeAtomJacobian(atom1,&AtomJacobian1);" << endl;
-    vector<Atom*> neighbors = m_grid->getNeighboringAtoms(atom1,true,true,true,VDW_R_MAX);
-    // 2. For each such neighbor, compute dU(R_ab)/d(q)
-    // The formula is -12*VDW_SIGMA*(VDW_R0^6*r_12^(-8)-VDW_R0^12*r_12^(-14))*(J1-J2)'(P1-P2)),
-    // where ' is transpose.
-    log("debug") << "in Molecule::vdwGradient - before 2nd loop" << endl;
-    for (vector<Atom*>::iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
-      if (atom1->inSameRigidbody(*ait2)) continue;
-      Atom* atom2 = *ait2;
-      double r_12 = atom1->distanceTo(atom2);
-      double front_constant_part = (-12)*VDW_SIGMA*(pow(VDW_R0,6)*pow(r_12,-8)-pow(VDW_R0,12)*pow(r_12,-14));
-      computeAtomJacobian(atom2,&AtomJacobian2);
-      if (AtomJacobian3==nullptr)
-        AtomJacobian3 = gsl_matrix_calloc(3,totalDofNum());
-      gsl_matrix_memcpy(AtomJacobian3,AtomJacobian1);
-      gsl_matrix_sub(AtomJacobian3,AtomJacobian2); // AtomJacobian3 holds the result of substraction
-      Math3D::Vector3 p12_v3 = atom1->m_Position - atom2->m_Position;
-      Coordinate::copyToGslVector(p12_v3, p12);
-      gsl_blas_dgemv(CblasTrans,1,AtomJacobian3,p12,0,p_temp);
-      gsl_vector_scale(p_temp,front_constant_part);
-      gsl_vector_add(gradient,p_temp);
-    }
-  }
-  log("debug") << "in Molecule::vdwGradient - after loop" << endl;
-
-  gsl_vector_free(p12);
-  gsl_vector_free(p_temp);
-  return gradient;
-}
+//gsl_vector*Molecule::vdwGradient () { // minimize the L-J potential
+//
+//  ///TODO: Correct this, the formel with VDW_R0 is not correct
+//  log("debug") << "in Molecule::vdwGradient" << endl;
+//  gsl_vector* gradient = gsl_vector_calloc(totalDofNum());
+//  gsl_vector* p12 = gsl_vector_calloc(3);
+//  gsl_vector* p_temp = gsl_vector_calloc(totalDofNum());
+//
+//  // For each atom, look for it's neighbors which are not in the same rigid body and whose ID is bigger (to avoid double count). For each such neighbor, compute dU(R_ab)/d(delta_q).
+//  // 1. For each atom, find it's neighbors which are not in the same rigid body
+//  for (vector<Atom*>::iterator ait= atoms.begin(); ait != atoms.end(); ++ait) {
+//    log("debug") << "in Molecule::vdwGradient - start 1st loop" << endl;
+//    Atom* atom1 = *ait;
+//    computeAtomJacobian(atom1,&AtomJacobian1);
+//    log("debug") << "in Molecule::vdwGradient - after computeAtomJacobian(atom1,&AtomJacobian1);" << endl;
+//    vector<Atom*> neighbors = m_grid->getNeighboringAtoms(atom1,true,true,true,VDW_R_MAX);
+//    // 2. For each such neighbor, compute dU(R_ab)/d(q)
+//    // The formula is -12*VDW_SIGMA*(VDW_R0^6*r_12^(-8)-VDW_R0^12*r_12^(-14))*(J1-J2)'(P1-P2)),
+//    // where ' is transpose.
+//    log("debug") << "in Molecule::vdwGradient - before 2nd loop" << endl;
+//    for (vector<Atom*>::iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
+//      if (atom1->inSameRigidbody(*ait2)) continue;
+//      Atom* atom2 = *ait2;
+//      double r_12 = atom1->distanceTo(atom2);
+//      double front_constant_part = (-12)*VDW_SIGMA*(pow(VDW_R0,6)*pow(r_12,-8)-pow(VDW_R0,12)*pow(r_12,-14));
+//      computeAtomJacobian(atom2,&AtomJacobian2);
+//      if (AtomJacobian3==nullptr)
+//        AtomJacobian3 = gsl_matrix_calloc(3,totalDofNum());
+//      gsl_matrix_memcpy(AtomJacobian3,AtomJacobian1);
+//      gsl_matrix_sub(AtomJacobian3,AtomJacobian2); // AtomJacobian3 holds the result of substraction
+//      Math3D::Vector3 p12_v3 = atom1->m_Position - atom2->m_Position;
+//      Coordinate::copyToGslVector(p12_v3, p12);
+//      gsl_blas_dgemv(CblasTrans,1,AtomJacobian3,p12,0,p_temp);
+//      gsl_vector_scale(p_temp,front_constant_part);
+//      gsl_vector_add(gradient,p_temp);
+//    }
+//  }
+//  log("debug") << "in Molecule::vdwGradient - after loop" << endl;
+//
+//  gsl_vector_free(p12);
+//  gsl_vector_free(p_temp);
+//  return gradient;
+//}
 
 pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions, string collisionCheck) { // compute the total vdw energy, excluding the covalent bonds and atoms in the same rigid body
 

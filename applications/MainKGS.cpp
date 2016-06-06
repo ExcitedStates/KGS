@@ -88,6 +88,7 @@ void randomSampling(SamplingOptions& options){
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   log() << "Molecule has " << protein.atoms.size() << " atoms\n";
+  options.setResidueNetwork(&protein);
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(&protein, options.annotationFile);
@@ -103,24 +104,21 @@ void randomSampling(SamplingOptions& options){
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
 
+  IO::readRigidbody( &protein, options.residueNetwork );
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
+//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
+  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  cout<<"MainKGS .. spanning tree:"<<endl;
+
+  protein.SetConfiguration(new Configuration(&protein));
+
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
   protein.m_initialCollisions = protein.getAllCollisions();
   for(auto const& coll: protein.m_initialCollisions){
     log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
   }
-
-  //Todo: fully delete FIRST from this software
-  //Create the rigid body trees
-  IO::readRigidbody( &protein );
-
-  options.setResidueNetwork(&protein);
-
-//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
-//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
-  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
-  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-//  cout<<"MainKGS .. spanning tree:"<<endl;
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -172,7 +170,8 @@ void randomSampling(SamplingOptions& options){
     exit(-1);
   }
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
+  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs()
+        << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
@@ -223,6 +222,7 @@ void targetedSampling(SamplingOptions& options){
 
   string pdb_file = options.initialStructureFile;
   Molecule protein;
+  protein.setCollisionFactor(options.collisionFactor);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   log() << "Molecule has " << protein.atoms.size() << " atoms\n";
@@ -244,36 +244,55 @@ void targetedSampling(SamplingOptions& options){
   // Do the same for the target
   string target_file = options.targetStructureFile;
   Molecule * target = new Molecule();
+  target->setCollisionFactor(options.collisionFactor);
   IO::readPdb( target, target_file, options.extraCovBonds,&protein);
 
   //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(&protein);
 
-  //Todo: fully delete FIRST from this software
-  //Read the rigid body of the protein
-  IO::readRigidbody( &protein );
-  IO::readRigidbody( target );
 
+  /// Rigid bodies, spanning trees, and initial collisions
   options.setResidueNetwork(&protein);
   options.setAtomSets(&protein,target);
+
+  IO::readRigidbody( &protein );
+//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
+//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
+  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  cout<<"MainKGS .. spanning tree:"<<endl;
+
+  protein.SetConfiguration(new Configuration(&protein));
+
+  // Check for collision
+  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
+  protein.m_initialCollisions = protein.getAllCollisions();
+  for(auto const& coll: protein.m_initialCollisions){
+    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+  }
+
+  /// Rigid bodies, spanning trees, and initial collisions for the target
+  IO::readRigidbody( target );
+  //Build rigid body tree for target
+//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
+//  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
+  target->buildSpanningTree();
+  cout<<"MainKGS .. target spanning tree:"<<endl;
 
   //Alignment and spanning trees with possibly best m_root
   if(options.alignIni){
     target->alignReferencePositionsTo(&protein);//backup the aligned configuration
   }
 
-  //Build rigid body tree for protein
-//  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root, target);
-//  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
-  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  target->SetConfiguration(new Configuration(target));
 
   // Check for collision
-  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
-  protein.SetConfiguration(new Configuration(&protein));
-  protein.m_initialCollisions = protein.getAllCollisions();
-  for(auto const& coll: protein.m_initialCollisions){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
-  }
+  target->m_initialCollisions = target->getAllCollisions();
+//    	for(mit=target->m_initialCollisions.begin(); mit != target->m_initialCollisions.end();mit++){
+//    		Atom* atom1=mit->second.first;
+//        	log("dominik")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
+//    	}
+
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -282,18 +301,11 @@ void targetedSampling(SamplingOptions& options){
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
-  //Build rigid body tree for target
-//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
-//  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
-  target->buildSpanningTree();
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
-
-  target->SetConfiguration(new Configuration(target));
-  target->m_initialCollisions = target->getAllCollisions();
 
   //Initialize metric
   metrics::Metric* metric;
@@ -363,8 +375,10 @@ void targetedSampling(SamplingOptions& options){
       IO::writeQ(target,protein.m_conf, out);
     }
 
-  log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
-  log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
+    log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs()
+          << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+    log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs()
+          << ", Max accessible DOFs: " << target->m_spanning_tree->getNumDOFs() - target->m_spanning_tree->getNumCycleDOFs() + target->m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
@@ -377,12 +391,12 @@ void targetedSampling(SamplingOptions& options){
   //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
   log()<<" and " << (protein.m_conf->getNullspace()->NumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl;
 
 
-  log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf);
+  log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf)<<endl;
 
-  log("samplingStatus")<<"Sampling ...\n";
+  log("samplingStatus")<<"Sampling ...\n"<<endl;
   CTKTimer timer;
   timer.Reset();
   double start_time = timer.LastElapsedTime();

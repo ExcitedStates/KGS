@@ -96,7 +96,7 @@ class Molecule {
   void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
 
-  gsl_vector* vdwGradient ();
+//  gsl_vector* vdwGradient ();
   std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
   double vdwEnergy (std::string collisionCheck);//compute vdw energy
 

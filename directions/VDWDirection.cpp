@@ -107,4 +107,6 @@ void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);
     vertex = vertex->m_parent;
   }
+
+  //Todo: This should be optimizable using the sorted vertices and the Abé implementation of the MSD gradient
 }
