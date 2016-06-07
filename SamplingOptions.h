@@ -104,6 +104,8 @@ class SamplingOptions
   int frontSize;
   /** Max number of trials before switching search directions. */
   int switchAfter;
+  /** Cut-off for svd computation (magnitude of smallest singular value in the nullspace)*/
+  double svdCutoff;
 
   void print();
 

@@ -32,6 +32,7 @@ class SamplingPlanner{
    * initial to this sample is written to a file.
    */
   virtual void createTrajectory();
+  static void writeNewSample(Configuration* conf, Configuration* ref, int sample_num);
 
  protected:
 
@@ -39,8 +40,6 @@ class SamplingPlanner{
   Move& move;
 
   metrics::Metric& m_metric;   ///< Metric used to measure distances between samples
-
-  void writeNewSample(Configuration* conf, Configuration* ref, int sample_num);
 
 };
 

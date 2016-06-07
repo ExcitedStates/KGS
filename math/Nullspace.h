@@ -55,6 +55,9 @@ class Nullspace {
   /** Return the basis of the nullspace as columns of a matrix */
   gsl_matrix *getBasis() const;
 
+  /** Return the SVD of the nullspace as columns of a matrix */
+  SVD *getSVD() const;
+
   /**
    * Returns true iff the angle specified by the argument is rigidified.
    * This result is only accurate if UpdateFromMatrix and RigidityAnalysis have both

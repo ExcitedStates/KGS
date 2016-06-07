@@ -190,4 +190,7 @@ gsl_matrix *Nullspace::getBasis() const {
   return m_nullspaceBasis;
 }
 
+SVD *Nullspace::getSVD() const {
+  return svd;
+}
 

@@ -201,6 +201,7 @@ add_executable( testik		    applications/MainTestExactIK.cpp )
 add_executable( mytest  	    applications/MainTest.cpp )
 add_executable( transition  	applications/MainTransition.cpp )
 add_executable( loopexplore  	applications/MainLoopExplore.cpp )
+add_executable( hierarchy        applications/MainHierarchy.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
@@ -211,6 +212,7 @@ target_link_libraries( testik		    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( mytest  		    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( transition 	    libKGS ${GSL_LIBRARIES} )
 target_link_libraries( loopexplore 	    libKGS ${GSL_LIBRARIES} )
+target_link_libraries( hierarchy         libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 
