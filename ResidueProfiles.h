@@ -1341,16 +1341,16 @@ const char* const COV_BOND_PROFILES [][3] = {
 
 const char* const FIXED_BOND_PROFILES [][3] = {
     {"ALA","-C","N"},
-    {"ALA","CA","CB"}, //@Dominik: why is this rigid?
+    {"ALA","CA","CB"},
     {"GLY","-C","N"},
     {"SER","-C","N"},
     {"THR","-C","N"},
     {"LEU","-C","N"},
-    {"LEU","CG","CD1"}, //@Dominik: why is this rigid?
-    {"LEU","CG","CD2"}, //@Dominik: why is this rigid?
+    {"LEU","CG","CD1"},
+    {"LEU","CG","CD2"},
     {"ILE","-C","N"},
-    {"ILE","CB","CG2"}, //@Dominik: why is this rigid?
-    {"ILE","CG1","CD1"}, //@Dominik: why is this rigid?
+    {"ILE","CB","CG2"},
+    {"ILE","CG1","CD1"},
     {"VAL","-C","N"},
     {"ASN","-C","N"},
     {"ASN","CG","OD1"}, //added
