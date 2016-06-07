@@ -650,62 +650,62 @@ gsl_vector*Molecule::getEndEffectors(){
 }
 
 
-void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
-
-  // No cycle
-  //if(!m_conf->CycleNullSpace)
-  if(!m_conf->getNullspace())
-  {
-    gsl_vector_memcpy(after_project, to_project);
-    return;
-  }
-
-  //if (to_project->size > m_conf->CycleNullSpace->n) {
-  if( to_project->size > m_conf->getNullspace()->NumDOFs() ) {
-    // The input vectors contain all DOFs, however, the null space only contains DOFs in cycles.
-    // Convert the DOFs in the input vectors to DOFs in cycles.
-    //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
-    //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
-    gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
-    for (auto const& edge: m_spanning_tree->Edges){
-      int dof_id = edge->getDOF()->getIndex();
-      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-      if ( cycle_dof_id!=-1 ) {
-        gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
-      }
-    }
-
-    // Project onto the null space
-    double normBefore = gsl_vector_length(to_proj_short);
-    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->NumDOFs());
-    m_conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
-    double normAfter = gsl_vector_length(after_proj_short);
-
-    //Scale projected gradient to same norm as unprojected
-    if(normAfter>0.0000001)
-      gsl_vector_scale(after_proj_short, normBefore/normAfter);
-
-    // Convert back to full length DOFs vector
-    for( auto const& edge:m_spanning_tree->Edges){
-      int dof_id = edge->getDOF()->getIndex();
-      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-      if ( cycle_dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
-      }
-      else if ( dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
-      }
-    }
-    gsl_vector_free(to_proj_short);
-    gsl_vector_free(after_proj_short);
-  }
-  else {
-    double normBefore = gsl_vector_length(to_project);
-    m_conf->getNullspace()->ProjectOnNullSpace(to_project, after_project);
-    double normAfter = gsl_vector_length(after_project);
-    gsl_vector_scale(after_project, normBefore/normAfter);
-  }
-}
+//void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
+//
+//  // No cycle
+//  //if(!m_conf->CycleNullSpace)
+//  if(!m_conf->getNullspace())
+//  {
+//    gsl_vector_memcpy(after_project, to_project);
+//    return;
+//  }
+//
+//  //if (to_project->size > m_conf->CycleNullSpace->n) {
+//  if( to_project->size > m_conf->getNullspace()->getNumDOFs() ) {
+//    // The input vectors contain all DOFs, however, the null space only contains DOFs in cycles.
+//    // Convert the DOFs in the input vectors to DOFs in cycles.
+//    //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
+//    //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
+//    gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->getNumDOFs());
+//    for (auto const& edge: m_spanning_tree->Edges){
+//      int dof_id = edge->getDOF()->getIndex();
+//      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+//      if ( cycle_dof_id!=-1 ) {
+//        gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
+//      }
+//    }
+//
+//    // Project onto the null space
+//    double normBefore = gsl_vector_length(to_proj_short);
+//    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->getNumDOFs());
+//    m_conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
+//    double normAfter = gsl_vector_length(after_proj_short);
+//
+//    //Scale projected gradient to same norm as unprojected
+//    if(normAfter>0.0000001)
+//      gsl_vector_scale(after_proj_short, normBefore/normAfter);
+//
+//    // Convert back to full length DOFs vector
+//    for( auto const& edge:m_spanning_tree->Edges){
+//      int dof_id = edge->getDOF()->getIndex();
+//      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+//      if ( cycle_dof_id!=-1 ) {
+//        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
+//      }
+//      else if ( dof_id!=-1 ) {
+//        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
+//      }
+//    }
+//    gsl_vector_free(to_proj_short);
+//    gsl_vector_free(after_proj_short);
+//  }
+//  else {
+//    double normBefore = gsl_vector_length(to_project);
+//    m_conf->getNullspace()->ProjectOnNullSpace(to_project, after_project);
+//    double normAfter = gsl_vector_length(after_project);
+//    gsl_vector_scale(after_project, normBefore/normAfter);
+//  }
+//}
 
 void Molecule::alignReferencePositionsTo(Molecule * base){
   this->restoreAtomPos();
@@ -1159,7 +1159,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
   //restoreAtomPos(false);
   SetConfiguration(ret);
-  ret->computeCycleJacobianAndNullSpace();
+  //ret->computeCycleJacobianAndNullSpace();
 
   //Find smallest connected subgraph that contains both resetDOFS and recloseDOFs (TODO: Approximate Steiner tree)
   vector<KinVertex*> subVerts;

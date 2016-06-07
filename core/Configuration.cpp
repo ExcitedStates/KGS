@@ -52,22 +52,20 @@ double rigidityTime = 0;
 
 gsl_matrix* Configuration::CycleJacobian = nullptr;
 gsl_matrix* Configuration::HBondJacobian = nullptr;
+Configuration* Configuration::CycleJacobianOwner = nullptr;
 SVD* Configuration::JacobianSVD = nullptr;
 
-gsl_matrix* Configuration::ClashAvoidingJacobian = nullptr;
-Nullspace* Configuration::ClashAvoidingNullSpace = nullptr;
+//gsl_matrix* Configuration::ClashAvoidingJacobian = nullptr;
+//Nullspace* Configuration::ClashAvoidingNullSpace = nullptr;
 
-Configuration::Configuration(Molecule * protein_):
-  m_molecule(protein_),
+Configuration::Configuration(Molecule * mol):
+  m_molecule(mol),
   nullspace(nullptr),
   m_parent(nullptr),
   m_dofs_global(nullptr),
   m_treeDepth(0)
 {
   assert(m_molecule!=nullptr);
-  if(m_molecule==NULL){
-	  std::cerr<<"Configuration(.. 1) - molecule is NULL"<<std::endl;
-  }
 
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
@@ -503,6 +501,8 @@ void Configuration::Print () {
 
 
 void Configuration::computeJacobians() {
+  if(CycleJacobianOwner==this) return;
+  CycleJacobianOwner = this;
 
   updateMolecule();
 
@@ -662,6 +662,7 @@ void Configuration::computeJacobians() {
 //We compute another Jacobian that also considers motion along clash normal directions as a constraint
 //--> allowed motions will not move clashing atoms further into each other
 
+/*
 void Configuration::ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pair<Atom*,Atom*>,int > allCollisions,bool firstTime, bool projectConstraints) {
 //	CTKTimer timer;
 //	timer.Reset();
@@ -813,6 +814,64 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
   }
 }
 
+ */
+
+
+void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
+  Nullspace* N = getNullspace();
+  //Since we're only using this for converting Cycle-DOF ids the mol doesnt have to be updated
+  Molecule* M = getMolecule();
+
+  if(N==nullptr){
+    gsl_vector_memcpy(after_project, to_project);
+    return;
+  }
+
+  if( to_project->size > N->getNumDOFs() ) {
+    // The input vectors contain all DOFs, however, the null space only contains DOFs in cycles.
+    // Convert the DOFs in the input vectors to DOFs in cycles.
+    //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
+    //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
+    gsl_vector *to_proj_short = gsl_vector_calloc(N->getNumDOFs());
+    for (auto const& edge: M->m_spanning_tree->Edges){
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+      if ( cycle_dof_id!=-1 ) {
+        gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
+      }
+    }
+
+    // Project onto the null space
+    double normBefore = gsl_vector_length(to_proj_short);
+    gsl_vector *after_proj_short = gsl_vector_calloc(N->getNumDOFs());
+    N->ProjectOnNullSpace(to_proj_short, after_proj_short);
+    double normAfter = gsl_vector_length(after_proj_short);
+
+    //Scale projected gradient to same norm as unprojected
+    if(normAfter>0.0000001)
+      gsl_vector_scale(after_proj_short, normBefore/normAfter);
+
+    // Convert back to full length DOFs vector
+    for( auto const& edge: M->m_spanning_tree->Edges){
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+      if ( cycle_dof_id!=-1 ) {
+        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
+      }
+      else if ( dof_id!=-1 ) {
+        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
+      }
+    }
+    gsl_vector_free(to_proj_short);
+    gsl_vector_free(after_proj_short);
+  }
+  else {
+    double normBefore = gsl_vector_length(to_project);
+    N->ProjectOnNullSpace(to_project, after_project);
+    double normAfter = gsl_vector_length(after_project);
+    gsl_vector_scale(after_project, normBefore/normAfter);
+  }
+}
 
 Molecule * Configuration::getMolecule() const
 {
@@ -830,8 +889,9 @@ void Configuration::updateMolecule()
   m_molecule->SetConfiguration(this);
 }
 
-gsl_matrix* Configuration::getCycleJacobian() const
+gsl_matrix* Configuration::getCycleJacobian()
 {
+  computeJacobians();
   return CycleJacobian;
 }
 

@@ -64,7 +64,7 @@ int main( int argc, char* argv[] ){
 
   Configuration* conf = new Configuration(protein);
   protein->SetConfiguration(conf);
-  conf->computeCycleJacobianAndNullSpace();
+  //conf->computeCycleJacobianAndNullSpace();
 
   log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->Matrix()->size1 << " rows, ";
   log("rigidity")<<conf->getNullspace()->Matrix()->size2<<" columns"<<endl;

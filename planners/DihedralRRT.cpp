@@ -37,8 +37,8 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, metrics::Metric& metric,
 	m_protein = protein;
 	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();
 	Configuration *pSmp = new Configuration(m_protein);
-  pSmp->updateMolecule();
-  pSmp->computeCycleJacobianAndNullSpace();
+  //pSmp->updateMolecule();
+  //pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
 	m_target = nullptr;
@@ -62,12 +62,10 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, metrics::Metric& metric,
 }
 
 DihedralRRT::~DihedralRRT() {
-	Configuration *pSmp;
 	for (list<Configuration *>::iterator iter = m_samples.begin(); iter != m_samples.end(); iter++)
 	{
 		delete *iter;
 	}
-	
 }
 
 

@@ -175,51 +175,51 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
   return bestmove;
 }
 
-void LSNullspaceDirection::clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein){
-
-//  gsl_matrix* N = Configuration::PreventClashNullSpace->m_nullspaceBasis;
-  gsl_matrix* N = Configuration::ClashAvoidingNullSpace->getBasis();
-  /*gsl_matrix* fullTargetJacobian = gsl_matrix_calloc(m_TargetJacobian->size1,N->size1);
-  gsl_matrix_set_zero(fullTargetJacobian);
-
-if(m_TargetJacobian->size2!= N->size1){
-      map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
-for (vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); vit++){
-  if( (*vit).second->isRibose ){
-    SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
-    int dof_id = v->DOF_id;
-    int cycle_dof_id = v->Cycle_DOF_id;
-    if ( cycle_dof_id!=-1 ) {
-      for( int i=0; i!=m_TargetJacobian->size1; i++){
-        gsl_matrix_set(fullTargetJacobian, i, dof_id, gsl_matrix_get(m_TargetJacobian,i,cycle_dof_id));
-      }
-    }
-  }
-}
-for (vector<Edge*>::iterator eit=protein->m_spanning_tree->Edges.begin(); eit!=protein->m_spanning_tree->Edges.end(); ++eit) {
-  int dof_id = (*eit)->DOF_id;
-  int cycle_dof_id = (*eit)->Cycle_DOF_id;
-  if ( cycle_dof_id!=-1 ) {
-    for( int i=0; i!=m_TargetJacobian->size1; i++){
-      gsl_matrix_set(fullTargetJacobian, i, dof_id, gsl_matrix_get(m_TargetJacobian,i,cycle_dof_id));
-    }
-  }
-}
-      }
-
-  for (int j=0;j!=fullTargetJacobian->size2;j++){
-      for( int i=0; i!=m_TargetJacobian->size1; i++){
-              gsl_matrix_set(fullTargetJacobian, i, j, gsl_matrix_get(m_TargetJacobian,i,j));
-      }
-  }*/
-
-  gsl_matrix* bestmove = determineBestMove(N,m_TargetJacobian,m_TargetPosition);
-  for (int i=0;i<bestmove->size1;i++){
-    gsl_vector_set(admissible_gradient,i,gsl_matrix_get(bestmove,i,0));
-  }
-
-  gsl_matrix_free(bestmove);
-  //gsl_matrix_free(fullTargetJacobian);
-  //protein->ProjectOnClashFreeNullSpace(gradient,admissible_gradient);
-}
+//void LSNullspaceDirection::clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein){
+//
+////  gsl_matrix* N = Configuration::PreventClashNullSpace->m_nullspaceBasis;
+//  gsl_matrix* N = Configuration::ClashAvoidingNullSpace->getBasis();
+//  /*gsl_matrix* fullTargetJacobian = gsl_matrix_calloc(m_TargetJacobian->size1,N->size1);
+//  gsl_matrix_set_zero(fullTargetJacobian);
+//
+//if(m_TargetJacobian->size2!= N->size1){
+//      map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
+//for (vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); vit++){
+//  if( (*vit).second->isRibose ){
+//    SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
+//    int dof_id = v->DOF_id;
+//    int cycle_dof_id = v->Cycle_DOF_id;
+//    if ( cycle_dof_id!=-1 ) {
+//      for( int i=0; i!=m_TargetJacobian->size1; i++){
+//        gsl_matrix_set(fullTargetJacobian, i, dof_id, gsl_matrix_get(m_TargetJacobian,i,cycle_dof_id));
+//      }
+//    }
+//  }
+//}
+//for (vector<Edge*>::iterator eit=protein->m_spanning_tree->Edges.begin(); eit!=protein->m_spanning_tree->Edges.end(); ++eit) {
+//  int dof_id = (*eit)->DOF_id;
+//  int cycle_dof_id = (*eit)->Cycle_DOF_id;
+//  if ( cycle_dof_id!=-1 ) {
+//    for( int i=0; i!=m_TargetJacobian->size1; i++){
+//      gsl_matrix_set(fullTargetJacobian, i, dof_id, gsl_matrix_get(m_TargetJacobian,i,cycle_dof_id));
+//    }
+//  }
+//}
+//      }
+//
+//  for (int j=0;j!=fullTargetJacobian->size2;j++){
+//      for( int i=0; i!=m_TargetJacobian->size1; i++){
+//              gsl_matrix_set(fullTargetJacobian, i, j, gsl_matrix_get(m_TargetJacobian,i,j));
+//      }
+//  }*/
+//
+//  gsl_matrix* bestmove = determineBestMove(N,m_TargetJacobian,m_TargetPosition);
+//  for (int i=0;i<bestmove->size1;i++){
+//    gsl_vector_set(admissible_gradient,i,gsl_matrix_get(bestmove,i,0));
+//  }
+//
+//  gsl_matrix_free(bestmove);
+//  //gsl_matrix_free(fullTargetJacobian);
+//  //protein->ProjectOnClashFreeNullSpace(gradient,admissible_gradient);
+//}
 

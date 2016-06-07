@@ -56,7 +56,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   //gsl_vector_cout(gradient);
 
   // Get atom positions at current
-  Molecule *protein = current->updatedMolecule();
+  //Molecule *protein = current->updatedMolecule();
 
   double currNorm = gsl_vector_length(gradient);
   double targetNorm = currNorm;//*m_stepSize;
@@ -65,11 +65,13 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   //cout << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
-  gsl_vector *projected_gradient = gsl_vector_calloc(protein->totalDofNum());
-  protein->ProjectOnCycleNullSpace(gradient, projected_gradient);
+  gsl_vector *projected_gradient = gsl_vector_calloc(current->getNumDOFs());
+  current->projectOnCycleNullSpace(gradient, projected_gradient);
+  //protein->ProjectOnCycleNullSpace(gradient, projected_gradient);
 
   Configuration *new_q = new Configuration(current);
-  std::copy(projected_gradient->data, projected_gradient->data + projected_gradient->size, new_q->m_dofs);
+  for (int i = 0; i < new_q->getNumDOFs(); ++i)
+    new_q->m_dofs[i] = current->m_dofs[i] + gsl_vector_get(projected_gradient, i);
   gsl_vector_free(projected_gradient);
 
   //If no clash return
@@ -86,7 +88,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   for (int trialStep = 0; trialStep < m_trialSteps; trialStep++) {
 
     //get all collisions at this configuration
-    allCollisions = protein->getAllCollisions(m_collisionCheckAtomTypes);
+    allCollisions = current->updatedMolecule()->getAllCollisions(m_collisionCheckAtomTypes);
 
     //Combine with collisions of previous trial
     for(auto const& prev_coll: previousCollisions){
@@ -212,10 +214,8 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
 
   Configuration* new_q = new Configuration(conf);
 //  log("dominik")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
-  std::copy(
-      projected_gradient->data,
-      projected_gradient->data+new_q->getNumDOFs(),
-      new_q->m_dofs );
+  for (int i = 0; i < new_q->getNumDOFs(); ++i)
+    new_q->m_dofs[i] = conf->m_dofs[i] + gsl_vector_get(projected_gradient, i);
   gsl_vector_free(projected_gradient);
 
   new_q->m_usedClashPrevention = true;

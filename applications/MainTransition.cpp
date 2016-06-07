@@ -182,7 +182,7 @@ int main( int argc, char* argv[] ) {
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
     log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
-    log()<<" and " << (protein.m_conf->getNullspace()->NumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
     log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
 
 

@@ -41,7 +41,7 @@ class Nullspace {
   int NullspaceSize() const { return m_nullspaceSize; }
 
   /** Return number of cycle DOFs */
-  int NumDOFs() const { return n; }
+  int getNumDOFs() const { return n; }
 
   /** Return number of dihedral DOFs that were rigidified in the last call to RigidityAnalysis. */
   int NumRigidDihedrals() const { return numRigidDihedrals; }

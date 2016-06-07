@@ -64,7 +64,7 @@ class Configuration
   //double *m_sumProjSteps;          //TODO: What is this?
 
   /** Construct a configuration with all DOF-values set to 0 and no m_parent. */
-  Configuration(Molecule * protein);
+  Configuration(Molecule * mol);
 
   /** Construct a configuration with all DOF-values set to 0 and the specified m_parent. */
   Configuration(Configuration* parent);
@@ -87,14 +87,13 @@ class Configuration
   double Length();                       // TODO: Remove (?)
 
   void Print();                          // TODO: Remove or rename to printDOFs
-  void computeCycleJacobianAndNullSpace();
-  void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian
   void identifyBiggerRigidBodies();      ///< Identify clusters
   void readBiggerSet();                  ///< read the set of clusters, related to identifying clusters
+  void projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
   //Clash-avoiding Jacobian and nullspace
-  void ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pair<Atom*,Atom*>,int >  allCollisions,bool firstTime,bool projectConstraints);
-  void computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom*>,int > allCollisions,bool projectConstraints);
+  //void ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pair<Atom*,Atom*>,int >  allCollisions,bool firstTime,bool projectConstraints);
+  //void computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom*>,int > allCollisions,bool projectConstraints);
 
 
   static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
@@ -125,8 +124,8 @@ class Configuration
   Molecule * getMolecule() const;///< Return the associated molecule
   void updateMolecule();         ///< Update the atom-positions to reflect this configuration
 
-  /** Return the cycle jacobian. Assumes that computeJacobians has been called on this configuration last */
-  gsl_matrix* getCycleJacobian() const;
+  /** Return the cycle jacobian. Calls computeJacobians if CycleJacobian is not up to date */
+  gsl_matrix* getCycleJacobian();
 
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
 
@@ -141,10 +140,13 @@ class Configuration
   Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from
   std::list<Configuration*> m_children;          ///< List of child-configurations
 
+  void computeCycleJacobianAndNullSpace();
+  void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian
   // Jacobian matrix of all the cycles of rigid bodies
   static gsl_matrix* CycleJacobian; // column dimension is the number of DOFs; row dimension is 5 times the number of cycles because 2 atoms on each cycle-closing edge
   static gsl_matrix* HBondJacobian; // column dimension is the number of DOFS; row dimension is the number of cycles
-  static gsl_matrix* ClashAvoidingJacobian;
+  //static gsl_matrix* ClashAvoidingJacobian;
+  static Configuration* CycleJacobianOwner;
 
   static SVD* JacobianSVD;
   Nullspace* nullspace;                  ///< Nullspace of this configuration

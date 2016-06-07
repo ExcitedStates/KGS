@@ -56,8 +56,8 @@ RRTPlanner::RRTPlanner(Molecule *protein, Move& move, metrics::Metric& metric, D
 {
 	m_numDOFs = m_protein->m_spanning_tree->getNumDOFs();//Edges.size();
 	Configuration *pSmp = new Configuration(m_protein);
-  pSmp->updateMolecule();
-  pSmp->computeCycleJacobianAndNullSpace();
+  //pSmp->updateMolecule();
+  //pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
 	m_protein->m_conf_backup = pSmp;
 	m_target = nullptr;

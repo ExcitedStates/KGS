@@ -71,7 +71,7 @@ int main( int argc, char* argv[] ) {
 
   Configuration *conf = new Configuration(protein);
   protein->SetConfiguration(conf);
-  conf->computeCycleJacobianAndNullSpace();
+  //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;
   log("hierarchy") << "> " << protein->atoms.size() << " atoms" << endl;

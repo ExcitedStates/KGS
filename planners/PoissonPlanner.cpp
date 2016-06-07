@@ -52,8 +52,8 @@ PoissonPlanner::PoissonPlanner(Molecule * protein, Move& move, metrics::Metric& 
   protein(protein)
 {
   m_root = new Configuration( protein );
-  m_root->updateMolecule();
-  m_root->computeCycleJacobianAndNullSpace();
+  //m_root->updateMolecule();
+  //m_root->computeCycleJacobianAndNullSpace();
   m_root->m_id = 0;
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
