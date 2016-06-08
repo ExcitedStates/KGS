@@ -32,6 +32,7 @@
 #include <stack>
 #include <directions/Direction.h>
 #include <directions/RandomDirection.h>
+#include <loopclosure/ExactIK.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -40,27 +41,25 @@
 
 using namespace std;
 
-PoissonPlanner2::PoissonPlanner2(Molecule * protein, Move& move, metrics::Metric& metric, bool ikBeforeClose):
+PoissonPlanner2::PoissonPlanner2(
+    Molecule * protein,
+    Move& move,
+    metrics::Metric& metric,
+    vector<ResTriple>& exactIKtriples
+):
 	SamplingPlanner(move,metric),
   stop_after(SamplingOptions::getOptions()->samplesToGenerate),
   max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
   m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
   m_lilRad(m_bigRad/2),
   protein(protein),
-  m_ikBeforeClose(ikBeforeClose)
+  m_ikTriples(exactIKtriples)
 {
-  //cout<<"PoissonPlanner2::PoissonPlanner2 - stopafter: "<<stop_after<<endl;
   m_root = new Configuration( protein );
-//  m_root->updateMolecule();
-//  m_root->computeCycleJacobianAndNullSpace();
   m_root->m_id = 0;
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
   updateMaxDists(m_root);
-
-  if(ikBeforeClose){
-
-  }
 }
 
 PoissonPlanner2::~PoissonPlanner2() {
@@ -93,7 +92,7 @@ void PoissonPlanner2::GenerateSamples()
 
     vector<Configuration*> nearSeed;
     if(!m_checkAll) {
-      collectPossibleChildCollisions(seed, nearSeed, m_root);
+      collectPossibleChildCollisions(seed, nearSeed, m_root, m_bigRad);
     }
 
 
@@ -140,7 +139,7 @@ void PoissonPlanner2::GenerateSamples()
 //      for (auto const &v: all_samples) {
       for (auto const &v: nearSeed) {
 //        cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. "<<endl;
-        double dist = m_metric.distance(pert, v);
+        double dist = memo_distance(pert, v);
 //        log("samplingStatus")<<" - dist "<<dist<<" > "<<m_lilRad<<" ?"<<endl;
         if (dist < m_lilRad) {
           too_close_to_existing = true;
@@ -159,9 +158,9 @@ void PoissonPlanner2::GenerateSamples()
       open_samples.push_back(pert);
       all_samples.push_back(pert);
 //      cout<<"PoissonPlanner2::GenerateSamples() - distance to init .. "<<endl;
-      pert->m_distanceToIni    = m_metric.distance(pert,m_root);
+      pert->m_distanceToIni    = memo_distance(pert,m_root);
 //      cout<<"PoissonPlanner2::GenerateSamples() - distance to seed .. "<<endl;
-      pert->m_distanceToParent = m_metric.distance(pert,seed);
+      pert->m_distanceToParent = memo_distance(pert,seed);
       updateMaxDists(pert);
       writeNewSample(pert, m_root, sample_num);
 
@@ -171,6 +170,66 @@ void PoissonPlanner2::GenerateSamples()
       log("samplingStatus") << endl;
 
       sample_num++;
+    }
+
+    //Perform exact IK rebuild
+    ExactIK ik;
+    for(auto triple: m_ikTriples) {
+      seed->updateMolecule();
+      vector<Configuration *> rebuilt = ik.rebuildLoop(get<0>(triple), get<1>(triple), get<2>(triple) );
+      for(Configuration* pert: rebuilt){
+
+        //Collision with seed is quick to check
+        pert->m_distanceToParent = memo_distance(pert,seed);
+        if(pert->m_distanceToParent<m_lilRad){
+          rejected_collision++;
+          delete pert;
+          continue;
+        }
+
+        //If clashing just continue
+        if(pert->updatedMolecule()->inCollision() ) {
+          rejected_clash++;
+          delete pert;
+          continue;
+        }
+
+
+        //Check if close to existing
+        vector<Configuration*> nearPert;
+        collectPossibleChildCollisions(seed, nearPert, 0.0);
+        bool too_close_to_existing = false;
+        for (auto const &v: nearPert) {
+          double dist = memo_distance(pert, v);
+          if (dist < m_lilRad) {
+            too_close_to_existing = true;
+            break;
+          }
+        }
+        if (too_close_to_existing) {
+          rejected_collision++;
+          delete pert;
+          continue;
+        }
+
+        //Perturbation is OK: Add to open
+        pert->m_id = sample_num;
+        pert->m_distanceToIni    = memo_distance(pert,m_root);
+        open_samples.push_back(pert);
+        all_samples.push_back(pert);
+        updateMaxDists(pert);
+        writeNewSample(pert, m_root, sample_num);
+
+        log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
+        log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
+        log("samplingStatus") << " .. seed dist: "<< setprecision(3)<<pert->m_distanceToParent;
+        log("samplingStatus") << " .. from exact IK";
+        log("samplingStatus") << endl;
+
+        sample_num++;
+
+      }
+
     }
 
     open_samples.erase(it);
@@ -194,7 +253,6 @@ double PoissonPlanner2::memo_distance(Configuration* c1, Configuration* c2)
   auto it = m_distances.find({c1,c2});
   if( it!=m_distances.end() ) return it->second;
 
-//  cout<<"PoissonPlanner2::memo_distance()  .. "<<endl;
   double dist = m_metric.distance(c1,c2); //Expensive
   m_distances[{c1,c2}] = dist;
   m_distances[{c2,c1}] = dist;
@@ -204,26 +262,30 @@ double PoissonPlanner2::memo_distance(Configuration* c1, Configuration* c2)
 
 void PoissonPlanner2::collectPossibleChildCollisions(
     Configuration* conf,
-    std::vector<Configuration*>& ret
+    std::vector<Configuration*>& ret,
+    double childOffset
 )
 {
-  collectPossibleChildCollisions(conf, ret, m_root);
+  collectPossibleChildCollisions(conf, ret, m_root, childOffset);
 }
 
 void PoissonPlanner2::collectPossibleChildCollisions(
     Configuration* conf,
     std::vector<Configuration*>& ret,
-    Configuration* v
+    Configuration* v,
+    double childOffset
 )
 {
   double d = memo_distance(v,conf);
-  if( d >= m_maxDist[v]+m_bigRad+m_lilRad )
+  //if( d >= m_maxDist[v]+m_bigRad+m_lilRad )
+  if( d >= m_maxDist[v]+childOffset+m_lilRad )
     return;
 
-  if(d<m_bigRad+m_lilRad) ret.push_back(v);
+  //if(d<m_bigRad+m_lilRad) ret.push_back(v);
+  if(d<childOffset+m_lilRad) ret.push_back(v);
 
   for(auto const& child: v->getChildren())
-    collectPossibleChildCollisions(conf, ret, child);
+    collectPossibleChildCollisions(conf, ret, child, childOffset);
 
 }
 

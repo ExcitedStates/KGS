@@ -41,6 +41,7 @@
 
 class Molecule;
 
+typedef std::tuple<Residue*, Residue*, Residue*> ResTriple;
 
 /**
  * A sampling planner based on Poisson-disc sampling as described in Robert Bridsons 2007 SIGGRAPH paper.
@@ -52,7 +53,7 @@ class Molecule;
  */
 class PoissonPlanner2 : public SamplingPlanner{
  public:
-  PoissonPlanner2(Molecule *, Move&, metrics::Metric&, bool ikBeforeClose=false);
+  PoissonPlanner2(Molecule *, Move&, metrics::Metric&, std::vector<ResTriple>& exactIKtriples);
   ~PoissonPlanner2();
 
   void GenerateSamples();
@@ -66,7 +67,7 @@ class PoissonPlanner2 : public SamplingPlanner{
   const int max_rejects_before_close; ///< Number perturbations that are tried before a sample is 'closed'
   const double m_bigRad;              ///< Largest allowed step-size
   const double m_lilRad;              ///< Smallest allowed distance between any two samples
-  const bool m_ikBeforeClose;         ///< Indicates whether to sample all exact IK solutions before closing a sample
+  const std::vector<ResTriple>& m_ikTriples; ///< Triples of residues that will be rebuilt before closing.
 
   std::list<Configuration*> open_samples;     ///< Non-closed samples
   std::list<Configuration*> closed_samples;   ///< Samples that have tested more than max_rejects_before_close perturbations
@@ -89,10 +90,12 @@ class PoissonPlanner2 : public SamplingPlanner{
 
   /** Collect all open or closed configurations within dist of conf and add them to ret. */
   void collectPossibleChildCollisions(Configuration* conf,
-                                      std::vector<Configuration*>& ret);
+                                      std::vector<Configuration*>& ret,
+                                      double childOffset);
   void collectPossibleChildCollisions(Configuration* conf,
                                       std::vector<Configuration*>& ret,
-                                      Configuration* v);
+                                      Configuration* v,
+                                      double childOffset);
 
   void updateMaxDists(Configuration* newConf);
   void updateMaxDists(Configuration* v, Configuration* newConf);

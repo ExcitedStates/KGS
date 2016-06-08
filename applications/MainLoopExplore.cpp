@@ -117,6 +117,8 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
+  
+
   //Initialize planner
   SamplingPlanner* planner = nullptr;
   if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
