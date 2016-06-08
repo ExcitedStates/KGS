@@ -132,7 +132,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       blendedDir.changeWeight(1,1.0 - double(numSamples)/double(stopAfter) );
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
-    gsl_vector_scale(gradient, stepSize);
+    gsl_vector_scale_to_length(gradient, stepSize);
     cout<<"Gradient done, norm is "<<gsl_vector_length(gradient)<<endl;
     qNew = move.move(qSeed, gradient); //Perform move
 

@@ -10,14 +10,14 @@ RMSD::RMSD():
   m_atomsRMSD(nullptr)
 {}
 
-RMSD::RMSD(vector<Atom*>* atomsRMSD):
+RMSD::RMSD(const vector<Atom*>* atomsRMSD):
   m_atomsRMSD(atomsRMSD)
 {}
 
 double RMSD::distance(Configuration* c1, Configuration* c2)
 {
 //  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
-  std::vector<Atom*>* atomsRMSD = m_atomsRMSD;
+  const std::vector<Atom*>* atomsRMSD = m_atomsRMSD;
 
   // If atomsAlign is nullptr, align the entire m_protein
   if( atomsRMSD==nullptr || atomsRMSD->empty() ) {

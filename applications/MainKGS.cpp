@@ -309,7 +309,7 @@ void targetedSampling(SamplingOptions& options){
 
   //Initialize metric
   metrics::Metric* metric;
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
+  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD(SamplingOptions::getOptions()->getAtomsMoving());
   if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
 
   //Initialize move
