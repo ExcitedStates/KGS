@@ -691,6 +691,8 @@ void Configuration::ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pai
 //---------------------------------------------------------
 void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom*>,int > allCollisions, bool projectConstraints) {
 
+  updateMolecule();
+
   //The clash Jacobian is the regular Jacobian's constraints, plus one constraint per pair of clashing atoms
   int numCollisions = allCollisions.size();
   int rowNum, colNum;
@@ -880,13 +882,13 @@ Molecule * Configuration::getMolecule() const
 
 Molecule * Configuration::updatedMolecule()
 {
-  m_molecule->SetConfiguration(this);
+  m_molecule->setConfiguration(this);
   return m_molecule;
 }
 
 void Configuration::updateMolecule()
 {
-  m_molecule->SetConfiguration(this);
+  m_molecule->setConfiguration(this);
 }
 
 gsl_matrix* Configuration::getCycleJacobian()

@@ -1314,7 +1314,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
     //		Rigidbody* biggestRb = c->m_biggerRBMap.
     //		list<unsigned int> *atom_ids = c->m_sortedRBs;
     //Set initial configuration
-    //		molecule->SetConfiguration(c);
+    //		molecule->setConfiguration(c);
     c->updateMolecule();
     //		molecule->alignToReference()
     c = molecule->m_conf;
@@ -1397,7 +1397,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
           if(cit->m_id != path[i+1])
             continue;
           else{
-            //						molecule->SetConfiguration(*cit);
+            //						molecule->setConfiguration(*cit);
             cit->updateMolecule();
             break;
           }
@@ -1505,7 +1505,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //Next configuration only if we haven't reached the last one yet!
       if( c->getParent() != nullptr){
         c=c->getParent();
-        //				target->SetConfiguration(c);
+        //				target->setConfiguration(c);
         c->updateMolecule();
         currId = c->m_id;
       }

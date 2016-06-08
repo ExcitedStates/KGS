@@ -302,7 +302,7 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 /*
  * Get a list of colliding atoms in the current protein configuration.
  */
-std::set< pair<Atom*,Atom*>> Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
+std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
   if(m_conf==nullptr) {
     cerr << "Molecule::getAllCollisions - No configuration set" << endl;
     throw "Molecule::getAllCollisions - No configuration set";
@@ -742,7 +742,7 @@ void Molecule::restoreAtomPos(){
 
 }
 
-void Molecule::SetConfiguration(Configuration *q){
+void Molecule::setConfiguration(Configuration *q){
   if( m_conf==q) return;
 
   restoreAtomPos();
@@ -1030,7 +1030,7 @@ Coordinate Molecule::centerOfGeometry () const {
 }
 
 void Molecule::checkCycleClosure(Configuration *q){
-  SetConfiguration(q);
+  setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
   KinEdge *pEdge;
@@ -1158,7 +1158,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   Configuration* ret = cur->clone();
 
   //restoreAtomPos(false);
-  SetConfiguration(ret);
+  setConfiguration(ret);
   //ret->computeCycleJacobianAndNullSpace();
 
   //Find smallest connected subgraph that contains both resetDOFS and recloseDOFs (TODO: Approximate Steiner tree)
@@ -1396,12 +1396,12 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     ret->m_dofs[boundary[i]->getDOF()->getIndex()] += (newTorsion - oldTorsion);
 
     //{
-    //	SetConfiguration(cur);
+    //	setConfiguration(cur);
     //	stringstream ss; ss<<"test_"<<resi<<"_init.pdb";
     //	IO::writePdb(this, ss.str());
     //}
     //{
-    //	SetConfiguration(ret);
+    //	setConfiguration(ret);
     //	stringstream ss; ss<<"test_"<<resi<<"_final2.pdb";
     //	IO::writePdb(this, ss.str());
     //}

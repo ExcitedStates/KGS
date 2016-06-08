@@ -23,7 +23,6 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
 )
 {
 
-
   double blen[6];
   double bang[7];
   double tang[2];
@@ -48,21 +47,21 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
                   r_soln_c, &n_soln);
 
 
-  for(int i=0;i<n_soln;i++){
-    cout<<"MODEL "<<(i+1)<<endl;
-    for(int r=0;r<3;r++) {
-      const Residue* res = res1;
-      if(r==1) res=res2;
-      if(r==2) res=res3;
-      printf("ATOM      1  N   ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           N\n", res->getId(),
-             r_soln_n[i][r][0], r_soln_n[i][r][1], r_soln_n[i][r][2]);
-      printf("ATOM      2  CA  ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           C\n", res->getId(),
-             r_soln_a[i][r][0], r_soln_a[i][r][1], r_soln_a[i][r][2]);
-      printf("ATOM      3  C   ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           C\n", res->getId(),
-             r_soln_c[i][r][0], r_soln_c[i][r][1], r_soln_c[i][r][2]);
-    }
-    cout<<"ENDMDL"<<endl;
-  }
+//  for(int i=0;i<n_soln;i++){
+//    cout<<"MODEL "<<(i+1)<<endl;
+//    for(int r=0;r<3;r++) {
+//      const Residue* res = res1;
+//      if(r==1) res=res2;
+//      if(r==2) res=res3;
+//      printf("ATOM      1  N   ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           N\n", res->getId(),
+//             r_soln_n[i][r][0], r_soln_n[i][r][1], r_soln_n[i][r][2]);
+//      printf("ATOM      2  CA  ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           C\n", res->getId(),
+//             r_soln_a[i][r][0], r_soln_a[i][r][1], r_soln_a[i][r][2]);
+//      printf("ATOM      3  C   ALA A %3d    %8.3f%8.3f%8.3f  1.00  1.00           C\n", res->getId(),
+//             r_soln_c[i][r][0], r_soln_c[i][r][1], r_soln_c[i][r][2]);
+//    }
+//    cout<<"ENDMDL"<<endl;
+//  }
 
   Configuration* parent = res1->getChain()->getMolecule()->m_conf;
   if(parent==nullptr) parent = new Configuration(res1->getChain()->getMolecule());
@@ -115,6 +114,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     double delPsi3 = newPsi3 - oldPsi3;
 
     for(auto const& edge: parent->getMolecule()->m_spanning_tree->Edges){
+      if(edge->getBond()==nullptr) continue;
       if(edge->getBond()->Atom1==N1) child->m_dofs[edge->getDOF()->getIndex()] += delPhi1;
       if(edge->getBond()->Atom1==A1) child->m_dofs[edge->getDOF()->getIndex()] += delPsi1;
       if(edge->getBond()->Atom1==N2) child->m_dofs[edge->getDOF()->getIndex()] += delPhi2;

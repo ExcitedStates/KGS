@@ -41,7 +41,7 @@ void SamplingPlanner::createTrajectory(){
 				}
 			}
 	//}
-	//m_molecule->SetConfiguration(pSmp);
+	//m_molecule->setConfiguration(pSmp);
 	Molecule * m_protein = pSmp->updatedMolecule();
   SamplingOptions& options = *(SamplingOptions::getOptions());
 

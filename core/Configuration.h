@@ -48,7 +48,7 @@ class Molecule;
  * the reference positions of m_protein. Modifying for example
  * conf->m_dofs[2] += 0.1
  * will add 0.1 units (often radians) to the third DOF. To see the resulting structure call either
- * m_protein->SetConfiguration(conf);
+ * m_protein->setConfiguration(conf);
  * or
  * conf->updatedProtein();
  * and then access Atom::position (not Atom::m_referencePosition).

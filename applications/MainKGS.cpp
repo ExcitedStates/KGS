@@ -110,7 +110,7 @@ void randomSampling(SamplingOptions& options){
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
   cout<<"MainKGS .. spanning tree:"<<endl;
 
-  protein.SetConfiguration(new Configuration(&protein));
+  protein.setConfiguration(new Configuration(&protein));
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
@@ -261,7 +261,7 @@ void targetedSampling(SamplingOptions& options){
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
   cout<<"MainKGS .. spanning tree:"<<endl;
 
-  protein.SetConfiguration(new Configuration(&protein));
+  protein.setConfiguration(new Configuration(&protein));
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
@@ -283,7 +283,7 @@ void targetedSampling(SamplingOptions& options){
     target->alignReferencePositionsTo(&protein);//backup the aligned configuration
   }
 
-  target->SetConfiguration(new Configuration(target));
+  target->setConfiguration(new Configuration(target));
 
   // Check for collision
   target->m_initialCollisions = target->getAllCollisions();

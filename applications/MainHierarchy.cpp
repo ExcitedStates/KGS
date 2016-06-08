@@ -69,7 +69,7 @@ int main( int argc, char* argv[] ) {
 //		writeHBondPML(m_molecule, argv[1]);
 
   Configuration *conf = new Configuration(protein);
-  protein->SetConfiguration(conf);
+  protein->setConfiguration(conf);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;

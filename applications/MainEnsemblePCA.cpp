@@ -23,7 +23,7 @@ Molecule * readProtein(char* path){
 
 	IO::readRigidbody( protein );
 	protein->buildSpanningTree();
-	protein->SetConfiguration(new Configuration(protein));
+  protein->setConfiguration(new Configuration(protein));
 	return protein;
 }
 
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]){
 			for(int i=0;i<n;i++) {
 				conf->m_dofs[i] = avg[i] + gsl_vector_get(&(evec_i.vector), i) * a;
 			}
-			aligned->SetConfiguration(conf);
+      aligned->setConfiguration(conf);
 			//RRTPlanner::align(aligned, native, nullptr);
 			metrics::RMSD::align(aligned, native);
 			stringstream ss;ss<<"comp_"<<component<<"_"<<a<<".pdb";

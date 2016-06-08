@@ -163,7 +163,7 @@ Configuration* DihedralRRT::GenerateRandConf() {
 	}
 	
 	pNewSmp->m_id = -1;
-	m_protein->SetConfiguration(pNewSmp);
+  m_protein->setConfiguration(pNewSmp);
 	pNewSmp->updateGlobalTorsions();
 	return pNewSmp;
 }

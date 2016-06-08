@@ -70,7 +70,7 @@ int main( int argc, char* argv[] ) {
   IO::readHbonds( &protein, options.hydrogenbondFile );
   IO::readRigidbody( &protein, options.residueNetwork );
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  protein.SetConfiguration(new Configuration(&protein));
+  protein.setConfiguration(new Configuration(&protein));
   protein.m_initialCollisions = protein.getAllCollisions();
 
   if(options.selectionMoving.empty()){

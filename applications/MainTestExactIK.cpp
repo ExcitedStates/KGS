@@ -19,29 +19,76 @@ using namespace std;
 
 int main( int argc, char* argv[] ) {
 
-  string pdb_file = "/Users/rfonseca/Downloads/1crn_Processed.pdb";
+  string pdb_file = "/Users/rfonseca/Documents/KGSexperiments/WAFR16/work/dhfr/MET20+FG_rigidCore_ligands/3ql3_clean.Processed.pdb.knr";
   Molecule protein;
-  vector<string> extracovbonds;
-  IO::readPdb( &protein, pdb_file, extracovbonds );
+  vector<string> extra_cov_bonds;
+  IO::readPdb(&protein, pdb_file, extra_cov_bonds);
+  protein.setCollisionFactor(0.7);
 
-  IO::readHbonds( &protein, "/Users/rfonseca/Downloads/hbonds.txt" );
+  IO::readHbonds(&protein,
+                 "/Users/rfonseca/Documents/KGSexperiments/WAFR16/work/dhfr/MET20+FG_rigidCore_ligands/constraints.txt");
 
   //Create the rigid body trees
-  IO::readRigidbody( &protein );
+  IO::readRigidbody(&protein);
 
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
+  protein.setConfiguration(new Configuration(&protein));
+  protein.m_initialCollisions = protein.getAllCollisions();
 
   ExactIK ik;
 
-  int first = 30;
-  vector<Configuration*> rebuiltConfs = ik.rebuildLoop(
-      protein.getChain("A")->getResidue(first+0),
-      protein.getChain("A")->getResidue(first+1),
-      protein.getChain("A")->getResidue(first+5)
-  );
+  vector<pair<int, int> > intervals = {{20,  25},
+                                       {116, 121},
+                                       {124, 128}};
 
-  cout<<rebuiltConfs.size()<<" rebuilt configurations"<<endl;
-  for(size_t i=0;i<rebuiltConfs.size(); i++){
-    IO::writePdb(rebuiltConfs[i]->updatedMolecule(), "/Users/rfonseca/Downloads/rebuilt_"+std::to_string((long long)i)+".pdb");
+  vector< tuple<int,int,int> > triples;
+
+  //Generate all triples within intervals
+
+  vector<Configuration *> allConfs;
+
+  for (auto ival: intervals) {
+    for (int r1 = ival.first; r1 <= ival.second; r1++) {
+      for (int r2 = r1 + 1; r2 <= ival.second; r2++) {
+        for (int r3 = r2 + 1; r3 <= ival.second; r3++) {
+
+          Residue* res1 = protein.getChain("A")->getResidue(r1);
+          Residue* res2 = protein.getChain("A")->getResidue(r2);
+          Residue* res3 = protein.getChain("A")->getResidue(r3);
+          if(!ik.validRebuildLoop(res1,res2,res3)) continue;
+
+          vector<Configuration *> rebuiltConfs = ik.rebuildLoop(res1,res2,res3);
+          int count=0;
+          for(auto conf: rebuiltConfs) {
+            if(!conf->updatedMolecule()->inCollision()) {
+//            if(true) {
+              allConfs.push_back(conf);
+              count++;
+            }
+
+          }
+          cout<<"Generated "<<rebuiltConfs.size()<<" configurations ("<<count<<" non-colliding) for triple {"<<r1<<","<<r2<<","<<r3<<"}"<<endl;
+        }
+      }
+    }
   }
+
+  cout<<"Generated "<<allConfs.size()<<" in total"<<endl;
+  for (size_t i = 0; i < allConfs.size(); i++) {
+    IO::writePdb(allConfs[i]->updatedMolecule(),
+                 "/Users/rfonseca/Documents/KGSexperiments/WAFR16/work/dhfr/MET20+FG_rigidCore_ligands_exactik/seeds/rebuilt_" + std::to_string((long long) i) + ".pdb");
+  }
+
+//  int first = 30;
+//  vector<Configuration *> rebuiltConfs = ik.rebuildLoop(
+//      protein.getChain("A")->getResidue(first + 0),
+//      protein.getChain("A")->getResidue(first + 1),
+//      protein.getChain("A")->getResidue(first + 5)
+//  );
+//
+//  cout << rebuiltConfs.size() << " rebuilt configurations" << endl;
+//  for (size_t i = 0; i < rebuiltConfs.size(); i++) {
+//    IO::writePdb(rebuiltConfs[i]->updatedMolecule(),
+//                 "/Users/rfonseca/Downloads/rebuilt_" + std::to_string((long long) i) + ".pdb");
+//  }
 }

@@ -62,7 +62,7 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "> " << protein->m_spanning_tree->getNumDOFs() << " DOFs of which " << protein->m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = new Configuration(protein);
-  protein->SetConfiguration(conf);
+  protein->setConfiguration(conf);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->Matrix()->size1 << " rows, ";

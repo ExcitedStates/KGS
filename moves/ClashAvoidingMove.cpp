@@ -239,6 +239,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
   //Clashes can occur also for previously free dihedrals!
   //Therefore, we use the full set of dihedrals to determine this matrix!
   conf->updateMolecule();
+  //Check that the correct cycle jacobian is used.
   gsl_matrix* cycleJac = conf->getCycleJacobian();
   int numCollisions = collisions.size();
   int rowNum = cycleJac->size1 + numCollisions;
