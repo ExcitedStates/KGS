@@ -194,7 +194,6 @@ void PoissonPlanner2::GenerateSamples()
           continue;
         }
 
-
         //Check if close to existing
         vector<Configuration*> nearPert;
         collectPossibleChildCollisions(seed, nearPert, 0.0);

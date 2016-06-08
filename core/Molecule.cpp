@@ -394,97 +394,111 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
 
 void Molecule::buildSpanningTree() {
   //log() << "In buildSpanningTree" << endl;
-  m_spanning_tree = new KinTree();
+  m_spanning_tree=new KinTree();
 
   // add all rigid bodies as vertices into Rigidbody_graph
-  for (auto const& id_rb_pair: Rigidbody_map_by_id) {
-    Rigidbody* rb = id_rb_pair.second;
+  for( auto const &id_rb_pair: Rigidbody_map_by_id ) {
+    Rigidbody *rb=id_rb_pair.second;
     m_spanning_tree->addVertex(rb);
   }
 
-  m_spanning_tree->m_root = m_spanning_tree->addVertex(nullptr);
+  m_spanning_tree->m_root=m_spanning_tree->addVertex(nullptr);
 //  size_t numVertices = Rigidbody_map_by_id.size();
 
-  list<KinEdge*> cycleEdges;
+  list<KinEdge *> cycleEdges;
 
   //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
-  list<KinVertex*> queue;
-  for(auto const& chain: chains) {
+//  list<KinVertex *> queue;
+  auto my_comp = [](const KinVertex* v1, const KinVertex* v2){
+    int id1 = v1->m_rigidbody == nullptr ? 0: v1->m_rigidbody->id();
+    int id2 = v2->m_rigidbody == nullptr ? 0: v2->m_rigidbody->id();
+    return id1>id2;
+  };
+  std::priority_queue<KinVertex*,vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
+
+  for( auto const &chain: chains ) {
     //Add first vertex in chain to queue
-    Residue* firstRes = chain->getResidues()[0];
-    Atom* firstAtom = firstRes->getAtoms().front();
-    KinVertex* firstVertex = firstAtom->getRigidbody()->getVertex();
-    queue.push_back(firstVertex);
+    Residue *firstRes=chain->getResidues()[0];
+    Atom *firstAtom=firstRes->getAtoms().front();
+    KinVertex *firstVertex=firstAtom->getRigidbody()->getVertex();
+//    queue.push_back(firstVertex);
+    queue.push(firstVertex);
 
     //Connect to super-m_root
-    KinVertex* v2 = m_spanning_tree->addVertex(nullptr);
-    KinVertex* v3 = m_spanning_tree->addVertex(nullptr);
-    KinVertex* v4 = m_spanning_tree->addVertex(nullptr);
-    KinVertex* v5 = m_spanning_tree->addVertex(nullptr);
-    KinVertex* v6 = m_spanning_tree->addVertex(nullptr);
+    KinVertex *v2=m_spanning_tree->addVertex(nullptr);
+    KinVertex *v3=m_spanning_tree->addVertex(nullptr);
+    KinVertex *v4=m_spanning_tree->addVertex(nullptr);
+    KinVertex *v5=m_spanning_tree->addVertex(nullptr);
+    KinVertex *v6=m_spanning_tree->addVertex(nullptr);
 
-    KinEdge* e1 = m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
-    KinEdge* e2 = m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
-    KinEdge* e3 = m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
-    KinEdge* e4 = m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
-    KinEdge* e5 = m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
-    KinEdge* e6 = m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);
+    KinEdge *e1=m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
+    KinEdge *e2=m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
+    KinEdge *e3=m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
+    KinEdge *e4=m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
+    KinEdge *e5=m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
+    KinEdge *e6=m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);
 
-    e1->setDOF(new GlobalRotateDOF(e1,0));
-    e2->setDOF(new GlobalRotateDOF(e2,1));
-    e3->setDOF(new GlobalRotateDOF(e3,2));
-    e4->setDOF(new GlobalTranslateDOF(e4,0));
-    e5->setDOF(new GlobalTranslateDOF(e5,1));
-    e6->setDOF(new GlobalTranslateDOF(e6,2));
-    log("debug")<<"Molecule::buildSpanningTree() - Connecting "<<firstAtom<<" to super-root using 6 dofs"<<endl;
+    e1->setDOF(new GlobalRotateDOF(e1, 0));
+    e2->setDOF(new GlobalRotateDOF(e2, 1));
+    e3->setDOF(new GlobalRotateDOF(e3, 2));
+    e4->setDOF(new GlobalTranslateDOF(e4, 0));
+    e5->setDOF(new GlobalTranslateDOF(e5, 1));
+    e6->setDOF(new GlobalTranslateDOF(e6, 2));
+    log("debug") << "Molecule::buildSpanningTree() - Connecting " << firstAtom << " to super-root using 6 dofs" << endl;
   }
 
   //Perform breadth-first-search from all queue vertices and construct KinEdges
   //A variant of Prims algorithm is used to get the orientation of the tree correct in the first go
-  std::set<Bond*> visitedBonds;
-  std::set<KinVertex*> visitedVertices;
+  std::set<Bond *> visitedBonds;
+  std::set<KinVertex *> visitedVertices;
 
-  while (!queue.empty()) {
-
-    KinVertex* current_vertex = queue.front();
-    queue.pop_front();
+  while( !queue.empty()) {
+    KinVertex *current_vertex=queue.top();
+    queue.pop();
+//    KinVertex *current_vertex=queue.front();
+//    queue.pop_front();
     visitedVertices.insert(current_vertex);
-    log("debug")<<"Molecule::buildSpanningTree() - Visiting vertex of size "<<current_vertex->m_rigidbody->Atoms.size()<<", rbID: "<<current_vertex->m_rigidbody->id()<<", "<<current_vertex->m_rigidbody->Bonds.size()<<" bonds"<<endl;
+    log("debug") << "Molecule::buildSpanningTree() - Visiting vertex of size " <<
+    current_vertex->m_rigidbody->Atoms.size() << ", rbID: " << current_vertex->m_rigidbody->id() << ", " <<
+    current_vertex->m_rigidbody->Bonds.size() << " bonds" << endl;
 
-    for (Bond* const& bond: current_vertex->m_rigidbody->Bonds) {
+    for( Bond *const &bond: current_vertex->m_rigidbody->Bonds ) {
       // Determine which other rigid body bond is connected to
-      KinVertex* bonded_vertex = bond->Atom2->getRigidbody()->getVertex();
-      if(bonded_vertex==current_vertex)
-        bonded_vertex = bond->Atom1->getRigidbody()->getVertex();
+      KinVertex *bonded_vertex=bond->Atom2->getRigidbody()->getVertex();
+      if( bonded_vertex == current_vertex )
+        bonded_vertex=bond->Atom1->getRigidbody()->getVertex();
 
-      if(current_vertex==bonded_vertex) {
-        log("debug")<<"Molecule::buildSpanningTree() - Bond connecting same rigid body "<<bond<<endl;
+      if( current_vertex == bonded_vertex ) {
+        log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
         continue;
       }
       //if(visitedVertices.count(bonded_vertex)>0){
-      if(visitedBonds.count(bond)>0){
-        log("debug")<<"Molecule::buildSpanningTree() - Already visited bond "<<bond<<endl;
+      if( visitedBonds.count(bond)>0 ) {
+        log("debug") << "Molecule::buildSpanningTree() - Already visited bond " << bond << endl;
         continue;
       }
 
       visitedBonds.insert(bond);
 
-      if ( bond->isHbond() ) {
+      if( bond->isHbond()) {
         // If it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
-        KinEdge *edge = new KinEdge(current_vertex,bonded_vertex,bond);//TODO: Might be a problem. Idx changed from -1 to 0
+        KinEdge *edge=new KinEdge(current_vertex, bonded_vertex,
+                                  bond);//TODO: Might be a problem. Idx changed from -1 to 0
         cycleEdges.push_back(edge);
-        log("debug")<<"Molecule::buildSpanningTree() - Adding cycle-edge from h-bond "<<edge<<endl;
+        log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
 
-      }else{
-        if(visitedVertices.count(bonded_vertex)>0){
-          KinEdge *edge = new KinEdge(current_vertex,bonded_vertex,bond);//TODO: Might be a problem. Idx changed from -1 to 0
+      } else {
+        if( visitedVertices.count(bonded_vertex)>0 ) {
+          KinEdge *edge=new KinEdge(current_vertex, bonded_vertex,
+                                    bond);//TODO: Might be a problem. Idx changed from -1 to 0
           cycleEdges.push_back(edge);
-          log("debug")<<"Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond "<<edge<<endl;
+          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond " << edge << endl;
 
-        }else {
+        } else {
           // If it's a covalent bond, add it into the tree m_edges
           visitedVertices.insert(bonded_vertex);
-          queue.push_back(bonded_vertex);
+//          queue.push_back(bonded_vertex);
+          queue.push(bonded_vertex);
           KinEdge *edge=m_spanning_tree->addEdgeDirected(current_vertex, bonded_vertex, bond);
           edge->setDOF(new TorsionDOF(edge));
           log("debug") << "Molecule::buildSpanningTree() - Adding torsion-edge " << edge << endl;
@@ -497,17 +511,17 @@ void Molecule::buildSpanningTree() {
 
   // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
   // end-points to the LCA into m_spanning_tree->m_cycleDOFs.
-  for ( auto const& h_edge: cycleEdges) {
-    KinVertex* lca = m_spanning_tree->findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);
-    m_spanning_tree->CycleAnchorEdges.push_back( make_pair(h_edge,lca) );
+  for( auto const &h_edge: cycleEdges ) {
+    KinVertex *lca=m_spanning_tree->findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);
+    m_spanning_tree->CycleAnchorEdges.push_back(make_pair(h_edge, lca));
 
-    for(KinVertex* v=h_edge->StartVertex; v!=lca; v=v->m_parent){
-      KinEdge* edge = v->m_parent->findEdge(v);
+    for( KinVertex *v=h_edge->StartVertex; v != lca; v=v->m_parent ) {
+      KinEdge *edge=v->m_parent->findEdge(v);
       m_spanning_tree->addCycleDOF(edge->getDOF());
     }
 
-    for(KinVertex* v=h_edge->EndVertex; v!=lca; v=v->m_parent){
-      KinEdge* edge = v->m_parent->findEdge(v);
+    for( KinVertex *v=h_edge->EndVertex; v != lca; v=v->m_parent ) {
+      KinEdge *edge=v->m_parent->findEdge(v);
       m_spanning_tree->addCycleDOF(edge->getDOF());
     }
   }

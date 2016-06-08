@@ -25,6 +25,7 @@
 #include <directions/MSDDirection.h>
 #include <directions/LSNullspaceDirection.h>
 #include <moves/DecreaseStepMove.h>
+#include <loopclosure/ExactIK.h>
 
 using namespace std;
 
@@ -40,9 +41,9 @@ int main( int argc, char* argv[] ) {
   reportStream.open("kgs_report.log");
   enableLogger("report", reportStream);
 
-  //ofstream debugStream;
-  //debugStream.open("kgs_debug.log");
-  //enableLogger("debug", debugStream);
+  ofstream debugStream;
+  debugStream.open("kgs_debug.log");
+  enableLogger("debug", debugStream);
 
   ofstream plannerStream;
   plannerStream.open("kgs_planner.log");
@@ -117,7 +118,26 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
-  
+  vector<ResTriple> ikTriples;
+  vector<pair<int, int> > intervals = {{20,  23},
+                                       {116, 121},
+                                       {124, 127}};
+
+  //Generate all triples within intervals
+  ExactIK ik;
+  for( auto ival: intervals ) {
+    for( int r1=ival.first; r1<=ival.second; r1++ ) {
+      for( int r2=r1 + 1; r2<=ival.second; r2++ ) {
+        for( int r3=r2 + 1; r3<=ival.second; r3++ ) {
+          Residue* res1 = protein.getChain("A")->getResidue(r1);
+          Residue* res2 = protein.getChain("A")->getResidue(r2);
+          Residue* res3 = protein.getChain("A")->getResidue(r3);
+          if(ik.validRebuildLoop(res1,res2,res3))
+            ikTriples.push_back(make_tuple(res1, res2, res3));
+        }
+      }
+    }
+  }
 
   //Initialize planner
   SamplingPlanner* planner = nullptr;
@@ -125,7 +145,7 @@ int main( int argc, char* argv[] ) {
   else if(options.planner_string.empty())         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
   else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(    &protein, *move, *metric, *direction );
   else if(options.planner_string=="poisson")      planner = new PoissonPlanner( &protein, *move, *metric );
-  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(&protein, *move, *metric );
+  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(&protein, *move, *metric, ikTriples );
   else{
     cerr<<"Unknown --planner option specified!"<<endl;
     exit(-1);
