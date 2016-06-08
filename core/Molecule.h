@@ -84,7 +84,7 @@ class Molecule {
   int countOriginalDofs () const;
   Coordinate centerOfMass () const;
   Coordinate centerOfGeometry () const;
-  void checkCycleClosure(Configuration *q);
+  void checkCycleClosure(Configuration *q);//Todo: Move this to configuration, this is conf dependent, not topology
 
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
@@ -92,7 +92,7 @@ class Molecule {
   void buildSpanningTree();
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
   void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
-  gsl_vector* getEndEffectors();
+//  gsl_vector* getEndEffectors();
   //void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
 
@@ -108,7 +108,7 @@ class Molecule {
   std::vector<Chain*> chains;
   std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
   std::list<Bond *> Cov_bonds;
-  std::list<Hbond *> H_bonds; // To do: or it is better to use list<>?
+  std::list<Hbond *> H_bonds; // Todo: vector, or it is better to use list<>?
   std::set< std::pair<Atom*,Atom*> > m_initialCollisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
 
   // Topology of rigid bodies

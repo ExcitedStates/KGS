@@ -22,7 +22,6 @@
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "RunFirst.h"
 #include "core/ProteinHBond.h"
 #include "Logger.h"
 #include "SamplingOptions.h"
@@ -62,7 +61,7 @@ int main( int argc, char* argv[] ) {
   if (options.hydrogenbondMethod == "user")
     IO::readHbonds(protein, options.hydrogenbondFile);
   else
-    HbondIdentifier::identify_hbonds(protein);
+    HbondIdentifier::identifyHbonds(protein);
 
   IO::readRigidbody(protein);
   protein->buildSpanningTree();

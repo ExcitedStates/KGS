@@ -626,28 +626,28 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
 }
 
 
-gsl_vector*Molecule::getEndEffectors(){
-  gsl_vector* ret = gsl_vector_alloc(  (m_spanning_tree->CycleAnchorEdges).size()*6  );
-
-  int i=0;
-  for (vector< pair<KinEdge*,KinVertex*> >::iterator it=m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); ++it) {
-    // get end-effectors
-    KinEdge* edge_ptr = it->first;
-    Hbond * bond_ptr = (Hbond *)(edge_ptr->getBond());
-    Math3D::Vector3 p1 = bond_ptr->Atom1->m_Position;
-    Math3D::Vector3 p2 = bond_ptr->Atom2->m_Position;
-    Math3D::Vector3 p1Diff = (p1-bond_ptr->getIdealHPoint());
-    Math3D::Vector3 p2Diff = (p2-bond_ptr->getIdealAcceptorPoint());
-    gsl_vector_set(ret, i+0, p1Diff.x);
-    gsl_vector_set(ret, i+1, p1Diff.y);
-    gsl_vector_set(ret, i+2, p1Diff.z);
-    gsl_vector_set(ret, i+3, p2Diff.x);
-    gsl_vector_set(ret, i+4, p2Diff.y);
-    gsl_vector_set(ret, i+5, p2Diff.z);
-    i+=6;
-  }
-  return ret;
-}
+//gsl_vector*Molecule::getEndEffectors(){
+//  gsl_vector* ret = gsl_vector_alloc(  (m_spanning_tree->CycleAnchorEdges).size()*6  );
+//
+//  int i=0;
+//  for (vector< pair<KinEdge*,KinVertex*> >::iterator it=m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); ++it) {
+//    // get end-effectors
+//    KinEdge* edge_ptr = it->first;
+//    Hbond * bond_ptr = (Hbond *)(edge_ptr->getBond());
+//    Math3D::Vector3 p1 = bond_ptr->Atom1->m_Position;
+//    Math3D::Vector3 p2 = bond_ptr->Atom2->m_Position;
+//    Math3D::Vector3 p1Diff = (p1-bond_ptr->getIdealHPoint());
+//    Math3D::Vector3 p2Diff = (p2-bond_ptr->getIdealAcceptorPoint());
+//    gsl_vector_set(ret, i+0, p1Diff.x);
+//    gsl_vector_set(ret, i+1, p1Diff.y);
+//    gsl_vector_set(ret, i+2, p1Diff.z);
+//    gsl_vector_set(ret, i+3, p2Diff.x);
+//    gsl_vector_set(ret, i+4, p2Diff.y);
+//    gsl_vector_set(ret, i+5, p2Diff.z);
+//    i+=6;
+//  }
+//  return ret;
+//}
 
 
 //void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
@@ -1041,11 +1041,11 @@ void Molecule::checkCycleClosure(Configuration *q){
     Atom* atom1 = pEdge->getBond()->Atom1;
     Atom* atom2 = pEdge->getBond()->Atom2;
     Hbond * hBond = reinterpret_cast<Hbond *>(pEdge->getBond());
-    float distanceChange = atom1->m_Position.distanceTo(atom2->m_Position)-hBond->iniLength;
-    float rightAngleChange = hBond->getRightAngle() - hBond->iniOrientRight;
-    float leftAngleChange = hBond->getLeftAngle() - hBond->iniOrientLeft;
+    float distanceChange = hBond->getLength()-hBond->getIniLength();
+    float rightAngleChange = hBond->getRightAngle() - hBond->getIniAngle_H_A_AA();
+    float leftAngleChange = hBond->getLeftAngle() - hBond->getIniAngle_D_H_A();
 
-    double distanceViolation = distanceChange / hBond->iniLength * 100;
+    double distanceViolation = distanceChange / hBond->getIniLength() * 100;
     double absViolation = std::fabs(distanceViolation);
 
     log("report")<<"hBond strain at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %"<<endl;
@@ -1056,11 +1056,11 @@ void Molecule::checkCycleClosure(Configuration *q){
 //		if(Abs(distanceViolation) > 10){//10 % change of length
 //			log("report") <<"Distance violation at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %"<<endl;
 //		}
-//		float rightAngleChange = hBond->getRightAngle() - hBond->iniOrientRight;
+//		float rightAngleChange = hBond->getRightAngle() - hBond->m_iniAngle_H_A_AA;
 //		if(Abs(rightAngleChange) > 0.00001){
 //			log("report") <<"Right angle violation "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << rightAngleChange<<endl;
 //		}
-//		float leftAngleChange = hBond->getLeftAngle() - hBond->iniOrientLeft;
+//		float leftAngleChange = hBond->getLeftAngle() - hBond->m_iniAngle_D_H_A;
 //		if(Abs(leftAngleChange) > 0.00001){
 //			log("report") <<"Left angle violation "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << leftAngleChange<<endl;
 //		}

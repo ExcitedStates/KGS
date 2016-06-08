@@ -8,7 +8,6 @@
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "RunFirst.h"
 #include "Logger.h"
 
 #include "planners/SamplingPlanner.h"

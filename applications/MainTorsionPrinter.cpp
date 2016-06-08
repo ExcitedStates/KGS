@@ -14,7 +14,6 @@
 #include "Util.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "RunFirst.h"
 #include "math/MathUtility.h"
 #include "DisjointSets.h"
 #include "core/ProteinHBond.h"

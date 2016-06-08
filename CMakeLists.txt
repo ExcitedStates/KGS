@@ -44,7 +44,6 @@ add_library( libKGS
 		ResidueProfiles.h
 		core/Rigidbody.h
 		core/graph/KinGraph.h
-		RunFirst.h
 		math/SVD.h
 		SamplingOptions.h
 		planners/SamplingPlanner.h
@@ -96,7 +95,6 @@ add_library( libKGS
 		core/Residue.cpp
 		core/Rigidbody.cpp
 		core/graph/KinGraph.cpp
-		RunFirst.cpp
 		math/SVD.cpp
 		SamplingOptions.cpp
 		planners/SamplingPlanner.cpp

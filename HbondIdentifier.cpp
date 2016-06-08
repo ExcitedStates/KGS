@@ -37,7 +37,7 @@
 #include "core/ProteinHBond.h"
 #include "IO.h"
 #include "math/MathUtility.h"
-#include "RunFirst.h"
+//#include "RunFirst.h"
 
 using namespace std;
 
@@ -54,7 +54,7 @@ void manualHbond(Molecule * protein, int res1, string atm1, int res2, string atm
 	cout<<"Manually bonded: "<<a1<<" , "<<a2<<" , "<<a1->getFirstCovNeighbor()<<" , "<<a2->getFirstCovNeighbor()<<endl;
 }
 
-void HbondIdentifier::identify_hbonds (Molecule *protein) {
+void HbondIdentifier::identifyHbonds(Molecule *protein) {
 	Grid grid(protein);
 	for (vector<Atom*>::iterator atom_itr=protein->atoms.begin(); atom_itr != protein->atoms.end(); ++atom_itr) {
 		if ( (*atom_itr)->getType() != "H" ) continue;
@@ -99,52 +99,54 @@ void HbondIdentifier::identify_hbonds (Molecule *protein) {
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << "\t" << (*atom_itr)->getName() << " " << (*neighbor_itr)->getName() << " " << dist_H_A << " " << dist_D_A << " " << ang_D_H_A << " " << ang_H_A_AA << " " << ang_D_A_AA << endl;
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << endl;
 			Hbond * new_hb = new Hbond(*atom_itr, *neighbor_itr, donor, AA);
-			new_hb->Dist_H_A = dist_H_A;
-			new_hb->Ang_H_A_AA = ang_H_A_AA;
+			new_hb->setIniLength(dist_H_A);
+			new_hb->setIniAngle_H_A_AA(ang_H_A_AA);
+			new_hb->setIniAngle_D_H_A(ang_D_H_A);
 			protein->addHbond(new_hb);
-			//cout<<"identify_hbonds(..) - Bonded: "<<(*atom_itr)<<" , "<<(*neighbor_itr)<<" , "<<donor<<" , "<<AA<<endl;
+			//cout<<"identifyHbonds(..) - Bonded: "<<(*atom_itr)<<" , "<<(*neighbor_itr)<<" , "<<donor<<" , "<<AA<<endl;
 		}
 	}
 }
 
-void HbondIdentifier::compute_hbonds_energy (Molecule *protein, string path, string protein_name) {
-	IO::writeHbonds(protein,path+"hbonds.in.no_energy");
-	RunFirst::ComputeHbondEnergy(path,protein_name,"hbonds.in.no_energy","hbonds.in");
-	// get the energy values from hbonds.in
-	char temp[50];
-	int hatom_id, oatom_id;
-	double energy;
-	string atom1_sid, atom2_sid, energy_s;
-	string input_file = path + "hbonds.in";
-	ifstream input(input_file.c_str());
-	while (input.good()) {
-		input >> atom1_sid;
-		if (input.eof())
-			break;
-		input >> atom2_sid;
-		input >> energy_s;
-		input.getline(temp,50);
-		hatom_id = atoi(atom1_sid.c_str());
-		oatom_id = atoi(atom2_sid.c_str());
-		energy = atof(energy_s.c_str());
-		for (list<Hbond *>::iterator hit=protein->H_bonds.begin(); hit != protein->H_bonds.end(); ++hit) {
-			if ( (*hit)->Hatom->getId()==hatom_id && (*hit)->Acceptor->getId()==oatom_id ) {
-				(*hit)->Energy = energy;
-				break;
-			}
-		}
-	}
-	input.close();
+void HbondIdentifier::computeHbondEnergy(Molecule *protein, string path, string protein_name) {
+//  //Todo: Implemeent Mayo energy function
+//	IO::writeHbonds(protein,path+"hbonds.in.no_energy");
+//	RunFirst::ComputeHbondEnergy(path,protein_name,"hbonds.in.no_energy","hbonds.in");
+//	// get the energy values from hbonds.in
+//	char temp[50];
+//	int hatom_id, oatom_id;
+//	double energy;
+//	string atom1_sid, atom2_sid, energy_s;
+//	string input_file = path + "hbonds.in";
+//	ifstream input(input_file.c_str());
+//	while (input.good()) {
+//		input >> atom1_sid;
+//		if (input.eof())
+//			break;
+//		input >> atom2_sid;
+//		input >> energy_s;
+//		input.getline(temp,50);
+//		hatom_id = atoi(atom1_sid.c_str());
+//		oatom_id = atoi(atom2_sid.c_str());
+//		energy = atof(energy_s.c_str());
+//		for (list<Hbond *>::iterator hit=protein->H_bonds.begin(); hit != protein->H_bonds.end(); ++hit) {
+//			if ( (*hit)->Hatom->getId()==hatom_id && (*hit)->Acceptor->getId()==oatom_id ) {
+//				(*hit)->setEnergy(energy);
+//				break;
+//			}
+//		}
+//	}
+//	input.close();
 }
 				
-void HbondIdentifier::select_hbonds (Molecule *protein, string path, string protein_name) {
+void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protein_name) {
 	// identify hbonds if not yet
-	if ( protein->H_bonds.empty() ) { identify_hbonds(protein);	}
-	if ( protein->H_bonds.empty() ) { cerr<<"HbondIdentifier::select_hbonds: Was unable to identify any hydrogen bonds. Exiting."<<endl;exit(-1); }
+	if ( protein->H_bonds.empty() ) { identifyHbonds(protein);	}
+	if ( protein->H_bonds.empty() ) { cerr<<"HbondIdentifier::selectHbonds: Was unable to identify any hydrogen bonds. Exiting."<<endl;exit(-1); }
 
 	// compute energy if not yet
-	if ( protein->H_bonds.front()->Energy == DEFAULT_HBOND_ENERGY ) {
-		compute_hbonds_energy(protein,path,protein_name);
+	if ( protein->H_bonds.front()->getEnergy() == DEFAULT_HBOND_ENERGY ) {
+    computeHbondEnergy(protein, path, protein_name);
 	}
 
 	// select hbonds according to the decision tree
@@ -153,29 +155,29 @@ void HbondIdentifier::select_hbonds (Molecule *protein, string path, string prot
 	hit = protein->H_bonds.begin();
 	cout << "InfoHB)\t INITIAL H_bonds list size = " << protein->H_bonds.size() << endl;
 	while ( hit!=protein->H_bonds.end() ) {
-		if ( (*hit)->Dist_H_A >= 2.4 ) {
-			if ( (*hit)->Energy >= 0.4 ) {
-				if ( (*hit)->Dist_H_A >= 2.67 )
+		if ( (*hit)->getLength() >= 2.4 ) {
+			if ( (*hit)->getEnergy() >= 0.4 ) {
+				if ( (*hit)->getLength() >= 2.67 )
 					prob = 0.21;
 				else
 					prob = 0.37;
 			}
 			else {
-				if ( (*hit)->Energy >= -0.95 )
+				if ( (*hit)->getEnergy() >= -0.95 )
 					prob = 0.46;
 				else
 					prob = 0.60;
 			}
 		}
 		else {
-			if ( (*hit)->Dist_H_A >= 2.15 ) {
-				if ( (*hit)->Dist_H_A >= 2.27 )
+			if ( (*hit)->getLength() >= 2.15 ) {
+				if ( (*hit)->getLength() >= 2.27 )
 					prob = 0.73;
 				else
 					prob = 0.84;
 			}
 			else {
-				if ( (*hit)->Ang_H_A_AA < toRadian(104.6) )
+				if ( (*hit)->getIniAngle_H_A_AA() < toRadian(104.6) )
 					prob = 0.71;
 				else
 					prob = 0.96;

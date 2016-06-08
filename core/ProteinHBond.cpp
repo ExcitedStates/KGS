@@ -37,7 +37,7 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	Acceptor = acceptor;
 	Donor = donor;
 	AA = aa;
-	Energy = energy;
+	m_energy = energy;
 
 	// super-class attributes
 	Atom1 = hatom;
@@ -45,20 +45,21 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	BondType = "HB";
 	Bars = 5;
 	constrained = false;
-	iniLength = VectorLength(Atom1->m_Position,Atom2->m_Position);
-	iniOrientLeft = getLeftAngle();
-	iniOrientRight = getRightAngle();
+	m_iniDist_H_A = VectorLength(Atom1->m_Position,Atom2->m_Position);
+	m_iniAngle_D_H_A = getLeftAngle();
+	m_iniAngle_H_A_AA = getRightAngle();
 
-    Vector3 x,y,z;
-    coordinateSystem(hatom, x,y,z);
-    Vector3 d = acceptor->m_Position -hatom->m_Position;
-    idealA[0] = x.dot(d);
-    idealA[1] = y.dot(d);
-    idealA[2] = z.dot(d);
-    coordinateSystem(acceptor, x,y,z);
-    idealH[0] = -x.dot(d);
-    idealH[1] = -y.dot(d);
-    idealH[2] = -z.dot(d);
+
+//  Vector3 x,y,z;
+//  coordinateSystem(hatom, x,y,z);
+//  Vector3 d = acceptor->m_Position -hatom->m_Position;
+//  idealA[0] = x.dot(d);
+//  idealA[1] = y.dot(d);
+//  idealA[2] = z.dot(d);
+//  coordinateSystem(acceptor, x,y,z);
+//  idealH[0] = -x.dot(d);
+//  idealH[1] = -y.dot(d);
+//  idealH[2] = -z.dot(d);
 }
 
 Hbond::Hbond(Hbond & hbond) {
@@ -66,7 +67,7 @@ Hbond::Hbond(Hbond & hbond) {
 	Acceptor = hbond.Acceptor;
 	Donor = hbond.Donor;
 	AA = hbond.AA;
-	Energy = hbond.Energy;
+	m_energy = hbond.m_energy;
 
 	// super-class attributes
 	Atom1 = hbond.Atom1;
@@ -74,13 +75,16 @@ Hbond::Hbond(Hbond & hbond) {
 	BondType = hbond.BondType;
 	Bars = hbond.Bars;
 	constrained = hbond.constrained;
-	iniLength = hbond.iniLength;
-	iniOrientLeft = hbond.iniOrientLeft;
-	iniOrientRight = hbond.iniOrientRight;
+	m_iniDist_H_A = hbond.m_iniDist_H_A;
+	m_iniAngle_D_H_A = hbond.m_iniAngle_D_H_A;
+	m_iniAngle_H_A_AA = hbond.m_iniAngle_H_A_AA;
 
-	idealA = hbond.idealA;
-	idealH = hbond.idealH;
+  identifyHybridization();
+
+//	idealA = hbond.idealA;
+//	idealH = hbond.idealH;
 }
+
 
 bool Hbond::isSame (Hbond * b2) {
 	if ( Hatom->getName() == b2->Hatom->getName() &&
@@ -96,33 +100,37 @@ bool Hbond::isSame (Hbond * b2) {
 	return false;
 }
 
-Vector3 Hbond::getIdealHPoint(){
-    Vector3 x,y,z;
-    coordinateSystem(Acceptor, x,y,z);
-    return Acceptor->m_Position + (x*idealH[0]) + (y*idealH[1]) + (z*idealH[2]);
-}
+//Vector3 Hbond::getIdealHPoint(){
+//    Vector3 x,y,z;
+//    coordinateSystem(Acceptor, x,y,z);
+//    return Acceptor->m_Position + (x*idealH[0]) + (y*idealH[1]) + (z*idealH[2]);
+//}
+//
+//Vector3 Hbond::getIdealAcceptorPoint(){
+//    Vector3 x,y,z;
+//    coordinateSystem(Hatom, x,y,z);
+//    return Hatom->m_Position + (x*idealA[0]) + (y*idealA[1]) + (z*idealA[2]);
+//}
 
-Vector3 Hbond::getIdealAcceptorPoint(){
-    Vector3 x,y,z;
-    coordinateSystem(Hatom, x,y,z);
-    return Hatom->m_Position + (x*idealA[0]) + (y*idealA[1]) + (z*idealA[2]);
-}
+//void Hbond::coordinateSystem(Atom* a, Vector3& x, Vector3& y, Vector3& z ){
+//	Atom* a1 = a;
+//    Atom* a2 = a->Cov_neighbor_list[0];
+//    Atom* a3 = nullptr;
+//    if( a1->Cov_neighbor_list.size()>1) a3 = a1->Cov_neighbor_list[1];
+//    else{
+//        if(a2->Cov_neighbor_list[0]!=a1)
+//            a3 = a2->Cov_neighbor_list[0];
+//        else
+//            a3 = a2->Cov_neighbor_list[1];
+//    }
+//
+//    x = a1->m_Position -a2->m_Position;
+//    y = a3->m_Position -a2->m_Position;
+//    z = cross(x,y);
+//}
 
-void Hbond::coordinateSystem(Atom* a, Vector3& x, Vector3& y, Vector3& z ){
-	Atom* a1 = a;
-    Atom* a2 = a->Cov_neighbor_list[0];
-    Atom* a3 = nullptr;
-    if( a1->Cov_neighbor_list.size()>1) a3 = a1->Cov_neighbor_list[1];
-    else{
-        if(a2->Cov_neighbor_list[0]!=a1)
-            a3 = a2->Cov_neighbor_list[0];
-        else
-            a3 = a2->Cov_neighbor_list[1];
-    }
-
-    x = a1->m_Position -a2->m_Position;
-    y = a3->m_Position -a2->m_Position;
-    z = cross(x,y);
+double Hbond::getLength() {
+  return Bond::Atom1->m_Position.distanceTo(Bond::Atom2->m_Position);
 }
 
 double Hbond::getLeftAngle() {
@@ -153,3 +161,11 @@ double Hbond::getRightAngle() {
     return ret;
 }
 
+void Hbond::identifyHybridization() {
+
+  m_D_sp2 = false;
+  m_A_sp2 = false;
+  m_D_sp3 = false;
+  m_A_sp3 = false;
+
+}

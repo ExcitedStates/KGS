@@ -819,14 +819,14 @@ void IO::writeHbonds (Molecule *protein, string output_file_name) {
   for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
     output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
     output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
-    if ( (*hb_itr)->Energy==DEFAULT_HBOND_ENERGY ) {
+    if ( (*hb_itr)->getEnergy()==DEFAULT_HBOND_ENERGY ) {
       output << endl;
     }
     else {
-      output << std::right << setw(16) << (*hb_itr)->Energy;
+      output << std::right << setw(16) << (*hb_itr)->getEnergy();
       output << std::right << setw(5) << 5;
-      output << std::right << setw(16) << (*hb_itr)->Dist_H_A;
-      output << std::right << setw(16) << (*hb_itr)->Ang_H_A_AA << endl;
+      output << std::right << setw(16) << (*hb_itr)->getLength();
+      output << std::right << setw(16) << (*hb_itr)->getIniAngle_H_A_AA() << endl;
     }
   }
   output.close();

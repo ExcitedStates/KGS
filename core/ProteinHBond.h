@@ -37,12 +37,6 @@
 
 class Hbond : public Bond {
  public:
-  double Energy;
-  double Dist_H_A;
-  double Ang_H_A_AA;
-  double iniLength;
-  double iniOrientLeft;
-  double iniOrientRight;
 
   Atom* Donor;
   Atom* Hatom;
@@ -56,12 +50,60 @@ class Hbond : public Bond {
   Atom* atom2(){ return Bond::Atom2; }
   Math3D::Vector3 getIdealHPoint();
   Math3D::Vector3 getIdealAcceptorPoint();
+  double getLength();
   double getLeftAngle();
   double getRightAngle();
+
+  void identifyHybridization();
+
+// private:
+//  void coordinateSystem(Atom* a, Math3D::Vector3& x, Math3D::Vector3& y, Math3D::Vector3& z );
+//  Math3D::Vector3 idealH;
+//  Math3D::Vector3 idealA;
+
  private:
-  void coordinateSystem(Atom* a, Math3D::Vector3& x, Math3D::Vector3& y, Math3D::Vector3& z );
-  Math3D::Vector3 idealH;
-  Math3D::Vector3 idealA;
+//These are initial distance and orientations, only set in the beginning
+  double m_iniDist_H_A;
+  double m_iniAngle_D_H_A;
+  double m_iniAngle_H_A_AA;
+  double m_energy;
+  bool m_D_sp2;
+  bool m_D_sp3;
+  bool m_A_sp2;
+  bool m_A_sp3;
+
+  //Getters and Setters
+ public:
+  double getIniLength() const {
+    return m_iniDist_H_A;
+  }
+  void setIniLength(double iniDist_H_A) {
+    m_iniDist_H_A = iniDist_H_A;
+  }
+
+  double getIniAngle_D_H_A() const {
+    return m_iniAngle_D_H_A;
+  }
+
+  void setIniAngle_D_H_A(double iniAngle_D_H_A) {
+    m_iniAngle_D_H_A = iniAngle_D_H_A;
+  }
+
+  double getIniAngle_H_A_AA() const {
+    return m_iniAngle_H_A_AA;
+  }
+
+  void setIniAngle_H_A_AA(double iniAngle_H_A_AA) {
+    m_iniAngle_H_A_AA = iniAngle_H_A_AA;
+  }
+
+  double getEnergy() const {
+    return m_energy;
+  }
+
+  void setEnergy(double energy) {
+    m_energy = energy;
+  }
 
 };
 
