@@ -23,7 +23,7 @@ int main( int argc, char* argv[] ) {
   Molecule protein;
   vector<string> extra_cov_bonds;
   IO::readPdb(&protein, pdb_file, extra_cov_bonds);
-  protein.setCollisionFactor(0.7);
+  protein.setCollisionFactor(0.4);
 
   IO::readHbonds(&protein,
                  "/Users/rfonseca/Documents/KGSexperiments/WAFR16/work/dhfr/MET20+FG_rigidCore_ligands/constraints.txt");
@@ -32,7 +32,8 @@ int main( int argc, char* argv[] ) {
   IO::readRigidbody(&protein);
 
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  protein.setConfiguration(new Configuration(&protein));
+  Configuration* init = new Configuration(&protein);
+  protein.setConfiguration(init);
   protein.m_initialCollisions = protein.getAllCollisions();
 
   ExactIK ik;
@@ -44,6 +45,16 @@ int main( int argc, char* argv[] ) {
   vector< tuple<int,int,int> > triples;
 
   //Generate all triples within intervals
+  for( auto ival: intervals ) {
+    for( int r1=ival.first; r1<=ival.second; r1++ ) {
+      for( int r2=r1 + 1; r2<=ival.second; r2++ ) {
+        for( int r3=r2 + 1; r3<=ival.second; r3++ ) {
+          triples.push_back(make_tuple(r1, r2, r3));
+        }
+      }
+    }
+  }
+
 
   vector<Configuration *> allConfs;
 
@@ -57,6 +68,7 @@ int main( int argc, char* argv[] ) {
           Residue* res3 = protein.getChain("A")->getResidue(r3);
           if(!ik.validRebuildLoop(res1,res2,res3)) continue;
 
+          protein.setConfiguration(init);
           vector<Configuration *> rebuiltConfs = ik.rebuildLoop(res1,res2,res3);
           int count=0;
           for(auto conf: rebuiltConfs) {

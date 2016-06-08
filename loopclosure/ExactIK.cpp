@@ -113,6 +113,12 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     double newPsi3 = TorsionalAngle(_N3, A3->m_Position, C3->m_Position, N4->m_Position);
     double delPsi3 = newPsi3 - oldPsi3;
 
+    double e = 0.001;
+    if(   fabs(delPhi1)<e && fabs(delPsi1)<e &&
+          fabs(delPhi2)<e && fabs(delPsi2)<e &&
+          fabs(delPhi3)<e && fabs(delPsi3)<e )
+      continue;
+
     for(auto const& edge: parent->getMolecule()->m_spanning_tree->Edges){
       if(edge->getBond()==nullptr) continue;
       if(edge->getBond()->Atom1==N1) child->m_dofs[edge->getDOF()->getIndex()] += delPhi1;
