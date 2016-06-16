@@ -28,6 +28,7 @@
 #include "ProteinHBond.h"
 #include "core/Atom.h"
 #include "math/MathUtility.h"
+#include "Logger.h"
 
 using namespace Math3D;
 using namespace std;
@@ -37,7 +38,6 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	Acceptor = acceptor;
 	Donor = donor;
 	AA = aa;
-	m_energy = energy;
 
 	// super-class attributes
 	Atom1 = hatom;
@@ -46,9 +46,14 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	Bars = 5;
 	constrained = false;
 	m_iniDist_H_A = VectorLength(Atom1->m_Position,Atom2->m_Position);
-	m_iniAngle_D_H_A = getLeftAngle();
-	m_iniAngle_H_A_AA = getRightAngle();
+	m_iniAngle_D_H_A = getAngle_D_H_A();
+	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
+  identifyHybridization();
+
+  m_iniEnergy = energy;
+  if(energy == DEFAULT_HBOND_ENERGY)
+    m_iniEnergy = computeEnergy();
 
 //  Vector3 x,y,z;
 //  coordinateSystem(hatom, x,y,z);
@@ -67,7 +72,7 @@ Hbond::Hbond(Hbond & hbond) {
 	Acceptor = hbond.Acceptor;
 	Donor = hbond.Donor;
 	AA = hbond.AA;
-	m_energy = hbond.m_energy;
+	m_iniEnergy = hbond.m_iniEnergy;
 
 	// super-class attributes
 	Atom1 = hbond.Atom1;
@@ -79,7 +84,10 @@ Hbond::Hbond(Hbond & hbond) {
 	m_iniAngle_D_H_A = hbond.m_iniAngle_D_H_A;
 	m_iniAngle_H_A_AA = hbond.m_iniAngle_H_A_AA;
 
-  identifyHybridization();
+  m_D_sp2 = hbond.m_D_sp2;
+  m_D_sp3 = hbond.m_D_sp3;
+  m_A_sp2 = hbond.m_A_sp2;
+  m_A_sp3 = hbond.m_A_sp3;
 
 //	idealA = hbond.idealA;
 //	idealH = hbond.idealH;
@@ -130,35 +138,129 @@ bool Hbond::isSame (Hbond * b2) {
 //}
 
 double Hbond::getLength() {
-  return Bond::Atom1->m_Position.distanceTo(Bond::Atom2->m_Position);
+  double length = Hatom->m_Position.distanceTo(Acceptor->m_Position);
+  return length;
 }
 
-double Hbond::getLeftAngle() {
-    Atom *a1, *a2, *a3;
-    a1 = Bond::Atom1->Cov_neighbor_list[0] == Atom2 ? Atom1->Cov_neighbor_list[1] : Atom1->Cov_neighbor_list[0];
-    a2 = Bond::Atom1;
-    a3 = Bond::Atom2;
-    //Make sure a1 is the covalent neighbor of Atom1 with lexicographically smallest name
-    for(vector<Atom*>::iterator ait = a2->Cov_neighbor_list.begin(); ait!=a2->Cov_neighbor_list.end(); ait++){
-        Atom* a = *ait;
-        if(a!=a3 && a->getName()<a1->getName()) a1 = a;
-    }
-    double ret=VectorAngle(a2->m_Position - a1->m_Position, a3->m_Position - a2->m_Position);
-    return ret;
+double Hbond::getDistance_D_A() {
+  double distance = Donor->m_Position.distanceTo(Acceptor->m_Position);
+  return distance;
 }
 
-double Hbond::getRightAngle() {
-    Atom *a1, *a2, *a3;
-    a1 = Bond::Atom1;
-    a2 = Bond::Atom2;
-    a3 = Bond::Atom2->Cov_neighbor_list[0] == Atom1 ? Atom2->Cov_neighbor_list[1] : Atom2->Cov_neighbor_list[0];
-    //Make sure a3 is the covalent neighbor of Atom2 with lexicographically smallest name
-    for(vector<Atom*>::iterator ait = a2->Cov_neighbor_list.begin(); ait!=a2->Cov_neighbor_list.end(); ait++){
-        Atom* a = *ait;
-        if(a!=a1 && a->getName()<a3->getName()) a3 = a;
-    }
-    double ret=VectorAngle(a2->m_Position - a1->m_Position, a3->m_Position - a2->m_Position);
-    return ret;
+double Hbond::getAngle_D_H_A() {
+  double ret = Angle(Donor->m_Position, Hatom->m_Position, Acceptor->m_Position);
+  return ret;
+}
+
+double Hbond::getAngle_H_A_AA() {
+  double ret = Angle(Hatom->m_Position, Acceptor->m_Position, AA->m_Position);
+  return ret;
+}
+
+double Hbond::getOutOfPlaneAngle() {
+
+	//Todo: Check if one should rather use the other covalent neighbors instead of H-atom and Acceptor
+
+	Atom *a1, *a2, *a3;
+
+  if(Donor->Cov_neighbor_list.size() >= 3) {
+    a2 = Donor->Cov_neighbor_list[0];
+    a3 = Donor->Cov_neighbor_list[1];
+    if (a2 == Hatom)
+      a2 = Donor->Cov_neighbor_list[2];
+    if (a3 == Hatom)
+      a3 = Donor->Cov_neighbor_list[2];
+    a1 = Hatom;
+  }
+  else{
+    a1=Donor;
+    a2 = Hatom;
+    a3 =  Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
+  }
+
+  Math3D::Vector3 normal1 = UnitNormal(a1->m_Position,a2->m_Position, a3->m_Position);
+
+  if(AA->Cov_neighbor_list.size() >= 3) {
+    a2 = AA->Cov_neighbor_list[0];
+    a3 = AA->Cov_neighbor_list[1];
+    if (a2 == Acceptor)
+      a2 = AA->Cov_neighbor_list[2];
+    if (a3 == Acceptor)
+      a3 = AA->Cov_neighbor_list[2];
+    a1 = Acceptor;
+  }
+  else{
+    a1 = AA;
+    a2 = Acceptor;
+    a3 =  AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
+  }
+
+  Math3D::Vector3 normal2 = UnitNormal(a1->m_Position,a2->m_Position, a3->m_Position);
+
+	double angle = VectorAngle(normal1,normal2);
+
+  if (angle < Pi/2.0 )
+    angle = Pi - angle;
+
+//  cout<<"Out of plane angle is: "<<angle<<endl;
+  return angle;
+}
+
+double Hbond::computeEnergy() {
+
+  // Mayo energy function, from Dahiyat, Gordon, and Mayo (1997).
+  // Automated design of the surface positions of protein helices. Protein Science 6: 1333-1337.
+
+  const double d0 = 8.0; //energy well-depth
+  const double r0 = 2.8; //h-bond equilibrium distance
+  const double psi0 = toRadian(109.5); // sp3 optimal angle
+
+  double distance_D_A = getDistance_D_A();
+  double ratioSquared = r0 * r0 / distance_D_A / distance_D_A;
+  double energyDist = d0 * (5 * pow(ratioSquared, 6) - 6 * pow(ratioSquared, 5)); //distance-dependent part
+//  log("report")<<"Distance energy part: "<<energyDist<<endl;
+
+  double theta = getAngle_D_H_A();
+
+  //Now we compute the angular term, dependent on the four different cases
+  //Todo: CHECK IF GEOMETRIC CRITERIA ARE FULFILLED
+
+  double angularEnergy = cos(theta) * cos(theta); //This is a factor present in all cases
+  double energy, psi, phi;
+
+  /// Case 1: donor sp3 and acceptor sp3
+  if (m_D_sp3 && m_A_sp3 ) {
+//    log("report")<<"Using case D_sp3 A_sp3"<<endl;
+    psi = getAngle_H_A_AA();
+    energy = energyDist * angularEnergy * cos(psi - psi0) * cos(psi - psi0);
+//    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
+  }
+    /// Case 2: donor sp3 and acceptor sp2
+  else if (m_D_sp3 && m_A_sp2 ) {
+//    log("report")<<"Using case D_sp3 A_sp2"<<endl;
+    psi = getAngle_H_A_AA();
+    energy = energyDist * angularEnergy * cos(psi) * cos(psi);
+//    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
+  }
+    /// Case 3: donor sp2 and acceptor sp3
+  else if (m_D_sp2 && m_A_sp3 ) {
+//    log("report")<<"Using case D_sp2 A_sp3"<<endl;
+    energy = energyDist * angularEnergy * angularEnergy;
+//    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
+  }
+    /// Case 4: donor sp2 and acceptor sp2
+  else if (m_D_sp2 && m_A_sp2 ) {
+//    log("report")<<"Using case D_sp2 A_sp2"<<endl;
+    phi = getOutOfPlaneAngle();
+    psi = getAngle_H_A_AA();
+    psi = max(psi, phi);
+    energy = energyDist * angularEnergy * cos(psi) * cos(psi);
+//    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
+  }
+
+//  log("report")<<"Donor SP2: "<<m_D_sp2<<", Acceptor SP2: "<<m_A_sp2<<", Donor SP3: "<<m_D_sp3<<", Acceptor SP3: "<<m_A_sp3<<endl;
+
+  return energy;
 }
 
 void Hbond::identifyHybridization() {
@@ -167,5 +269,83 @@ void Hbond::identifyHybridization() {
   m_A_sp2 = false;
   m_D_sp3 = false;
   m_A_sp3 = false;
+
+  /// Using a simple cut-off value of 115 degrees to separate sp2 from sp3 hybridization.
+  /// Meng and Lewis (1991). Determination of Molecular Topology and Atomic Hybridization States
+  /// from Heavy Atom Coordinates.
+
+  const double cutoff_sp2_sp3 = Math::DtoR(115.0);
+
+  double angleD = 0.0;
+  Atom *a1, *a2, *a3;
+  //Donor
+
+//  a3 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
+//  angleD = VectorAngle(Hatom->m_Position - Donor->m_Position, a3->m_Position - Donor->m_Position);
+
+  if(Donor->Cov_neighbor_list.size() >= 3) {
+    a2 = Donor->Cov_neighbor_list[0];
+    a3 = Donor->Cov_neighbor_list[1];
+    if (a2 == Hatom)
+      a2 = Donor->Cov_neighbor_list[2];
+    if (a3 == Hatom)
+      a3 = Donor->Cov_neighbor_list[2];
+    a1 = Hatom;
+
+    angleD = Angle(a1->m_Position, Donor->m_Position, a2->m_Position);
+    angleD += Angle(a2->m_Position, Donor->m_Position, a3->m_Position);
+    angleD += Angle(a3->m_Position, Donor->m_Position, a1->m_Position);
+
+    angleD = angleD/3.0; //mean angle
+  }
+  else{
+    a1 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
+    angleD = Angle(a1->m_Position, Donor->m_Position, Hatom->m_Position);
+  }
+
+  log("report")<<"Donor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleD)<<endl;
+  if(angleD <= cutoff_sp2_sp3 )
+    m_D_sp3 = true;
+  else
+    m_D_sp2 = true;
+
+  //Acceptor
+  double angleA = 0.0;
+
+//  a3 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
+//  angleA = VectorAngle(Acceptor->m_Position - AA->m_Position, a3->m_Position - AA->m_Position);
+
+  if(AA->Cov_neighbor_list.size() >= 3) {
+    a2 = AA->Cov_neighbor_list[0];
+    a3 = AA->Cov_neighbor_list[1];
+    if (a2 == Acceptor)
+      a2 = AA->Cov_neighbor_list[2];
+    if (a3 == Acceptor)
+      a3 = AA->Cov_neighbor_list[2];
+    a1 = Acceptor;
+
+    angleA = Angle(a1->m_Position, AA->m_Position, a2->m_Position);
+    angleA += Angle(a2->m_Position, AA->m_Position, a3->m_Position);
+    angleA += Angle(a3->m_Position, AA->m_Position, a1->m_Position);
+
+    angleA = angleA/3.0; //mean angle
+  }
+  else{
+    a1 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
+    angleA = Angle(a1->m_Position, AA->m_Position, Acceptor->m_Position);
+  }
+
+  log("report")<<"Acceptor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleA)<<endl;
+  if(angleA <= cutoff_sp2_sp3 )
+    m_A_sp3 = true;
+  else
+    m_A_sp2 = true;
+
+}
+
+bool Hbond::evaluateGeometry() {
+
+  /// Todo: Implement geometric criteria for boundaries of Mayo energy function
+  return true;
 
 }

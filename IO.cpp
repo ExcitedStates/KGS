@@ -819,11 +819,11 @@ void IO::writeHbonds (Molecule *protein, string output_file_name) {
   for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
     output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
     output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
-    if ( (*hb_itr)->getEnergy()==DEFAULT_HBOND_ENERGY ) {
+    if ((*hb_itr)->getIniEnergy()==DEFAULT_HBOND_ENERGY ) {
       output << endl;
     }
     else {
-      output << std::right << setw(16) << (*hb_itr)->getEnergy();
+      output << std::right << setw(16) << (*hb_itr)->getIniEnergy();
       output << std::right << setw(5) << 5;
       output << std::right << setw(16) << (*hb_itr)->getLength();
       output << std::right << setw(16) << (*hb_itr)->getIniAngle_H_A_AA() << endl;
@@ -875,11 +875,11 @@ void IO::readHbonds (Molecule *protein, string hbond_file_name) {
     std::istringstream input(line);
     input >> atom1_sid;
     input >> atom2_sid;
-    if (input >> energy_s){
-      energy = atof(energy_s.c_str());
-    }else{
+//    if (input >> energy_s){
+//      energy = atof(energy_s.c_str());
+//    }else{
       energy = DEFAULT_HBOND_ENERGY;
-    }
+//    }
     hatom_id = atoi(atom1_sid.c_str());
     oatom_id = atoi(atom2_sid.c_str());
 
@@ -888,6 +888,13 @@ void IO::readHbonds (Molecule *protein, string hbond_file_name) {
     oatom = protein->getAtom(oatom_id);
     if(oatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
 
+    //Check if hatom and oatom were assigned correctly
+    if( hatom->isHeavyAtom() ) {
+      oatom = hatom;
+      hatom = protein->getAtom(oatom_id);
+    }
+
+    //Assign donors and base atoms
     donor = hatom->getFirstCovNeighbor();
     AA = oatom->getFirstCovNeighbor();
     Hbond * new_hb = new Hbond(hatom, oatom, donor, AA, energy);

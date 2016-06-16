@@ -33,11 +33,10 @@
 #include "Util.h"
 #include "core/Residue.h"
 #include "core/Grid.h"
-#include "core/Bond.h"
 #include "core/ProteinHBond.h"
 #include "IO.h"
 #include "math/MathUtility.h"
-//#include "RunFirst.h"
+#include "Logger.h"
 
 using namespace std;
 
@@ -108,35 +107,56 @@ void HbondIdentifier::identifyHbonds(Molecule *protein) {
 	}
 }
 
-void HbondIdentifier::computeHbondEnergy(Molecule *protein, string path, string protein_name) {
-//  //Todo: Implemeent Mayo energy function
-//	IO::writeHbonds(protein,path+"hbonds.in.no_energy");
-//	RunFirst::ComputeHbondEnergy(path,protein_name,"hbonds.in.no_energy","hbonds.in");
-//	// get the energy values from hbonds.in
-//	char temp[50];
-//	int hatom_id, oatom_id;
-//	double energy;
-//	string atom1_sid, atom2_sid, energy_s;
-//	string input_file = path + "hbonds.in";
-//	ifstream input(input_file.c_str());
-//	while (input.good()) {
-//		input >> atom1_sid;
-//		if (input.eof())
-//			break;
-//		input >> atom2_sid;
-//		input >> energy_s;
-//		input.getline(temp,50);
-//		hatom_id = atoi(atom1_sid.c_str());
-//		oatom_id = atoi(atom2_sid.c_str());
-//		energy = atof(energy_s.c_str());
-//		for (list<Hbond *>::iterator hit=protein->H_bonds.begin(); hit != protein->H_bonds.end(); ++hit) {
-//			if ( (*hit)->Hatom->getId()==hatom_id && (*hit)->Acceptor->getId()==oatom_id ) {
-//				(*hit)->setEnergy(energy);
-//				break;
-//			}
-//		}
-//	}
-//	input.close();
+double HbondIdentifier::computeHbondEnergy(Molecule *protein) {
+
+	//Mayo energy function, from Dahiyat, Gordon, and Mayo (1997). Automated design of the surface positions of protein helices. Protein Science 6: 1333-1337.
+	double energy=0.0, energyDiff = 0.0, completeHbondEnergy = 0.0;
+	int count=0;
+
+	for(auto const& hBond: protein->H_bonds) {
+		energy = hBond->computeEnergy();
+		energyDiff = energy - hBond->getIniEnergy();
+		log("report")<<"Energy change at bond "<<++count<<": "<<energyDiff<<endl;
+		completeHbondEnergy += energy;
+	}
+	return completeHbondEnergy;
+}
+
+double HbondIdentifier::computeHbondEnergy(Configuration *conf) {
+
+	// Mayo energy function, from Dahiyat, Gordon, and Mayo (1997).
+	// Automated design of the surface positions of protein helices. Protein Science 6: 1333-1337.
+
+	Molecule* protein = conf->updatedMolecule();
+
+	double completeHbondEnergy = 0.0;
+	int count=0;
+
+	log("report")<<"Conformation "<<conf->m_id<<endl;
+
+  for(auto const& hBond: protein->H_bonds) {
+
+		if( hBond->evaluateGeometry() ) {
+			double energy = hBond->computeEnergy();
+			double energyDiff = energy - hBond->getIniEnergy();
+			log("report") << "Energy change at bond " << ++count << ": " << energyDiff << endl;
+			completeHbondEnergy += energy;
+		}
+		else{
+			log("report") << "Geometry violated at bond " << ++count << ": " << endl;
+		}
+//			cout<<"Distance DA: "<<hBond->getDistance_D_A()<<endl;
+//			cout<<"Length: "<<hBond->getLength()<<", ini length: "<<hBond->getIniLength()<<endl;
+//			cout<<"DHA angle: "<<hBond->getAngle_D_H_A()<<", ini DHA angle: "<<hBond->getIniAngle_D_H_A()<<endl;
+//			cout<<"HAAA angle: "<<hBond->getAngle_H_A_AA()<<", ini HAAA angle: "<<hBond->getIniAngle_H_A_AA()<<endl;
+//			cout<<"Outofplane angle: "<<hBond->getOutOfPlaneAngle()<<endl;
+//			cout<<"Donor residue: "<<hBond->Donor->getResidue()->getName()<<", Acceptor residue: "<<hBond->Acceptor->getResidue()->getName()<<endl;
+//			cout<<"Energy: "<<energy<<", ini energy: "<<hBond->getIniEnergy()<<endl;
+  }
+	log("report")<<endl;fflush(stdout);
+
+//	exit(1);
+  return completeHbondEnergy;
 }
 				
 void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protein_name) {
@@ -145,8 +165,8 @@ void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protei
 	if ( protein->H_bonds.empty() ) { cerr<<"HbondIdentifier::selectHbonds: Was unable to identify any hydrogen bonds. Exiting."<<endl;exit(-1); }
 
 	// compute energy if not yet
-	if ( protein->H_bonds.front()->getEnergy() == DEFAULT_HBOND_ENERGY ) {
-    computeHbondEnergy(protein, path, protein_name);
+	if (protein->H_bonds.front()->getIniEnergy() == DEFAULT_HBOND_ENERGY ) {
+    double overallEnergy = computeHbondEnergy(protein);
 	}
 
 	// select hbonds according to the decision tree
@@ -156,14 +176,14 @@ void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protei
 	cout << "InfoHB)\t INITIAL H_bonds list size = " << protein->H_bonds.size() << endl;
 	while ( hit!=protein->H_bonds.end() ) {
 		if ( (*hit)->getLength() >= 2.4 ) {
-			if ( (*hit)->getEnergy() >= 0.4 ) {
+			if ((*hit)->getIniEnergy() >= 0.4 ) {
 				if ( (*hit)->getLength() >= 2.67 )
 					prob = 0.21;
 				else
 					prob = 0.37;
 			}
 			else {
-				if ( (*hit)->getEnergy() >= -0.95 )
+				if ((*hit)->getIniEnergy() >= -0.95 )
 					prob = 0.46;
 				else
 					prob = 0.60;

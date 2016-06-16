@@ -251,9 +251,9 @@ template <class T> inline Real Delta(T x) { return (x==0? One : Zero); }
 
 /// Degree to radian conversion
 inline double DtoR(double f) { return f*dDtoRConst; }
+inline float DtoR(float f) { return f*fDtoRConst; }
 /// Radian to degree conversion
 inline double RtoD(double f) { return f*dRtoDConst; }
-inline float DtoR(float f) { return f*fDtoRConst; }
 inline float RtoD(float f) { return f*fRtoDConst; }
 
 /*@}*/

@@ -51,6 +51,7 @@ double TorsionalAngle (Math3D::Vector3 &p1, Math3D::Vector3 &p2, Math3D::Vector3
 double VectorRotationAngle (Math3D::Vector3 p1, Math3D::Vector3 p2, Math3D::Vector3 axis);
 double VectorAngle(Math3D::Vector3 p1, Math3D::Vector3 p2);
 double Angle(const Math3D::Vector3& p1, const Math3D::Vector3& p2, const Math3D::Vector3& p3);
+Math3D::Vector3 UnitNormal (const Math3D::Vector3& p1, const Math3D::Vector3& p2, const Math3D::Vector3& p3);
 double VectorLength (Math3D::Vector3 p1, Math3D::Vector3 p2);
 double toDegree(double radian);
 double toRadian(double degree);

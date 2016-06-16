@@ -51,8 +51,12 @@ class Hbond : public Bond {
   Math3D::Vector3 getIdealHPoint();
   Math3D::Vector3 getIdealAcceptorPoint();
   double getLength();
-  double getLeftAngle();
-  double getRightAngle();
+  double getDistance_D_A();
+  double getAngle_D_H_A();
+  double getAngle_H_A_AA();
+  double getOutOfPlaneAngle();
+  bool evaluateGeometry();
+  double computeEnergy();
 
   void identifyHybridization();
 
@@ -66,13 +70,13 @@ class Hbond : public Bond {
   double m_iniDist_H_A;
   double m_iniAngle_D_H_A;
   double m_iniAngle_H_A_AA;
-  double m_energy;
+  double m_iniEnergy;
   bool m_D_sp2;
   bool m_D_sp3;
   bool m_A_sp2;
   bool m_A_sp3;
 
-  //Getters and Setters
+  //Getters and Setters for initially determined values
  public:
   double getIniLength() const {
     return m_iniDist_H_A;
@@ -97,12 +101,28 @@ class Hbond : public Bond {
     m_iniAngle_H_A_AA = iniAngle_H_A_AA;
   }
 
-  double getEnergy() const {
-    return m_energy;
+  double getIniEnergy() const {
+    return m_iniEnergy;
   }
 
-  void setEnergy(double energy) {
-    m_energy = energy;
+  void setIniEnergy(double energy) {
+    m_iniEnergy = energy;
+  }
+
+  bool donorSP2() const {
+    return m_D_sp2;
+  }
+
+  bool donorSP3() const {
+    return m_D_sp3;
+  }
+
+  bool acceptorSP2() const {
+    return m_A_sp2;
+  }
+
+  bool acceptorSP3() const {
+    return m_A_sp3;
   }
 
 };

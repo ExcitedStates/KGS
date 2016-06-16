@@ -32,11 +32,13 @@
 
 
 class Molecule;
+class Configuration;
 
 class HbondIdentifier {
   public:
-	static void identifyHbonds(Molecule *protein); // my own implementation of identifying H-bonds
-	static void computeHbondEnergy(Molecule *protein, std::string path, std::string protein_name);
+	static void identifyHbonds(Molecule *protein); //own implementation of identifying H-bonds
+	static double computeHbondEnergy(Molecule *protein);
+	static double computeHbondEnergy(Configuration *conf);
 	static void selectHbonds(Molecule *protein, std::string path, std::string protein_name);
 };
 

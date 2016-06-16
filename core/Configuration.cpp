@@ -69,6 +69,7 @@ Configuration::Configuration(Molecule * mol):
 
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
+  m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
   m_paretoFrontDistance 	 = 99999;
   m_distanceToParent       = 0;
@@ -103,6 +104,7 @@ Configuration::Configuration(Configuration* parent_):
   }
   m_id 										 = 0;
   m_vdwEnergy 						 = 0;
+  m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
   m_paretoFrontDistance 	 = 99999;
   m_distanceToParent       = 0;

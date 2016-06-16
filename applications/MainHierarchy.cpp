@@ -35,11 +35,11 @@ using namespace std;
 int main( int argc, char* argv[] ) {
 
   enableLogger("hierarchy");
+  enableLogger("samplingStatus");
 
   ofstream reportStream;
   reportStream.open("kgs_report.log");
   enableLogger("report", reportStream);
-
 
   if (argc < 2) {
     cerr << "Too few arguments. Please specify PDB-file in arguments" << endl;
@@ -50,11 +50,17 @@ int main( int argc, char* argv[] ) {
   SamplingOptions::createOptions(argc, argv);
   SamplingOptions &options = *(SamplingOptions::getOptions());
 
+  if (loggerEnabled("samplingStatus")) {
+    enableLogger("so");//SamplingOptions
+    options.print();
+  }
+
   string out_path = options.workingDirectory;
   //string pdb_file = path + protein_name + ".pdb";
 
   Molecule *protein = new Molecule();
   protein->setCollisionFactor(options.collisionFactor);
+
   IO::readPdb(protein, options.initialStructureFile, options.extraCovBonds);
   string name = protein->getName();
 
@@ -70,6 +76,10 @@ int main( int argc, char* argv[] ) {
 
   Configuration *conf = new Configuration(protein);
   protein->setConfiguration(conf);
+
+  protein->m_initialCollisions = protein->getAllCollisions();
+
+  double initialHbondEnergy = HbondIdentifier::computeHbondEnergy(conf);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;
@@ -87,6 +97,8 @@ int main( int argc, char* argv[] ) {
   log("hierarchy") << numCols << " columns" << endl;
   log("hierarchy") << "Dimension of kernel " << nullspaceCols << endl;
 
+  log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
+
   gsl_vector* projected_gradient = gsl_vector_calloc(numCols);
 
   for( int i = 0; i < numCols; ++i) {
@@ -95,8 +107,12 @@ int main( int argc, char* argv[] ) {
       log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
     }
 
-    gsl_vector_view projected_gradient_view = gsl_matrix_row(conf->getNullspace()->getSVD()->V,numCols - i - 1);
+    gsl_vector_view projected_gradient_view = gsl_matrix_column(conf->getNullspace()->getSVD()->V,numCols - i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
+
+    gsl_vector* violation = gsl_matrix_vector_mul(conf->getNullspace()->getSVD()->matrix, projected_gradient);
+    log("hierarchy")<<"Violation from column "<<i+1<<": "<<gsl_vector_length(violation)<<endl;
+    gsl_vector_free(violation);
 
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
     // Control the max amount of rotation
@@ -119,13 +135,14 @@ int main( int argc, char* argv[] ) {
     log("hierarchy")<<" Gradient length: "<<gsl_vector_length(projected_gradient)<<endl;
 
     Configuration *qNew = new Configuration(conf);
+    qNew->m_id = i+1;
     std::copy(
         projected_gradient->data,
         projected_gradient->data + qNew->getNumDOFs(),
         qNew->m_dofs);
 
     if (qNew->updatedMolecule()->inCollision()) {
-      log("hierarchy") << "Configuration in direction " << i << " is in collision. " << endl;
+      log("hierarchy") << "Configuration in direction " << i+1 << " is in collision. " << endl;
     }
 //    else {//collision-free //todo: do we want to reject colliding configurations?
     protein = qNew->updatedMolecule();
@@ -133,9 +150,10 @@ int main( int argc, char* argv[] ) {
     //Potentially reject new config if large violations?
     protein->checkCycleClosure(qNew);
     qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(SamplingOptions::getOptions()->collisionCheck);
+    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
 
     log("hierarchy") << "> New structure: " << ++sampleCount << " of a total of " <<
-    conf->getNullspace()->Matrix()->size2 << " samples. " << endl;
+    conf->getNullspace()->Matrix()->size2 << " samples. Delta hbond energy: " << initialHbondEnergy-hBondEnergy<< endl;
     SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
   }
   gsl_vector_free(projected_gradient);

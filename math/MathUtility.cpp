@@ -173,6 +173,13 @@ double Angle(const Math3D::Vector3& p1, const Math3D::Vector3& p2, const Math3D:
 	return VectorAngle(p1-p2, p3-p2);
 }
 
+Math3D::Vector3 UnitNormal( const Math3D::Vector3& p1, const Math3D::Vector3& p2, const Math3D::Vector3& p3 )
+{
+	Math3D::Vector3 normalVector = cross(p2-p1, p3-p1);
+  normalVector.inplaceNormalize();
+	return normalVector;
+}
+
 double VectorLength (Vector3 p1, Vector3 p2) {
 	Vector3 v = p1-p2;
 	return sqrt(dot(v,v));

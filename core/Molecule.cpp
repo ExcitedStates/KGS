@@ -56,6 +56,7 @@
 #include <core/dofs/TorsionDOF.h>
 #include <cmath>
 #include <math/gsl_helpers.h>
+#include <math/MathUtility.h>
 
 const double VDW_SIGMA = 0.2; // sigma = 0.2 kcal/mol
 const double VDW_R0 = 3.5; // r_0 = 3.5A
@@ -1050,32 +1051,36 @@ void Molecule::checkCycleClosure(Configuration *q){
   KinEdge *pEdge;
   int id=1;
   double maxViolation = 0.0;
+
+  log("report")<<"Conformation "<<q->m_id<<endl;
+
   for (pair_it=m_spanning_tree->CycleAnchorEdges.begin(); pair_it!=m_spanning_tree->CycleAnchorEdges.end(); ++pair_it) {
     pEdge = pair_it->first;
     Atom* atom1 = pEdge->getBond()->Atom1;
     Atom* atom2 = pEdge->getBond()->Atom2;
     Hbond * hBond = reinterpret_cast<Hbond *>(pEdge->getBond());
-    float distanceChange = hBond->getLength()-hBond->getIniLength();
-    float rightAngleChange = hBond->getRightAngle() - hBond->getIniAngle_H_A_AA();
-    float leftAngleChange = hBond->getLeftAngle() - hBond->getIniAngle_D_H_A();
+    float distanceChange = hBond->getLength() - hBond->getIniLength();
+    float rightAngleChange = hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA();
+    float leftAngleChange = hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A();
 
-    double distanceViolation = distanceChange / hBond->getIniLength() * 100;
-    double absViolation = std::fabs(distanceViolation);
+    double distanceViolation = std::fabs(distanceChange / hBond->getIniLength() * 100 );
+    rightAngleChange = Math::RtoD( formatRangeRadian(rightAngleChange) );
+    leftAngleChange = Math::RtoD( formatRangeRadian(leftAngleChange) );
 
-    log("report")<<"hBond strain at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %"<<endl;
-    if(absViolation > maxViolation){
-      q->m_maxConstraintViolation = absViolation;
-      maxViolation = absViolation;
+    log("report")<<"hBond strain at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %";
+    log("report")<<", "<<rightAngleChange<<" deg rangle, "<<leftAngleChange<<" deg langle"<<endl;
+
+    if(distanceViolation > maxViolation){
+      q->m_maxConstraintViolation = distanceViolation;
+      maxViolation = distanceViolation;
     }
-//		if(Abs(distanceViolation) > 10){//10 % change of length
+//		if(distanceViolation > 10){//10 % change of length
 //			log("report") <<"Distance violation at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %"<<endl;
 //		}
-//		float rightAngleChange = hBond->getRightAngle() - hBond->m_iniAngle_H_A_AA;
-//		if(Abs(rightAngleChange) > 0.00001){
+//		if(std::fabs(rightAngleChange) > 0.1){
 //			log("report") <<"Right angle violation "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << rightAngleChange<<endl;
 //		}
-//		float leftAngleChange = hBond->getLeftAngle() - hBond->m_iniAngle_D_H_A;
-//		if(Abs(leftAngleChange) > 0.00001){
+//		if(std::fabs(leftAngleChange) > 0.1){
 //			log("report") <<"Left angle violation "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << leftAngleChange<<endl;
 //		}
 
