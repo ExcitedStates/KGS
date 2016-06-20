@@ -119,9 +119,10 @@ int main( int argc, char* argv[] ) {
   }
 
   vector<ResTriple> ikTriples;
-  vector<pair<int, int> > intervals = {{20,  23},
-                                       {116, 121},
-                                       {124, 127}};
+  vector<pair<int, int> > intervals = {{20,  24}};
+//  vector<pair<int, int> > intervals = {{20,  24},
+//                                       {116, 121},
+//                                       {124, 127}};
 
   //Generate all triples within intervals
   ExactIK ik;

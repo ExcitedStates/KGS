@@ -23,6 +23,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
 )
 {
 
+//  cout<<"ExactIK:rebuildLoop("<<res1->getId()<<","<<res2->getId()<<","<<res3->getId()<<")"<<endl;
   double blen[6];
   double bang[7];
   double tang[2];
@@ -118,15 +119,17 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
           fabs(delPhi2)<e && fabs(delPsi2)<e &&
           fabs(delPhi3)<e && fabs(delPsi3)<e )
       continue;
+//    cout<<"Setting dofs"<<endl;
 
     for(auto const& edge: parent->getMolecule()->m_spanning_tree->Edges){
-      if(edge->getBond()==nullptr) continue;
-      if(edge->getBond()->Atom1==N1) child->m_dofs[edge->getDOF()->getIndex()] += delPhi1;
-      if(edge->getBond()->Atom1==A1) child->m_dofs[edge->getDOF()->getIndex()] += delPsi1;
-      if(edge->getBond()->Atom1==N2) child->m_dofs[edge->getDOF()->getIndex()] += delPhi2;
-      if(edge->getBond()->Atom1==A2) child->m_dofs[edge->getDOF()->getIndex()] += delPsi2;
-      if(edge->getBond()->Atom1==N3) child->m_dofs[edge->getDOF()->getIndex()] += delPhi3;
-      if(edge->getBond()->Atom1==A3) child->m_dofs[edge->getDOF()->getIndex()] += delPsi3;
+      Bond* b = edge->getBond();
+      if(b==nullptr) continue;
+      if(b->Atom1==N1 && b->Atom2==A1) { child->m_dofs[edge->getDOF()->getIndex()] += delPhi1; }
+      if(b->Atom1==A1 && b->Atom2==C1) { child->m_dofs[edge->getDOF()->getIndex()] += delPsi1; }
+      if(b->Atom1==N2 && b->Atom2==A2) { child->m_dofs[edge->getDOF()->getIndex()] += delPhi2; }
+      if(b->Atom1==A2 && b->Atom2==C2) { child->m_dofs[edge->getDOF()->getIndex()] += delPsi2; }
+      if(b->Atom1==N3 && b->Atom2==A3) { child->m_dofs[edge->getDOF()->getIndex()] += delPhi3; }
+      if(b->Atom1==A3 && b->Atom2==C3) { child->m_dofs[edge->getDOF()->getIndex()] += delPsi3; }
     }
 
     ret.push_back(child);

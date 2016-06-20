@@ -64,18 +64,18 @@ namespace metrics{
 				bool locked = edge->getBond()->constrained;
 				if( cycle_dof_id == -1 ){//free dihedral, always moveable
 					distance += angle_diff*angle_diff;
-          if(angle_diff>0.0001)
+//          if(angle_diff>0.0001)
             count++;
 				}
 				else if (!locked ) {
 					distance += angle_diff*angle_diff;
-          if(angle_diff>0.0001)
+//          if(angle_diff>0.0001)
 					count++;
 				}
 			}
 			else{
 				distance += angle_diff*angle_diff;
-        if(angle_diff>0.0001)
+//        if(angle_diff>0.0001)
 				count++;
 			}
 //			if( Abs(angle_diff - diff_rel ) > 0.0001)
