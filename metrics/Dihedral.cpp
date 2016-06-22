@@ -2,6 +2,7 @@
 #include "metrics/Metric.h"
 #include "core/Molecule.h"
 #include "math/gsl_helpers.h"
+#include "Logger.h"
 #include <math.h>
 
 using namespace std;
@@ -36,19 +37,19 @@ namespace metrics{
 
 		int count = 0;
 		double distance=0.0;
-    for(KinEdge*& edge: m_protein->m_spanning_tree->Edges){
+		for(KinEdge*& edge: m_protein->m_spanning_tree->Edges){
+			if(edge->getBond()==nullptr) continue;
 			int dofId = edge->getDOF()->getIndex();
 			double angle_diff;
 			if(useGlobals) {
-        angle_diff = fabs(c2->getGlobalTorsion(dofId) - c1->getGlobalTorsion(dofId));
-        if(angle_diff>M_PI)
-          angle_diff = 2*M_PI - angle_diff;
-      }else{
-        angle_diff = fabs(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
-        if(angle_diff>M_PI)
-          angle_diff = 2*M_PI - angle_diff;
-      }
-      //cout<<"DOFid: "<<dofId<<" , diff: "<<angle_diff<<endl;
+				angle_diff = fabs(c2->getGlobalTorsion(dofId) - c1->getGlobalTorsion(dofId));
+				if(angle_diff>M_PI)
+					angle_diff = 2*M_PI - angle_diff;
+			}else{
+				angle_diff = fabs(c2->m_dofs[dofId] - c1->m_dofs[dofId]);
+				if(angle_diff>M_PI)
+					angle_diff = 2*M_PI - angle_diff;
+			}
 
       //if(edge->getBond()) {
       //  Atom *a=edge->getBond()->Atom1;
@@ -84,6 +85,7 @@ namespace metrics{
 
 //		cout<<"relative distance: "<<sqrt(distanceRel)<<" absolute distance: "<<sqrt(distance)<<endl;
 //		return sqrt(distance/count);
-		return sqrt(distance/count);
+        double ret = sqrt(distance/count);
+		return ret;
 	}
 }

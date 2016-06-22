@@ -48,6 +48,7 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
   Molecule * protein = conf->getMolecule();
   double absMax = 0.0;
   for (auto const& edge: protein->m_spanning_tree->Edges) {
+	  if(edge->getBond()==nullptr) continue;
 
     int dofId = edge->getDOF()->getIndex();
     double newVal = RandomAngleUniform(Math3D::dPi);

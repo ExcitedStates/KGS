@@ -129,6 +129,9 @@ Configuration::Configuration(Configuration* parent_):
 }
 
 Configuration::~Configuration(){
+  if (m_molecule->m_conf==this)
+	  m_molecule->setConfiguration(nullptr);
+
   // Remove DOF-value arrays
   if (m_dofs != nullptr)
     delete[] m_dofs;

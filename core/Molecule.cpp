@@ -758,11 +758,12 @@ void Molecule::restoreAtomPos(){
 }
 
 void Molecule::setConfiguration(Configuration *q){
-  if( m_conf==q) return;
+  if(m_conf==q) return;
 
   restoreAtomPos();
-
   m_conf = q;
+  if(q==nullptr) return;
+
   _SetConfiguration(q);
 
   if(q->getGlobalTorsions() == nullptr){

@@ -2,6 +2,7 @@
 #include <cmath>
 #include "TorsionDOF.h"
 #include "math3d/primitives.h"
+#include "Logger.h"
 
 Math3D::Vector3 TorsionDOF::getDerivative(Coordinate& coord) const
 {
