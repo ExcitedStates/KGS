@@ -117,8 +117,10 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     double e = 0.001;
     if(   fabs(delPhi1)<e && fabs(delPsi1)<e &&
           fabs(delPhi2)<e && fabs(delPsi2)<e &&
-          fabs(delPhi3)<e && fabs(delPsi3)<e )
+          fabs(delPhi3)<e && fabs(delPsi3)<e ) {
+      delete child;
       continue;
+    }
 //    cout<<"Setting dofs"<<endl;
 
     for(auto const& edge: parent->getMolecule()->m_spanning_tree->Edges){

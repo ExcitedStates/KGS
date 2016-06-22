@@ -79,7 +79,7 @@ void PoissonPlanner2::GenerateSamples()
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
   double origStepSize = move.getStepSize();
 
-  int sample_num = 0;
+  int sample_num = 1;
   int rejected_clash     = 0;
   int rejected_collision = 0;
 
@@ -138,9 +138,9 @@ void PoissonPlanner2::GenerateSamples()
       bool too_close_to_existing = false;
 //      for (auto const &v: all_samples) {
       for (auto const &v: nearSeed) {
-//        cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. "<<endl;
+//        cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. ";
         double dist = memo_distance(pert, v);
-//        log("samplingStatus")<<" - dist "<<dist<<" > "<<m_lilRad<<" ?"<<endl;
+//        cout<<"dist "<<dist<<" ("<<v->m_id<<")"<<endl;
         if (dist < m_lilRad) {
           too_close_to_existing = true;
           break;
@@ -196,14 +196,22 @@ void PoissonPlanner2::GenerateSamples()
 
         //Check if close to existing
         vector<Configuration*> nearPert;
-        collectPossibleChildCollisions(seed, nearPert, 0.0);
+        collectPossibleChildCollisions(pert, nearPert, 0.0);
+//        cout<<"PoissonPlanner2::GenerateSamples - collected: ";
+//        for (auto const &v: nearPert) { cout<<v->m_id<<" "; }
+//        cout<<endl;
         bool too_close_to_existing = false;
         for (auto const &v: nearPert) {
+//        for (auto const &v: all_samples) {
+//          cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. ";
           double dist = memo_distance(pert, v);
+//          cout<<"dist "<<dist<<" ("<<v->m_id<<")";
           if (dist < m_lilRad) {
+//            cout<<" .. too close: Bailing";
             too_close_to_existing = true;
             break;
           }
+//          cout<<endl;
         }
         if (too_close_to_existing) {
           rejected_collision++;
@@ -265,6 +273,7 @@ void PoissonPlanner2::collectPossibleChildCollisions(
     double childOffset
 )
 {
+//  cout<<"collectPossibleChildCollisions(..m_root)"<<endl;
   collectPossibleChildCollisions(conf, ret, m_root, childOffset);
 }
 
@@ -275,16 +284,21 @@ void PoissonPlanner2::collectPossibleChildCollisions(
     double childOffset
 )
 {
+  if(v->m_id<0) return;
+
   double d = memo_distance(v,conf);
   //if( d >= m_maxDist[v]+m_bigRad+m_lilRad )
+//  cout<<"collectPossibleChildCollisions - dist<"<<conf->m_id<<","<<v->m_id<<"> = "<<d<<endl;
   if( d >= m_maxDist[v]+childOffset+m_lilRad )
     return;
 
   //if(d<m_bigRad+m_lilRad) ret.push_back(v);
   if(d<childOffset+m_lilRad) ret.push_back(v);
 
-  for(auto const& child: v->getChildren())
+  for(auto const& child: v->getChildren()) {
+//    cout<<"collectPossibleChildCollisions - "<<child->m_id<<" is a child of "<<v->m_id<<endl;
     collectPossibleChildCollisions(conf, ret, child, childOffset);
+  }
 
 }
 

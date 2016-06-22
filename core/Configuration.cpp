@@ -102,7 +102,7 @@ Configuration::Configuration(Configuration* parent_):
   if(m_molecule==NULL){
 	  std::cerr<<"Configuration(..) - molecule is NULL"<<std::endl;
   }
-  m_id 										 = 0;
+  m_id 										 = -1;
   m_vdwEnergy 						 = 0;
   m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
