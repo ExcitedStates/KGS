@@ -163,7 +163,7 @@ void randomSampling(SamplingOptions& options){
   SamplingPlanner* planner;
   if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
   else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move,*metric );
+  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move, *metric );
   else{
     cerr<<"Unknown planner option specified!"<<endl;
     exit(-1);

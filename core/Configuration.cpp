@@ -100,13 +100,13 @@ Configuration::Configuration(Configuration* parent_):
 {
   assert(m_molecule!=nullptr);
   if(m_molecule==NULL){
-	  std::cerr<<"Configuration(..) - molecule is NULL"<<std::endl;
+    std::cerr<<"Configuration(..) - molecule is NULL"<<std::endl;
   }
-  m_id 										 = -1;
-  m_vdwEnergy 						 = 0;
+  m_id                     = -1;//Setting id to -1 by default is important. Check out PoissonSampler2.cpp for example
+  m_vdwEnergy              = 0;
   m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
-  m_paretoFrontDistance 	 = 99999;
+  m_paretoFrontDistance    = 99999;
   m_distanceToParent       = 0;
   m_distanceToIni          = 0;
   m_maxIndex               = 0;
@@ -114,8 +114,8 @@ Configuration::Configuration(Configuration* parent_):
   m_maxConstraintViolation = 99999;
   m_numClusters            = 0;
   m_minCollisionFactor     = 0;
-  m_usedClashPrevention		 = false;
-  m_clashFreeDofs					 = m_molecule->m_spanning_tree->getNumDOFs();
+  m_usedClashPrevention    = false;
+  m_clashFreeDofs          = m_molecule->m_spanning_tree->getNumDOFs();
 
   parent_->m_children.push_back(this);
 
@@ -130,7 +130,7 @@ Configuration::Configuration(Configuration* parent_):
 
 Configuration::~Configuration(){
   if (m_molecule->m_conf==this)
-	  m_molecule->setConfiguration(nullptr);
+    m_molecule->setConfiguration(nullptr);
 
   // Remove DOF-value arrays
   if (m_dofs != nullptr)

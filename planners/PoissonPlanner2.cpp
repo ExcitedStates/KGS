@@ -105,9 +105,7 @@ void PoissonPlanner2::GenerateSamples()
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
-//      cout<<"PoissonPlanner2::GenerateSamples() - prescaling .. "<<endl;
       double dist = m_metric.distance(pert, seed);
-//      log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       int scaleAttempts = 0;
       while( dist<m_lilRad || dist>m_bigRad){
         if(++scaleAttempts==5) break;
@@ -115,9 +113,7 @@ void PoissonPlanner2::GenerateSamples()
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
         pert = move.move(seed, gradient);
-//        cout<<"PoissonPlanner2::GenerateSamples() - attempting to put in poisson disk .. "<<endl;
         dist = m_metric.distance(pert, seed);
-//        log("samplingStatus")<<" - seed-to-new distance is now "<<dist<<" (should be between "<<m_lilRad<<" and "<<m_bigRad<<")"<<endl;
       }
 
       if(scaleAttempts==5){
@@ -129,18 +125,14 @@ void PoissonPlanner2::GenerateSamples()
       if(pert->updatedMolecule()->inCollision() ) {
         rejected_clash++;
         delete pert;
-//        log("samplingStatus")<<" - rejected from clash"<<endl;
         continue;
       }
 
 
       //Check if close to existing
       bool too_close_to_existing = false;
-//      for (auto const &v: all_samples) {
       for (auto const &v: nearSeed) {
-//        cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. ";
         double dist = memo_distance(pert, v);
-//        cout<<"dist "<<dist<<" ("<<v->m_id<<")"<<endl;
         if (dist < m_lilRad) {
           too_close_to_existing = true;
           break;
@@ -149,7 +141,6 @@ void PoissonPlanner2::GenerateSamples()
       if (too_close_to_existing) {
         rejected_collision++;
         delete pert;
-//        log("samplingStatus")<<" - rejected from collision"<<endl;
         continue;
       }
 
@@ -157,9 +148,7 @@ void PoissonPlanner2::GenerateSamples()
       pert->m_id = sample_num;
       open_samples.push_back(pert);
       all_samples.push_back(pert);
-//      cout<<"PoissonPlanner2::GenerateSamples() - distance to init .. "<<endl;
       pert->m_distanceToIni    = memo_distance(pert,m_root);
-//      cout<<"PoissonPlanner2::GenerateSamples() - distance to seed .. "<<endl;
       pert->m_distanceToParent = memo_distance(pert,seed);
       updateMaxDists(pert);
       writeNewSample(pert, m_root, sample_num);
@@ -197,21 +186,14 @@ void PoissonPlanner2::GenerateSamples()
         //Check if close to existing
         vector<Configuration*> nearPert;
         collectPossibleChildCollisions(pert, nearPert, 0.0);
-//        cout<<"PoissonPlanner2::GenerateSamples - collected: ";
-//        for (auto const &v: nearPert) { cout<<v->m_id<<" "; }
-//        cout<<endl;
         bool too_close_to_existing = false;
         for (auto const &v: nearPert) {
 //        for (auto const &v: all_samples) {
-//          cout<<"PoissonPlanner2::GenerateSamples() - distance to other sample .. ";
           double dist = memo_distance(pert, v);
-//          cout<<"dist "<<dist<<" ("<<v->m_id<<")";
           if (dist < m_lilRad) {
-//            cout<<" .. too close: Bailing";
             too_close_to_existing = true;
             break;
           }
-//          cout<<endl;
         }
         if (too_close_to_existing) {
           rejected_collision++;
@@ -273,7 +255,6 @@ void PoissonPlanner2::collectPossibleChildCollisions(
     double childOffset
 )
 {
-//  cout<<"collectPossibleChildCollisions(..m_root)"<<endl;
   collectPossibleChildCollisions(conf, ret, m_root, childOffset);
 }
 
@@ -288,7 +269,6 @@ void PoissonPlanner2::collectPossibleChildCollisions(
 
   double d = memo_distance(v,conf);
   //if( d >= m_maxDist[v]+m_bigRad+m_lilRad )
-//  cout<<"collectPossibleChildCollisions - dist<"<<conf->m_id<<","<<v->m_id<<"> = "<<d<<endl;
   if( d >= m_maxDist[v]+childOffset+m_lilRad )
     return;
 

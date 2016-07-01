@@ -119,7 +119,8 @@ int main( int argc, char* argv[] ) {
   }
 
   vector<ResTriple> ikTriples;
-  vector<pair<int, int> > intervals = {{20,  24}};
+  //vector<pair<int, int> > intervals = {{20,  24}};
+  vector<pair<int, int> > intervals = {{14,  24}};
 //  vector<pair<int, int> > intervals = {{20,  24},
 //                                       {116, 121},
 //                                       {124, 127}};
