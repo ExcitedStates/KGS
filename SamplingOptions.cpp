@@ -461,9 +461,10 @@ void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 
 	if(selectionAlign != ""){
 		Selection alignSelection(selectionAlign);
-		vector<Residue*> residuesAlign = alignSelection.getSelectedResidues(protein);
-		alignSelection.selection( selectAtoms ); // will use heavy atoms
-		atomsAlign = alignSelection.getSelectedAtoms( residuesAlign );
+//		vector<Residue*> residuesAlign = alignSelection.getSelectedResidues(protein);
+//		alignSelection.selection( selectAtoms ); // will use heavy atoms // TODO: What is this even supposed to do?
+//		atomsAlign = alignSelection.getSelectedAtoms( residuesAlign );
+		atomsAlign = alignSelection.getSelectedAtoms( protein );
 	}
 	else{
 		Selection alignSelection(selectAtoms);
@@ -492,10 +493,11 @@ void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 	Selection movingSelection;
 
 	if(selectionMoving != ""){
-		Selection movingSelection(selectionMoving);
-		vector<Residue*> residuesMoving = movingSelection.getSelectedResidues(protein);
-		movingSelection.selection( selectAtoms ); // will use selected atoms only, default heavy
-		atomsMoving = movingSelection.getSelectedAtoms( residuesMoving );
+//		Selection movingSelection(selectionMoving);
+//		vector<Residue*> residuesMoving = movingSelection.getSelectedResidues(protein);
+//		movingSelection.selection( selectAtoms ); // will use selected atoms only, default heavy
+//		atomsMoving = movingSelection.getSelectedAtoms( residuesMoving );
+    atomsMoving = movingSelection.getSelectedAtoms( protein );
 	}
 	else{
 		Selection movingSelection(selectAtoms);

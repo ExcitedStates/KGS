@@ -39,38 +39,76 @@
 #include "core/Residue.h"
 
 
+/**
+ * A selection of atoms or bonds in a molecule. A selection follows the grammar
+ * SEL    :== CLAUSE + SEL
+ *        :== CLAUSE or SEL
+ * CLAUSE :== resi <int>
+ *        :== resi <int>-<int>
+ *        :== name STRINGLIST
+ *        :== CLAUSE and CLAUSE
+ *        :== all
+ *        :== backbone
+ *        :== heavy
+ *        :== hydro
+ * STRINGLIST :== <string>
+ *            :== <string>+STRINGLIST
+ * This permits selections very similar to pymols syntax. For instance, to select all c-alphas in
+ * two loop regions use the selection "name CA and resi 10-15 + name CA and resi 20-25".
+ */
 class Selection {
-public:
-	Selection( );
-	Selection( std::string selection );
-	Selection( std::string selection, std::string delim );
-	void print() const;
-	void print( std::string selName ) const;
+ public:
+  Selection();
 
-	// Mutator and Accessor
-	void delim(std::string delim);
-	std::string delim() const;
-	// Mutator and Accessor
-	void selection(std::string selection);
-	std::string selection() const;
-	// Mutator and Accessor
-	void selectionWords( std::vector<std::string> selectionWords );
-	std::vector<std::string> selectionWords() const;
+  Selection( std::string selection );
 
-	std::vector<Residue*> getSelectedResidues( const Molecule *protein ) const;
-	std::vector<Atom*> getSelectedAtoms( const Molecule *protein );
-	std::vector<Atom*> getSelectedAtoms( const std::vector<Residue*> residues );
+  std::vector<Atom *>& getSelectedAtoms( const Molecule *mol );
 
-	static std::vector<std::string> &split( const std::string &s, std::string delim, std::vector<std::string> &words );
-	static std::vector<std::string>  split( const std::string &s, std::string delim );
-	static std::vector<int> &split( const std::string &s, std::string delim, std::vector<int> &numbers );
-	std::string &combine( const std::vector<std::string> &words, std::string delim, std::string &s );
-	std::string  combine( const std::vector<std::string> &words, std::string delim );
+  std::vector<Bond *>& getSelectedBonds( const Molecule *mol );
+  std::vector<Residue*> getSelectedResidues( const Molecule *protein ) const;
 
-private:
-	std::string selection_, delim_;
-	std::vector<std::string> selectionWords_;
+
+  static std::vector<int> split( const std::string &s, const std::string& delim, std::vector<int>& numbers );
+  static std::vector<std::string> split( const std::string &s, const std::string& delim, std::vector<std::string> &words );
+  static std::vector<std::string> split( const std::string &s, const std::string& delim );
+ private:
+  const std::string m_selectionString;
+
+  std::map<Molecule *, std::vector<Atom *> > m_cachedAtoms;
+
 };
+
+//public:
+//  Selection( );
+//	Selection( std::string selection );
+//	Selection( std::string selection, std::string delim );
+//	void print() const;
+//	void print( std::string selName ) const;
+//
+//	// Mutator and Accessor
+//	void delim(std::string delim);
+//	std::string delim() const;
+//	// Mutator and Accessor
+//	void selection(std::string selection);
+//	std::string selection() const;
+//	// Mutator and Accessor
+//	void selectionWords( std::vector<std::string> selectionWords );
+//	std::vector<std::string> selectionWords() const;
+//
+//	std::vector<Residue*> getSelectedResidues( const Molecule *protein ) const;
+//	std::vector<Atom*> getSelectedAtoms( const Molecule *protein );
+//	std::vector<Atom*> getSelectedAtoms( const std::vector<Residue*> residues );
+//
+//	static std::vector<std::string> &split( const std::string &s, std::string delim, std::vector<std::string> &words );
+//	static std::vector<std::string>  split( const std::string &s, std::string delim );
+//	static std::vector<int> &split( const std::string &s, std::string delim, std::vector<int> &numbers );
+//	std::string &combine( const std::vector<std::string> &words, std::string delim, std::string &s );
+//	std::string  combine( const std::vector<std::string> &words, std::string delim );
+//
+//private:
+//	std::string selection_, delim_;
+//	std::vector<std::string> selectionWords_;
+//};
 
 #endif // SELECTION_H
 

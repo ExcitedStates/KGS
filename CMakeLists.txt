@@ -123,6 +123,9 @@ add_library( libKGS
 		directions/VDWDirection.cpp
 		metrics/Dihedral.cpp
 		metrics/RMSD.cpp
+		metrics/RMSDnosuper.cpp
+		metrics/RMSD.h
+		metrics/RMSDnosuper.h
         math3d/primitives.cpp
 
 		math/GSLSVD.cpp
@@ -149,7 +152,10 @@ add_library( libKGS
 		core/graph/KinVertex.h
 		core/graph/KinTree.cpp
 		core/graph/KinTree.h
-		moves/DecreaseStepMove.cpp moves/DecreaseStepMove.h)
+		moves/DecreaseStepMove.cpp moves/DecreaseStepMove.h
+		metrics/Metric.h
+		metrics/Metric.cpp
+		)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

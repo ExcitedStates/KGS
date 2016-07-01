@@ -6,13 +6,10 @@ using namespace std;
 
 namespace metrics{
 
-RMSD::RMSD():
-  m_atomsRMSD(nullptr)
+RMSD::RMSD(Selection& selection):
+  Metric(selection)
 {}
 
-RMSD::RMSD(const vector<Atom*>* atomsRMSD):
-  m_atomsRMSD(atomsRMSD)
-{}
 
 double RMSD::distance(Configuration* c1, Configuration* c2)
 {

@@ -17,15 +17,11 @@
 namespace metrics{
 
 
-class RMSD: public Metric{
+class RMSDnosuper: public Metric{
  public:
-  RMSD();
-  RMSD(const std::vector<Atom*>* atomsRMSD);
+  RMSDnosuper(Selection& selection);
 
   double distance(Configuration*, Configuration*);
-
- private:
-  const std::vector<Atom*>* m_atomsRMSD;
 
 };
 

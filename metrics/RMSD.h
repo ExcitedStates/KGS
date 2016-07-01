@@ -19,8 +19,7 @@ namespace metrics{
 
 class RMSD: public Metric{
  public:
-  RMSD();
-  RMSD(const std::vector<Atom*>* atomsRMSD);
+  RMSD(Selection& selection);
 
   double distance(Configuration*, Configuration*);
   static double distance_noOptimization(Configuration *c1, Configuration *c2);

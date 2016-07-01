@@ -47,13 +47,13 @@ PoissonPlanner2::PoissonPlanner2(
     metrics::Metric& metric,
     vector<ResTriple>& exactIKtriples
 ):
-	SamplingPlanner(move,metric),
-  stop_after(SamplingOptions::getOptions()->samplesToGenerate),
-  max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
-  m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
-  m_lilRad(m_bigRad/2),
-  protein(protein),
-  m_ikTriples(exactIKtriples)
+    SamplingPlanner(move,metric),
+    stop_after(SamplingOptions::getOptions()->samplesToGenerate),
+    max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
+    m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
+    m_lilRad(m_bigRad/2),
+    protein(protein),
+    m_ikTriples(exactIKtriples)
 {
   m_root = new Configuration( protein );
   m_root->m_id = 0;
@@ -99,7 +99,6 @@ void PoissonPlanner2::GenerateSamples()
     //Make max_rejects_before_close attempts at perturbing it
     size_t attempt;
     for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
-      //cout<<"PoissonPlanner2::GenerateSamples() - attempt "<<attempt<<endl;
       move.setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       Configuration *pert = move.move(seed, gradient); //Perform move

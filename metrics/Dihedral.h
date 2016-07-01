@@ -11,13 +11,9 @@ namespace metrics{
 
 	class Dihedral: public Metric{
 		public:
-			Dihedral(): Dihedral("ALL") {}
-			Dihedral(const std::string& atom_selection);
+			Dihedral(Selection& selection);
 
 			double distance(Configuration*, Configuration*);
-
-		private:
-			const std::string atom_selection;
 
 	};
 }
