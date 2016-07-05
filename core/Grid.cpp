@@ -44,7 +44,7 @@ Grid::Grid (Molecule * protein, double collisionFactor):
 	Min_x = 1000;
 	Min_y = 1000;
 	Min_z = 1000;
-	for (Atom* const& atom: protein->atoms) {
+	for (Atom* const& atom: protein->getAtoms()) {
 		if (atom->m_Position.x<Min_x) Min_x = atom->m_Position.x;
 		if (atom->m_Position.y<Min_y) Min_y = atom->m_Position.y;
 		if (atom->m_Position.z<Min_z) Min_z = atom->m_Position.z;
@@ -56,7 +56,7 @@ Grid::Grid (Molecule * protein, double collisionFactor):
 	//									          << Min_y << "," << Max_y << ") ("
 	//										  << Min_z << "," << Max_z << ") (" << endl;
 
-	for (Atom* const& atom: protein->atoms) {
+	for (Atom* const& atom: protein->getAtoms()) {
 		addAtom( atom );
 	}
 }

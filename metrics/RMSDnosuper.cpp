@@ -10,12 +10,12 @@ RMSDnosuper::RMSDnosuper( Selection &selection ) :
 
 double RMSDnosuper::distance( Configuration *c1, Configuration *c2 ) {
 //  const std::vector<Atom *> *atomsRMSD=SamplingOptions::getOptions()->getAtomsMoving();
-  const std::vector<Atom*> atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
-  const std::vector<Atom*> atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
+  const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
+  const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
   if(atomsRMSD1.size() != atomsRMSD2.size()){
     cerr<<"RMSDnosuper::distance(..)";
-    cerr<<" - Mismatching number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
+    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
     exit(-1);
   }
 

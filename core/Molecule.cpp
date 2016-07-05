@@ -80,7 +80,7 @@ Molecule::Molecule() {
 
 Molecule::~Molecule() {
   // delete all atoms
-  for (vector<Atom *>::iterator it = atoms.begin(); it != atoms.end(); ++it) {
+  for (vector<Atom *>::iterator it = m_atoms.begin(); it != m_atoms.end(); ++it) {
     delete (*it);
   }
 
@@ -103,10 +103,10 @@ Molecule::~Molecule() {
       delete it->second;
   }
 
-  for (list<Bond *>::iterator it=Cov_bonds.begin(); it != Cov_bonds.end(); ++it) {
+  for (list<Bond *>::iterator it=m_covBonds.begin(); it != m_covBonds.end(); ++it) {
     delete (*it);
   }
-  for (list<Hbond *>::iterator it=H_bonds.begin(); it != H_bonds.end(); ++it) {
+  for (list<Hbond *>::iterator it=m_hBonds.begin(); it != m_hBonds.end(); ++it) {
     delete (*it);
   }
 
@@ -144,7 +144,7 @@ Atom* Molecule::addAtom(
     chain = addChain(chainName);
 
   Atom* ret = chain->addAtom(resName,resId, atomName, atomId, position);
-  atoms.push_back(ret);
+  m_atoms.push_back(ret);
 
   return ret;
 }
@@ -176,7 +176,7 @@ Chain*Molecule::addChain (const string& chainName) {
 
 int Molecule::getMaxResidueNumber(){
   int ret= -1000000;
-  for(auto const& a: atoms){
+  for(auto const& a: m_atoms){
     if( a->getResidue()->getId() > ret )
       ret = a->getResidue()->getId();
   }
@@ -186,7 +186,7 @@ int Molecule::getMaxResidueNumber(){
 
 int Molecule::getMinResidueNumber(){
   int ret= 1000000;
-  for(vector<Atom*>::iterator ait = atoms.begin(); ait != atoms.end(); ait++){
+  for(vector<Atom*>::iterator ait = m_atoms.begin(); ait != m_atoms.end(); ait++){
     Atom* a = *ait;
     if( a->getResidue()->getId() < ret )
       ret = a->getResidue()->getId();
@@ -208,21 +208,45 @@ Atom* Molecule::getAtom(const string& chainName, const int& resNum, const string
 }
 
 Atom* Molecule::getAtom (int atom_id) {
-  for (auto const& a: atoms) {
+  for (auto const& a: m_atoms) {
     if(a->getId()==atom_id)
       return a;
   }
   return nullptr;
 }
 
+const std::vector<Atom*>& Molecule::getAtoms() const {
+  return m_atoms;
+}
+
+std::vector<Atom*>& Molecule::getAtoms(){
+  return m_atoms;
+}
+
+const std::list<Bond*>& Molecule::getCovBonds() const {
+  return m_covBonds;
+}
+
+std::list<Bond*>& Molecule::getCovBonds(){
+  return m_covBonds;
+}
+
+const std::list<Hbond*>& Molecule::getHBonds() const {
+  return m_hBonds;
+}
+
+std::list<Hbond*>& Molecule::getHBonds(){
+  return m_hBonds;
+}
+
 void Molecule::printAllAtoms () const {
-  for (vector<Atom*>::const_iterator it= atoms.begin(); it != atoms.end(); ++it) {
+  for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
     (*it)->printSummaryInfo();
   }
 }
 
 int Molecule::size() const {
-  return atoms.size();
+  return m_atoms.size();
 }
 
 void Molecule::updateAtom (int atom_id, Coordinate new_pos) {
@@ -279,7 +303,7 @@ void Molecule::setCollisionFactor(double collisionFactor)
 
 bool Molecule::inCollision (string collisionCheckAtoms ) const {
 
-  for (vector<Atom*>::const_iterator itr= atoms.begin(); itr != atoms.end(); ++itr)
+  for (vector<Atom*>::const_iterator itr= m_atoms.begin(); itr != m_atoms.end(); ++itr)
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) )
     if ( m_grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
       return true;
@@ -288,7 +312,7 @@ bool Molecule::inCollision (string collisionCheckAtoms ) const {
 
 double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
   double minCollFactor = 10000;
-  for (vector<Atom*>::const_iterator itr=atoms.begin(); itr!=atoms.end(); ++itr){
+  for (vector<Atom*>::const_iterator itr=m_atoms.begin(); itr!=m_atoms.end(); ++itr){
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) ){
       double factor = m_grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
       if(factor < minCollFactor){
@@ -310,7 +334,7 @@ std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionC
   }
 
   set< pair<Atom*,Atom*>> collisions;
-  for (auto const& atom: atoms) {
+  for (auto const& atom: m_atoms) {
     if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
       vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
       for (auto const& colliding_atom : colliding_atoms) {
@@ -331,13 +355,13 @@ void Molecule::printAllCollisions () const {
 
 void Molecule::addCovBond (Bond * bond) {
   //log()<<"Molecule::addCovBond("<<bond<<")"<<endl;
-  Cov_bonds.push_back(bond);
+  m_covBonds.push_back(bond);
   bond->Atom1->addCovBond(bond);
   bond->Atom2->addCovBond(bond);
 }
 
 void Molecule::addHbond (Hbond * hb) {
-  H_bonds.push_back(hb);
+  m_hBonds.push_back(hb);
   hb->Atom1->addHbond(hb);
   hb->Atom2->addHbond(hb);
 }
@@ -727,7 +751,7 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
   //Align conformations
   metrics::RMSD::align(this,base);
 
-  for (vector<Atom*>::const_iterator it=atoms.begin(); it!=atoms.end(); ++it) {
+  for (vector<Atom*>::const_iterator it=m_atoms.begin(); it!=m_atoms.end(); ++it) {
     (*it)->m_referencePosition = (*it)->m_Position;
   }
 }
@@ -738,13 +762,13 @@ void Molecule::translateReferencePositionsToRoot(Molecule * base)
   Coordinate& thatRoot = base->m_spanning_tree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
   Math3D::Vector3 diff = thatRoot-thisRoot;
 
-  for(auto const& atom: atoms){
+  for(auto const& atom: m_atoms){
     atom->m_referencePosition+=diff;
   }
 }
 
 void Molecule::restoreAtomPos(){
-  for (auto const& a: atoms)
+  for (auto const& a: m_atoms)
     a->m_Position = a->m_referencePosition;
 
   m_conf = nullptr;
@@ -886,7 +910,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
   // OLD: For each such neighbor, compute U(R_ab)=VDW_SIGMA*((VDW_R0/r_12)^12-2*(VDW_R0/r_12)^6)
   // Corrected: For each such neighbor, compute U(R_ab)=epsilon_ij*(vdw_r12/r_12)^12-2*(VDW_R0/r_12)^6) and sum up everything.
   // CHARMM: http://www.charmmtutorial.org/index.php/The_Energy_Function#Energy_calculation
-  for (vector<Atom*>::const_iterator ait=atoms.begin(); ait!=atoms.end(); ++ait) {
+  for (vector<Atom*>::const_iterator ait=m_atoms.begin(); ait!=m_atoms.end(); ++ait) {
     Atom* atom1 = *ait;
     if(!(atom1->isCollisionCheckAtom(collisionCheck)) ){//we only use atoms that are also used for clash detection
       continue;
@@ -935,7 +959,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   // for each atom, look for it's neighbors.
   //For each such neighbor, compute U(R_ab)=epsilon_ij*(vdw_r12/r_12)^12-2*(VDW_R0/r_12)^6) and sum up everything.
   // CHARMM: http://www.charmmtutorial.org/index.php/The_Energy_Function#Energy_calculation
-  for (vector<Atom*>::const_iterator ait=atoms.begin(); ait!=atoms.end(); ++ait) {
+  for (vector<Atom*>::const_iterator ait=m_atoms.begin(); ait!=m_atoms.end(); ++ait) {
     Atom* atom1 = *ait;
     if(!(atom1->isCollisionCheckAtom(collisionCheck)) ){//we only use atoms that are also used for clash detection
       continue;
@@ -977,7 +1001,7 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
   Atom *hatom, *acceptor, *donor, *AAatom;
   list<Hbond *> intersection;
   int count1=0, count2=0;
-  for (list<Hbond *>::iterator itr2=p2->H_bonds.begin(); itr2 != p2->H_bonds.end(); ++itr2) {
+  for (list<Hbond *>::iterator itr2=p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
     hBond= (*itr2);
 
     hatom = this->getAtom(hBond->Hatom->getResidue()->getChain()->getName(),hBond->Hatom->getResidue()->getId(), hBond->Hatom->getName());
@@ -1003,7 +1027,7 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
       count2++;
     }
   }
-  p2->H_bonds=intersection;
+  p2->m_hBonds=intersection;
 }
 
 bool Molecule::hasCycle() const {
@@ -1012,21 +1036,21 @@ bool Molecule::hasCycle() const {
 
 int Molecule::countOriginalDofs () const {
   int num = 0;
-  for (list<Bond *>::const_iterator it=Cov_bonds.begin(); it != Cov_bonds.end(); ++it) {
+  for (list<Bond *>::const_iterator it=m_covBonds.begin(); it != m_covBonds.end(); ++it) {
     Atom* a1 = (*it)->Atom1;
     Atom* a2 = (*it)->Atom2;
     if ( a1->Cov_neighbor_list.size()==1 || a2->Cov_neighbor_list.size()==1 )
       continue;
     ++num;
   }
-  num += H_bonds.size();
+  num += m_hBonds.size();
   return num;
 }
 
 Coordinate Molecule::centerOfMass () const {
   Coordinate cur_position, center_of_mass;
   double mass, sum_of_mass=0;
-  for (vector<Atom*>::const_iterator it= atoms.begin(); it != atoms.end(); ++it) {
+  for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
     cur_position = (*it)->m_Position;
     mass = (*it)->getMass();
     center_of_mass += cur_position * mass;
@@ -1038,10 +1062,10 @@ Coordinate Molecule::centerOfMass () const {
 
 Coordinate Molecule::centerOfGeometry () const {
   Coordinate center;
-  for (vector<Atom*>::const_iterator it= atoms.begin(); it != atoms.end(); ++it) {
+  for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
     center += (*it)->m_Position;
   }
-  center /= atoms.size();
+  center /= m_atoms.size();
   return center;
 }
 

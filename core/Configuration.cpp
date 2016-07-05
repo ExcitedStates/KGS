@@ -332,11 +332,11 @@ bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, un
 void Configuration::readBiggerSet(){
 
   //Create disjoint set
-  DisjointSets ds(m_molecule->atoms[m_molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+  DisjointSets ds(m_molecule->getAtoms()[m_molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
   //For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
   for (int i=0;i< m_molecule->size();i++){
-    Atom* atom = m_molecule->atoms[i];
+    Atom* atom = m_molecule->getAtoms()[i];
     if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
     }
@@ -344,8 +344,9 @@ void Configuration::readBiggerSet(){
 
 
   //For each fixed or constrained bond (a1,a2) call Union(a1,a2)
-  for (list<Bond *>::iterator it= m_molecule->Cov_bonds.begin(); it != m_molecule->Cov_bonds.end(); ++it){
-    Bond * bond = *it;
+  for (auto const& bond: m_molecule->getCovBonds()){
+//    for (list<Bond *>::iterator it= m_molecule->getCovBonds().begin(); it != m_molecule->getCovBonds().end(); ++it){
+//    Bond * bond = *it;
 
     ///First, simply check if bond is constrained
     if( bond->constrained || bond->Bars == 6){
@@ -355,8 +356,9 @@ void Configuration::readBiggerSet(){
 
   ///Also, do the same thing for the hydrogen bonds
   ///insert the h-bonds at the correct place
-  for (list<Hbond *>::iterator bit= m_molecule->H_bonds.begin(); bit != m_molecule->H_bonds.end(); ++bit){
-    Hbond * bond = *bit;
+  for(auto const& bond: m_molecule->getHBonds()){
+//  for (list<Hbond *>::iterator bit= m_molecule->getHBonds().begin(); bit != m_molecule->getHBonds().end(); ++bit){
+//    Hbond * bond = *bit;
     if( bond->constrained ){
       ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
     }
@@ -370,7 +372,7 @@ void Configuration::readBiggerSet(){
 
   //Map the set-ID's (first map entry) to RB-ID's (second map entry) and add bonded atoms to RBs.
   for (int i=0;i< m_molecule->size();i++){
-    Atom* atom = m_molecule->atoms[i];
+    Atom* atom = m_molecule->getAtoms()[i];
 
     //Map the set-id to the RB-id
     int set_id = ds.FindSet(atom->getId());

@@ -72,7 +72,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 //  vector<int> counts(ret->size, 0);
   int count=0;
 
-  for( auto const &atom: protein->atoms ) {
+  for( auto const &atom: protein->getAtoms() ) {
     //Filter atoms
     if( atom_selection == "HEAVY" && !atom->isHeavyAtom()) continue;
     if( atom_selection == "RESHEAVY" && ( !atom->isHeavyAtom() || //HEAVY atom not in residue selection

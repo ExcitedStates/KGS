@@ -26,9 +26,6 @@ class RMSD: public Metric{
 
   static double align(Molecule * other, Molecule * base);
 
- private:
-  const std::vector<Atom*>* m_atomsRMSD;
-
 };
 
 typedef struct

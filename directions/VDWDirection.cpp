@@ -45,7 +45,7 @@ void VDWDirection::computeGradient(Configuration* conf, Configuration* target, g
   gsl_vector* p12 = gsl_vector_calloc(3);
   gsl_vector* p_temp = gsl_vector_calloc(protein->totalDofNum());
 
-  for (auto const& atom1: protein->atoms) {
+  for (auto const& atom1: protein->getAtoms()) {
     std::vector<Atom*> neighbors = protein->getGrid()->getNeighboringAtomsVDW(atom1,      //atom
                                                                               true,       //neighborWithLargerId
                                                                               true,       //noCovBondNeighbor

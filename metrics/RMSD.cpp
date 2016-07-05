@@ -14,16 +14,23 @@ RMSD::RMSD(Selection& selection):
 double RMSD::distance(Configuration* c1, Configuration* c2)
 {
 //  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
-  const std::vector<Atom*>* atomsRMSD = m_atomsRMSD;
+  const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
+  const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
   // If atomsAlign is nullptr, align the entire m_protein
-  if( atomsRMSD==nullptr || atomsRMSD->empty() ) {
-    //cout<<"Found no atoms to align .. using all."<<endl;
-    atomsRMSD = &(c1->getMolecule()->atoms);//choose all atoms
+  if( atomsRMSD1.empty() || atomsRMSD2.empty() ){
+    cerr<<"RMSD::distance - Atom-selection given to RMSD metric contained no atoms: "<<m_selection<<endl;
+    exit(-1);
+  }
+
+  if( atomsRMSD1.size() != atomsRMSD2.size() ){
+    cerr<<"RMSD::distance(..)";
+    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
+    exit(-1);
   }
 
   Molecule * protein = c1->updatedMolecule();
-  int atom_num = atomsRMSD->size();
+  int atom_num = atomsRMSD1.size();
   assert(atom_num>3);
   float* v1 = new float[atom_num*3];
   float* v2 = new float[atom_num*3];
@@ -31,7 +38,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   int resId;
   string name, chainName;
   unsigned int i=0;
-  for (auto const& atom: *atomsRMSD){
+  for (auto const& atom: atomsRMSD1){
     name = atom->getName();
     chainName = atom->getResidue()->getChain()->getName();
     resId = atom->getResidue()->getId();
@@ -44,7 +51,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
 
   protein= c2->updatedMolecule();
   i=0;
-  for (auto const& atom: *atomsRMSD) {
+  for (auto const& atom: atomsRMSD2) {
     name = atom->getName();
     chainName = atom->getResidue()->getChain()->getName();
     resId = atom->getResidue()->getId();
@@ -74,7 +81,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
   // If atomsAlign is nullptr, align the entire m_protein
   if (atomsRMSD==nullptr) {
     cout<<"Found no atoms to align .. using all"<<endl;
-    atomsRMSD = &(c1->getMolecule()->atoms);//choose all atoms
+    atomsRMSD = &(c1->getMolecule()->getAtoms());//choose all atoms
   }
 
   vector<Coordinate> p1_atoms;
@@ -116,7 +123,7 @@ double RMSD::align(Molecule * other, Molecule * base) {
   // If atomsAlign is nullptr, align the entire m_protein
   if (atomsAlign == nullptr) {
     cout<<"Found no atoms to align"<<endl;
-    atomsAlign = &(base->atoms);//choose all atoms
+    atomsAlign = &(base->getAtoms());//choose all atoms
   }
 
   int atom_size = atomsAlign->size();
@@ -155,7 +162,7 @@ double RMSD::align(Molecule * other, Molecule * base) {
 
   // Transform position in m_molecule other
   float* v3 = new float[3];
-  for (vector<Atom*>::iterator it=other->atoms.begin(); it != other->atoms.end(); ++it) {
+  for (vector<Atom*>::iterator it=other->getAtoms().begin(); it != other->getAtoms().end(); ++it) {
     Coordinate pos = (*it)->m_Position;
     v3[0] = pos.x;
     v3[1] = pos.y;

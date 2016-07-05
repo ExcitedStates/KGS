@@ -99,7 +99,7 @@ Atom* Residue::getAtom (string atom_name) const{
   return nullptr;
 }
 
-std::list<Atom*>& Residue::getAtoms(){
+const std::list<Atom*>& Residue::getAtoms() const{
   return m_atoms;
 }
 

@@ -60,6 +60,12 @@ class Molecule {
   Chain* getChain (const std::string& chainName);
   Atom* getAtom (int atom_id);
   Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name);
+  const std::vector<Atom*>& getAtoms() const;
+  std::vector<Atom*>& getAtoms();
+  const std::list<Bond*>& getCovBonds() const;
+  std::list<Bond*>& getCovBonds();
+  const std::list<Hbond*>& getHBonds() const;
+  std::list<Hbond*>& getHBonds();
 
   int getMinResidueNumber();
   int getMaxResidueNumber();
@@ -104,11 +110,8 @@ class Molecule {
   Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
   Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);
 
-  std::vector<Atom*> atoms;
   std::vector<Chain*> chains;
   std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
-  std::list<Bond *> Cov_bonds;
-  std::list<Hbond *> H_bonds; // Todo: vector, or it is better to use list<>?
   std::set< std::pair<Atom*,Atom*> > m_initialCollisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
 
   // Topology of rigid bodies
@@ -140,6 +143,9 @@ class Molecule {
   void indexAtoms();
   Grid *m_grid;
 //  Grid *m_backupGrid;
+  std::list<Bond *> m_covBonds;
+  std::list<Hbond *> m_hBonds;
+  std::vector<Atom*> m_atoms;
 
   double m_collisionFactor;
 };

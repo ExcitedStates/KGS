@@ -50,7 +50,7 @@ int main( int argc, char* argv[] ) {
   Molecule protein;
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-  log() << "Molecule has " << protein.atoms.size() << " atoms\n";
+  log() << "Molecule has " << protein.m_atoms.size() << " atoms\n";
   cout<<"main - 3"<<endl;
 
   if(!options.annotationFile.empty())
@@ -97,7 +97,7 @@ int main( int argc, char* argv[] ) {
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.atoms.size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein.m_atoms.size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
@@ -106,7 +106,7 @@ int main( int argc, char* argv[] ) {
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   log("samplingStatus")<<"Target has:"<<endl;
-  log("samplingStatus")<<"> "<<target->atoms.size()<<" atoms"<<endl;
+  log("samplingStatus")<<"> "<<target->m_atoms.size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
@@ -183,7 +183,7 @@ int main( int argc, char* argv[] ) {
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
     log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
     log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.m_hBonds.size()<<" hydrogen bonds!"<<endl<<endl;
 
 
     log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf);

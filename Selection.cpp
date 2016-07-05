@@ -46,7 +46,7 @@ vector<Atom*>& Selection::getSelectedAtoms( const Molecule* mol )
     m_cachedAtoms[mol] = std::move(std::vector<Atom*>());
     vector<Atom*>& ret = m_cachedAtoms[mol];
 
-    for(auto const& a: mol->atoms){
+    for(auto const& a: mol->getAtoms()){
       if( m_rootClause->inSelection(a) )
         ret.push_back(a);
     }
@@ -86,7 +86,7 @@ std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
   if(m_cachedBonds.count(mol)==0) {
     m_cachedBonds[mol] = std::move(vector<Bond*>());
     vector<Bond *>& ret = m_cachedBonds[mol];
-    for (auto const &bond: mol->Cov_bonds) {
+    for (auto const &bond: mol->getCovBonds()) {
       //Check if both end-atoms are in selection
       if (m_rootClause->inSelection(bond->Atom1) && m_rootClause->inSelection(bond->Atom2))
         ret.push_back(bond);
@@ -96,6 +96,17 @@ std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
   return m_cachedBonds[mol];
 }
 
+bool Selection::inSelection( const Atom* a ) const { return m_rootClause->inSelection(a); }
+
+bool Selection::inSelection( const Bond* b ) const{
+  return m_rootClause->inSelection(b->Atom1) && m_rootClause->inSelection(b->Atom2);
+}
+
+bool Selection::inSelection( const Residue* r) const{
+  for(auto const& a: r->getAtoms())
+    if(!m_rootClause->inSelection(a)) return false;
+  return true;
+}
 
 
 Selection::Clause* Selection::parseClause(const std::string &input) {
@@ -125,7 +136,7 @@ Selection::OrClause::OrClause(const std::string& input)
     }
   }
 }
-bool Selection::OrClause::inSelection(Atom* a) const
+bool Selection::OrClause::inSelection(const Atom* a) const
 {
   for(const Clause* subClause: m_childClauses)
     if( subClause->inSelection(a) ) return true;
@@ -142,7 +153,7 @@ Selection::AndClause::AndClause(const std::string& input)
     }
   }
 }
-bool Selection::AndClause::inSelection(Atom* a) const
+bool Selection::AndClause::inSelection(const Atom* a) const
 {
   for(const Clause* subClause: m_childClauses)
     if( !subClause->inSelection(a) ) return false;
@@ -155,7 +166,7 @@ Selection::NotClause::NotClause(const std::string& input)
   else if(Util::startsWith(input, "! ")) m_childClause = parseClause(input.substr(2));
   else if(Util::startsWith(input, "!")) m_childClause = parseClause(input.substr(1));
 }
-bool Selection::NotClause::inSelection(Atom* a) const
+bool Selection::NotClause::inSelection(const Atom* a) const
 {
   return !(m_childClause->inSelection(a));
 }
@@ -184,7 +195,7 @@ Selection::ResiClause::ResiClause(const std::string& input)
     throw "KGS error: Selection::ResiClause - Can't parse "+input;
   }
 }
-bool Selection::ResiClause::inSelection(Atom* a) const{
+bool Selection::ResiClause::inSelection(const Atom* a) const{
   return m_residueIDs.find(a->getResidue()->getId()) != m_residueIDs.end();
 }
 
@@ -200,7 +211,7 @@ Selection::ResnClause::ResnClause(const std::string& input)
     }
   }
 }
-bool Selection::ResnClause::inSelection(Atom* a) const{
+bool Selection::ResnClause::inSelection(const Atom* a) const{
   return std::find( m_residueNames.begin(), m_residueNames.end(), a->getResidue()->getName() )
          != m_residueNames.end();
 }
@@ -217,7 +228,7 @@ Selection::NameClause::NameClause(const std::string& input)
     }
   }
 }
-bool Selection::NameClause::inSelection(Atom* a) const
+bool Selection::NameClause::inSelection(const Atom* a) const
 {
   return std::find( m_atomNames.begin(), m_atomNames.end(), a->getName() )
          != m_atomNames.end();
@@ -235,14 +246,14 @@ Selection::ElemClause::ElemClause(const std::string& input)
     }
   }
 }
-bool Selection::ElemClause::inSelection(Atom* a) const
+bool Selection::ElemClause::inSelection(const Atom* a) const
 {
   return std::find( m_atomElements.begin(), m_atomElements.end(), a->getName() )
          != m_atomElements.end();
 }
 
 Selection::AllClause::AllClause(const std::string& input){}
-bool Selection::AllClause::inSelection(Atom* a) const{
+bool Selection::AllClause::inSelection(const Atom* a) const{
   return true;
 }
 
@@ -258,6 +269,15 @@ Selection::HydroClause::HydroClause(const std::string& input):
     ElemClause("elem H")
 {}
 
+std::ostream& operator<<(std::ostream& os, const Selection& s)
+{
+  return os<<s.m_selectionPattern;
+}
+
+std::ostream& operator<<(std::ostream& os, const Selection* s)
+{
+  return os<<s->m_selectionPattern;
+}
 
 //Selection::Selection( ) : delim_( " " ) {
 //}

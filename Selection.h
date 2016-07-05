@@ -97,20 +97,36 @@ class Selection {
   /** Initialize the selection with the specified selection-pattern. */
   Selection( const std::string& pattern );
 
-  /** Return all atoms in mol that match the selection-pattern passed to the constructor. The first time
-   * this function is called it will iterate through all atoms in mol and the result will be cached.
-   * Subsequent calls will simply return a reference to the vector computed in the first call. */
+  /** Return all atoms in mol that match the selection-pattern passed to the constructor. The order
+   * of atoms will be the same as that in mol->getAtoms().
+   *
+   * The first time this function is called it will iterate through all atoms in mol and the result
+   * will be cached. Subsequent calls will simply return a reference to the vector computed in the
+   * first call. */
   std::vector<Atom *>& getSelectedAtoms( const Molecule *mol );
 
-  /** Return all bonds for which end-point atoms are matched by the selection pattern. The first time
-   * this function is called it will iterate through all bonds in mol and the result will be cached.
-   * Subsequent calls will simply return a reference to the vector computed in the first call.  */
+  /** Return all bonds for which end-point atoms are matched by the selection pattern. The order of
+   * bonds will be the same as that in mol->getCovBonds().
+   *
+   * The first time this function is called it will iterate through all bonds in mol and the result
+   * will be cached. Subsequent calls will simply return a reference to the vector computed in the
+   * first call.  */
   std::vector<Bond *>& getSelectedBonds( const Molecule *mol );
 
   /** Return all residues for which all contained atoms are matched by the selection pattern. The first time
    * this function is called it will iterate through all atoms in mol and the result will be cached.
    * Subsequent calls will simply return a reference to the vector computed in the first call.  */
   std::vector<Residue*>& getSelectedResidues( const Molecule *mol );
+
+  /** Return true iff the specified atom matches the selection-pattern. */
+  bool inSelection( const Atom* ) const;
+
+  /** Return true iff the atoms at both ends of the bond match the selection-pattern. */
+  bool inSelection( const Bond* ) const;
+
+  /** Return true iff all atoms in the residue match the selection-pattern. */
+  bool inSelection( const Residue* ) const;
+
 
 
  private:
@@ -125,17 +141,20 @@ class Selection {
   std::map<const Molecule *, std::vector<Bond *> > m_cachedBonds;
   std::map<const Molecule *, std::vector<Residue *> > m_cachedResidues;
 
+  friend std::ostream& operator<<(std::ostream& os, const Selection& s);
+  friend std::ostream& operator<<(std::ostream& os, const Selection* s);
+
   static Clause* parseClause(const std::string& input);
 
   class Clause{
    public:
-    virtual bool inSelection(Atom* a) const = 0;
+    virtual bool inSelection(const Atom* a) const = 0;
   };
 
   class OrClause: public Clause{
    public:
     OrClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::vector<Clause*> m_childClauses;
   };
@@ -143,7 +162,7 @@ class Selection {
   class AndClause: public Clause{
    public:
     AndClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::vector<Clause*> m_childClauses;
   };
@@ -151,7 +170,7 @@ class Selection {
   class NotClause: public Clause{
    public:
     NotClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     const Clause* m_childClause;
   };
@@ -159,7 +178,7 @@ class Selection {
   class ResiClause: public Clause{
    public:
     ResiClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::set<int> m_residueIDs;
   };
@@ -167,7 +186,7 @@ class Selection {
   class ResnClause: public Clause{
    public:
     ResnClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::vector<std::string> m_residueNames;
   };
@@ -175,7 +194,7 @@ class Selection {
   class NameClause: public Clause{
    public:
     NameClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::vector<std::string> m_atomNames;
   };
@@ -183,7 +202,7 @@ class Selection {
   class ElemClause: public Clause{
    public:
     ElemClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
    private:
     std::vector<std::string> m_atomElements;
   };
@@ -191,7 +210,7 @@ class Selection {
   class AllClause: public Clause{
    public:
     AllClause(const std::string& input);
-    bool inSelection(Atom* a) const;
+    bool inSelection(const Atom* a) const;
   };
 
   class BackboneClause: public NameClause{
@@ -210,6 +229,9 @@ class Selection {
   };
 
 };
+
+std::ostream& operator<<(std::ostream& os, const Selection& s);
+std::ostream& operator<<(std::ostream& os, const Selection* s);
 
 //public:
 //  Selection( );

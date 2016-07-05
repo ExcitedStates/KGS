@@ -50,7 +50,7 @@ class Residue {
                  const int& atomId,
                  const Coordinate& position);
   Atom* getAtom (std::string atom_name) const;
-  std::list<Atom*>& getAtoms();
+  const std::list<Atom*>& getAtoms() const;
   const Chain* getChain () const;
   void printSummaryInfo() const;
   void print() const;
