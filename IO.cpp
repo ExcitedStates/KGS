@@ -166,7 +166,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
 
   if(reference == nullptr) {
     for (unsigned int i = 0; i < extraCovBonds.size(); i++) {
-      vector<string> tokens = Selection::split(extraCovBonds[i], "-");
+      vector<string> tokens = Util::split(extraCovBonds[i], '-');
       int atomId1 = atoi(tokens[0].c_str());
       int atomId2 = atoi(tokens[1].c_str());
       Atom *a1 = protein->getAtom(atomId1);
@@ -185,7 +185,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   }
   else {
     for (unsigned int i = 0; i < extraCovBonds.size(); i++) {
-      vector<string> tokens = Selection::split(extraCovBonds[i], "-");
+      vector<string> tokens = Util::split(extraCovBonds[i], '-');
       int atomId1 = atoi(tokens[0].c_str());
       int atomId2 = atoi(tokens[1].c_str());
       Atom* a1 = reference->getAtom(atomId1);//id's from reference
@@ -370,13 +370,13 @@ void IO::readDssp (Molecule * protein, string dssp_file) {
 }
 
 
-void IO::readRigidbody (Molecule * protein) {
+void IO::readRigidbody (Molecule * molecule) {
   //Create disjoint set
-  DisjointSets ds(protein->atoms[protein->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+  DisjointSets ds(molecule->atoms[molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
-  for (int i=0;i<protein->size();i++){
-    Atom* atom = protein->atoms[i];
+  for (int i=0;i<molecule->size();i++){
+    Atom* atom = molecule->atoms[i];
     if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
@@ -398,7 +398,7 @@ void IO::readRigidbody (Molecule * protein) {
   }
 
   //For each fixed bond (a1,a2) call Union(a1,a2)
-  for (list<Bond *>::iterator it=protein->Cov_bonds.begin(); it != protein->Cov_bonds.end(); ++it){
+  for (list<Bond *>::iterator it=molecule->Cov_bonds.begin(); it != molecule->Cov_bonds.end(); ++it){
     Bond * bond = *it;
 
     ///****************************************
@@ -445,8 +445,8 @@ void IO::readRigidbody (Molecule * protein) {
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
 
   //Map the set-ID's to RB-ID's and add bonded atoms to RBs.
-  for (int i=0;i<protein->size();i++){
-    Atom* atom = protein->atoms[i];
+  for (int i=0;i<molecule->size();i++){
+    Atom* atom = molecule->atoms[i];
 
     //Map the set-id to the RB-id
     int set_id = ds.FindSet(atom->getId());
@@ -457,22 +457,22 @@ void IO::readRigidbody (Molecule * protein) {
       idMap.insert( make_pair(set_id, body_id) );
     }
     //If the set containing a1 is not a rigid body: create one
-    if ( protein->Rigidbody_map_by_id.find(body_id)==protein->Rigidbody_map_by_id.end() ) {
+    if ( molecule->Rigidbody_map_by_id.find(body_id)==molecule->Rigidbody_map_by_id.end() ) {
       Rigidbody* new_rb = new Rigidbody(body_id);
-      protein->Rigidbody_map_by_id.insert( make_pair(body_id,new_rb) );
+      molecule->Rigidbody_map_by_id.insert( make_pair(body_id,new_rb) );
     }
-    Rigidbody* rb = protein->Rigidbody_map_by_id.find(body_id)->second;
+    Rigidbody* rb = molecule->Rigidbody_map_by_id.find(body_id)->second;
     if (!rb->containsAtom(atom)) rb->addAtom(atom);
 
   }
 
   //Delete small RBs and sort atoms within each RB
-  map<unsigned int, Rigidbody*>::iterator it = protein->Rigidbody_map_by_id.begin();
-  while ( it!=protein->Rigidbody_map_by_id.end() ) {
+  map<unsigned int, Rigidbody*>::iterator it = molecule->Rigidbody_map_by_id.begin();
+  while ( it!=molecule->Rigidbody_map_by_id.end() ) {
     Rigidbody *rb = it->second;
     if ( rb->Atoms.size() <= 0 ) {
       cerr << "Error: rigid body " << rb->id() << " has no atoms." << endl;
-      protein->Rigidbody_map_by_id.erase(it++);
+      molecule->Rigidbody_map_by_id.erase(it++);
       delete rb;
     }
     else { // sort atom ids
@@ -489,32 +489,32 @@ void IO::readRigidbody (Molecule * protein) {
   }
 
   //Store bonds in rigid bodies
-  for (list<Bond *>::iterator bit=protein->Cov_bonds.begin(); bit != protein->Cov_bonds.end(); ++bit) {
+  for (list<Bond *>::iterator bit=molecule->Cov_bonds.begin(); bit != molecule->Cov_bonds.end(); ++bit) {
     Bond* bond = *bit;
     //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
     int setId1 = ds.FindSet((*bit)->Atom1->getId());
-    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    molecule->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
     int setId2 = ds.FindSet((*bit)->Atom2->getId());
     if(setId1!=setId2)
-      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+      molecule->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
   }
-  for (list<Hbond *>::iterator bit=protein->H_bonds.begin(); bit != protein->H_bonds.end(); ++bit) {
+  for (list<Hbond *>::iterator bit=molecule->H_bonds.begin(); bit != molecule->H_bonds.end(); ++bit) {
     int setId1 = ds.FindSet((*bit)->Atom1->getId());
-    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    molecule->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
     int setId2 = ds.FindSet((*bit)->Atom2->getId());
     if(setId1!=setId2)
-      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+      molecule->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
   }
 
 
 }
 
-void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
+void IO::readRigidbody (Molecule * molecule, vector<int>& movingResidues) {
   //Create disjoint set
-  DisjointSets ds(protein->atoms[protein->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+  DisjointSets ds(molecule->atoms[molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
   //For each atom not in a residue in movingResidues call Union (rigidifies everything not in movingResidues)
-  for(auto const& chain: protein->chains) {
+  for(auto const& chain: molecule->chains) {
     Atom* lastAtom = nullptr;
     for (auto const& res: chain->getResidues()) {
       if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
@@ -531,8 +531,8 @@ void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
   }
 
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
-  for (int i=0;i<protein->size();i++){
-    Atom* atom = protein->atoms[i];
+  for (int i=0;i<molecule->size();i++){
+    Atom* atom = molecule->atoms[i];
     if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
@@ -554,7 +554,7 @@ void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
   }
 
   //For each fixed bond (a1,a2) call Union(a1,a2)
-  for (list<Bond *>::iterator it=protein->Cov_bonds.begin(); it != protein->Cov_bonds.end(); ++it){
+  for (list<Bond *>::iterator it=molecule->Cov_bonds.begin(); it != molecule->Cov_bonds.end(); ++it){
     Bond * bond = *it;
 
     ///****************************************
@@ -601,8 +601,8 @@ void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
 
   //Map the set-ID's to RB-ID's and add bonded atoms to RBs.
-  for (int i=0;i<protein->size();i++){
-    Atom* atom = protein->atoms[i];
+  for (int i=0;i<molecule->size();i++){
+    Atom* atom = molecule->atoms[i];
 
     //Map the set-id to the RB-id
     int set_id = ds.FindSet(atom->getId());
@@ -613,22 +613,22 @@ void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
       idMap.insert( make_pair(set_id, body_id) );
     }
     //If the set containing a1 is not a rigid body: create one
-    if ( protein->Rigidbody_map_by_id.find(body_id)==protein->Rigidbody_map_by_id.end() ) {
+    if ( molecule->Rigidbody_map_by_id.find(body_id)==molecule->Rigidbody_map_by_id.end() ) {
       Rigidbody* new_rb = new Rigidbody(body_id);
-      protein->Rigidbody_map_by_id.insert( make_pair(body_id,new_rb) );
+      molecule->Rigidbody_map_by_id.insert( make_pair(body_id,new_rb) );
     }
-    Rigidbody* rb = protein->Rigidbody_map_by_id.find(body_id)->second;
+    Rigidbody* rb = molecule->Rigidbody_map_by_id.find(body_id)->second;
     if (!rb->containsAtom(atom)) rb->addAtom(atom);
 
   }
 
   //Delete small RBs and sort atoms within each RB
-  map<unsigned int, Rigidbody*>::iterator it = protein->Rigidbody_map_by_id.begin();
-  while ( it!=protein->Rigidbody_map_by_id.end() ) {
+  map<unsigned int, Rigidbody*>::iterator it = molecule->Rigidbody_map_by_id.begin();
+  while ( it!=molecule->Rigidbody_map_by_id.end() ) {
     Rigidbody *rb = it->second;
     if ( rb->Atoms.size() <= 0 ) {
       cerr << "Error: rigid body " << rb->id() << " has no atoms." << endl;
-      protein->Rigidbody_map_by_id.erase(it++);
+      molecule->Rigidbody_map_by_id.erase(it++);
       delete rb;
     }
     else { // sort atom ids
@@ -645,27 +645,27 @@ void IO::readRigidbody (Molecule * protein, vector<int>& movingResidues) {
   }
 
   //Store bonds in rigid bodies
-  for (list<Bond *>::iterator bit=protein->Cov_bonds.begin(); bit != protein->Cov_bonds.end(); ++bit) {
+  for (list<Bond *>::iterator bit=molecule->Cov_bonds.begin(); bit != molecule->Cov_bonds.end(); ++bit) {
     Bond* bond = *bit;
     //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
     int setId1 = ds.FindSet((*bit)->Atom1->getId());
-    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    molecule->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
     int setId2 = ds.FindSet((*bit)->Atom2->getId());
     if(setId1!=setId2)
-      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+      molecule->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
   }
-  for (list<Hbond *>::iterator bit=protein->H_bonds.begin(); bit != protein->H_bonds.end(); ++bit) {
+  for (list<Hbond *>::iterator bit=molecule->H_bonds.begin(); bit != molecule->H_bonds.end(); ++bit) {
     int setId1 = ds.FindSet((*bit)->Atom1->getId());
-    protein->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
+    molecule->Rigidbody_map_by_id.find( idMap.find(setId1)->second )->second->addBond(*bit);
     int setId2 = ds.FindSet((*bit)->Atom2->getId());
     if(setId1!=setId2)
-      protein->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
+      molecule->Rigidbody_map_by_id.find( idMap.find(setId2)->second )->second->addBond(*bit);
   }
 
 
 }
 
-void IO::writePdb (Molecule * protein, string output_file_name) {
+void IO::writePdb (Molecule * molecule, string output_file_name) {
   for(int i=0;i<output_file_name.length();i++){
     if(output_file_name[i]=='/'){
       mkdir(output_file_name.substr(0,i).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -677,8 +677,8 @@ void IO::writePdb (Molecule * protein, string output_file_name) {
     cerr<<"Cannot write to "<<output_file_name<<endl;
     exit(-1);
   }
-  if(protein->m_conf!=nullptr){
-    Configuration* c = protein->m_conf;
+  if(molecule->m_conf!=nullptr){
+    Configuration* c = molecule->m_conf;
     output << "REMARK\tID = " << c->m_id << endl;
     if(c->getParent() != nullptr)
       output << "REMARK\tParent ID = " << c->getParent()->m_id << endl;
@@ -687,18 +687,18 @@ void IO::writePdb (Molecule * protein, string output_file_name) {
     int count=0;
     while(c->getParent() != nullptr && c->getParent() != c) { output << c->m_id << " "; c=c->getParent(); count++; }
     output << c->m_id << endl;
-    //Use protein->m_conf for all information
-    output<<"REMARK\tDistance_initial = "<<setprecision(3)<<protein->m_conf->m_distanceToIni<<endl;
-    output<<"REMARK\tDistance to parent = "<<setprecision(3)<<protein->m_conf->m_distanceToParent<<endl;
-    output<<"REMARK\tDistance to target = "<<setprecision(6)<<protein->m_conf->m_distanceToTarget<<endl;
-    output<<"REMARK\tMax violation = "<<setprecision(3)<<protein->m_conf->m_maxConstraintViolation<<endl;
-    output<<"REMARK\tClash prevention = "<<setprecision(3)<<protein->m_conf->m_usedClashPrevention<<endl;
-    output<<"REMARK\tClash free dofs = "<<setprecision(3)<<protein->m_conf->m_clashFreeDofs<<endl;
-    output<<"REMARK\tOverall dofs = "<<setprecision(3)<<protein->m_conf->getNumDOFs()<<endl;
-    output<<"REMARK\tMin collision factor = "<<setprecision(3)<<protein->m_conf->m_minCollisionFactor<<endl;
-    output<<"REMARK\tVdw energy = "<<setprecision(6)<<protein->m_conf->m_vdwEnergy<<endl;
+    //Use molecule->m_conf for all information
+    output<<"REMARK\tDistance_initial = "<<setprecision(3)<<molecule->m_conf->m_distanceToIni<<endl;
+    output<<"REMARK\tDistance to parent = "<<setprecision(3)<<molecule->m_conf->m_distanceToParent<<endl;
+    output<<"REMARK\tDistance to target = "<<setprecision(6)<<molecule->m_conf->m_distanceToTarget<<endl;
+    output<<"REMARK\tMax violation = "<<setprecision(3)<<molecule->m_conf->m_maxConstraintViolation<<endl;
+    output<<"REMARK\tClash prevention = "<<setprecision(3)<<molecule->m_conf->m_usedClashPrevention<<endl;
+    output<<"REMARK\tClash free dofs = "<<setprecision(3)<<molecule->m_conf->m_clashFreeDofs<<endl;
+    output<<"REMARK\tOverall dofs = "<<setprecision(3)<<molecule->m_conf->getNumDOFs()<<endl;
+    output<<"REMARK\tMin collision factor = "<<setprecision(3)<<molecule->m_conf->m_minCollisionFactor<<endl;
+    output<<"REMARK\tVdw energy = "<<setprecision(6)<<molecule->m_conf->m_vdwEnergy<<endl;
   }
-  for (vector<Atom*>::iterator atom_itr=protein->atoms.begin(); atom_itr != protein->atoms.end(); ++atom_itr) {
+  for (vector<Atom*>::iterator atom_itr=molecule->atoms.begin(); atom_itr != molecule->atoms.end(); ++atom_itr) {
     Atom* atom = *atom_itr;
     Residue* res = (*atom_itr)->getResidue();
     char buffer[100];
@@ -780,15 +780,15 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 }
 
 
-void IO::writeCovBonds (Molecule *protein, string output_file_name) {
+void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
-  for (list<Bond *>::iterator bond_itr=protein->Cov_bonds.begin(); bond_itr != protein->Cov_bonds.end(); ++bond_itr) {
+  for (list<Bond *>::iterator bond_itr=molecule->Cov_bonds.begin(); bond_itr != molecule->Cov_bonds.end(); ++bond_itr) {
     output << right << setw(8) << (*bond_itr)->Atom1->getId() << right << setw(8) << (*bond_itr)->Atom2->getId() << right << setw(8) << (*bond_itr)->Bars << endl;
   }
   output.close();
 }
 
-void IO::readCovBonds (Molecule *protein, string in_file_name) {
+void IO::readCovBonds (Molecule *molecule, string in_file_name) {
 
   ifstream cov(in_file_name.c_str());
   if (!cov.good()) {
@@ -805,18 +805,18 @@ void IO::readCovBonds (Molecule *protein, string in_file_name) {
 
     string atom_name1 = line.substr(0,8);
     string atom_name2 = line.substr(8,8);
-    Atom *atom1 = protein->getAtom(atoi(atom_name1.c_str()));
-    Atom *atom2 = protein->getAtom(atoi(atom_name2.c_str()));
+    Atom *atom1 = molecule->getAtom(atoi(atom_name1.c_str()));
+    Atom *atom2 = molecule->getAtom(atoi(atom_name2.c_str()));
 
     Bond * new_cb = new Bond(atom1, atom2, "COV");
-    protein->addCovBond(new_cb);
+    molecule->addCovBond(new_cb);
   }
   cov.close();
 }
 
-void IO::writeHbonds (Molecule *protein, string output_file_name) {
+void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
-  for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
+  for (list<Hbond *>::iterator hb_itr=molecule->H_bonds.begin(); hb_itr != molecule->H_bonds.end(); ++hb_itr) {
     output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
     output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
     if ((*hb_itr)->getIniEnergy()==DEFAULT_HBOND_ENERGY ) {
@@ -864,7 +864,7 @@ void IO::writeHbonds (Molecule *protein, string output_file_name) {
 //	input.close();
 //}
 
-void IO::readHbonds (Molecule *protein, string hbond_file_name) {
+void IO::readHbonds (Molecule *molecule, string hbond_file_name) {
   ifstream input(hbond_file_name.c_str());
   std::string line;
   string atom1_sid, atom2_sid, energy_s;
@@ -883,35 +883,35 @@ void IO::readHbonds (Molecule *protein, string hbond_file_name) {
     hatom_id = atoi(atom1_sid.c_str());
     oatom_id = atoi(atom2_sid.c_str());
 
-    hatom = protein->getAtom(hatom_id);
+    hatom = molecule->getAtom(hatom_id);
     if(hatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<hatom_id<<endl; exit(-1); }
-    oatom = protein->getAtom(oatom_id);
+    oatom = molecule->getAtom(oatom_id);
     if(oatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
 
     //Check if hatom and oatom were assigned correctly
     if( hatom->isHeavyAtom() ) {
       oatom = hatom;
-      hatom = protein->getAtom(oatom_id);
+      hatom = molecule->getAtom(oatom_id);
     }
 
     //Assign donors and base atoms
     donor = hatom->getFirstCovNeighbor();
     AA = oatom->getFirstCovNeighbor();
     Hbond * new_hb = new Hbond(hatom, oatom, donor, AA, energy);
-    protein->addHbond(new_hb);
+    molecule->addHbond(new_hb);
   }
   input.close();
 }
 
-void IO::readAnnotations (Molecule *protein, string annotation_file_name){
+void IO::readAnnotations (Molecule *molecule, string annotation_file_name){
   ifstream input(annotation_file_name.c_str());
   if(!input.is_open()) return;
 
-  Chain* chain = (protein->chains[0]);
+  Chain* chain = (molecule->chains[0]);
   int residues = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
-  protein->residueAnnotations = new int[residues];
+  molecule->residueAnnotations = new int[residues];
   for(int i=0;i<residues;i++)
-    protein->residueAnnotations[i] = 0;
+    molecule->residueAnnotations[i] = 0;
 
   int residue, annotation;
   while (input.good()) {
@@ -927,27 +927,27 @@ void IO::readAnnotations (Molecule *protein, string annotation_file_name){
     }
 
     assert(residue<residues);
-    protein->residueAnnotations[residue] = annotation;
+    molecule->residueAnnotations[residue] = annotation;
     //log("debugRas")<<"resAnn["<<residue<<"] = "<<annotation<<endl;
   }
 
 }
 
-void IO::readHbonds_dssr(Molecule * protein, string dssrFile){
+void IO::readHbonds_dssr(Molecule * molecule, string dssrFile){
   cerr<<"IO::readHbonds_dssr(..) not yet implemented. Sorry"<<endl;
   exit(-1);
 }
 
-void IO::readHbonds_rnaview(Molecule * protein, string file, bool fillAnnotations){
+void IO::readHbonds_rnaview(Molecule * molecule, string file, bool fillAnnotations){
   int residues=0;
   if(fillAnnotations){
-    for(auto const& chain: protein->chains){
+    for(auto const& chain: molecule->chains){
       int lastRes = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
       if(lastRes>residues) residues = lastRes;
     }
-    protein->residueAnnotations = new int[residues];
+    molecule->residueAnnotations = new int[residues];
     for(int i=0;i<residues;i++)
-      protein->residueAnnotations[i] = 0;
+      molecule->residueAnnotations[i] = 0;
   }
 
 
@@ -968,8 +968,8 @@ void IO::readHbonds_rnaview(Molecule * protein, string file, bool fillAnnotation
     int res2 = atoi(Util::trim(line.substr(23,6)).c_str());
 
     if(fillAnnotations){
-      if(res1>0 && res1<residues)	protein->residueAnnotations[res1] = 1;
-      if(res2>0 && res2<residues)	protein->residueAnnotations[res2] = 1;
+      if(res1>0 && res1<residues)	molecule->residueAnnotations[res1] = 1;
+      if(res2>0 && res2<residues)	molecule->residueAnnotations[res2] = 1;
     }
 
     if(line.length()<50) continue;
@@ -990,9 +990,9 @@ void IO::readHbonds_rnaview(Molecule * protein, string file, bool fillAnnotation
       donorName = "N1";
       acceptorName = "O2"; //(This might primarily be valid for 1LDZ)
     }else continue;
-    Atom* donor = protein->getAtom(chain1, res1, donorName);
+    Atom* donor = molecule->getAtom(chain1, res1, donorName);
     if(donor==nullptr) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res1<<"_"<<donorName<<endl;exit(-1);}
-    Atom* acceptor = protein->getAtom(chain2, res2, acceptorName);
+    Atom* acceptor = molecule->getAtom(chain2, res2, acceptorName);
     if(acceptor==nullptr) { cerr<<"IO::readHbonds_rnaview(..) Error: Couldnt find "<<res2<<"_"<<acceptorName<<endl;exit(-1);}
     Atom* AA = acceptor->getFirstCovNeighbor();
     Atom* hatom = nullptr;
@@ -1010,27 +1010,27 @@ void IO::readHbonds_rnaview(Molecule * protein, string file, bool fillAnnotation
       exit(-1);
     }
     Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
-    protein->addHbond(new_hb);
+    molecule->addHbond(new_hb);
     log("so")<<"RNAView file: Created hydrogen bond between "<<hatom<<
       "("<<hatom->getId()<<") and "<<acceptor<<"("<<acceptor->getId()<<")"<<endl;
   }
 
   if(fillAnnotations){
-    for(int i=0;protein->residueAnnotations[i]==0;i++)
-      protein->residueAnnotations[i]=1;
-    for(int i=residues-1;protein->residueAnnotations[i]==0;i--)
-      protein->residueAnnotations[i]=1;
+    for(int i=0;molecule->residueAnnotations[i]==0;i++)
+      molecule->residueAnnotations[i]=1;
+    for(int i=residues-1;molecule->residueAnnotations[i]==0;i--)
+      molecule->residueAnnotations[i]=1;
   }
   //enableLogger("debugRas");
   log("so")<<"ResidueAnnotations: ";
   for(int i=0;i<residues;i++){
-    log("so")<<protein->residueAnnotations[i];
+    log("so")<<molecule->residueAnnotations[i];
   }
   log("so")<<endl;
 
 }
 
-void IO::readHbonds_first(Molecule * protein, string file){
+void IO::readHbonds_first(Molecule * molecule, string file){
   ifstream input(file.c_str());
   if(!input.is_open()) {cerr<<"IO::readHbonds_first(..) Error: Couldnt open "<<file<<" for reading"<<endl; exit(-1);}
 
@@ -1041,19 +1041,19 @@ void IO::readHbonds_first(Molecule * protein, string file){
     int id1 = atoi(Util::trim(line.substr(0,8)).c_str());
     int id2 = atoi(Util::trim(line.substr(8,8)).c_str());
 
-    Atom* hatom = protein->getAtom(id1);
-    Atom* acceptor = protein->getAtom(id2);
+    Atom* hatom = molecule->getAtom(id1);
+    Atom* acceptor = molecule->getAtom(id2);
     Atom* AA = acceptor->getFirstCovNeighbor();
     Atom* donor = hatom->getFirstCovNeighbor();
 
     Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
-    protein->addHbond(new_hb);
+    molecule->addHbond(new_hb);
     log("verbose")<<"FIRST file: Created hydrogen bond between "<<hatom<<" and "<<acceptor<<endl;
   }
 }
 
 
-void IO::readHbonds_vadar(Molecule * protein, string file){
+void IO::readHbonds_vadar(Molecule * molecule, string file){
   ifstream input(file.c_str());
   if(!input.is_open()) {cerr<<"IO::readHbonds_vadar(..) Error: Couldnt open "<<file<<" for reading"<<endl; exit(-1);}
 
@@ -1074,9 +1074,9 @@ void IO::readHbonds_vadar(Molecule * protein, string file){
     int resId2 = atoi(res2.substr(0,res2.length()-1).c_str());
     //TODO: Assumes the chains are the same
 
-    Atom* donor = protein->getAtom(chain1, resId1, name1);
+    Atom* donor = molecule->getAtom(chain1, resId1, name1);
     if(donor==nullptr) { cerr<<"Cannot find res "<<resId1<<"/"<<name1<<endl; exit(-1); }
-    Atom* acceptor = protein->getAtom(chain1, resId2, name2);
+    Atom* acceptor = molecule->getAtom(chain1, resId2, name2);
     if(acceptor==nullptr) { cerr<<"Cannot find res "<<resId2<<"/"<<name2<<endl; exit(-1); }
     cout<<"Hbond "<<donor->getId()<<" "<<acceptor->getId()<<endl;
     Atom* hatom = donor->getFirstCovNeighbor();
@@ -1090,13 +1090,13 @@ void IO::readHbonds_vadar(Molecule * protein, string file){
     //Atom* AA = hatom->getFirstCovNeighbor();
 
     Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
-    protein->addHbond(new_hb);
+    molecule->addHbond(new_hb);
     log("verbose")<<"vadar file: Created hydrogen bond between "<<hatom<<" and "<<acceptor<<endl;
   }
 
 }
 
-void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_file_name) {
+void IO::writePyMolScript(Molecule * molecule, string pdb_file, string output_file_name) {
 
   ofstream pymol_script( output_file_name.c_str() );
 
@@ -1130,8 +1130,8 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
   // assign that color to those atoms.
   // Also, we save each cluster's color in a map for use again later
   map< unsigned int, string > mapClusterIDtoColor;
-  map<unsigned int,Rigidbody*>::iterator rbit = protein->m_conf->m_biggerRBMap.begin();
-  vector< pair< int, unsigned int> >::iterator sit = protein->m_conf->m_sortedRBs.begin();
+  map<unsigned int,Rigidbody*>::iterator rbit = molecule->m_conf->m_biggerRBMap.begin();
+  vector< pair< int, unsigned int> >::iterator sit = molecule->m_conf->m_sortedRBs.begin();
   Color::next_rcd_color_as_name(true);
 
   //	  while(rbit != m_molecule->m_conf->m_biggerRBMap.end() ){
@@ -1144,7 +1144,7 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
   //		  rbit++;
   //	  }
 
-  while(sit != protein->m_conf->m_sortedRBs.end() ){
+  while(sit != molecule->m_conf->m_sortedRBs.end() ){
     if( sit->first >= MIN_CLUSTER_SIZE ){
       //	  			  cout<<"Current print: "<<sit->second<<endl;
       string color = Color::next_rcd_color_as_name();
@@ -1163,7 +1163,7 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
   int site_1, site_2;
   vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
-  for (eit=protein->m_spanning_tree->CycleAnchorEdges.begin(); eit != protein->m_spanning_tree->CycleAnchorEdges.end(); eit++) {
+  for (eit=molecule->m_spanning_tree->CycleAnchorEdges.begin(); eit != molecule->m_spanning_tree->CycleAnchorEdges.end(); eit++) {
 
     site_1 = eit->first->getBond()->Atom1->getId();
     site_2 = eit->first->getBond()->Atom2->getId();
@@ -1183,9 +1183,9 @@ void IO::writePyMolScript(Molecule * protein, string pdb_file, string output_fil
 
   // for each rigid cluster, create a new pymol object of the cluster.
   unsigned int total_RC_objects = 0;
-  rbit = protein->m_conf->m_biggerRBMap.begin();
-  sit = protein->m_conf->m_sortedRBs.begin();
-  while( sit != protein->m_conf->m_sortedRBs.end() ){
+  rbit = molecule->m_conf->m_biggerRBMap.begin();
+  sit = molecule->m_conf->m_sortedRBs.begin();
+  while( sit != molecule->m_conf->m_sortedRBs.end() ){
     if( (sit->first) >= MIN_CLUSTER_SIZE ){
       pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << sit->second<< " has "
         << sit->first << " atoms." << endl;

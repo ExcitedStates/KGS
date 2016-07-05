@@ -29,6 +29,7 @@
 #define UTIL_H
 
 #include <string>
+#include <vector>
 
 #define CTK_PI 3.14159265
 
@@ -36,21 +37,27 @@
 typedef std::pair<std::string,std::string> CovBond;
 
 class Util {
-  public:
-	static std::string d2s (double x);
-	static std::string f2s (float x);
-	static std::string i2s (int x);
-	static std::string i2s(int x, int length);
-	static bool stob (std::string s);
-	static std::string trim (std::string s,char c=' ');
-	static std::string getPath (std::string s);
-	static std::string getBaseName (std::string s);
-	static std::string formatNumber(std::string number, int digits_num);
-	static float round(float number, int precision);
-	static double round(double number, int precision);
-	static std::string cutDecimal(float number, int decimals);
+ public:
+  static std::string d2s (double x);
+  static std::string f2s (float x);
+  static std::string i2s (int x);
+  static std::string i2s(int x, int length);
+  static bool stob (std::string s);
+  static std::string trim (std::string s,char c=' ');
+  static std::string getPath (std::string s);
+  static std::string getBaseName (std::string s);
+  static std::string formatNumber(std::string number, int digits_num);
+  static float round(float number, int precision);
+  static double round(double number, int precision);
+  static std::string cutDecimal(float number, int decimals);
 
-//	static std::string to_string(int i);
+  static std::vector<int>& split( const std::string &s, char delim, std::vector<int>& numbers );
+  static std::vector<std::string>& split( const std::string &s, char delim, std::vector<std::string> &words );
+  static std::vector<std::string> split( const std::string &s, char delim );
+  static std::vector<std::string> split( const std::string &s, const std::string& delim );
+  static bool contains( const std::string& s, const std::string& substring );
+  static bool startsWith( const std::string& s, const std::string& substring );
+
 };
 
 #endif

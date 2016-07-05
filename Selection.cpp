@@ -25,40 +25,238 @@
 
 
 */
+#include <regex>
 #include "Selection.h"
 #include "Logger.h"
+#include "Util.h"
 
 using namespace std;
 
 
 Selection::Selection() : Selection("all") {}
 
-Selection::Selection(string selectionString) :
-    m_selectionString(selectionString)
+Selection::Selection(const string& selectionPattern) :
+    m_selectionPattern(selectionPattern),
+    m_rootClause(parseClause(selectionPattern))
 {}
 
+vector<Atom*>& Selection::getSelectedAtoms( const Molecule* mol )
+{
+  if( m_cachedAtoms.count(mol)==0 ){
+    m_cachedAtoms[mol] = std::move(std::vector<Atom*>());
+    vector<Atom*>& ret = m_cachedAtoms[mol];
 
-vector<string> Selection::split( const string& s, const string& delim, vector<string>& words ) {
-	words.clear();
-	stringstream ss(s);
-	string item;
-	char c = delim[0]; // assumes 1st char of delim string is the separator!
-	while( getline(ss, item, c) )
-    words.push_back(item);
-	return words;
+    for(auto const& a: mol->atoms){
+      if( m_rootClause->inSelection(a) )
+        ret.push_back(a);
+    }
+  }
+
+  return m_cachedAtoms[mol];
 }
 
-/*
- * Split string by delimiter (uses 1st char).
- * Results returned in a new vector.
- */
-vector<string> Selection::split( const string &s, const string& delim ) {
-	vector<string> words;
-	split(s, delim, words);
-	return words;
+vector<Residue*>& Selection::getSelectedResidues( const Molecule *mol )
+{
+  if(m_cachedResidues.count(mol)==0) {
+
+    m_cachedResidues[mol] = std::move(std::vector<Residue*>());
+    vector<Residue *>& ret = m_cachedResidues[mol];
+    for (auto chain: mol->chains) {
+      for (auto res: chain->getResidues()) {
+
+        //Test whether all atoms in res are selected
+        bool includeRes = true;
+        for (auto atom: res->getAtoms()) {
+          if (!m_rootClause->inSelection(atom)) {
+            includeRes = false;
+            break;
+          }
+        }
+
+        if (includeRes) ret.push_back(res);
+      }
+    }
+  }
+
+  return m_cachedResidues[mol];
+}
+
+std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
+{
+  if(m_cachedBonds.count(mol)==0) {
+    m_cachedBonds[mol] = std::move(vector<Bond*>());
+    vector<Bond *>& ret = m_cachedBonds[mol];
+    for (auto const &bond: mol->Cov_bonds) {
+      //Check if both end-atoms are in selection
+      if (m_rootClause->inSelection(bond->Atom1) && m_rootClause->inSelection(bond->Atom2))
+        ret.push_back(bond);
+    }
+  }
+
+  return m_cachedBonds[mol];
 }
 
 
+
+Selection::Clause* Selection::parseClause(const std::string &input) {
+  if(Util::contains(input, " or ") || Util::contains(input, " + ")) return new OrClause(input);
+  if(Util::contains(input, " and ") || Util::contains(input, " & ")) return new AndClause(input);
+  if(Util::startsWith(input, "not ") || Util::startsWith(input, "!")) return new NotClause(input);
+  if(Util::startsWith(input, "resi ")) return new ResiClause(input);
+  if(Util::startsWith(input, "resn ")) return new ResnClause(input);
+  if(Util::startsWith(input, "name ")) return new NameClause(input);
+  if(input=="all")      return new AllClause(input);
+  if(input=="heavy")    return new HeavyClause(input);
+  if(input=="hydro")    return new HydroClause(input);
+  if(input=="backbone") return new BackboneClause(input);
+
+  throw "KGS error: Unrecognized pattern: "+input;
+}
+
+Selection::OrClause::OrClause(const std::string& input)
+{
+  cout<<"OrClause("<<input<<")"<<endl;
+  vector<string> subClausesPlus = Util::split(input, " + ");
+  for(const string& subClausePlus: subClausesPlus){
+    vector<string> subClausesOr = Util::split(subClausePlus, " or ");
+    for(const string& subClauseOr: subClausesOr){
+      cout<<" ... "<<subClauseOr<<endl;
+      m_childClauses.push_back( parseClause(subClauseOr) );
+    }
+  }
+}
+bool Selection::OrClause::inSelection(Atom* a) const
+{
+  for(const Clause* subClause: m_childClauses)
+    if( subClause->inSelection(a) ) return true;
+  return false;
+}
+
+Selection::AndClause::AndClause(const std::string& input)
+{
+  vector<string> subClausesAmp = Util::split(input, " & ");
+  for(const string& subClauseAmp: subClausesAmp){
+    vector<string> subClausesAnd = Util::split(subClauseAmp, " and ");
+    for(const string& subClauseAnd: subClausesAnd){
+      m_childClauses.push_back( parseClause(subClauseAnd) );
+    }
+  }
+}
+bool Selection::AndClause::inSelection(Atom* a) const
+{
+  for(const Clause* subClause: m_childClauses)
+    if( !subClause->inSelection(a) ) return false;
+  return true;
+}
+
+Selection::NotClause::NotClause(const std::string& input)
+{
+  if(Util::startsWith(input, "not ")) m_childClause = parseClause(input.substr(4));
+  else if(Util::startsWith(input, "! ")) m_childClause = parseClause(input.substr(2));
+  else if(Util::startsWith(input, "!")) m_childClause = parseClause(input.substr(1));
+}
+bool Selection::NotClause::inSelection(Atom* a) const
+{
+  return !(m_childClause->inSelection(a));
+}
+
+Selection::ResiClause::ResiClause(const std::string& input)
+{
+  regex intListPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
+  regex intervalPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
+  std::smatch sm;
+
+  const string resiInput = input.substr(5);
+
+  if( regex_match(resiInput, intListPat) ){
+    vector<string> tokens = Util::split(resiInput, '+');
+    for(const string& token: tokens){
+      int resi = std::stoi(token);
+      m_residueIDs.insert(resi);
+    }
+  }else if(regex_match(resiInput, sm, intervalPat)){
+    int intervalStart = stoi(sm[1]);
+    int intervalEnd = stoi(sm[2]);
+    for(int i=std::min(intervalStart, intervalEnd); i<=std::max(intervalStart, intervalEnd); i++){
+      m_residueIDs.insert(i);
+    }
+  }else{
+    throw "KGS error: Selection::ResiClause - Can't parse "+input;
+  }
+}
+bool Selection::ResiClause::inSelection(Atom* a) const{
+  return m_residueIDs.find(a->getResidue()->getId()) != m_residueIDs.end();
+}
+
+Selection::ResnClause::ResnClause(const std::string& input)
+{
+  regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
+  const string resnInput = input.substr(5);
+
+  if( regex_match(resnInput, strListPat) ){
+    vector<string> tokens = Util::split(resnInput, '+');
+    for(const string& token: tokens){
+      m_residueNames.push_back(token);
+    }
+  }
+}
+bool Selection::ResnClause::inSelection(Atom* a) const{
+  return std::find( m_residueNames.begin(), m_residueNames.end(), a->getResidue()->getName() )
+         != m_residueNames.end();
+}
+
+Selection::NameClause::NameClause(const std::string& input)
+{
+  regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
+  const string nameInput = input.substr(5);
+
+  if( regex_match(nameInput, strListPat) ){
+    vector<string> tokens = Util::split(nameInput, '+');
+    for(const string& token: tokens){
+      m_atomNames.push_back(token);
+    }
+  }
+}
+bool Selection::NameClause::inSelection(Atom* a) const
+{
+  return std::find( m_atomNames.begin(), m_atomNames.end(), a->getName() )
+         != m_atomNames.end();
+}
+
+Selection::ElemClause::ElemClause(const std::string& input)
+{
+  regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
+  const string elemInput = input.substr(5);
+
+  if( regex_match(elemInput, strListPat) ){
+    vector<string> tokens = Util::split(elemInput, '+');
+    for(const string& token: tokens){
+      m_atomElements.push_back(token);
+    }
+  }
+}
+bool Selection::ElemClause::inSelection(Atom* a) const
+{
+  return std::find( m_atomElements.begin(), m_atomElements.end(), a->getName() )
+         != m_atomElements.end();
+}
+
+Selection::AllClause::AllClause(const std::string& input){}
+bool Selection::AllClause::inSelection(Atom* a) const{
+  return true;
+}
+
+Selection::BackboneClause::BackboneClause(const std::string& input):
+    NameClause("name N+CA+C+P+O5'+C5'+C4'+C3'+O3'")
+{}
+
+Selection::HeavyClause::HeavyClause(const std::string& input):
+    NotClause("not hydro")
+{}
+
+Selection::HydroClause::HydroClause(const std::string& input):
+    ElemClause("elem H")
+{}
 
 
 //Selection::Selection( ) : delim_( " " ) {

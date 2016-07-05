@@ -34,7 +34,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--annotation"){                    annotationFile = argv[++i];                         continue; }
 		if(arg=="--hbondMethod"){                   hydrogenbondMethod = argv[++i];                     continue; }
 		if(arg=="--hbondFile"){                     hydrogenbondFile = argv[++i];                       continue; }
-		if(arg=="--extraCovBonds"){                 Selection::split( argv[++i],",", extraCovBonds );   continue; }
+		if(arg=="--extraCovBonds"){                 Util::split( string(argv[++i]),',', extraCovBonds );   continue; }
 		if(arg=="--workingDirectory"){              workingDirectory = argv[++i];                       continue; }
 		//if(arg=="--rigidbodiesFromFIRST"){          hydrogenbondFile = argv[++i];                       continue; }
 		if(arg=="--samples" || arg=="-s"){          samplesToGenerate = atoi(argv[++i]);                continue; }
@@ -60,7 +60,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
     if(arg=="--convergeDistance"){              convergeDistance = atof(argv[++i]);                 continue; } //Previously rmsdThreshold
     if(arg=="--saveData"){                      saveData = atoi(argv[++i]);                         continue; }
 		if(arg=="--sampleReverse"){                 sampleReverse = Util::stob(argv[++i]);              continue; }
-    if(arg=="--residueNetwork" || arg=="-res"){ Selection::split( argv[++i],",",residueNetwork);    continue; }
+    if(arg=="--residueNetwork" || arg=="-res"){ Util::split( argv[++i],',',residueNetwork);    continue; }
     if(arg=="--alignAlways"){                   alignAlways = Util::stob(argv[++i]);                continue; } //Previously align
 		if(arg=="--alignIni"){                      alignIni = Util::stob(argv[++i]);                   continue; }
 		if(arg=="--selectAtoms"){                   selectAtoms = argv[++i];                            continue; }

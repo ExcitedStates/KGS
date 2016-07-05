@@ -19,16 +19,18 @@ using namespace std;
 
 int main( int argc, char* argv[] ) {
 
-  double* arrsrc = (double*)malloc(10);
-  double* arrdst = (double*)malloc(10);
-  for(int i=0;i<10;i++){
-    arrsrc[i] = i*1.1;
-  }
-  memcpy(arrdst, arrsrc, sizeof(double)*10);
-  //std::copy(arrsrc, arrsrc+10, arrdst);
-
-  for(int i=0;i<10;i++){
-    cout<<arrdst[i]<<endl;
+  try {
+    Molecule mol;
+    std::vector<std::string> extraCovBonds;
+    IO::readPdb(&mol, "/Users/rfonseca/1crn.pdb", extraCovBonds);
+    IO::readRigidbody( &mol );
+    mol.buildSpanningTree();
+    Selection sel("backbone");
+    for (auto const &b: sel.getSelectedBonds(&mol)) {
+      cout << b << " " << b->getTorsion() <<endl;
+    }
+  } catch (const std::string& ex) {
+    cerr<<ex<<endl;
   }
 
 

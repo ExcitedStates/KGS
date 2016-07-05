@@ -110,3 +110,43 @@ string Util::cutDecimal(float number, int decimals) {
 	return f2s(round(number,decimals));
 }
 
+vector<string>& Util::split( const string& s, char delim, vector<string>& words ) {
+  words.clear();
+  stringstream ss(s);
+  string item;
+  while( getline(ss, item, delim) )
+    words.push_back(item);
+  return words;
+}
+
+vector<int>& Util::split( const string& s, char delim, vector<int>& numbers ) {
+//See outcommented section of Selection
+  return numbers;
+}
+
+vector<string> Util::split( const string& s, char delim ) {
+  vector<string> words;
+  split(s, delim, words);
+  return words;
+}
+
+vector<string> Util::split( const string& s, const string& delim ) {
+  vector<string> words;
+  auto i = 0, pos = 0;
+  do{
+    pos = s.find(delim, i);
+    words.push_back(s.substr(i, pos));
+    i = pos+delim.size();
+  }while(pos!=string::npos);
+
+  return words;
+}
+
+bool Util::contains( const string& s, const string& substring ) {
+  return s.find(substring)!=string::npos;
+}
+
+bool Util::startsWith( const string& s, const string& substring ) {
+  return s.compare(0, substring.length(), substring)==0;
+}
+
