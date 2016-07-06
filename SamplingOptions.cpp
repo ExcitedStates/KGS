@@ -346,7 +346,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
 
-  log("so")<<"\t--metricSelection <selection-pattern>\t: A selection-pattern which is passed to the metric. Default is 'all'."<<endl;
+  log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'all'."<<endl;
 
 	log("so")<<"\t--planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
 
@@ -466,12 +466,11 @@ void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
 
 	//Within the user-provided selection of residues, we choose <selectAtoms> atoms (user-provided string, default "heavy")
 
-	Selection alignSelection;
+	Selection alignSelection(selectionAlign);
 	vector<Atom*> atomsAlign;
 	vector<Atom*> atomsMoving;
 
 	if(selectionAlign != ""){
-		Selection alignSelection(selectionAlign);
 //		vector<Residue*> residuesAlign = alignSelection.getSelectedResidues(protein);
 //		alignSelection.selection( selectAtoms ); // will use heavy atoms // TODO: What is this even supposed to do?
 //		atomsAlign = alignSelection.getSelectedAtoms( residuesAlign );
