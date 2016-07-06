@@ -26,6 +26,7 @@
 #include <directions/LSNullspaceDirection.h>
 #include <moves/DecreaseStepMove.h>
 #include <loopclosure/ExactIK.h>
+#include <metrics/RMSDnosuper.h>
 
 using namespace std;
 
@@ -75,21 +76,28 @@ int main( int argc, char* argv[] ) {
   protein.m_initialCollisions = protein.getAllCollisions();
 
   if(options.selectionMoving.empty()){
-    cerr<<"Must supply --selectionMoving (e.g. \"resi 17 to 22 and resi 50 to 55\")"<<endl;
+    cerr<<"Must supply --selectionMoving (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
     exit(-1);
   }
 
 
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_atoms.size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein.getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
-  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
+  try {
+    Selection metricSelection(options.metricPattern);
+    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+  }catch(std::runtime_error& error) {
+    cerr<<error.what()<<endl;
+    exit(-1);
+  }
 
   //Initialize move
   Move* move = nullptr;

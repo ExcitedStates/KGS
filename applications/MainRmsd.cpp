@@ -32,7 +32,8 @@ int main( int argc, char* argv[] ){
   if(argc<3){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
 //  metrics::Metric* metric = new metrics::RMSD();
-  metrics::Metric* metric = new metrics::Dihedral();
+  Selection sel("all");
+  metrics::Metric* metric = new metrics::Dihedral(sel);
   Configuration* reference = new Configuration(myReadFile(argv[1]));
   for(int i=2;i<argc;i++){
     Molecule * p = myReadFile(argv[i]);

@@ -17,7 +17,6 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
   const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
-  // If atomsAlign is nullptr, align the entire m_protein
   if( atomsRMSD1.empty() || atomsRMSD2.empty() ){
     cerr<<"RMSD::distance - Atom-selection given to RMSD metric contained no atoms: "<<m_selection<<endl;
     exit(-1);

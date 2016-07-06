@@ -48,6 +48,7 @@
  *     :== SEL or SEL        # Disjunction of two selections
  *     :== SEL & SEL         # Conjunction of two selections
  *     :== SEL and SEL       # Conjunction of two selections
+ *     :== ! SEL             # Negation of selection
  *     :== not SEL           # Negation of selection
  *     :== resi <int>-<int>  # Residue ID interval
  *     :== resi INTLIST      # Residue ID list
@@ -66,13 +67,13 @@
  *
  * There are two uses of the symbol '+' and the whitespace around it is important. A
  * typical selection will be composed of a series of clauses or-ed together, e.g.
- * "resi 5 or resi 10" will select all atoms in residues with id 5 and 10.
+ * "resi 5 or resi 10" will select all atoms in residues with id 5 and 10. Since "and"
+ * binds stronger than "or", the pattern "name CA and resi 2 or resi 3" will select only
+ * the C-alpha atom of residue 2 and also all atoms in residue 3.
  *
- * Since "and" binds stronger than "or", the pattern "name CA and resi 2 or resi 3" will
- * select only the C-alpha atom of residue 2 but also all atoms in residue 3.
- *
- * There is no parenthesis in selection patterns, so to select all C-alphas in two loop
- * regions use the selection "name CA and resi 10-15 + name CA and resi 20-25".
+ * There is no parenthesis in selection-patterns, so to select all C-alphas in two loop
+ * regions use the selection "name CA and resi 10-15 + name CA and resi 20-25". Passing
+ * an empty string as selection-pattern corresponds to the pattern "all".
  *
  * To use a selection object, first instantiate it with the pattern and then call either
  * getSelectedAtoms, getSelectedBonds, or getSelectedResidues on a molecule object. The
@@ -80,13 +81,10 @@
  * <pre>
  * Selection sel("resi 10-15 and backbone");
  * Molecule mol;
- * //Initialize mol
- * //...
- * for( auto atom: sel.getSelectedAtoms(&mol))
+ * //Initialize mol ...
+ * for( auto atom: sel.getSelectedAtoms(&mol) )
  *   cout<<atom<<endl;
  * </pre>
- *
- * Passing an empty string corresponds to the pattern "all".
  */
 class Selection {
  public:

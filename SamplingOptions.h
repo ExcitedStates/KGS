@@ -49,8 +49,10 @@ class SamplingOptions
   double stepSize;
   /** Desired norm of step to next sample, can be decreased during collision with decreaseSteps and decreaseFactor */
   bool flexibleRibose;
-  /** Desired m_metric */
+  /** Desired metric */
   std::string metric_string;
+  /** Selection-pattern passed to metric */
+  std::string metricPattern;
   /** Desired planner */
   std::string planner_string;
   /** Generate new samples from randomly chosen seed samples (instead from last accepted sample). */

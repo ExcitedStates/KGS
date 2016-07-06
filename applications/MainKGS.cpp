@@ -28,6 +28,7 @@
 #include <directions/LSNullspaceDirection.h>
 #include <directions/BlendedDirection.h>
 #include <moves/DecreaseStepMove.h>
+#include <metrics/RMSDnosuper.h>
 
 using namespace std;
 
@@ -86,7 +87,7 @@ void randomSampling(SamplingOptions& options){
   Molecule protein;
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-  log() << "Molecule has " << protein.m_atoms.size() << " atoms\n";
+  log() << "Molecule has " << protein.getAtoms().size() << " atoms\n";
   options.setResidueNetwork(&protein);
 
   if(!options.annotationFile.empty())
@@ -121,15 +122,22 @@ void randomSampling(SamplingOptions& options){
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_atoms.size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein.getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize metric
-  metrics::Metric* metric;
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD();
-  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
+  metrics::Metric* metric = nullptr;
+  try {
+    Selection metricSelection(options.metricPattern);
+    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+  }catch(std::runtime_error& error) {
+    cerr<<error.what()<<endl;
+    exit(-1);
+  }
 
   //Initialize move
   Move* move;
@@ -183,7 +191,7 @@ void randomSampling(SamplingOptions& options){
   //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
   log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.m_hBonds.size()<<" hydrogen bonds!"<<endl<<endl;
+  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
   log("samplingStatus")<<"Sampling ...\n";
   CTKTimer timer;
@@ -224,7 +232,7 @@ void targetedSampling(SamplingOptions& options){
   protein.setCollisionFactor(options.collisionFactor);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-  log() << "Molecule has " << protein.m_atoms.size() << " atoms\n";
+  log() << "Molecule has " << protein.getAtoms().size() << " atoms\n";
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(&protein, options.annotationFile);
@@ -295,21 +303,28 @@ void targetedSampling(SamplingOptions& options){
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus") << "> " << protein.m_atoms.size() << " atoms" << endl;
+  log("samplingStatus") << "> " << protein.getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   log("samplingStatus")<<"Target has:"<<endl;
-  log("samplingStatus")<<"> "<<target->m_atoms.size()<<" atoms"<<endl;
+  log("samplingStatus")<<"> "<<target->getAtoms().size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->m_initialCollisions.size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
   //Initialize metric
-  metrics::Metric* metric;
-  if(SamplingOptions::getOptions()->metric_string=="rmsd") 		  metric = new metrics::RMSD(SamplingOptions::getOptions()->getAtomsMoving());
-  if(SamplingOptions::getOptions()->metric_string=="dihedral") 	metric = new metrics::Dihedral();
+  metrics::Metric* metric = nullptr;
+  try {
+    Selection metricSelection(options.metricPattern);
+    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+  }catch(std::runtime_error& error) {
+    cerr<<error.what()<<endl;
+    exit(-1);
+  }
 
   //Initialize move
   Move* move;
@@ -390,7 +405,7 @@ void targetedSampling(SamplingOptions& options){
   //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
   log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
   log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.m_hBonds.size()<<" hydrogen bonds!"<<endl;
+  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl;
 
 
   log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf)<<endl;

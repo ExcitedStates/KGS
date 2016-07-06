@@ -121,17 +121,15 @@ Selection::Clause* Selection::parseClause(const std::string &input) {
   if(input=="hydro")    return new HydroClause(input);
   if(input=="backbone") return new BackboneClause(input);
 
-  throw "KGS error: Unrecognized pattern: "+input;
+  throw std::runtime_error("KGS error: Unrecognized pattern: "+input);
 }
 
 Selection::OrClause::OrClause(const std::string& input)
 {
-  cout<<"OrClause("<<input<<")"<<endl;
   vector<string> subClausesPlus = Util::split(input, " + ");
   for(const string& subClausePlus: subClausesPlus){
     vector<string> subClausesOr = Util::split(subClausePlus, " or ");
     for(const string& subClauseOr: subClausesOr){
-      cout<<" ... "<<subClauseOr<<endl;
       m_childClauses.push_back( parseClause(subClauseOr) );
     }
   }
@@ -174,7 +172,7 @@ bool Selection::NotClause::inSelection(const Atom* a) const
 Selection::ResiClause::ResiClause(const std::string& input)
 {
   regex intListPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
-  regex intervalPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
+  regex intervalPat("(\\-?[[:digit:]]+)\\-(\\-?[[:digit:]]+)");
   std::smatch sm;
 
   const string resiInput = input.substr(5);
@@ -192,7 +190,7 @@ Selection::ResiClause::ResiClause(const std::string& input)
       m_residueIDs.insert(i);
     }
   }else{
-    throw "KGS error: Selection::ResiClause - Can't parse "+input;
+    throw std::runtime_error("KGS error: Selection::ResiClause - Can't parse \""+input+"\"");
   }
 }
 bool Selection::ResiClause::inSelection(const Atom* a) const{

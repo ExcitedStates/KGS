@@ -181,9 +181,9 @@ int main(int argc, char* argv[]){
 			//printf ("eigenvector = \n");
 			//gsl_vector_fprintf (stdout, &evec_i.vector, "%g");
 		}
-	double atom_def[native->m_atoms.size()];
-	double atom_mob[native->m_atoms.size()];
-	for(int i=0;i<native->m_atoms.size(); i++){
+	double atom_def[native->getAtoms().size()];
+	double atom_mob[native->getAtoms().size()];
+	for(int i=0;i<native->getAtoms().size(); i++){
 		atom_def[i] = 0;
 		atom_mob[i] = 0;
 	}
@@ -235,31 +235,28 @@ int main(int argc, char* argv[]){
 //	}
     double defMax = 0.0;
 //    double mobMax = 0.0;
-	for(int i=0;i<native->m_atoms.size(); i++){
+	for(int i=0;i<native->getAtoms().size(); i++){
         if(atom_def[i]>defMax) defMax = atom_def[i];
 //        if(atom_mob[i]>mobMax) mobMax = atom_mob[i];
 	}
 	cout<<"DefMax: "<<defMax<<endl;
-	for(int i=0;i<native->m_atoms.size(); i++){
+	for(int i=0;i<native->getAtoms().size(); i++){
         atom_def[i] /= defMax;
 //        atom_mob[i] /= mobMax;
 	}
 
 	ofstream output("pca_def.pdb");
-	//for (vector<Atom*>::iterator atom_itr=native->atoms.begin(); atom_itr!=native->atoms.end(); ++atom_itr) {
-	//	Atom* atom = *atom_itr;
-    for (int a=0;a<native->m_atoms.size(); a++){
-        Atom* atom = native->m_atoms[a]; // *atom_itr;
-		Residue* res = atom->getResidue();
-		char buffer[100];
-		sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s  ",
-			atom->getId(),atom->getName().c_str(),
-			res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
-			atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom_def[atom->getId()],atom_def[atom->getId()], atom->getType().c_str());
-		string line(buffer);
-		output << line << endl;
-	}
-	output.close();
+  for(auto const& atom: native->getAtoms()){
+    Residue* res = atom->getResidue();
+    char buffer[100];
+    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s  ",
+            atom->getId(),atom->getName().c_str(),
+            res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
+            atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom_def[atom->getId()],atom_def[atom->getId()], atom->getType().c_str());
+    string line(buffer);
+    output << line << endl;
+  }
+  output.close();
 
 //	ofstream output2("pca_mob.pdb");
 //	//for (vector<Atom*>::iterator atom_itr=native->atoms.begin(); atom_itr!=native->atoms.end(); ++atom_itr) {

@@ -56,7 +56,7 @@ int main( int argc, char* argv[] ){
 //		writeHBondPML(m_molecule, argv[1]);
 
   log("rigidity")<<"Molecule has:"<<endl;
-  log("rigidity") << "> " << protein->m_atoms.size() << " atoms" << endl;
+  log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->m_initialCollisions.size()<<" initial collisions"<<endl;
   log("rigidity")<<"> "<<protein->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanning_tree->getNumDOFs() << " DOFs of which " << protein->m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;

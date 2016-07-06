@@ -101,8 +101,8 @@ int main( int argc, char* argv[] ) {
     protein->buildSpanningTree();
 
     bool rna = true;
-    for (int i = 0; i < protein->m_atoms.size(); i++) {
-      if (protein->m_atoms[i]->getName() == "CA") {
+    for(auto const& atom: protein->getAtoms()){
+      if (atom->getName() == "CA") {
         rna = false;
         break;
       }

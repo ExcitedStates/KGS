@@ -48,7 +48,8 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
 		if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
 		if(arg=="--rejectsBeforeClose"){            poisson_max_rejects_before_close = atoi(argv[++i]); continue; }
-		if(arg=="--metric"   ){                     metric_string = argv[++i];                          continue; }
+		if(arg=="--metric"){                        metric_string = argv[++i];                          continue; }
+    if(arg=="--metricSelection"){               metricPattern = argv[++i];                          continue; }
 		if(arg=="--planner"   ){                    planner_string = argv[++i];                         continue; }
 		if(arg=="--rebuildLength"){                 rebuild_fragment_length = atoi(argv[++i]);          continue; }
 		if(arg=="--rebuildFrequency"){              rebuild_frequency = atof(argv[++i]);                continue; }
@@ -136,10 +137,17 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 
 	//Check for valid metric
 	std::transform(metric_string.begin(), metric_string.end(), metric_string.begin(), ::tolower);
-	if(metric_string!="dihedral" && metric_string!="rmsd"){
-		cerr<<"Invalid --m_metric option: "<<metric_string<<". Must be either 'dihedral' or 'rmsd'."<<endl;
+	if(metric_string!="dihedral" && metric_string!="rmsd" && metric_string!="rmsdnosuper"){
+		cerr<<"Invalid --metric option: "<<metric_string<<". Must be either 'dihedral', 'RMSD', or 'RMSDnosuper."<<endl;
 		exit(-1);
 	}
+
+  //Set default convergeDistance
+  if(convergeDistance<0.0) {
+    if(metric_string=="rmsd")        convergeDistance = 0.01;
+    if(metric_string=="rmsdnosuper") convergeDistance = 0.01;
+    if(metric_string=="dihedral")    convergeDistance = 1.0e-8;
+  }
 
 	//Check for valid planner
 	std::transform(planner_string.begin(), planner_string.end(), planner_string.begin(), ::tolower);
@@ -171,12 +179,6 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
   //Check target structure
   if(targetStructureFile.empty()){
     log("so")<<"No target structure file supplied, random sampling."<<endl;
-  }
-
-  //Set default convergeDistance
-  if(convergeDistance<0.0) {
-    if(metric_string=="rmsd")     convergeDistance = 0.01;
-    if(metric_string=="dihedral") convergeDistance = 1.0e-8;
   }
 
 	//Search for hbonds file. Print warning if not found
@@ -219,6 +221,7 @@ void SamplingOptions::initializeVariables(){
   maxRotation               = 3.1415/18;
   poisson_max_rejects_before_close = 10;
   metric_string             = "rmsd";
+  metricPattern             = "all";
   planner_string            = "binnedRRT";
   rebuild_fragment_length   = 0;
   rebuild_frequency         = 0.0;
@@ -266,6 +269,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--maxRotation "<<maxRotation<<endl;
   log("so")<<"\t--rejectsBeforeClose "<<poisson_max_rejects_before_close<<endl;
 	log("so")<<"\t--metric "<<metric_string<<endl;
+  log("so")<<"\t--metricSelection "<<metricPattern<<endl;
 	log("so")<<"\t--planner "<<planner_string<<endl;
 	log("so")<<"\t--rebuildLength "<<rebuild_fragment_length<<endl;
 	log("so")<<"\t--rebuildFrequency "<<rebuild_frequency<<endl;
@@ -340,7 +344,9 @@ void SamplingOptions::printUsage(char* pname){
 
   log("so")<<"\t--rejectsBeforeClose <integer> \t: For poisson sampling: Number of perturbations attempted before closing. The default is 10°."<<endl;
 
-	log("so")<<"\t--m_metric <rmsd|dihedral> \t: The m_metric to use in sampler. Default is rmsd."<<endl;
+	log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
+
+  log("so")<<"\t--metricSelection <selection-pattern>\t: A selection-pattern which is passed to the metric. Default is 'all'."<<endl;
 
 	log("so")<<"\t--planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
 
@@ -361,7 +367,7 @@ void SamplingOptions::printUsage(char* pname){
 
   log("so")<<"\t--biasToTarget, -bias <real number> \t: Percentage of using target as 'random seed configuration'. Default 0.1."<<endl;
 
-  log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral m_metric."<<endl;
+  log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
 
   log("so")<<"\t--saveData <0|1|2>\t: Indicate whether files shall be saved! 0= none, 1=pdb and q, 2=all"<<endl;
 
@@ -439,12 +445,17 @@ void SamplingOptions::setResidueNetwork(const Molecule * protein){
 	//Determine if only certain residues shall be perturbed
 	string selGradient = selectionMoving;
 	if(selGradient != ""){
-		Selection gradientSelection(selGradient);
-		vector<Residue*> residuesGradient = gradientSelection.getSelectedResidues(protein);
-		for(auto const& residue: residuesGradient){
-			residueNetwork.push_back( residue->getId() );
-		}
-		log("dominik")<<" Number of residues for gradient = "<<residueNetwork.size()<<endl;
+    try {
+      Selection gradientSelection(selGradient);
+      vector<Residue *> residuesGradient = gradientSelection.getSelectedResidues(protein);
+      for (auto const &residue: residuesGradient) {
+        residueNetwork.push_back(residue->getId());
+      }
+      log("dominik") << " Number of residues for gradient = " << residueNetwork.size() << endl;
+    }catch(std::runtime_error& error) {
+      cerr<<error.what()<<endl;
+      exit(-1);
+    }
 	}
 }
 

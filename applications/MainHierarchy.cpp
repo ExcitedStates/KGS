@@ -83,7 +83,7 @@ int main( int argc, char* argv[] ) {
   //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;
-  log("hierarchy") << "> " << protein->m_atoms.size() << " atoms" << endl;
+  log("hierarchy") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("hierarchy") << "> " << protein->m_initialCollisions.size() << " initial collisions" << endl;
   log("hierarchy") << "> " << protein->m_spanning_tree->CycleAnchorEdges.size() << " hydrogen bonds" << endl;
   log("hierarchy") << "> " << protein->m_spanning_tree->getNumDOFs() << " DOFs of which " <<

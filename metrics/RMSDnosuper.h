@@ -1,5 +1,5 @@
-#ifndef RMSD_H_
-#define RMSD_H_
+#ifndef RMSDNOSUPER_H_
+#define RMSDNOSUPER_H_
 
 #include <stdio.h>
 #include <stdlib.h>
