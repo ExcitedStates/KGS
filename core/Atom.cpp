@@ -38,8 +38,8 @@ using namespace std;
 Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* residue):
     Name(name),
     Id(id),
-    m_Position(pos),
-    Parent_residue(residue),
+    m_position(pos),
+    m_parentResidue(residue),
     m_rigidbody(nullptr),
     m_biggerRigidbody(nullptr)
 {
@@ -141,7 +141,7 @@ void Atom::printSummaryInfo() const {
 
 	cout << " Radius(" << getRadius() << ") " << (On_sidechain?"Sidechain":"Mainchain");
 	cout << " Rigid("<<m_rigidbody->id() << ")";
-	cout << " Pos(" << m_Position.tostring() << ")" << endl;
+	cout << " Pos(" << m_position.tostring() << ")" << endl;
 	cout << "  " << Cov_bond_list.size() << " covalent bonds:";
 	for (vector<Atom*>::const_iterator it=Cov_neighbor_list.begin(); it!=Cov_neighbor_list.end(); ++it) {
 		Atom* neighbor = *it;
@@ -169,7 +169,7 @@ Atom* Atom::getBondNeighbor (Bond * bond) const {
 }
 
 Residue* Atom::getResidue () const{
-	return Parent_residue;
+	return m_parentResidue;
 }
 
 void Atom::addCovBond (Bond * cbond) {
@@ -199,11 +199,11 @@ void Atom::removeHbond (Hbond * hbond) {
 }
 
 double Atom::distanceTo (Atom* other) const {
-	return m_Position.distanceTo(other->m_Position);
+	return m_position.distanceTo(other->m_position);
 }
 
 bool Atom::isWithinDistanceFrom (Atom* center, double dist) const {
-	return m_Position.isWithinSphere(center->m_Position,dist);
+	return m_position.isWithinSphere(center->m_position,dist);
 }
 
 void Atom::setAsMainchainAtom () {
@@ -346,7 +346,7 @@ bool Atom::isCollisionCheckAtom (string collisionCheckAtoms ) const {
 /* Output operator overloading for easy printing. */
 
 ostream& operator<<(ostream& os, const Atom& a) {
-	//os<<"Atom["<<a.Id<<","<<a.Parent_residue->Name<<"_"<<a.Parent_residue->Id<<"_"<<a.Name<<"]";
+	//os<<"Atom["<<a.Id<<","<<a.m_parentResidue->Name<<"_"<<a.m_parentResidue->Id<<"_"<<a.Name<<"]";
 	os<<a.getResidue()->getName()<<"_"<<a.getResidue()->getId()<<"_"<<a.getName();
 	return os;
 }

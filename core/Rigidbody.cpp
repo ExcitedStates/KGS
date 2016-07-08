@@ -160,12 +160,12 @@ bool Rigidbody::containsAtom (Atom* atom) const {
 
 //bool Rigidbody::containsAtomAtPosition( const clipper::Coord_orth& pos ) const {
 //	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
-//		if ( pos[0] >= (*it)->m_Position[0] - (*it)->Vdw_radius / 100 &&
-//		     pos[0] <= (*it)->m_Position[0] + (*it)->Vdw_radius / 100 &&
-//		     pos[1] >= (*it)->m_Position[1] - (*it)->Vdw_radius / 100 &&
-//		     pos[1] <= (*it)->m_Position[1] + (*it)->Vdw_radius / 100 &&
-//		     pos[2] >= (*it)->m_Position[2] - (*it)->Vdw_radius / 100 &&
-//		     pos[2] <= (*it)->m_Position[2] + (*it)->Vdw_radius / 100 )
+//		if ( pos[0] >= (*it)->m_position[0] - (*it)->Vdw_radius / 100 &&
+//		     pos[0] <= (*it)->m_position[0] + (*it)->Vdw_radius / 100 &&
+//		     pos[1] >= (*it)->m_position[1] - (*it)->Vdw_radius / 100 &&
+//		     pos[1] <= (*it)->m_position[1] + (*it)->Vdw_radius / 100 &&
+//		     pos[2] >= (*it)->m_position[2] - (*it)->Vdw_radius / 100 &&
+//		     pos[2] <= (*it)->m_position[2] + (*it)->Vdw_radius / 100 )
 //			return true;
 //	return false;
 //}

@@ -130,7 +130,7 @@ class Atom {
 	bool compareType(std::string atomType) const;
   static bool compare(Atom* atom1, Atom* atom2);
 
-	Coordinate m_Position;
+	Coordinate m_position;
 	Coordinate m_referencePosition;
 	bool On_sidechain;
 	std::vector<Bond *> Cov_bond_list;
@@ -144,7 +144,7 @@ class Atom {
  private:
   const int Id;
   const std::string Name;
-	Residue* Parent_residue;
+	Residue* m_parentResidue;
   Rigidbody* m_rigidbody;
   Rigidbody* m_biggerRigidbody;
 };

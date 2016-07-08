@@ -86,14 +86,14 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
                                   atom->getName());
     if( aTarget==nullptr ) continue;
 
-    Math3D::Vector3 diff = aTarget->m_Position - atom->m_Position;
+    Math3D::Vector3 diff = aTarget->m_position - atom->m_position;
 
     //Compute gradient contribution all the way to the root
     KinVertex* v = atom->getRigidbody()->getVertex();
     while(v!=protein->m_spanning_tree->m_root){
       KinEdge* parentEdge = v->m_parent->findEdge(v);
       int dof_id = parentEdge->getDOF()->getIndex();
-      Math3D::Vector3 deriv = parentEdge->getDOF()->getDerivative(atom->m_Position);
+      Math3D::Vector3 deriv = parentEdge->getDOF()->getDerivative(atom->m_position);
 
       gradient[dof_id] += deriv.dot(diff);
 //      counts[dof_id]++;
@@ -201,10 +201,10 @@ for ( KinVertex* const& currVertex: m_sortedVertices ){
       if(aTarget == nullptr ){//|| aTarget->getResidue()->getProperName() != atom->getResidue()->getProperName()){
         continue;//skip the non-existing atom
       }
-      Math3D::Vector3 distance = aTarget->m_Position - atom->m_Position;
+      Math3D::Vector3 distance = aTarget->m_position - atom->m_position;
       if(distance != zeros ){
         g += distance;
-        Math3D::Vector3 crossP = cross(aTarget->m_Position,atom->m_Position);
+        Math3D::Vector3 crossP = cross(aTarget->m_position,atom->m_position);
         f += crossP;
         ++count;
       }
@@ -251,9 +251,9 @@ for ( KinVertex* const& currVertex: m_sortedVertices ){
     }
   }
   if(atom3 != nullptr && atom4 != nullptr){
-    Math3D::Vector3 r_i = atom2->m_Position - atom1->m_Position;
+    Math3D::Vector3 r_i = atom2->m_position - atom1->m_position;
     r_i.setNormalized(r_i);
-    Math3D::Vector3 rp_cross = cross(r_i,atom1->m_Position);
+    Math3D::Vector3 rp_cross = cross(r_i,atom1->m_position);
 
     double deltaQ_i = -r_i.dot(stackF.top() ) - rp_cross.dot( stackG.top() ); //final formula without pre-factor
     gsl_vector_set(ret, currEdge->getDOF()->getIndex(), deltaQ_i);

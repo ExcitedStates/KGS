@@ -90,7 +90,7 @@ class Molecule {
   int countOriginalDofs () const;
   Coordinate centerOfMass () const;
   Coordinate centerOfGeometry () const;
-  void checkCycleClosure(Configuration *q);//Todo: Move this to configuration, this is conf dependent, not topology
+  double checkCycleClosure(Configuration *q);//Todo: Move this to configuration, this is conf dependent, not topology
 
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);

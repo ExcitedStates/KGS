@@ -75,26 +75,26 @@ void HbondIdentifier::identifyHbonds(Molecule *protein) {
       // skip if the atom is N TRP's side-chain
       if ( neighbor_type=="N" && (*neighbor_itr)->getResidue()->getProperName()=="TRP" && (*neighbor_itr)->isSidechainAtom() ) continue;
 
-      // check distance H and A<2.5
-      double dist_H_A = (*atom_itr)->m_Position.distanceTo( (*neighbor_itr)->m_Position);
-      if ( dist_H_A>=2.5 ) continue;
-      // check distance D and A<3.9
-      double dist_D_A = donor->m_Position.distanceTo( (*neighbor_itr)->m_Position);
-      if ( dist_D_A>=3.9 ) continue;
-      // check angle D H A > 90
-      double ang_D_H_A = (*atom_itr)->m_Position.getAngle( donor->m_Position, (*neighbor_itr)->m_Position);
-      if ( ang_D_H_A<=90 ) continue;
-      // check angle H A AA > 90
-      Atom* AA = (*neighbor_itr)->getFirstCovNeighbor();
-      double ang_H_A_AA = (*neighbor_itr)->m_Position.getAngle( (*atom_itr)->m_Position, AA->m_Position);
-      if ( ang_H_A_AA<=90 ) continue;
-      // check angle D A AA > 90
-      double ang_D_A_AA = (*neighbor_itr)->m_Position.getAngle( donor->m_Position, AA->m_Position);
-      if ( ang_D_A_AA<=90 ) continue;
-
-      // create the Hbond object and insert into m_molecule
-      //int h_id = (*atom_itr)->getId();
-      //int a_id = (*neighbor_itr)->getId();
+			// check distance H and A<2.5
+			double dist_H_A = (*atom_itr)->m_position.distanceTo( (*neighbor_itr)->m_position);
+			if ( dist_H_A>=2.5 ) continue;
+			// check distance D and A<3.9
+			double dist_D_A = donor->m_position.distanceTo( (*neighbor_itr)->m_position);
+			if ( dist_D_A>=3.9 ) continue;
+			// check angle D H A > 90
+			double ang_D_H_A = (*atom_itr)->m_position.getAngle( donor->m_position, (*neighbor_itr)->m_position);
+			if ( ang_D_H_A<=90 ) continue;
+			// check angle H A AA > 90
+			Atom* AA = (*neighbor_itr)->getFirstCovNeighbor();
+			double ang_H_A_AA = (*neighbor_itr)->m_position.getAngle( (*atom_itr)->m_position, AA->m_position);
+			if ( ang_H_A_AA<=90 ) continue;
+			// check angle D A AA > 90
+			double ang_D_A_AA = (*neighbor_itr)->m_position.getAngle( donor->m_position, AA->m_position);
+			if ( ang_D_A_AA<=90 ) continue;
+			
+			// create the Hbond object and insert into m_molecule
+			//int h_id = (*atom_itr)->getId();
+			//int a_id = (*neighbor_itr)->getId();
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << "\t" << (*atom_itr)->getName() << " " << (*neighbor_itr)->getName() << " " << dist_H_A << " " << dist_D_A << " " << ang_D_H_A << " " << ang_H_A_AA << " " << ang_D_A_AA << endl;
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << endl;
       Hbond * new_hb = new Hbond(*atom_itr, *neighbor_itr, donor, AA);
@@ -155,7 +155,6 @@ double HbondIdentifier::computeHbondEnergy(Configuration *conf) {
   }
   log("report")<<endl;fflush(stdout);
 
-//	exit(1);
   return completeHbondEnergy;
 }
 

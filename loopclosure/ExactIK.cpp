@@ -34,10 +34,10 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
   double r_n1[3], r_a1[3], r_a3[3], r_c3[3];
 
   for (int i=0; i<3; i++){
-    r_n1[i] = res1->getAtom( "N")->m_Position[i];
-    r_a1[i] = res1->getAtom("CA")->m_Position[i];
-    r_a3[i] = res3->getAtom("CA")->m_Position[i];
-    r_c3[i] = res3->getAtom( "C")->m_Position[i];
+    r_n1[i] = res1->getAtom( "N")->m_position[i];
+    r_a1[i] = res1->getAtom("CA")->m_position[i];
+    r_a3[i] = res3->getAtom("CA")->m_position[i];
+    r_c3[i] = res3->getAtom( "C")->m_position[i];
   }
 
   double r_soln_n[16][3][3], r_soln_a[16][3][3], r_soln_c[16][3][3];
@@ -90,28 +90,28 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     Coordinate _C2(r_soln_c[i][1][0],r_soln_c[i][1][1],r_soln_c[i][1][2]);
     Coordinate _N3(r_soln_n[i][2][0],r_soln_n[i][2][1],r_soln_n[i][2][2]);
 
-    double oldPhi1 = TorsionalAngle(C0->m_Position, N1->m_Position, A1->m_Position, C1->m_Position);
-    double newPhi1 = TorsionalAngle(C0->m_Position, N1->m_Position, A1->m_Position, _C1);
+    double oldPhi1 = TorsionalAngle(C0->m_position, N1->m_position, A1->m_position, C1->m_position);
+    double newPhi1 = TorsionalAngle(C0->m_position, N1->m_position, A1->m_position, _C1);
     double delPhi1 = newPhi1 - oldPhi1;
 
-    double oldPsi1 = TorsionalAngle(N1->m_Position, A1->m_Position, C1->m_Position, N2->m_Position);
-    double newPsi1 = TorsionalAngle(N1->m_Position, A1->m_Position, _C1, _N2);
+    double oldPsi1 = TorsionalAngle(N1->m_position, A1->m_position, C1->m_position, N2->m_position);
+    double newPsi1 = TorsionalAngle(N1->m_position, A1->m_position, _C1, _N2);
     double delPsi1 = newPsi1 - oldPsi1;
 
-    double oldPhi2 = TorsionalAngle(C1->m_Position, N2->m_Position, A2->m_Position, C2->m_Position);
+    double oldPhi2 = TorsionalAngle(C1->m_position, N2->m_position, A2->m_position, C2->m_position);
     double newPhi2 = TorsionalAngle(_C1, _N2, _A2, _C2);
     double delPhi2 = newPhi2 - oldPhi2;
 
-    double oldPsi2 = TorsionalAngle(N2->m_Position, A2->m_Position, C2->m_Position, N3->m_Position);
+    double oldPsi2 = TorsionalAngle(N2->m_position, A2->m_position, C2->m_position, N3->m_position);
     double newPsi2 = TorsionalAngle(_N2, _A2, _C2, _N3);
     double delPsi2 = newPsi2 - oldPsi2;
 
-    double oldPhi3 = TorsionalAngle(C2->m_Position, N3->m_Position, A3->m_Position, C3->m_Position);
-    double newPhi3 = TorsionalAngle(_C2, _N3, A3->m_Position, C3->m_Position);
+    double oldPhi3 = TorsionalAngle(C2->m_position, N3->m_position, A3->m_position, C3->m_position);
+    double newPhi3 = TorsionalAngle(_C2, _N3, A3->m_position, C3->m_position);
     double delPhi3 = newPhi3 - oldPhi3;
 
-    double oldPsi3 = TorsionalAngle(N3->m_Position, A3->m_Position, C3->m_Position, N4->m_Position);
-    double newPsi3 = TorsionalAngle(_N3, A3->m_Position, C3->m_Position, N4->m_Position);
+    double oldPsi3 = TorsionalAngle(N3->m_position, A3->m_position, C3->m_position, N4->m_position);
+    double newPsi3 = TorsionalAngle(_N3, A3->m_position, C3->m_position, N4->m_position);
     double delPsi3 = newPsi3 - oldPsi3;
 
     double e = 0.001;
@@ -197,15 +197,15 @@ void ExactIK::initializeIKParams(
     double tang[2]
 )
 {
-  Coordinate& N1 = res1->getAtom( "N")->m_Position;
-  Coordinate& A1 = res1->getAtom("CA")->m_Position;
-  Coordinate& C1 = res1->getAtom( "C")->m_Position;
-  Coordinate& N2 = res2->getAtom( "N")->m_Position;
-  Coordinate& A2 = res2->getAtom("CA")->m_Position;
-  Coordinate& C2 = res2->getAtom( "C")->m_Position;
-  Coordinate& N3 = res3->getAtom( "N")->m_Position;
-  Coordinate& A3 = res3->getAtom("CA")->m_Position;
-  Coordinate& C3 = res3->getAtom( "C")->m_Position;
+  Coordinate& N1 = res1->getAtom( "N")->m_position;
+  Coordinate& A1 = res1->getAtom("CA")->m_position;
+  Coordinate& C1 = res1->getAtom( "C")->m_position;
+  Coordinate& N2 = res2->getAtom( "N")->m_position;
+  Coordinate& A2 = res2->getAtom("CA")->m_position;
+  Coordinate& C2 = res2->getAtom( "C")->m_position;
+  Coordinate& N3 = res3->getAtom( "N")->m_position;
+  Coordinate& A3 = res3->getAtom("CA")->m_position;
+  Coordinate& C3 = res3->getAtom( "C")->m_position;
 
   //Initialize lengths
   blen[0] = A1.distanceTo(C1);

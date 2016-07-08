@@ -472,32 +472,6 @@ Configuration* Configuration::clone() const {
   return ret;
 }
 
-//---------------------------------------------------------
-void Configuration::Normalize(){
-  double s = 0;
-
-  for(int i=0; i <getNumDOFs(); ++i)
-    s += m_dofs[i] * m_dofs[i];
-
-  s = sqrt(s);
-  for(int i=0; i < getNumDOFs(); ++i)
-    m_dofs[i] /= s;
-}
-//---------------------------------------------------------
-double Configuration::Length(){
-  double s = 0;
-
-  for(int i=0; i < getNumDOFs(); ++i)
-    s += m_dofs[i] * m_dofs[i];
-
-  return sqrt(s);
-}
-//---------------------------------------------------------
-void Configuration::SetAll(double v){
-  for(int i=0; i < getNumDOFs(); ++i)
-    m_dofs[i] = v;
-}
-
 void Configuration::Print () {
   for (int i=0; i < getNumDOFs(); ++i){
     cout << "Relative: " << m_dofs[i] << " ";
@@ -558,8 +532,8 @@ void Configuration::computeJacobians() {
     //End-effectors and their positions, corresponds to a and b
     Atom* atom1 = bond_ptr->Atom1;
     Atom* atom2 = bond_ptr->Atom2;
-    Coordinate p1 = atom1->m_Position; //end-effector, position 1
-    Coordinate p2 = atom2->m_Position; //end-effector, position 2
+    Coordinate p1 = atom1->m_position; //end-effector, position 1
+    Coordinate p2 = atom2->m_position; //end-effector, position 2
 
     KinVertex* vertex1 = edge_ptr->StartVertex;
     KinVertex* vertex2 = edge_ptr->EndVertex;
@@ -586,8 +560,8 @@ void Configuration::computeJacobians() {
       exit(-1);
     }
 
-    Coordinate p1_prev = atom1_prev->m_Position;
-    Coordinate p2_prev = atom2_prev->m_Position;
+    Coordinate p1_prev = atom1_prev->m_position;
+    Coordinate p2_prev = atom2_prev->m_position;
     //Now we have all atoms we need --> Calculate Jacobian
 
 
@@ -635,10 +609,10 @@ void Configuration::computeJacobians() {
 
         // Jacobian_entry is the derivative of the vertices of the hydrogen bond
         // Now, we also have to calculate the derivatives of the other neighboring atoms!
-        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1); //a
-        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2); //b
-        //Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p1_prev);
-        Math3D::Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p2_prev);
+        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p1); //a
+        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p2); //b
+        //Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p1_prev);
+        Math3D::Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p2_prev);
          */
         Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
@@ -758,8 +732,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
     Atom* atom2 = mit->first.second;
     log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
-    Coordinate p1 = atom1->m_Position; //end-effector, position 1
-    Coordinate p2 = atom2->m_Position; //end-effector, position 2
+    Coordinate p1 = atom1->m_position; //end-effector, position 1
+    Coordinate p2 = atom2->m_position; //end-effector, position 2
 
     Math3D::Vector3 clashNormal = p2-p1;
     clashNormal.getNormalized(clashNormal);
@@ -777,7 +751,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_Position,p_edge->getBond()->Atom2->m_Position,p1);
+//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->Atom2->m_position,p1);
         Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
@@ -802,8 +776,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
       if (dof_id!=-1) { // this edge is a DOF
 
 //				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
-//            p_edge->getBond()->Atom1->m_Position,
-//            p_edge->getBond()->Atom2->m_Position,
+//            p_edge->getBond()->Atom1->m_position,
+//            p_edge->getBond()->Atom2->m_position,
 //            p2); //b
         Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
         double jacobianEntryClash = - dot(clashNormal, derivativeP2);
@@ -825,6 +799,21 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
  */
 
+/// This function converts a vector with all dof entries to a vector with cycle dofs only, by extracting correct entries
+void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs){
+
+  Molecule* M = getMolecule();
+
+  for (auto const& edge: M->m_spanning_tree->Edges){
+    int dof_id = edge->getDOF()->getIndex();
+    int cycle_dof_id = edge->getDOF()->getCycleIndex();
+    if ( cycle_dof_id!=-1 ) {
+      gsl_vector_set(cycleDofs,cycle_dof_id,gsl_vector_get(allDofs,dof_id));
+    }
+  }
+
+}
+
 
 void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
   Nullspace* N = getNullspace();
@@ -839,16 +828,9 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
   if( to_project->size > N->getNumDOFs() ) {
     // The input vectors contain all DOFs, however, the null space only contains DOFs in cycles.
     // Convert the DOFs in the input vectors to DOFs in cycles.
-    //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
-    //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
+
     gsl_vector *to_proj_short = gsl_vector_calloc(N->getNumDOFs());
-    for (auto const& edge: M->m_spanning_tree->Edges){
-      int dof_id = edge->getDOF()->getIndex();
-      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-      if ( cycle_dof_id!=-1 ) {
-        gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
-      }
-    }
+    convertAllDofsToCycleDofs(to_proj_short, to_project);
 
     // Project onto the null space
     double normBefore = gsl_vector_length(to_proj_short);

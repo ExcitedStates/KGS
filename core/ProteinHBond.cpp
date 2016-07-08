@@ -45,7 +45,7 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	BondType = "HB";
 	Bars = 5;
 	constrained = false;
-	m_iniDist_H_A = VectorLength(Atom1->m_Position,Atom2->m_Position);
+	m_iniDist_H_A = VectorLength(Atom1->m_position,Atom2->m_position);
 	m_iniAngle_D_H_A = getAngle_D_H_A();
 	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
@@ -57,7 +57,7 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 
 //  Vector3 x,y,z;
 //  coordinateSystem(hatom, x,y,z);
-//  Vector3 d = acceptor->m_Position -hatom->m_Position;
+//  Vector3 d = acceptor->m_position -hatom->m_position;
 //  idealA[0] = x.dot(d);
 //  idealA[1] = y.dot(d);
 //  idealA[2] = z.dot(d);
@@ -111,13 +111,13 @@ bool Hbond::isSame (Hbond * b2) {
 //Vector3 Hbond::getIdealHPoint(){
 //    Vector3 x,y,z;
 //    coordinateSystem(Acceptor, x,y,z);
-//    return Acceptor->m_Position + (x*idealH[0]) + (y*idealH[1]) + (z*idealH[2]);
+//    return Acceptor->m_position + (x*idealH[0]) + (y*idealH[1]) + (z*idealH[2]);
 //}
 //
 //Vector3 Hbond::getIdealAcceptorPoint(){
 //    Vector3 x,y,z;
 //    coordinateSystem(Hatom, x,y,z);
-//    return Hatom->m_Position + (x*idealA[0]) + (y*idealA[1]) + (z*idealA[2]);
+//    return Hatom->m_position + (x*idealA[0]) + (y*idealA[1]) + (z*idealA[2]);
 //}
 
 //void Hbond::coordinateSystem(Atom* a, Vector3& x, Vector3& y, Vector3& z ){
@@ -132,28 +132,28 @@ bool Hbond::isSame (Hbond * b2) {
 //            a3 = a2->Cov_neighbor_list[1];
 //    }
 //
-//    x = a1->m_Position -a2->m_Position;
-//    y = a3->m_Position -a2->m_Position;
+//    x = a1->m_position -a2->m_position;
+//    y = a3->m_position -a2->m_position;
 //    z = cross(x,y);
 //}
 
 double Hbond::getLength() {
-  double length = Hatom->m_Position.distanceTo(Acceptor->m_Position);
+  double length = Hatom->m_position.distanceTo(Acceptor->m_position);
   return length;
 }
 
 double Hbond::getDistance_D_A() {
-  double distance = Donor->m_Position.distanceTo(Acceptor->m_Position);
+  double distance = Donor->m_position.distanceTo(Acceptor->m_position);
   return distance;
 }
 
 double Hbond::getAngle_D_H_A() {
-  double ret = Angle(Donor->m_Position, Hatom->m_Position, Acceptor->m_Position);
+  double ret = Angle(Donor->m_position, Hatom->m_position, Acceptor->m_position);
   return ret;
 }
 
 double Hbond::getAngle_H_A_AA() {
-  double ret = Angle(Hatom->m_Position, Acceptor->m_Position, AA->m_Position);
+  double ret = Angle(Hatom->m_position, Acceptor->m_position, AA->m_position);
   return ret;
 }
 
@@ -178,7 +178,7 @@ double Hbond::getOutOfPlaneAngle() {
     a3 =  Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
   }
 
-  Math3D::Vector3 normal1 = UnitNormal(a1->m_Position,a2->m_Position, a3->m_Position);
+  Math3D::Vector3 normal1 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);
 
   if(AA->Cov_neighbor_list.size() >= 3) {
     a2 = AA->Cov_neighbor_list[0];
@@ -195,7 +195,7 @@ double Hbond::getOutOfPlaneAngle() {
     a3 =  AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
   }
 
-  Math3D::Vector3 normal2 = UnitNormal(a1->m_Position,a2->m_Position, a3->m_Position);
+  Math3D::Vector3 normal2 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);
 
 	double angle = VectorAngle(normal1,normal2);
 
@@ -281,7 +281,7 @@ void Hbond::identifyHybridization() {
   //Donor
 
 //  a3 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
-//  angleD = VectorAngle(Hatom->m_Position - Donor->m_Position, a3->m_Position - Donor->m_Position);
+//  angleD = VectorAngle(Hatom->m_position - Donor->m_position, a3->m_position - Donor->m_position);
 
   if(Donor->Cov_neighbor_list.size() >= 3) {
     a2 = Donor->Cov_neighbor_list[0];
@@ -292,15 +292,15 @@ void Hbond::identifyHybridization() {
       a3 = Donor->Cov_neighbor_list[2];
     a1 = Hatom;
 
-    angleD = Angle(a1->m_Position, Donor->m_Position, a2->m_Position);
-    angleD += Angle(a2->m_Position, Donor->m_Position, a3->m_Position);
-    angleD += Angle(a3->m_Position, Donor->m_Position, a1->m_Position);
+    angleD = Angle(a1->m_position, Donor->m_position, a2->m_position);
+    angleD += Angle(a2->m_position, Donor->m_position, a3->m_position);
+    angleD += Angle(a3->m_position, Donor->m_position, a1->m_position);
 
     angleD = angleD/3.0; //mean angle
   }
   else{
     a1 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
-    angleD = Angle(a1->m_Position, Donor->m_Position, Hatom->m_Position);
+    angleD = Angle(a1->m_position, Donor->m_position, Hatom->m_position);
   }
 
   log("report")<<"Donor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleD)<<endl;
@@ -313,7 +313,7 @@ void Hbond::identifyHybridization() {
   double angleA = 0.0;
 
 //  a3 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
-//  angleA = VectorAngle(Acceptor->m_Position - AA->m_Position, a3->m_Position - AA->m_Position);
+//  angleA = VectorAngle(Acceptor->m_position - AA->m_position, a3->m_position - AA->m_position);
 
   if(AA->Cov_neighbor_list.size() >= 3) {
     a2 = AA->Cov_neighbor_list[0];
@@ -324,15 +324,15 @@ void Hbond::identifyHybridization() {
       a3 = AA->Cov_neighbor_list[2];
     a1 = Acceptor;
 
-    angleA = Angle(a1->m_Position, AA->m_Position, a2->m_Position);
-    angleA += Angle(a2->m_Position, AA->m_Position, a3->m_Position);
-    angleA += Angle(a3->m_Position, AA->m_Position, a1->m_Position);
+    angleA = Angle(a1->m_position, AA->m_position, a2->m_position);
+    angleA += Angle(a2->m_position, AA->m_position, a3->m_position);
+    angleA += Angle(a3->m_position, AA->m_position, a1->m_position);
 
     angleA = angleA/3.0; //mean angle
   }
   else{
     a1 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
-    angleA = Angle(a1->m_Position, AA->m_Position, Acceptor->m_Position);
+    angleA = Angle(a1->m_position, AA->m_position, Acceptor->m_position);
   }
 
   log("report")<<"Acceptor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleA)<<endl;

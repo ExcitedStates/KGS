@@ -45,12 +45,12 @@ Grid::Grid (Molecule * protein, double collisionFactor):
 	Min_y = 1000;
 	Min_z = 1000;
 	for (Atom* const& atom: protein->getAtoms()) {
-		if (atom->m_Position.x<Min_x) Min_x = atom->m_Position.x;
-		if (atom->m_Position.y<Min_y) Min_y = atom->m_Position.y;
-		if (atom->m_Position.z<Min_z) Min_z = atom->m_Position.z;
-		if (atom->m_Position.x>Max_x) Max_x = atom->m_Position.x;
-		if (atom->m_Position.y>Max_y) Max_y = atom->m_Position.y;
-		if (atom->m_Position.z>Max_z) Max_z = atom->m_Position.z;
+		if (atom->m_position.x<Min_x) Min_x = atom->m_position.x;
+		if (atom->m_position.y<Min_y) Min_y = atom->m_position.y;
+		if (atom->m_position.z<Min_z) Min_z = atom->m_position.z;
+		if (atom->m_position.x>Max_x) Max_x = atom->m_position.x;
+		if (atom->m_position.y>Max_y) Max_y = atom->m_position.y;
+		if (atom->m_position.z>Max_z) Max_z = atom->m_position.z;
 	}
 	//cout << "InfoGridConstructor)\t (Min_x,Max_x) (Min_y,Max_y) (Min_z,Max_z) = (" << Min_x << "," << Max_x << ") ("
 	//									          << Min_y << "," << Max_y << ") ("
@@ -110,7 +110,7 @@ Coordinate Grid::makeKey (Coordinate& pos) const {
 vector<Atom*> Grid::getNeighboringAtoms (Atom* atom, bool neighborWithLargerId, bool noCovBondNeighbor, bool noHbondNeighbor, double radius) const {
 // TODO: can optimize this function by not visiting some corner cells which is further away than radius*sqrt(2)
 	vector<Atom*> neighbors;
-	Coordinate pos = atom->m_Position;
+	Coordinate pos = atom->m_position;
 	Coordinate key = makeKey(pos);
   double radSq = radius*radius;
 	int neighbor_cell_num = int(ceil(radius/Cell_size));
@@ -130,7 +130,7 @@ vector<Atom*> Grid::getNeighboringAtoms (Atom* atom, bool neighborWithLargerId, 
 							continue;
 //            double dist = atom->distanceTo(*atom_itr);
 //            if (dist>radius) continue;
-						if (atom->m_Position.distanceSquared( (*atom_itr)->m_Position )>radSq) continue;
+						if (atom->m_position.distanceSquared( (*atom_itr)->m_position )>radSq) continue;
 						neighbors.push_back(*atom_itr);
 					}
 				}
@@ -143,7 +143,7 @@ vector<Atom*> Grid::getNeighboringAtoms (Atom* atom, bool neighborWithLargerId, 
 vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerId, bool noCovBondNeighbor, bool noSecondCovBondNeighbor, bool noHbondNeighbor, double radius) const {
 // TODO: can optimize this function by not visiting some corner cells which is further away than radius*sqrt(2)
 	vector<Atom*> neighbors;
-	Coordinate pos = atom->m_Position;
+	Coordinate pos = atom->m_position;
 	Coordinate key = makeKey(pos);
 	int neighbor_cell_num = int(ceil(radius/Cell_size)); // radius = Neighbor list cutoff; defaults to Cell_Size
 	for (int i=-neighbor_cell_num; i<=neighbor_cell_num; ++i)
@@ -154,7 +154,7 @@ vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerI
 				if ( map_itr == Atom_map.end() ) continue; // if the key doesn't exist
 				for (vector<Atom*>::const_iterator atom_itr=map_itr->second->begin(); atom_itr!=map_itr->second->end(); ++atom_itr)
 //					if ( (*atom_itr) != atom && (*atom_itr)->isWithinDistanceFrom( atom, radius ) ) {
-          if ( (*atom_itr) != atom && (*atom_itr)->m_Position.distanceSquared(atom->m_Position)<=radius*radius ) {
+          if ( (*atom_itr) != atom && (*atom_itr)->m_position.distanceSquared(atom->m_position)<=radius*radius ) {
 					//	if (neighborWithLargerId && (*atom_itr)->Id<atom->Id)
 					//		continue;
 						if (noCovBondNeighbor && atom->isCovNeighbor(*atom_itr))
@@ -184,7 +184,7 @@ bool Grid::inCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_coll
 		if ( atom->isCovNeighbor(*it) || atom->isSecondCovNeighbor(*it) || atom->isHbondNeighbor(*it) || !(atom->isCollisionCheckAtom(collisionCheckAtoms))) {
 			continue;
 		}
-		double dist = atom->m_Position.distanceTo((*it)->m_Position);
+		double dist = atom->m_position.distanceTo((*it)->m_position);
 		double threshold =  m_collisionFactor * ( atom->getRadius() + (*it)->getRadius() ); //TODO: Speed up
 		if ( dist < threshold ) {
 			// If this collision is in the initial collision list, ignore it
@@ -214,7 +214,7 @@ double Grid::minFactorWithoutCollision (Atom* atom, set< pair<Atom*,Atom*> > con
 		if ( atom->isCovNeighbor(*it) || atom->isSecondCovNeighbor(*it) || atom->isHbondNeighbor(*it) || !(atom->isCollisionCheckAtom(collisionCheckAtoms))) {
 			continue;
 		}
-		double dist = atom->m_Position.distanceTo((*it)->m_Position);
+		double dist = atom->m_position.distanceTo((*it)->m_position);
 		double stdThreshold =  atom->getRadius() + (*it)->getRadius();
 		double currentFactor = dist / stdThreshold;
 		if(currentFactor < minFactorWithoutCollision ){
@@ -250,7 +250,7 @@ vector<Atom*> Grid::getAllCollisions (
 		if ( atom->isCovNeighbor(*it) || atom->isSecondCovNeighbor(*it) || atom->isHbondNeighbor(*it) || !(atom->isCollisionCheckAtom(collisionCheckAtoms))) {
 			continue;
 		}
-		double dist = atom->m_Position.distanceTo((*it)->m_Position);
+		double dist = atom->m_position.distanceTo((*it)->m_position);
 		double threshold = m_collisionFactor * ( atom->getRadius() + (*it)->getRadius() );
 		if ( dist < threshold ) {
 			// If this collision is in the initial collision list, ignore it
@@ -271,7 +271,7 @@ vector<Atom*> Grid::getAllCollisions (
 // return TRUE if the atom is removed, otherwise FALSE
 bool Grid::removeAtom (Atom* atom) {
 	// only delete the atom if it is indexed already
-	Coordinate key = makeKey(atom->m_Position);
+	Coordinate key = makeKey(atom->m_position);
 	map<Coordinate,vector<Atom*>*,Coordinate_cmp>::iterator map_itr=Atom_map.find(key);
 	if ( map_itr!=Atom_map.end() ) {
 		// search for the atom in the vector<Atom*>*
@@ -286,7 +286,7 @@ bool Grid::removeAtom (Atom* atom) {
 }
 
 void Grid::addAtom (Atom* atom) {
-        Coordinate key = makeKey(atom->m_Position);
+        Coordinate key = makeKey(atom->m_position);
         if (Atom_map.find(key)==Atom_map.end()) {
                 vector<Atom*> *list = new vector<Atom*>; // this delocated? @D
                 Atom_map.insert( make_pair(key,list) );

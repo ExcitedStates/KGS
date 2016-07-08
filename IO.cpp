@@ -733,7 +733,7 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
     sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s  ",
         atom->getId(),atom->getName().c_str(),
         res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
-        atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom->getType().c_str());
+        atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getType().c_str());
     string line(buffer);
     output << line << endl;
   }
@@ -783,7 +783,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 //  for (list<Bond*>::iterator bond_itr=molecule->m_covBonds.begin(); bond_itr!=molecule->m_covBonds.end(); ++bond_itr) {
   for (auto const& bond: molecule->getCovBonds()){
 //    Bond* bond = (*bond_itr);
-    Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
     output << bondVec.norm() << endl;
   }
   output.close();
@@ -793,7 +793,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanning_tree->Edges.begin(); edge_itr!=molecule->m_spanning_tree->Edges.end(); ++edge_itr) {
     Bond* bond = (*edge_itr)->getBond();
     if(bond==nullptr) continue;
-    Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
     output1 << bondVec.norm() << endl;
   }
   output1.close();
@@ -802,7 +802,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   ofstream output2(anchorEdgeFile.c_str());
   for (vector< pair<KinEdge*,KinVertex*> >::iterator edge_itr=molecule->m_spanning_tree->CycleAnchorEdges.begin(); edge_itr!=molecule->m_spanning_tree->CycleAnchorEdges.end(); ++edge_itr) {
     Bond* bond = edge_itr->first->getBond();
-    Math3D::Vector3 bondVec = bond->Atom1->m_Position - bond->Atom2->m_Position;
+    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
     output2 << bondVec.norm() << endl;
   }
   output2.close();
@@ -848,19 +848,119 @@ void IO::readCovBonds (Molecule *molecule, string in_file_name) {
 
 void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
-//  for (list<Hbond *>::iterator hb_itr=molecule->m_hBonds.begin(); hb_itr != molecule->m_hBonds.end(); ++hb_itr) {
+
+//  //Header line
+//  output << std::right << setw(8) << "H-ID";
+//  output << std::right << setw(8) << "Acc-ID";
+//  output << std::right << setw(16) << "energy";
+  //  output << std::right << setw(6) << "#bars";
+//  output << std::right << setw(16) << "length [AA]";
+//  output << std::right << setw(16) << "angle D_H_A";
+//  output << std::right << setw(16) << "angle H_A_AA"<<endl;
+//
+//  for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
+//    output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
+//    output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
+//    output << std::right << setw(16) << (*hb_itr)->getIniEnergy();
+//    int numBars = (*hb_itr)->constrained? 6:5;
+//    output << std::right << setw(6) << numBars;
+//    output << std::right << setw(16) << (*hb_itr)->getLength();
+//    output << std::right << setw(16) << (*hb_itr)->getAngle_D_H_A();
+//    output << std::right << setw(16) << (*hb_itr)->getAngle_H_A_AA() << endl;
+//  }
+
+  //Header line
+  output << "H-ID ";
+  output << "Acc-ID ";
+  output << "energy ";
+  output << "#bars ";
+  output << "length ";
+  output << "angle_D_H_A ";
+  output << "angle_H_A_AA"<<endl;
+
   for (auto const& bond: molecule->getHBonds()){
-    output << std::right << setw(8) << bond->Hatom->getId();
-    output << std::right << setw(8) << bond->Acceptor->getId();
-    if (bond->getIniEnergy()==DEFAULT_HBOND_ENERGY ) {
-      output << endl;
-    }
-    else {
-      output << std::right << setw(16) << bond->getIniEnergy();
-      output << std::right << setw(5) << 5;
-      output << std::right << setw(16) << bond->getLength();
-      output << std::right << setw(16) << bond->getIniAngle_H_A_AA() << endl;
-    }
+    output << bond->Hatom->getId()<<" ";
+    output << bond->Acceptor->getId()<<" ";
+    output << bond->getIniEnergy()<<" ";
+    int numBars = bond->constrained? 6:5;
+    output << numBars<<" ";
+    output << bond->getLength()<<" ";
+    output << bond->getAngle_D_H_A()<<" ";
+    output << bond->getAngle_H_A_AA() << endl;
+  }
+  output.close();
+}
+
+void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
+  ofstream output(output_file_name.c_str());
+//  //Header line
+//  output << std::right << setw(8) << "H-ID";
+//  output << std::right << setw(8) << "Acc-ID";
+//  output << std::right << setw(16) << "energy";
+//  output << std::right << setw(6) << "#bars";
+//  output << std::right << setw(16) << "length [AA]";
+//  output << std::right << setw(16) << "angle D_H_A";
+//  output << std::right << setw(16) << "angle H_A_AA";
+//  output << std::right << setw(16) << "energy change";
+//  output << std::right << setw(16) << "length change";
+//  output << std::right << setw(16) << "D_H_A change";
+//  output << std::right << setw(16) << "H_A_AA change"<<endl;
+//
+//  for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
+//    double energy = (*hb_itr)->computeEnergy();
+//    output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
+//    output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
+//    int numBars = (*hb_itr)->constrained? 6:5;
+//    output << std::right << setw(6) << numBars;
+//    output << std::right << setw(16) << energy;
+//    output << std::right << setw(16) << (*hb_itr)->getLength();
+//    output << std::right << setw(16) << (*hb_itr)->getAngle_D_H_A();
+//    output << std::right << setw(16) << (*hb_itr)->getAngle_H_A_AA();
+//
+//    double energyChange = energy - (*hb_itr)->getIniEnergy();
+//    double distanceChange = (*hb_itr)->getLength() - (*hb_itr)->getIniLength();
+//    double H_A_AA_Change = formatRangeRadian( (*hb_itr)->getAngle_H_A_AA() - (*hb_itr)->getIniAngle_H_A_AA() );
+//    double D_H_A_Change = formatRangeRadian( (*hb_itr)->getAngle_D_H_A() - (*hb_itr)->getIniAngle_D_H_A() );
+//
+//    output << std::right << setw(16) << energyChange;
+//    output << std::right << setw(16) << distanceChange;
+//    output << std::right << setw(16) << D_H_A_Change;
+//    output << std::right << setw(16) << H_A_AA_Change<<endl;
+//  }
+
+  //Header line
+  output << "H-ID ";
+  output << "Acc-ID ";
+  output << "energy ";
+  output << "#bars ";
+  output << "length ";
+  output << "angle_D_H_A ";
+  output << "angle_H_A_AA ";
+  output << "energy_change ";
+  output << "length_change ";
+  output << "D_H_A_change ";
+  output << "H_A_AA_change "<<endl;
+
+  for (auto const& bond: molecule->getHBonds()){
+    double energy = bond->computeEnergy();
+    output << bond->Hatom->getId()<<" ";
+    output << bond->Acceptor->getId()<<" ";
+    output << energy<<" ";
+    int numBars = bond->constrained? 6:5;
+    output << numBars<<" ";
+    output << bond->getLength()<<" ";
+    output << bond->getAngle_D_H_A()<<" ";
+    output << bond->getAngle_H_A_AA()<<" ";
+
+    double energyChange = energy - bond->getIniEnergy();
+    double distanceChange = bond->getLength() - bond->getIniLength();
+    double H_A_AA_Change = formatRangeRadian( bond->getAngle_H_A_AA() - bond->getIniAngle_H_A_AA() );
+    double D_H_A_Change = formatRangeRadian( bond->getAngle_D_H_A() - bond->getIniAngle_D_H_A() );
+
+    output << energyChange<<" ";
+    output << distanceChange<<" ";
+    output << D_H_A_Change<<" ";
+    output << H_A_AA_Change<<endl;
   }
   output.close();
 }
@@ -1393,7 +1493,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //			for( eit = molecule->m_spanning_tree->Edges.begin(); eit != molecule->m_spanning_tree->Edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->Parent_residue;
+      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
       //				double val = Abs(c->m_f[dofId]);
       //				int num;
       //				if( val > 0.01)
@@ -1418,7 +1518,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             //atom->Position.x,atom->Position.y,atom->Position.z,atom->getType().c_str());
-          atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
+          atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
         //					atom->Position.x,atom->Position.y,atom->Position.z,resiColorMap.find(res->getId())->second,atom->getType().c_str() );
         string line(buffer);
         output << line << endl;
@@ -1504,7 +1604,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //			for( eit = target->m_spanning_tree->Edges.begin(); eit != target->m_spanning_tree->Edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->Parent_residue;
+      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
       //				double val = Abs(c->m_f[dofId]);
       //				int num;
       //				if( val > 0.01)
@@ -1530,7 +1630,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             //atom->Position.x,atom->Position.y,atom->Position.z,atom->getType().c_str());
-          atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
+          atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
         //					atom->Position.x,atom->Position.y,atom->Position.z,resiColorMap.find(res->getId())->second,atom->getType().c_str() );
         string line(buffer);
         output << line << endl;

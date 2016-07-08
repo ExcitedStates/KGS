@@ -115,7 +115,7 @@ double Bond::getTorsion() {
 
 	double ret = 0.0;
 	if(atom3 != nullptr && atom4 != nullptr){//only measure it if four covalently bonded atoms exist
-		ret = TorsionalAngle(atom3->m_Position,Atom1->m_Position,Atom2->m_Position,atom4->m_Position); // in radians
+		ret = TorsionalAngle(atom3->m_position,Atom1->m_position,Atom2->m_position,atom4->m_position); // in radians
 		ret = formatRangeRadian(ret);
 	}
 	else{

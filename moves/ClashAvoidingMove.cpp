@@ -280,8 +280,8 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
     Atom* atom2 = coll.second;
     log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
-    Coordinate p1 = atom1->m_Position; //end-effector, position 1
-    Coordinate p2 = atom2->m_Position; //end-effector, position 2
+    Coordinate p1 = atom1->m_position; //end-effector, position 1
+    Coordinate p2 = atom2->m_position; //end-effector, position 2
 
     Math3D::Vector3 clashNormal = p2-p1;
     clashNormal.getNormalized(clashNormal);

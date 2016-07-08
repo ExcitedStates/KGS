@@ -134,22 +134,22 @@ int main( int argc, char* argv[] ) {
             scC = protein->getAtom(chain, r, "C2");
           }
 
-          double alpha = (O3prev == nullptr || P == nullptr) ? -42.0 : TorsionalAngle(O3prev->m_Position, P->m_Position,
-                                                                                O5->m_Position, C5->m_Position);
-          double beta = (P == nullptr) ? -42.0 : TorsionalAngle(P->m_Position, O5->m_Position, C5->m_Position, C4->m_Position);
-          double gamma = TorsionalAngle(O5->m_Position, C5->m_Position, C4->m_Position, C3->m_Position);
-          double delta = TorsionalAngle(C5->m_Position, C4->m_Position, C3->m_Position, O3->m_Position);
-          double epsilon = (Pnext == nullptr) ? -42.0 : TorsionalAngle(C4->m_Position, C3->m_Position, O3->m_Position,
-                                                                    Pnext->m_Position);
-          double zeta = (Pnext == nullptr || O5next == nullptr) ? -42.0 : TorsionalAngle(C3->m_Position, O3->m_Position,
-                                                                                   Pnext->m_Position, O5next->m_Position);
+          double alpha = (O3prev == nullptr || P == nullptr) ? -42.0 : TorsionalAngle(O3prev->m_position, P->m_position,
+                                                                                O5->m_position, C5->m_position);
+          double beta = (P == nullptr) ? -42.0 : TorsionalAngle(P->m_position, O5->m_position, C5->m_position, C4->m_position);
+          double gamma = TorsionalAngle(O5->m_position, C5->m_position, C4->m_position, C3->m_position);
+          double delta = TorsionalAngle(C5->m_position, C4->m_position, C3->m_position, O3->m_position);
+          double epsilon = (Pnext == nullptr) ? -42.0 : TorsionalAngle(C4->m_position, C3->m_position, O3->m_position,
+                                                                    Pnext->m_position);
+          double zeta = (Pnext == nullptr || O5next == nullptr) ? -42.0 : TorsionalAngle(C3->m_position, O3->m_position,
+                                                                                   Pnext->m_position, O5next->m_position);
 
-          double tau0 = TorsionalAngle(C4->m_Position, O4->m_Position, C1->m_Position, C2->m_Position);
-          double tau1 = TorsionalAngle(O4->m_Position, C1->m_Position, C2->m_Position, C3->m_Position);
-          double tau2 = TorsionalAngle(C1->m_Position, C2->m_Position, C3->m_Position, C4->m_Position);
-          double tau3 = TorsionalAngle(C2->m_Position, C3->m_Position, C4->m_Position, O4->m_Position);
-          double tau4 = TorsionalAngle(C3->m_Position, C4->m_Position, O4->m_Position, C1->m_Position);
-          double chi = TorsionalAngle(O4->m_Position, C1->m_Position, scN->m_Position, scC->m_Position);
+          double tau0 = TorsionalAngle(C4->m_position, O4->m_position, C1->m_position, C2->m_position);
+          double tau1 = TorsionalAngle(O4->m_position, C1->m_position, C2->m_position, C3->m_position);
+          double tau2 = TorsionalAngle(C1->m_position, C2->m_position, C3->m_position, C4->m_position);
+          double tau3 = TorsionalAngle(C2->m_position, C3->m_position, C4->m_position, O4->m_position);
+          double tau4 = TorsionalAngle(C3->m_position, C4->m_position, O4->m_position, C1->m_position);
+          double chi = TorsionalAngle(O4->m_position, C1->m_position, scN->m_position, scC->m_position);
 
           log("torsions") << setw(11) << protein_name << " ";
           log("torsions") << setw(4) << C1->getResidue()->getId() << " ";
@@ -177,12 +177,12 @@ int main( int argc, char* argv[] ) {
           Atom *Nnext = protein->getAtom(chain, r + 1, "N");
           Atom *CAnext = protein->getAtom(chain, r + 1, "CA");
 
-          double phi = (Cprev == nullptr || N == nullptr) ? 180 : TorsionalAngle(Cprev->m_Position, N->m_Position, CA->m_Position,
-                                                                           C->m_Position);
-          double psi = (N == nullptr || Nnext == nullptr) ? 180 : TorsionalAngle(N->m_Position, CA->m_Position, C->m_Position,
-                                                                           Nnext->m_Position);
-          double omega = (CA == nullptr || CAnext == nullptr) ? 180 : TorsionalAngle(CA->m_Position, C->m_Position,
-                                                                               Nnext->m_Position, CAnext->m_Position);
+          double phi = (Cprev == nullptr || N == nullptr) ? 180 : TorsionalAngle(Cprev->m_position, N->m_position, CA->m_position,
+                                                                           C->m_position);
+          double psi = (N == nullptr || Nnext == nullptr) ? 180 : TorsionalAngle(N->m_position, CA->m_position, C->m_position,
+                                                                           Nnext->m_position);
+          double omega = (CA == nullptr || CAnext == nullptr) ? 180 : TorsionalAngle(CA->m_position, C->m_position,
+                                                                               Nnext->m_position, CAnext->m_position);
 
           log("torsions") << setw(11) << protein_name << " ";
           log("torsions") << setw(4) << CA->getResidue()->getId() << " ";

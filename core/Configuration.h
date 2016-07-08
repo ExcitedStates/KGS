@@ -59,7 +59,6 @@ class Molecule;
 class Configuration
 {
  public:
-  //int m_numDOFs;                    ///< Number of DOFs
   double *m_dofs;                    ///< DOF-values (relative to Atom::m_referencePosition)
   //double *m_sumProjSteps;          //TODO: What is this?
 
@@ -82,19 +81,17 @@ class Configuration
   void setGlobalTorsion(int i, double val);
 
   Configuration* clone() const;          ///< Copy this configuration
-  void SetAll(double v);                 // TODO: Remove (?)
-  void Normalize();                      // TODO: Remove (?)
-  double Length();                       // TODO: Remove (?)
 
   void Print();                          // TODO: Remove or rename to printDOFs
   void identifyBiggerRigidBodies();      ///< Identify clusters
   void readBiggerSet();                  ///< read the set of clusters, related to identifying clusters
   void projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
+  void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
+
   //Clash-avoiding Jacobian and nullspace
   //void ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pair<Atom*,Atom*>,int >  allCollisions,bool firstTime,bool projectConstraints);
   //void computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom*>,int > allCollisions,bool projectConstraints);
-
 
   static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
@@ -112,8 +109,8 @@ class Configuration
   double m_minCollisionFactor;      //minimum necessary clash-factor for configuration to be clash free, Todo: maybe not necessary to keep
   double m_usedClashPrevention;
 
-  std::map<unsigned int, Rigidbody*> m_biggerRBMap;  // TODO: What is the int? Cluster-idx?
-  std::vector< std::pair<int, unsigned int> > m_sortedRBs; // TODO: Sorted on what? What does the integers refer to?
+  std::map<unsigned int, Rigidbody*> m_biggerRBMap;  // <Cluster-idx, Pointer-to-cluster>
+  std::vector< std::pair<int, unsigned int> > m_sortedRBs; // < cluster-idx, cluster size>
 
   int m_numClusters;             ///< Number of rigid clusters (super rigid bodies)
   int m_maxIndex;                ///< Index of largest cluster

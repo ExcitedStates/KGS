@@ -42,9 +42,9 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     chainName = atom->getResidue()->getChain()->getName();
     resId = atom->getResidue()->getId();
     Atom* a1 = protein->getAtom(chainName,resId, name);
-    v1[i]=a1->m_Position.x;
-    v1[i+1]=a1->m_Position.y;
-    v1[i+2]=a1->m_Position.z;
+    v1[i]=a1->m_position.x;
+    v1[i+1]=a1->m_position.y;
+    v1[i+2]=a1->m_position.z;
     i+=3;
   }
 
@@ -55,9 +55,9 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     chainName = atom->getResidue()->getChain()->getName();
     resId = atom->getResidue()->getId();
     Atom* a2 = protein->getAtom(chainName,resId, name);
-    v2[i]=a2->m_Position.x;
-    v2[i+1]=a2->m_Position.y;
-    v2[i+2]=a2->m_Position.z;
+    v2[i]=a2->m_position.x;
+    v2[i+1]=a2->m_position.y;
+    v2[i+2]=a2->m_position.z;
     i+=3;
   }
 
@@ -97,7 +97,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     resId = aIt->getResidue()->getId();
-    p1_atoms.push_back(p1->getAtom(chainName,resId, name)->m_Position);
+    p1_atoms.push_back(p1->getAtom(chainName,resId, name)->m_position);
   }
 
   Molecule * p2 = c2->updatedMolecule();
@@ -105,7 +105,7 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     resId = aIt->getResidue()->getId();
-    p2_atoms.push_back(p2->getAtom(chainName,resId, name)->m_Position);
+    p2_atoms.push_back(p2->getAtom(chainName,resId, name)->m_position);
   }
 
   for(int i=0;i!=atom_size;i++){
@@ -139,10 +139,10 @@ double RMSD::align(Molecule * other, Molecule * base) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     int resId = aIt->getResidue()->getId();
-    c1 = base->getAtom(chainName, resId, name)->m_Position;
+    c1 = base->getAtom(chainName, resId, name)->m_position;
     a2 = other->getAtom(chainName, resId, name);
     if (a2) {
-      c2 = a2->m_Position;
+      c2 = a2->m_position;
       v1[i] = c1.x;
       v1[i + 1] = c1.y;
       v1[i + 2] = c1.z;
@@ -162,14 +162,14 @@ double RMSD::align(Molecule * other, Molecule * base) {
   // Transform position in m_molecule other
   float* v3 = new float[3];
   for (vector<Atom*>::iterator it=other->getAtoms().begin(); it != other->getAtoms().end(); ++it) {
-    Coordinate pos = (*it)->m_Position;
+    Coordinate pos = (*it)->m_position;
     v3[0] = pos.x;
     v3[1] = pos.y;
     v3[2] = pos.z;
     mulpt(&mtx,v3);
-    (*it)->m_Position.x = v3[0];
-    (*it)->m_Position.y = v3[1];
-    (*it)->m_Position.z = v3[2];
+    (*it)->m_position.x = v3[0];
+    (*it)->m_position.y = v3[1];
+    (*it)->m_position.z = v3[2];
   }
 
   // clear memory

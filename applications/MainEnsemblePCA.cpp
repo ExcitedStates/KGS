@@ -37,7 +37,7 @@ double torsion(Bond * bond){
 	a4 = a3->Cov_neighbor_list[0]; if(a4==a2) a4 = a3->Cov_neighbor_list[1];
 	for(int i=1;i<a3->Cov_neighbor_list.size();i++) if( a3->Cov_neighbor_list[i]!=a2 && a3->Cov_neighbor_list[i]->getName()<a4->getName() ) a4 = a3->Cov_neighbor_list[i];
 
-	double torsion = TorsionalAngle(a1->m_Position, a2->m_Position, a3->m_Position, a4->m_Position);
+	double torsion = TorsionalAngle(a1->m_position, a2->m_position, a3->m_position, a4->m_position);
 	return torsion;
 }
 
@@ -181,6 +181,7 @@ int main(int argc, char* argv[]){
 			//printf ("eigenvector = \n");
 			//gsl_vector_fprintf (stdout, &evec_i.vector, "%g");
 		}
+
 	double atom_def[native->getAtoms().size()];
 	double atom_mob[native->getAtoms().size()];
 	for(int i=0;i<native->getAtoms().size(); i++){
@@ -230,7 +231,7 @@ int main(int argc, char* argv[]){
 //        for (int a=0;a<native->atoms.size();a++){
 //            Atom* natom = native->atoms[a];
 //            Atom* atom = prot->atoms[a];
-//            atom_mob[a]+= atom->m_Position.distance(natom->m_Position)/configurations.size();
+//            atom_mob[a]+= atom->m_position.distance(natom->m_position)/configurations.size();
 //		}
 //	}
     double defMax = 0.0;
@@ -246,13 +247,14 @@ int main(int argc, char* argv[]){
 	}
 
 	ofstream output("pca_def.pdb");
+
   for(auto const& atom: native->getAtoms()){
     Residue* res = atom->getResidue();
     char buffer[100];
     sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s  ",
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
-            atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom_def[atom->getId()],atom_def[atom->getId()], atom->getType().c_str());
+            atom->m_position.x,atom->m_position.y,atom->m_position.z,atom_def[atom->getId()],atom_def[atom->getId()], atom->getType().c_str());
     string line(buffer);
     output << line << endl;
   }
@@ -267,7 +269,7 @@ int main(int argc, char* argv[]){
 //		sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s  ",
 //			atom->getId(),atom->Original_name.c_str(),
 //			res->getName().c_str(),res->getChainId().c_str(),res->getId(),
-//			atom->m_Position.x,atom->m_Position.y,atom->m_Position.z,atom_mob[atom->getId()],atom_mob[atom->getId()], atom->getType().c_str());
+//			atom->m_position.x,atom->m_position.y,atom->m_position.z,atom_mob[atom->getId()],atom_mob[atom->getId()], atom->getType().c_str());
 //		string line(buffer);
 //		output2 << line << endl;
 //	}

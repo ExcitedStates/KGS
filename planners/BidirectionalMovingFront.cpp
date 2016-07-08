@@ -146,7 +146,7 @@ void BidirectionalMovingFront::GenerateSamples() {
     }
     else{//collision-free
       //Potentially reject new config if large violations?
-      m_protein->checkCycleClosure(qNew);
+      double violationNorm = m_protein->checkCycleClosure(qNew);
 
       numSamples++;
       samplesTillSwap--;
@@ -175,6 +175,7 @@ void BidirectionalMovingFront::GenerateSamples() {
       log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << qNew->m_distanceToIni;
       log("samplingStatus") << " .. Distance to moving-front target: " << setprecision(3) << qNew->m_paretoFrontDistance;
       log("samplingStatus") << " .. accessible dofs: "<<qNew->m_clashFreeDofs<<endl;
+      log("samplingStatus") << " .. norm constraint violation: "<<violationNorm<<endl;
       log("samplingStatus")<<"Current shortest distance between both trees at configs "<<m_closestFwdSample->m_id <<" and "<<m_closestRevSample->m_id<<", Distance: "<<m_minDistance<<endl;
 
       writeNewSample(qNew, m_fwdRoot,qNew->m_id);

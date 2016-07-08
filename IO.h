@@ -50,15 +50,16 @@ class IO {
 	static void writeCovBonds (Molecule *molecule, std::string output_file_name);
 	static void readCovBonds  (Molecule *molecule, std::string input_file_name);
 	static void writeHbonds (Molecule * molecule, std::string output_file_name);
+	static void writeHbondsChange (Molecule * molecule, std::string output_file_name);
 	static void readHbonds (Molecule *molecule, std::string hbond_file_name);
   static void readAnnotations (Molecule *molecule, std::string annotation_file_name);
 	static void readHbonds_dssr(Molecule * molecule, std::string dssrFile);
 	static void readHbonds_rnaview(Molecule * molecule, std::string file, bool fillAnnotations);
 	static void readHbonds_first(Molecule * molecule, std::string file);
 	static void readHbonds_vadar(Molecule * molecule, std::string file);
-	static void writeRBs(Molecule * protein, std::string output_file_name);
-	static void writeStats(Molecule * protein, std::string output_file_name);
-	static void writeQ (Molecule *protein, Configuration* referenceConf, std::string output_file_name);
+	static void writeRBs(Molecule * molecule, std::string output_file_name);
+	static void writeStats(Molecule * molecule, std::string output_file_name);
+	static void writeQ (Molecule *molecule, Configuration* referenceConf, std::string output_file_name);
   static void writeTrajectory (Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
   private:
 	static void makeCovBond (Residue* res1, Residue* res2, std::string atom_name1, std::string atom_name2);

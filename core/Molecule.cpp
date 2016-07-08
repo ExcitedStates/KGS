@@ -252,7 +252,7 @@ int Molecule::size() const {
 void Molecule::updateAtom (int atom_id, Coordinate new_pos) {
   Atom* affected_atom = getAtom(atom_id);
   m_grid->removeAtom(affected_atom);
-  affected_atom->m_Position = new_pos;
+  affected_atom->m_position = new_pos;
   m_grid->addAtom(affected_atom);
 }
 
@@ -397,8 +397,8 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
         Atom* a1=this->getAtom(chainName,resId, name);
         Atom* a2=target->getAtom(chainName,resId, name);
         if(a1 && a2){
-          c1 = a1->m_Position;
-          c2 = a2->m_Position;
+          c1 = a1->m_position;
+          c2 = a2->m_position;
           sum += c1.distanceSquared(c2);
         } else{//only allow the rb's where all atoms are available in both proteins
           allAtoms = false;
@@ -653,10 +653,10 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
     KinEdge* edge = parent->findEdge(vertex);
     int dof_id = edge->getDOF()->getIndex();
     //Bond * bond_ptr = edge->getBond();
-    //Coordinate bp1 = bond_ptr->Atom1->m_Position;
-    //Coordinate bp2 = bond_ptr->Atom2->m_Position;
-    //Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_Position);
-    Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_Position);
+    //Coordinate bp1 = bond_ptr->Atom1->m_position;
+    //Coordinate bp2 = bond_ptr->Atom2->m_position;
+    //Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_position);
+    Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_position);
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
     gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
     gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);
@@ -673,8 +673,8 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
 //    // get end-effectors
 //    KinEdge* edge_ptr = it->first;
 //    Hbond * bond_ptr = (Hbond *)(edge_ptr->getBond());
-//    Math3D::Vector3 p1 = bond_ptr->Atom1->m_Position;
-//    Math3D::Vector3 p2 = bond_ptr->Atom2->m_Position;
+//    Math3D::Vector3 p1 = bond_ptr->Atom1->m_position;
+//    Math3D::Vector3 p2 = bond_ptr->Atom2->m_position;
 //    Math3D::Vector3 p1Diff = (p1-bond_ptr->getIdealHPoint());
 //    Math3D::Vector3 p2Diff = (p2-bond_ptr->getIdealAcceptorPoint());
 //    gsl_vector_set(ret, i+0, p1Diff.x);
@@ -752,7 +752,7 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
   metrics::RMSD::align(this,base);
 
   for (vector<Atom*>::const_iterator it=m_atoms.begin(); it!=m_atoms.end(); ++it) {
-    (*it)->m_referencePosition = (*it)->m_Position;
+    (*it)->m_referencePosition = (*it)->m_position;
   }
 }
 
@@ -769,7 +769,7 @@ void Molecule::translateReferencePositionsToRoot(Molecule * base)
 
 void Molecule::restoreAtomPos(){
   for (auto const& a: m_atoms)
-    a->m_Position = a->m_referencePosition;
+    a->m_position = a->m_referencePosition;
 
   m_conf = nullptr;
 
@@ -888,7 +888,7 @@ int Molecule::totalDofNum () const {
 //        AtomJacobian3 = gsl_matrix_calloc(3,totalDofNum());
 //      gsl_matrix_memcpy(AtomJacobian3,AtomJacobian1);
 //      gsl_matrix_sub(AtomJacobian3,AtomJacobian2); // AtomJacobian3 holds the result of substraction
-//      Math3D::Vector3 p12_v3 = atom1->m_Position - atom2->m_Position;
+//      Math3D::Vector3 p12_v3 = atom1->m_position - atom2->m_position;
 //      Coordinate::copyToGslVector(p12_v3, p12);
 //      gsl_blas_dgemv(CblasTrans,1,AtomJacobian3,p12,0,p_temp);
 //      gsl_vector_scale(p_temp,front_constant_part);
@@ -1051,7 +1051,7 @@ Coordinate Molecule::centerOfMass () const {
   Coordinate cur_position, center_of_mass;
   double mass, sum_of_mass=0;
   for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
-    cur_position = (*it)->m_Position;
+    cur_position = (*it)->m_position;
     mass = (*it)->getMass();
     center_of_mass += cur_position * mass;
     sum_of_mass += mass;
@@ -1063,19 +1063,20 @@ Coordinate Molecule::centerOfMass () const {
 Coordinate Molecule::centerOfGeometry () const {
   Coordinate center;
   for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
-    center += (*it)->m_Position;
+    center += (*it)->m_position;
   }
   center /= m_atoms.size();
   return center;
 }
 
-void Molecule::checkCycleClosure(Configuration *q){
+double Molecule::checkCycleClosure(Configuration *q){
   setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
   KinEdge *pEdge;
   int id=1;
   double maxViolation = 0.0;
+  double normOfViolation = 0.0;
 
   log("report")<<"Conformation "<<q->m_id<<endl;
 
@@ -1085,12 +1086,14 @@ void Molecule::checkCycleClosure(Configuration *q){
     Atom* atom2 = pEdge->getBond()->Atom2;
     Hbond * hBond = reinterpret_cast<Hbond *>(pEdge->getBond());
     float distanceChange = hBond->getLength() - hBond->getIniLength();
-    float rightAngleChange = hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA();
-    float leftAngleChange = hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A();
+    float rightAngleChange = formatRangeRadian( hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA() );
+    float leftAngleChange = formatRangeRadian( hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A() );
+
+    normOfViolation += distanceChange * distanceChange + rightAngleChange * rightAngleChange + leftAngleChange * leftAngleChange; //sum of all squares
 
     double distanceViolation = std::fabs(distanceChange / hBond->getIniLength() * 100 );
-    rightAngleChange = Math::RtoD( formatRangeRadian(rightAngleChange) );
-    leftAngleChange = Math::RtoD( formatRangeRadian(leftAngleChange) );
+    rightAngleChange = Math::RtoD( rightAngleChange );
+    leftAngleChange = Math::RtoD( leftAngleChange );
 
     log("report")<<"hBond strain at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %";
     log("report")<<", "<<rightAngleChange<<" deg rangle, "<<leftAngleChange<<" deg langle"<<endl;
@@ -1111,8 +1114,12 @@ void Molecule::checkCycleClosure(Configuration *q){
 
     id++;
   }
+  normOfViolation = sqrt(normOfViolation);
+
+  log("report")<<"Norm of violation: "<<normOfViolation<<endl;
   log("report")<<endl;fflush(stdout);
 
+  return normOfViolation;
 }
 
 
@@ -1259,10 +1266,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     KinEdge* e = *eit;
     if(e->getBond()!=nullptr) {
-      storedPositions.push_back(e->getBond()->Atom1->m_Position);
-      storedPositions.push_back(e->getBond()->Atom2->m_Position);
-      //log("debugRas")<<"Cylinder["<<e->getBond()->Atom1->m_Position[0]<<", "<<e->getBond()->Atom1->m_Position[1]<<", "<<e->getBond()->Atom1->m_Position[2]<<", ";
-      //log("debugRas")<<e->getBond()->Atom2->m_Position[0]<<", "<<e->getBond()->Atom2->m_Position[1]<<", "<<e->getBond()->Atom2->m_Position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
+      storedPositions.push_back(e->getBond()->Atom1->m_position);
+      storedPositions.push_back(e->getBond()->Atom2->m_position);
+      //log("debugRas")<<"Cylinder["<<e->getBond()->Atom1->m_position[0]<<", "<<e->getBond()->Atom1->m_position[1]<<", "<<e->getBond()->Atom1->m_position[2]<<", ";
+      //log("debugRas")<<e->getBond()->Atom2->m_position[0]<<", "<<e->getBond()->Atom2->m_position[1]<<", "<<e->getBond()->Atom2->m_position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
 
       //log("debugRebuild")<<"1: storedTorsion["<<storedTorsions.size()<<"] .. ";
       storedTorsions.push_back(e->getBond()->getTorsion());
@@ -1273,19 +1280,19 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   //Make sure only endpoints within subgraph and boundary can move
   for(vector<KinVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
     for(vector<Atom*>::iterator ait=(*vit)->m_rigidbody->Atoms.begin();ait!=(*vit)->m_rigidbody->Atoms.end();ait++){
-      (*ait)->m_Position = (*ait)->m_referencePosition;
+      (*ait)->m_position = (*ait)->m_referencePosition;
     }
   }
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     //(*eit)->getBond()->Atom1->m_bPositionModified = false;
     //(*eit)->getBond()->Atom2->m_bPositionModified = false;
-    (*eit)->getBond()->Atom1->m_Position = entry->getBond()->Atom1->m_referencePosition;
-    (*eit)->getBond()->Atom2->m_Position = entry->getBond()->Atom2->m_referencePosition;
+    (*eit)->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
+    (*eit)->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
   }
   //entry->getBond()->Atom1->m_bPositionModified = false;
   //entry->getBond()->Atom2->m_bPositionModified = false;
-  entry->getBond()->Atom1->m_Position = entry->getBond()->Atom1->m_referencePosition;
-  entry->getBond()->Atom2->m_Position = entry->getBond()->Atom2->m_referencePosition;
+  entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
+  entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
   //TODO: Also sugars
 
   //Change DOFs in resetDOFs to values indicated in resetValues
@@ -1309,8 +1316,8 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     int c = 0;
     for(vector<KinEdge*>::iterator bit = boundary.begin(); bit!=boundary.end(); bit++){
       KinEdge* eBoundary = *bit;
-      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->Atom1->m_Position);
-      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->Atom2->m_Position);
+      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->Atom1->m_position);
+      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->Atom2->m_position);
       //log("debugRas")<<"Stored["<<c*2+0<<"]"
       gsl_vector_set(e, c*6+0, v1[0]*e_scaling);
       gsl_vector_set(e, c*6+1, v1[1]*e_scaling);
@@ -1363,10 +1370,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
         int dof = find(recloseDOFs.begin(), recloseDOFs.end(), e->getDOF()->getIndex())-recloseDOFs.begin();
         //log("debugRas")<<"DOF: "<<dof<<endl;
         if(dof<recloseDOFs.size()){ // Continue if the edge is not in the recloseDOFs
-          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom1->m_Position);
-          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_Position, e->getBond()->Atom2->m_Position, eBoundary->getBond()->Atom2->m_Position);
-          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom1->m_Position);
-          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom2->m_Position);
+          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom1->m_position);
+          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom2->m_position);
+          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom1->m_position);
+          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom2->m_position);
           gsl_matrix_set(J, c*6+0, dof, v1[0]);
           gsl_matrix_set(J, c*6+1, dof, v1[1]);
           gsl_matrix_set(J, c*6+2, dof, v1[2]);
@@ -1416,16 +1423,16 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     for(vector<KinVertex*>::iterator vit = subVerts.begin(); vit!=subVerts.end(); vit++){
       for(vector<Atom*>::iterator ait=(*vit)->m_rigidbody->Atoms.begin();ait!=(*vit)->m_rigidbody->Atoms.end();ait++){
         //(*ait)->m_bPositionModified = false;
-        (*ait)->m_Position = (*ait)->m_referencePosition;
+        (*ait)->m_position = (*ait)->m_referencePosition;
 
       }
     }
     for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
-      (*eit)->getBond()->Atom1->m_Position = (*eit)->getBond()->Atom1->m_referencePosition;
-      (*eit)->getBond()->Atom2->m_Position = (*eit)->getBond()->Atom2->m_referencePosition;
+      (*eit)->getBond()->Atom1->m_position = (*eit)->getBond()->Atom1->m_referencePosition;
+      (*eit)->getBond()->Atom2->m_position = (*eit)->getBond()->Atom2->m_referencePosition;
     }
-    entry->getBond()->Atom1->m_Position = entry->getBond()->Atom1->m_referencePosition;
-    entry->getBond()->Atom2->m_Position = entry->getBond()->Atom2->m_referencePosition;
+    entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
+    entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
 
     //Move according to J_dag·e
     _SetConfiguration(ret, entry->StartVertex, subVerts);//, false);

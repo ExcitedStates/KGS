@@ -26,13 +26,13 @@ double RMSDnosuper::distance( Configuration *c1, Configuration *c2 ) {
   vector<Coordinate> p1_atoms;
   c1->updateMolecule();
   for( auto const &a : atomsRMSD1 ) {
-    p1_atoms.push_back(a->m_Position);
+    p1_atoms.push_back(a->m_position);
   }
 
   vector<Coordinate> p2_atoms;
   c2->updateMolecule();
   for( auto const &a : atomsRMSD2 ) {
-    p2_atoms.push_back(a->m_Position);
+    p2_atoms.push_back(a->m_position);
   }
 
   size_t numAtoms = atomsRMSD1.size();

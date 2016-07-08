@@ -106,16 +106,16 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration*
     int resId = (*ait)->getResidue()->getId();
     string chainName = (*ait)->getResidue()->getChain()->getName();
     Atom* atom = protein->getAtom(chainName,resId,name);
-    Coordinate p = atom->m_Position;
+    Coordinate p = atom->m_position;
     Atom* aTarget = target->getAtom(chainName,resId,name);
     if(aTarget == NULL ){
       //log("dominik")<<"Specified target atom does not exist!"<<endl;
       continue;//skip the non-existing atom
     }
     KinVertex* currVertex = atom->getRigidbody()->getVertex();
-    gsl_matrix_set(m_TargetPosition,i*3+0,0,aTarget->m_Position.x-p.x);
-    gsl_matrix_set(m_TargetPosition,i*3+1,0,aTarget->m_Position.y-p.y);
-    gsl_matrix_set(m_TargetPosition,i*3+2,0,aTarget->m_Position.z-p.z);
+    gsl_matrix_set(m_TargetPosition,i*3+0,0,aTarget->m_position.x-p.x);
+    gsl_matrix_set(m_TargetPosition,i*3+1,0,aTarget->m_position.y-p.y);
+    gsl_matrix_set(m_TargetPosition,i*3+2,0,aTarget->m_position.z-p.z);
     //       cout<<gsl_matrix_get(m_TargetPosition,i*3+0,0)<<" px "<<p.x<<" Tx "<<aTarget->Position.x<<gsl_matrix_get(m_TargetPosition,i*3+1,0)<<" "<<gsl_matrix_get(m_TargetPosition,i*3+2,0)<<" ";
     // trace back until the m_root from currVertex
     //while ( currVertex != protein->m_spanning_tree->Root ) {
@@ -128,7 +128,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration*
       if (dof_id!=-1) { // this edge is a DO
         Atom* ea1 = p_edge->getBond()->Atom1;
         Atom* ea2 = p_edge->getBond()->Atom2;
-        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_Position,ea2->m_Position,p);
+        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         gsl_matrix_set(m_TargetJacobian,i*3+0,dof_id,derivativeP.x);
         gsl_matrix_set(m_TargetJacobian,i*3+1,dof_id,derivativeP.y);
         gsl_matrix_set(m_TargetJacobian,i*3+2,dof_id,derivativeP.z);
