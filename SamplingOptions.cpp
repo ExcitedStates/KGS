@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
+#include <stdexcept>
 
 #include "Util.h"
 #include "Logger.h"

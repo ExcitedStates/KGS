@@ -181,7 +181,7 @@ int main( int argc, char* argv[] ) {
         allDofs->data + qNew->getNumDOFs(),
         qNew->m_dofs);
 
-    string outFile = "output/allDofs_"+std::to_string(static_cast<int>(i+1))+".txt";
+    string outFile = "output/allDofs_"+std::to_string(static_cast<long long>(i+1))+".txt";
     gsl_vector_outtofile(allDofs, outFile);
 
     bool inCollision = qNew->updatedMolecule()->inCollision();
@@ -201,7 +201,7 @@ int main( int argc, char* argv[] ) {
     conf->getNullspace()->Matrix()->size2 << " samples. Delta hbond energy: " << deltaH<<", pred. violation: "<<predictedViolation<<", obs. violation: "<<observedViolation<<endl;
     SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
 
-    hBondOut = "output/hBonds_"+std::to_string(static_cast<int>(i+1))+".txt";
+    hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(i+1))+".txt";
     IO::writeHbondsChange(&protein,hBondOut);
 
     //Store output data in this file, space-separated in this order

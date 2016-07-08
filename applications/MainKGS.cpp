@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <list>
+#include <stdexcept>
 #include "core/Molecule.h"
 #include "core/Chain.h"
 #include "core/Grid.h"
