@@ -11,6 +11,7 @@
 #include <map>
 #include "SiteID.h"
 
+
 static const unsigned int MIN_CLUSTER_SIZE = 1;
 
 struct RGBfractionComponents{float red; float green; float blue;};
