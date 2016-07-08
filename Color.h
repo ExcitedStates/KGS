@@ -9,7 +9,6 @@
 #define COLOR_H_
 #include <string>
 #include <map>
-
 #include "SiteID.h"
 
 static const unsigned int MIN_CLUSTER_SIZE = 1;
