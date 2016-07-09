@@ -34,6 +34,7 @@
 #include "core/Molecule.h"
 #include "core/Residue.h"
 #include "Util.h"
+#include "Selection.h"
 #include "ResidueProfiles.h"
 
 
@@ -43,7 +44,7 @@ class IO {
 	static void readPdb (Molecule * protein, std::string pdb_file, std::vector<std::string> &hbondsAsCov, Molecule * reference = nullptr);
 	static void readDssp (Molecule * protein, std::string dssp_file);
 	static void readRigidbody (Molecule * molecule);
-  static void readRigidbody (Molecule * molecule, std::vector<int>& movingResidues);
+  static void readRigidbody (Molecule * molecule, Selection& movingResidues);
 	static void writePdb (Molecule * molecule, std::string output_file_name);
 	static void writePyMolScript(Molecule * molecule, std::string pdb_file, std::string output_file_name);
   static void writeBondLengthsAndAngles (Molecule *molecule, std::string output_file_name);

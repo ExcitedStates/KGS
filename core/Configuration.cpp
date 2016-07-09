@@ -415,12 +415,12 @@ void Configuration::readBiggerSet(){
 
 //------------------------------------------------------
 void Configuration::updateGlobalTorsions(){
-  if(m_dofs_global == nullptr){
-    m_dofs_global = new double[getNumDOFs()];
-  }
+  if(m_dofs_global != nullptr)
+    return;
+
   updateMolecule();
+  m_dofs_global = new double[getNumDOFs()];
   for(int i=0; i<getNumDOFs(); ++i){
-//    m_dofs_global[i] = 0;
     m_dofs_global[i] = m_molecule->m_spanning_tree->getDOF(i)->getGlobalValue();
   }
   //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanning_tree->Edges.begin(); itr!= m_molecule->m_spanning_tree->Edges.end(); ++itr) {
@@ -431,12 +431,15 @@ void Configuration::updateGlobalTorsions(){
   //  m_dofs_global[dof_id] = pEdge->getBond()->getTorsion();
   //}
 }
-//------------------------------------------------------
-double Configuration::getGlobalTorsion( int i ) const{
+
+double Configuration::getGlobalTorsion( int i ) {
+  assert(i>=0 && i<getNumDOFs());
+  updateGlobalTorsions();
   return m_dofs_global[i];
 }
 
-double* Configuration::getGlobalTorsions() const{
+double* Configuration::getGlobalTorsions() {
+  updateGlobalTorsions();
   return m_dofs_global;
 }
 
@@ -460,11 +463,10 @@ Configuration* Configuration::clone() const {
   for(int i=0; i <getNumDOFs(); ++i){
     ret->m_dofs[i]        = m_dofs[i];
   }
-  if(getGlobalTorsions()!=nullptr){
+  if(m_dofs_global!=nullptr){
     ret->m_dofs_global = new double[getNumDOFs()];
     for(int i=0; i<getNumDOFs(); ++i) {
       ret->m_dofs_global[i]  = m_dofs_global[i];
-      //ret->m_sumProjSteps[i] = m_sumProjSteps[i];
     }
   }else{
     ret->m_dofs_global = nullptr;

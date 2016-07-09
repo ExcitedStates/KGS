@@ -70,9 +70,9 @@ int main( int argc, char* argv[] ) {
   protein.setCollisionFactor(options.collisionFactor);
 
   IO::readPdb(&protein, options.initialStructureFile, options.extraCovBonds);
-  options.setResidueNetwork(&protein);
+//  options.setResidueNetwork(&protein);
 
-  string name = protein.getName();
+//  string name = protein.getName();
 
   if (options.hydrogenbondMethod == "user")
     IO::readHbonds(&protein, options.hydrogenbondFile);

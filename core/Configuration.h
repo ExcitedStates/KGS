@@ -70,9 +70,8 @@ class Configuration
 
   ~Configuration();
 
-  void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
-  double getGlobalTorsion( int i ) const; ///< Get a global DOF-value
-  double* getGlobalTorsions() const;     ///< Get global DOF-value array
+  double getGlobalTorsion( int i ) ; ///< Get a global DOF-value
+  double* getGlobalTorsions() ;     ///< Get global DOF-value array
 
   unsigned int getNumDOFs() const;
 
@@ -132,6 +131,7 @@ class Configuration
   static Nullspace* ClashAvoidingNullSpace; //TODO: Make private (or even better put in ClashAvoidingMove).
  protected:
 
+  void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
   double *m_dofs_global;                 ///< DOF-values in a global system (not relative to Atom::reference_position)
   Molecule * const m_molecule;           ///< The molecule related to the configuration
   Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from

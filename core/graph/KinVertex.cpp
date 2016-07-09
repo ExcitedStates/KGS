@@ -1,3 +1,5 @@
+#include <cassert>
+#include <cmath>
 #include "KinVertex.h"
 
 #include "Logger.h"
@@ -70,20 +72,10 @@ void KinVertex::transformAtoms()
     atom->m_position.x = newPos.x;
     atom->m_position.y = newPos.y;
     atom->m_position.z = newPos.z;
+
+    assert( !std::isnan(newPos.x) );
+    assert( !std::isnan(newPos.y) );
+    assert( !std::isnan(newPos.z) );
   }
 }
 
-void KinVertex::TransformAtomPosition(Math3D::RigidTransform *trsfm){
-
-  for (auto const& atom: m_rigidbody->Atoms){
-    Math3D::Vector3 newPos = trsfm->R * atom->m_position;
-
-    newPos.x += trsfm->t.x;
-    newPos.y += trsfm->t.y;
-    newPos.z += trsfm->t.z;
-
-    atom->m_position.x = newPos.x;
-    atom->m_position.y = newPos.y;
-    atom->m_position.z = newPos.z;
-  }
-}

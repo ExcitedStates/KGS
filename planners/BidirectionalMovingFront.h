@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <metrics/RMSD.h>
 
 #include "metrics/Metric.h"
 #include "SamplingOptions.h"
@@ -76,12 +77,13 @@ class BidirectionalMovingFront : public SamplingPlanner{
   Configuration* m_closestFwdSample; // own configuration
   Configuration* m_closestRevSample; //closest target configuration
 
+  metrics::RMSD* m_rmsd; ///< Used for aligning
+
   int m_max_depth;
   double m_minDistance;
 
   bool m_addedToFront;
   int m_frontSize;
-
   bool m_isBlended;
 
   int m_nCDCall = 0;

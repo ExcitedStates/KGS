@@ -30,10 +30,12 @@
 
 #include <core/graph/KinTree.h>
 #include "Direction.h"
+#include "Selection.h"
+#include "metrics/RMSD.h"
 
 class MSDDirection: public Direction {
  public:
-  MSDDirection();
+  MSDDirection(Selection& resNetwork);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
@@ -46,6 +48,9 @@ class MSDDirection: public Direction {
   std::list< KinVertex* > m_sortedVertices;
 
   KinTree* m_preprocessedTree;
+
+  Selection& m_resNetwork;
+  metrics::RMSD m_rmsd;
 };
 
 

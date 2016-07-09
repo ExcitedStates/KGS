@@ -140,31 +140,33 @@ int main( int argc, char* argv[] ) {
   }
   move->setStepSize(options.stepSize);
 
+  Selection resNetwork(options.residueNetwork);
+
   //Initialize direction
   Direction* direction;
   bool blendedDir = false;
   if(options.gradient == 0)
-    direction = new RandomDirection();
+    direction = new RandomDirection(resNetwork);
   else if(options.gradient == 1)
-    direction = new DihedralDirection();
+    direction = new DihedralDirection(resNetwork);
   else if(options.gradient == 2){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(),0);
-    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new DihedralDirection(resNetwork),0);
+    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection();
+    direction = new MSDDirection(resNetwork);
   else if(options.gradient == 4){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(),0);
-    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new MSDDirection(resNetwork),0);
+    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient <= 5)
-    direction = new LSNullspaceDirection();
+    direction = new LSNullspaceDirection(resNetwork);
 
 
   if(options.saveData > 0){

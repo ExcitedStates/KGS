@@ -35,9 +35,9 @@
 #include "math.h" //dPi
 #include "math/MathUtility.h"
 
-RandomDirection::RandomDirection(std::vector<int> residueNetwork, double maxRotation):
+RandomDirection::RandomDirection(Selection& resNetwork, double maxRotation):
     m_maxRotation(maxRotation),
-    m_residueNetwork(residueNetwork)
+    m_resNetwork(resNetwork)
 { }
 
 
@@ -48,28 +48,18 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
   Molecule * protein = conf->getMolecule();
   double absMax = 0.0;
   for (auto const& edge: protein->m_spanning_tree->Edges) {
-	  if(edge->getBond()==nullptr) continue;
-
     int dofId = edge->getDOF()->getIndex();
-    double newVal = RandomAngleUniform(Math3D::dPi);
-    if(edge->StartVertex->m_rigidbody==nullptr)
-      newVal = 0.0;
+    double newVal = 0.0;
+
+    if( edge->getBond()!=nullptr && m_resNetwork.inSelection(edge->getBond()))
+      newVal = RandomAngleUniform(Math3D::dPi);
+
     absMax = std::max(absMax, std::fabs(newVal));
 
-    //TODO: adapt to sampling options selectionMoving etc
-    if (m_residueNetwork.empty()) {
-      gsl_vector_set(ret, dofId, newVal);
-    } else {
-      int resId = edge->getBond()->Atom1->getResidue()->getId();
-      if (std::find(m_residueNetwork.begin(), m_residueNetwork.end(), resId) != m_residueNetwork.end()) {
-        gsl_vector_set(ret, dofId, newVal);
-      }
-    }
+    gsl_vector_set(ret, dofId, newVal);
   }
 
   if ( absMax > m_maxRotation ){
     gsl_vector_scale(ret, m_maxRotation/absMax);
   }
-
-  //gsl_vector_scale(ret, SamplingOptions::getOptions()->stepSize);
 }

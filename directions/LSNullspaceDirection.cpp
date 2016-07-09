@@ -29,6 +29,8 @@
 
 #include <map>
 #include <cassert>
+#include <cmath>
+#include <gsl/gsl_matrix.h>
 
 #include "SamplingOptions.h"
 #include "math/SVD.h"
@@ -40,14 +42,15 @@
 
 using namespace std;
 
-gsl_matrix* LSNullspaceDirection::m_TargetJacobian = NULL;
-gsl_matrix* LSNullspaceDirection::m_TargetPosition = NULL;
+//gsl_matrix* LSNullspaceDirection::m_TargetJacobian = NULL;
+//gsl_matrix* LSNullspaceDirection::m_TargetPosition = NULL;
 
 
-LSNullspaceDirection::LSNullspaceDirection()
+LSNullspaceDirection::LSNullspaceDirection(Selection& atomsMoving):
+    m_atomsMovingSelection(atomsMoving)
 {
-  int numMovingAtoms = SamplingOptions::getOptions()->getAtomsMoving()->size();
-  m_TargetJacobian = gsl_matrix_calloc( numMovingAtoms*3, 1 );
+//  int numMovingAtoms = SamplingOptions::getOptions()->getAtomsMoving()->size();
+//  m_TargetJacobian = gsl_matrix_calloc( numMovingAtoms*3, 1 );
 }
 
 
@@ -55,6 +58,8 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
 {
   Molecule* protein = conf->getMolecule();
   Molecule* target = targetConf->getMolecule();
+
+  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
 
   //current_q->ComputeCycleJacobianAndNullSpace();
   gsl_matrix* N = conf->getNullspace()->getBasis();
@@ -75,69 +80,83 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
       fulldof++;
     }
   }
-  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
-  m_TargetJacobian = gsl_matrix_calloc(atomList->size()*3,fullN->size1);
-  gsl_matrix_set_zero(m_TargetJacobian);
-  gsl_matrix_set_zero(m_TargetPosition);
-  fillmatrices(conf, targetConf);
 
-  gsl_matrix* bestmove = determineBestMove(fullN,m_TargetJacobian,m_TargetPosition);
+//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+  gsl_matrix* TargetJacobian = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
+  gsl_matrix* TargetPosition = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
+//  gsl_matrix_set_zero(m_TargetJacobian); //Already done by calloc
+//  gsl_matrix_set_zero(m_TargetPosition);
+  fillmatrices(conf, targetConf, TargetJacobian, TargetPosition);
+
+  gsl_matrix* bestmove = determineBestMove(fullN,TargetJacobian,TargetPosition);
 
   for (int i=0;i<fullN->size1;i++){
-    gsl_vector_set(ret,i,gsl_matrix_get(bestmove,i,0));
+    double val = gsl_matrix_get(bestmove, i, 0);
+    assert( !std::isnan(val) );
+    gsl_vector_set(ret,i,val); //TODO: Speed up with memcpy
   }
   gsl_matrix_free(bestmove);
   gsl_matrix_free(fullN);
+  gsl_matrix_free(TargetJacobian);
+  gsl_matrix_free(TargetPosition);
 
 }
 
 
-void LSNullspaceDirection::fillmatrices(Configuration* current_q, Configuration* pTarget){
+void LSNullspaceDirection::fillmatrices(Configuration* current_q,
+                                        Configuration* pTarget,
+                                        gsl_matrix* targetJacobian,
+                                        gsl_matrix* targetPosition)
+{
 
   int i=0;
   Molecule* protein=current_q->getMolecule();
   Molecule* target=pTarget->getMolecule();//Todo: Here we have to be careful! This does not work if both configurations refer to the same protein!
   assert(protein!=target);
 
-  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
-  vector<Atom*>::const_iterator ait;
-  for(ait=atomList->begin(); ait!= atomList->end(); ait++){//only use to extract res IDs and names
-    string name = (*ait)->getName();
-    int resId = (*ait)->getResidue()->getId();
-    string chainName = (*ait)->getResidue()->getChain()->getName();
-    Atom* atom = protein->getAtom(chainName,resId,name);
+//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+//  const vector<Atom*>& atomList1 = m_atomsMovingSelection.getSelectedAtoms(protein);
+//  const vector<Atom*>& atomList2 = m_atomsMovingSelection.getSelectedAtoms(target);
+  const vector<Atom*>& atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
+
+//  if(atomList1.size()!=atomList2.size()){
+//    cerr<<"LSNullspaceDirection::fillmatrices - Molecules contain different number of atoms"<<endl;
+//    exit(-1);
+//  }
+
+  for(auto const& atom : atomList){//only use to extract res IDs and names
+    string name = atom->getName();
+    int resId = atom->getResidue()->getId();
+    string chainName = atom->getResidue()->getChain()->getName();
+//    Atom* atom = protein->getAtom(chainName,resId,name);
     Coordinate p = atom->m_position;
     Atom* aTarget = target->getAtom(chainName,resId,name);
-    if(aTarget == NULL ){
-      //log("dominik")<<"Specified target atom does not exist!"<<endl;
-      continue;//skip the non-existing atom
-    }
+    if(aTarget == NULL ) continue;//skip the non-existing atom
+
     KinVertex* currVertex = atom->getRigidbody()->getVertex();
-    gsl_matrix_set(m_TargetPosition,i*3+0,0,aTarget->m_position.x-p.x);
-    gsl_matrix_set(m_TargetPosition,i*3+1,0,aTarget->m_position.y-p.y);
-    gsl_matrix_set(m_TargetPosition,i*3+2,0,aTarget->m_position.z-p.z);
-    //       cout<<gsl_matrix_get(m_TargetPosition,i*3+0,0)<<" px "<<p.x<<" Tx "<<aTarget->Position.x<<gsl_matrix_get(m_TargetPosition,i*3+1,0)<<" "<<gsl_matrix_get(m_TargetPosition,i*3+2,0)<<" ";
-    // trace back until the m_root from currVertex
-    //while ( currVertex != protein->m_spanning_tree->Root ) {
+    gsl_matrix_set(targetPosition,i*3+0,0, aTarget->m_position.x - p.x);
+    gsl_matrix_set(targetPosition,i*3+1,0, aTarget->m_position.y - p.y);
+    gsl_matrix_set(targetPosition,i*3+2,0, aTarget->m_position.z - p.z);
+
+    //Trace back until the m_root from currVertex
     while ( currVertex->m_parent != NULL){
-//      Edge* p_edge = currVertex->Parent->Edges.find(currVertex->VertexId)->second;
       KinEdge* p_edge = currVertex->m_parent->findEdge(currVertex);
 
-      //int dof_id = p_edge->DOF_id;
       int dof_id = p_edge->getDOF()->getIndex();
-      if (dof_id!=-1) { // this edge is a DO
-        Atom* ea1 = p_edge->getBond()->Atom1;
-        Atom* ea2 = p_edge->getBond()->Atom2;
-        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
-        gsl_matrix_set(m_TargetJacobian,i*3+0,dof_id,derivativeP.x);
-        gsl_matrix_set(m_TargetJacobian,i*3+1,dof_id,derivativeP.y);
-        gsl_matrix_set(m_TargetJacobian,i*3+2,dof_id,derivativeP.z);
+      if (dof_id!=-1) { // this edge is a DOF
+//        Atom* ea1 = p_edge->getBond()->Atom1;
+//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
+        Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(p);
+
+        gsl_matrix_set(targetJacobian,i*3+0,dof_id,derivativeP.x);
+        gsl_matrix_set(targetJacobian,i*3+1,dof_id,derivativeP.y);
+        gsl_matrix_set(targetJacobian,i*3+2,dof_id,derivativeP.z);
       }
       currVertex = currVertex->m_parent;
     }
     i++;
   }
-  //cout<<endl;
 }
 
 gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition){

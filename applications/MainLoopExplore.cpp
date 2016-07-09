@@ -68,10 +68,12 @@ int main( int argc, char* argv[] ) {
   Molecule protein;
   protein.setCollisionFactor(options.collisionFactor);
 
+  Selection resNetwork(options.residueNetwork);
+
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-  options.setResidueNetwork(&protein);
+//  options.setResidueNetwork(&protein);
   IO::readHbonds( &protein, options.hydrogenbondFile );
-  IO::readRigidbody( &protein, options.residueNetwork );
+  IO::readRigidbody( &protein, resNetwork );
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
   protein.setConfiguration(new Configuration(&protein));
   protein.m_initialCollisions = protein.getAllCollisions();
@@ -118,10 +120,10 @@ int main( int argc, char* argv[] ) {
 
   //Initialize direction
   Direction* direction = nullptr;
-  if(options.gradient == 0)      direction = new RandomDirection();
-  else if(options.gradient <= 2) direction = new DihedralDirection();
-  else if(options.gradient <= 4) direction = new MSDDirection();
-  else if(options.gradient <= 5) direction = new LSNullspaceDirection();
+  if(options.gradient == 0)      direction = new RandomDirection(resNetwork);
+  else if(options.gradient <= 2) direction = new DihedralDirection(resNetwork);
+  else if(options.gradient <= 4) direction = new MSDDirection(resNetwork);
+  else if(options.gradient <= 5) direction = new LSNullspaceDirection(resNetwork);
   else{
     cerr<<"Invalid --gradient specified. Must be between 0 and 5"<<endl;
     exit(-1);

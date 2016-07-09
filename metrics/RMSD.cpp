@@ -1,3 +1,4 @@
+#include <cmath>
 #include "metrics/RMSD.h"
 #include "../SamplingOptions.h"
 #include "core/Chain.h"
@@ -15,18 +16,19 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
 {
 //  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
   const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
-  const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
+//  const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
-  if( atomsRMSD1.empty() || atomsRMSD2.empty() ){
+//  if( atomsRMSD1.empty() || atomsRMSD2.empty() ){
+  if( atomsRMSD1.empty() ){
     cerr<<"RMSD::distance - Atom-selection given to RMSD metric contained no atoms: "<<m_selection<<endl;
     exit(-1);
   }
 
-  if( atomsRMSD1.size() != atomsRMSD2.size() ){
-    cerr<<"RMSD::distance(..)";
-    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
-    exit(-1);
-  }
+//  if( atomsRMSD1.size() != atomsRMSD2.size() ){
+//    cerr<<"RMSD::distance(..)";
+//    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
+//    exit(-1);
+//  }
 
   Molecule * protein = c1->updatedMolecule();
   int atom_num = atomsRMSD1.size();
@@ -34,31 +36,36 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   float* v1 = new float[atom_num*3];
   float* v2 = new float[atom_num*3];
 
-  int resId;
-  string name, chainName;
+//  int resId;
+//  string name, chainName;
   unsigned int i=0;
   for (auto const& atom: atomsRMSD1){
-    name = atom->getName();
-    chainName = atom->getResidue()->getChain()->getName();
-    resId = atom->getResidue()->getId();
-    Atom* a1 = protein->getAtom(chainName,resId, name);
-    v1[i]=a1->m_position.x;
-    v1[i+1]=a1->m_position.y;
-    v1[i+2]=a1->m_position.z;
-    i+=3;
+    const string& name = atom->getName();
+    const string& chainName = atom->getResidue()->getChain()->getName();
+    const int resId = atom->getResidue()->getId();
+    Atom* a2 = c2->getMolecule()->getAtom(chainName, resId, name);
+    if(a2==nullptr) continue;
+//    Atom* a1 = protein->getAtom(chainName,resId, name);
+//    v1[i+0]=a1->m_Position.x;
+//    v1[i+1]=a1->m_Position.y;
+//    v1[i+2]=a1->m_Position.z;
+//    i+=3;
+    v1[i++] = atom->m_position.x;
+    v1[i++] = atom->m_position.y;
+    v1[i++] = atom->m_position.z;
   }
 
   protein= c2->updatedMolecule();
   i=0;
-  for (auto const& atom: atomsRMSD2) {
-    name = atom->getName();
-    chainName = atom->getResidue()->getChain()->getName();
-    resId = atom->getResidue()->getId();
+  for (auto const& atom: atomsRMSD1){
+    const string& name = atom->getName();
+    const string& chainName = atom->getResidue()->getChain()->getName();
+    const int resId = atom->getResidue()->getId();
     Atom* a2 = protein->getAtom(chainName,resId, name);
-    v2[i]=a2->m_position.x;
-    v2[i+1]=a2->m_position.y;
-    v2[i+2]=a2->m_position.z;
-    i+=3;
+    if(a2==nullptr) continue;
+    v2[i++] = a2->m_position.x;
+    v2[i++] = a2->m_position.y;
+    v2[i++] = a2->m_position.z;
   }
 
   // Prepare the m_transformation matrix
@@ -70,62 +77,83 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   delete[] v1;
   delete[] v2;
 
+  assert(!std::isnan(diff));
   return diff;
 }
 
 double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
 
-  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsMoving();
+//  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsMoving();
+  vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
+//  vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
-  // If atomsAlign is nullptr, align the entire m_protein
-  if (atomsRMSD==nullptr) {
-    cout<<"Found no atoms to align .. using all"<<endl;
-    atomsRMSD = &(c1->getMolecule()->getAtoms());//choose all atoms
+  if (atomsRMSD1.empty()) {
+    cout<<"RMSD::distance_noOptimization - Found no atoms to align .. using all"<<endl;
+    exit(-1);
   }
+//  if( atomsRMSD1.size() != atomsRMSD2.size() ){
+//    cerr<<"RMSD::distance_noOptimization(..)";
+//    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
+//    exit(-1);
+//  }
 
   vector<Coordinate> p1_atoms;
   vector<Coordinate> p2_atoms;
 
-  double sum=0;
-  int atom_size = atomsRMSD->size();
+//  int atom_size = atomsRMSD->size();
   int resId;
   std::string name;
   std::string chainName;
 
   Molecule * p1 = c1->updatedMolecule();
-  for (auto const& aIt : *atomsRMSD ) {
+  for (auto const& aIt : atomsRMSD1 ) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     resId = aIt->getResidue()->getId();
-    p1_atoms.push_back(p1->getAtom(chainName,resId, name)->m_position);
+
+    Atom* a2 = c2->getMolecule()->getAtom(chainName, resId, name);
+    if(a2==nullptr) continue;
+
+//    p1_atoms.push_back(p1->getAtom(chainName,resId, name)->m_position);
+    p1_atoms.push_back(aIt->m_position);
   }
 
   Molecule * p2 = c2->updatedMolecule();
-  for (auto const& aIt : *atomsRMSD ) {
+  for (auto const& aIt : atomsRMSD1 ) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     resId = aIt->getResidue()->getId();
-    p2_atoms.push_back(p2->getAtom(chainName,resId, name)->m_position);
+    Atom* a2 = c2->getMolecule()->getAtom(chainName, resId, name);
+    if(a2==nullptr) continue;
+    p2_atoms.push_back(a2->m_position);
   }
 
-  for(int i=0;i!=atom_size;i++){
+  double sum=0.0;
+  for(int i=0;i!=atomsRMSD1.size();i++){
     sum += p1_atoms[i].distanceSquared(p2_atoms[i]);
   }
 
-  return sqrt(sum/atom_size);
+  return sqrt(sum/atomsRMSD1.size());
 }
 
 double RMSD::align(Molecule * other, Molecule * base) {
 
-  const std::vector<Atom*>* atomsAlign = SamplingOptions::getOptions()->getAtomsAlign();
+//  const std::vector<Atom*>* atomsAlign = SamplingOptions::getOptions()->getAtomsAlign();
 
-  // If atomsAlign is nullptr, align the entire m_protein
-  if (atomsAlign == nullptr) {
-    cout<<"Found no atoms to align"<<endl;
-    atomsAlign = &(base->getAtoms());//choose all atoms
+//  vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(other);
+  vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(base);
+
+  if (atomsRMSD2.empty()) {
+    cout<<"RMSD::distance_noOptimization - Found no atoms to align .. using all"<<endl;
+    exit(-1);
   }
+//  if( atomsRMSD1.size() != atomsRMSD2.size() ){
+//    cerr<<"RMSD::align(..)";
+//    cerr<<" - Molecules have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
+//    exit(-1);
+//  }
 
-  int atom_size = atomsAlign->size();
+  int atom_size = atomsRMSD2.size();
   int coord_num = atom_size * 3;
   float* v1 = new float[coord_num];
   float* v2 = new float[coord_num];
@@ -135,13 +163,13 @@ double RMSD::align(Molecule * other, Molecule * base) {
   std::string name;
   std::string chainName;
 
-  for (auto const& aIt : *atomsAlign ) {
+  for (auto const& aIt : atomsRMSD2 ) {
     name = aIt->getName();
     chainName = aIt->getResidue()->getChain()->getName();
     int resId = aIt->getResidue()->getId();
     c1 = base->getAtom(chainName, resId, name)->m_position;
     a2 = other->getAtom(chainName, resId, name);
-    if (a2) {
+    if (a2!=nullptr) {
       c2 = a2->m_position;
       v1[i] = c1.x;
       v1[i + 1] = c1.y;
@@ -161,15 +189,15 @@ double RMSD::align(Molecule * other, Molecule * base) {
 
   // Transform position in m_molecule other
   float* v3 = new float[3];
-  for (vector<Atom*>::iterator it=other->getAtoms().begin(); it != other->getAtoms().end(); ++it) {
-    Coordinate pos = (*it)->m_position;
+  for (auto const& aIt : other->getAtoms()) {
+    Coordinate pos = aIt->m_position;
     v3[0] = pos.x;
     v3[1] = pos.y;
     v3[2] = pos.z;
     mulpt(&mtx,v3);
-    (*it)->m_position.x = v3[0];
-    (*it)->m_position.y = v3[1];
-    (*it)->m_position.z = v3[2];
+    aIt->m_position.x = v3[0];
+    aIt->m_position.y = v3[1];
+    aIt->m_position.z = v3[2];
   }
 
   // clear memory

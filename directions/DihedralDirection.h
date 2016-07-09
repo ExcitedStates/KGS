@@ -29,13 +29,16 @@
 
 #include "Direction.h"
 #include "core/Configuration.h"
+#include "Selection.h"
 
 class DihedralDirection: public Direction {
  public:
-  DihedralDirection();
+  DihedralDirection(Selection& resNetwork);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
+
+  Selection& m_resNetwork;
 
 };
 

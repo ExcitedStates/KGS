@@ -13,6 +13,8 @@ class Metric{
 
   virtual double distance(Configuration*, Configuration*) = 0;
 
+  Selection& getSelection();
+
  protected:
   Selection& m_selection;
 };

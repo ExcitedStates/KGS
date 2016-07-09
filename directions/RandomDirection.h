@@ -31,6 +31,7 @@
 
 #include "directions/Direction.h"
 #include "core/Configuration.h"
+#include "Selection.h"
 
 /**
  * A direction class that generates random gradients such that the maximum rotation is never
@@ -38,14 +39,14 @@
  */
 class RandomDirection: public Direction {
  public:
-  RandomDirection(std::vector<int> residueNetwork={}, double maxRotation=0.1745);
+  RandomDirection(Selection& resNetwork, double maxRotation=0.1745);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
  private:
   const double m_maxRotation;
-  const std::vector<int> m_residueNetwork;
+  Selection& m_resNetwork;
 };
 
 

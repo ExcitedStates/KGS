@@ -25,7 +25,6 @@ public:
 
   void forwardPropagate();
 private:
-  void TransformAtomPosition(Math3D::RigidTransform *trsfm);
   void transformAtoms();
 };
 

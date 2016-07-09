@@ -31,25 +31,27 @@
 
 #include <gsl/gsl_vector.h>
 
+#include "Selection.h"
 #include "Direction.h"
 #include "core/Configuration.h"
 
 
 class LSNullspaceDirection: public Direction {
 public:
-  LSNullspaceDirection();
+  LSNullspaceDirection(Selection& atomsMoving);
 
 private:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
-  void fillmatrices(Configuration* current_q, Configuration* pTarget);
+  void fillmatrices(Configuration* current_q, Configuration* pTarget, gsl_matrix* targetJacobian, gsl_matrix* targetPosition);
   void clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein);
   gsl_matrix* determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition);
 
 
-  static gsl_matrix* m_TargetJacobian;
-  static gsl_matrix* m_TargetPosition;
+//  static gsl_matrix* m_TargetJacobian;
+//  static gsl_matrix* m_TargetPosition;
 
+  Selection& m_atomsMovingSelection;
 };
 
 

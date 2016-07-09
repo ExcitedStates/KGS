@@ -29,6 +29,7 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
     direction(direction),
     m_target(target),
     m_isBlended(blendedDir),
+    m_rmsd(new metrics::RMSD(metric.getSelection())),
     stopAfter(SamplingOptions::getOptions()->samplesToGenerate),
     m_frontSize(SamplingOptions::getOptions()->frontSize)
 {
@@ -133,7 +134,6 @@ void BidirectionalMovingFront::GenerateSamples() {
     }
     direction.gradient(qSeed, qTarget, gradient); //computes the search direction for a new sample
     gsl_vector_scale_to_length(gradient, stepSize);
-    cout<<"Gradient done, norm is "<<gsl_vector_length(gradient)<<endl;
     qNew = move.move(qSeed, gradient); //Perform move
 
     if(qNew->updatedMolecule()->inCollision() ){
@@ -229,15 +229,15 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
   //Distance to target m_root
   m_revRoot->updateMolecule(); //go back to original, initial target and compute distance
   if(SamplingOptions::getOptions()->alignAlways){
-    alignVal = metrics::RMSD::align(m_target, m_protein);
-    qNew->m_distanceToTarget = metrics::RMSD::distance_noOptimization(qNew,m_revRoot);
+    alignVal = m_rmsd->align(m_target, m_protein);
+    qNew->m_distanceToTarget = m_rmsd->distance_noOptimization(qNew,m_revRoot);
   }else{
     qNew->m_distanceToTarget = m_metric.distance(qNew,m_revRoot);
   }
 
   //Distance to own m_root
   if(SamplingOptions::getOptions()->alignAlways) {
-    qNew->m_distanceToIni = metrics::RMSD::distance_noOptimization(qNew, m_fwdRoot);
+    qNew->m_distanceToIni = m_rmsd->distance_noOptimization(qNew, m_fwdRoot);
   }else{
     qNew->m_distanceToIni = m_metric.distance(qNew, m_fwdRoot);
   }
@@ -250,8 +250,8 @@ void BidirectionalMovingFront::evaluateDistances(Configuration* qNew){
   m_closestRevSample->updateMolecule();//Distance to closest sample from opposing tree
 
   if(SamplingOptions::getOptions()->alignAlways){
-    alignVal = metrics::RMSD::align(m_target, m_protein);
-    qNew->m_paretoFrontDistance = metrics::RMSD::distance_noOptimization(qNew,m_closestRevSample);
+    alignVal = m_rmsd->align(m_target, m_protein);
+    qNew->m_paretoFrontDistance = m_rmsd->distance_noOptimization(qNew,m_closestRevSample);
   }else{
     qNew->m_paretoFrontDistance = m_metric.distance(qNew,m_closestRevSample);
   }
@@ -297,8 +297,10 @@ Configuration* BidirectionalMovingFront::SelectSeed (Configuration *pTarget) {
   double distance;
   pMinSmp = nullptr;
 
-  const vector<int>* resNetwork = &(SamplingOptions::getOptions()->residueNetwork);
-  bool allResidues = resNetwork->size() == 0 ? true:false;
+//  const vector<int>* resNetwork = &(SamplingOptions::getOptions()->residueNetwork);
+//  bool allResidues = resNetwork->size() == 0 ? true:false;
+//  Selection resSelection(SamplingOptions::getOptions()->residueNetwork);
+  bool allResidues = true; //TODO: Update so old code works again
 
   string rmsdSet="HEAVY", dihSet="MOV";
   if(!allResidues){
@@ -308,15 +310,9 @@ Configuration* BidirectionalMovingFront::SelectSeed (Configuration *pTarget) {
 
   pTarget->updatedMolecule();//update target protein
 
-  for (list<Configuration*>::iterator iter=m_fwdFront.begin(); iter!=m_fwdFront.end(); ++iter) {
-    pSmp = *iter;
-    if(SamplingOptions::getOptions()->alignAlways){
-      double alignVal = metrics::RMSD::align(m_target, pSmp->updatedMolecule());
-      distance = m_metric.distance(pSmp,m_target->m_conf);
-    }
-    else{
-      distance = m_metric.distance(pSmp,m_target->m_conf);
-    }
+  for (auto const& pSmp : m_fwdFront){
+//    distance = m_metric.distance(pSmp,m_target->m_conf);//TODO: Why m_target->m_conf and not pTarget?
+    distance = m_metric.distance(pSmp,pTarget);
     if (distance < minDistance) {
       minDistance = distance;
       pMinSmp = pSmp;

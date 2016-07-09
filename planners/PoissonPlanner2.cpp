@@ -75,7 +75,8 @@ PoissonPlanner2::~PoissonPlanner2() {
 void PoissonPlanner2::GenerateSamples()
 {
   //cout<<"PoissonPlanner2::GenerateSamples()"<<endl;
-  Direction* direction = new RandomDirection();
+  Selection sel(SamplingOptions::getOptions()->residueNetwork);
+  Direction* direction = new RandomDirection(sel);
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
   double origStepSize = move.getStepSize();
 

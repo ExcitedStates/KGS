@@ -117,6 +117,7 @@ Selection::Clause* Selection::parseClause(const std::string &input) {
   if(Util::startsWith(input, "resn ")) return new ResnClause(input);
   if(Util::startsWith(input, "name ")) return new NameClause(input);
   if(input=="all")      return new AllClause(input);
+  if(input=="")         return new AllClause(input);
   if(input=="heavy")    return new HeavyClause(input);
   if(input=="hydro")    return new HydroClause(input);
   if(input=="backbone") return new BackboneClause(input);

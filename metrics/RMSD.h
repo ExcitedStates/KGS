@@ -22,9 +22,9 @@ class RMSD: public Metric{
   RMSD(Selection& selection);
 
   double distance(Configuration*, Configuration*);
-  static double distance_noOptimization(Configuration *c1, Configuration *c2);
+  double distance_noOptimization(Configuration *c1, Configuration *c2);
 
-  static double align(Molecule * other, Molecule * base);
+  double align(Molecule * other, Molecule * base);
 
 };
 

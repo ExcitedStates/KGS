@@ -30,6 +30,7 @@
 #include <directions/BlendedDirection.h>
 #include <moves/DecreaseStepMove.h>
 #include <metrics/RMSDnosuper.h>
+#include <planners/PoissonPlanner2.h>
 
 using namespace std;
 
@@ -52,7 +53,6 @@ int main( int argc, char* argv[] ) {
   plannerStream.open("kgs_planner.log");
   enableLogger("dominik", plannerStream);
 
-  //SamplingOptions options(argc,argv);
   SamplingOptions::createOptions(argc, argv);
 
   SamplingOptions &options = *(SamplingOptions::getOptions());
@@ -86,10 +86,11 @@ void randomSampling(SamplingOptions& options){
 
   string pdb_file = options.initialStructureFile;
   Molecule protein;
+  protein.setCollisionFactor(options.collisionFactor);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   log() << "Molecule has " << protein.getAtoms().size() << " atoms\n";
-  options.setResidueNetwork(&protein);
+  //options.setResidueNetwork(&protein);
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(&protein, options.annotationFile);
@@ -105,7 +106,8 @@ void randomSampling(SamplingOptions& options){
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
 
-  IO::readRigidbody( &protein, options.residueNetwork );
+  Selection resNetwork(options.residueNetwork);
+  IO::readRigidbody( &protein, resNetwork );
 //  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
@@ -159,21 +161,35 @@ void randomSampling(SamplingOptions& options){
   //Initialize direction
   Direction* direction;
 
-  if(options.gradient == 0)
-    direction = new RandomDirection();
-  else if(options.gradient <= 2)
-    direction = new DihedralDirection();
-  else if(options.gradient <= 4)
-    direction = new MSDDirection();
-  else if(options.gradient <= 5)
-    direction = new LSNullspaceDirection();
+  if(options.gradient == 0) {
+    log("samplingStatus")<<"Using random direction"<<endl;
+    direction = new RandomDirection(resNetwork);
+  }else if(options.gradient <= 2) {
+    log("samplingStatus")<<"Using dihedral direction"<<endl;
+    direction = new DihedralDirection(resNetwork);
+  }else if(options.gradient <= 4) {
+    log("samplingStatus")<<"Using MSD direction"<<endl;
+    direction = new MSDDirection(resNetwork);
+  }else if(options.gradient <= 5) {
+    log("samplingStatus")<<"Using LS direction"<<endl;
+    direction = new LSNullspaceDirection(resNetwork);
+  }else{
+    cerr<<"Unknown gradient specified"<<endl;
+    exit(-1);
+  }
 
   //Initialize planner
   SamplingPlanner* planner;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(    &protein, *move, *metric, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(   &protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner(&protein, *move, *metric );
-  else{
+  if(options.planner_string=="binnedrrt"){
+    log("samplingStatus")<<"Using binned RRT planner"<<endl;
+    planner = new RRTPlanner(    &protein, *move, *metric, *direction );
+  }else if(options.planner_string=="dihedralrrt"){
+    log("samplingStatus")<<"Using dihedral RRT planner"<<endl;
+    planner = new DihedralRRT(   &protein, *move, *metric, *direction );
+  }else if(options.planner_string=="poisson"){
+    log("samplingStatus")<<"Using Poisson-disk planner"<<endl;
+    planner = new PoissonPlanner(&protein, *move, *metric );
+  }else{
     cerr<<"Unknown planner option specified!"<<endl;
     exit(-1);
   }
@@ -260,10 +276,11 @@ void targetedSampling(SamplingOptions& options){
 
 
   /// Rigid bodies, spanning trees, and initial collisions
-  options.setResidueNetwork(&protein);
-  options.setAtomSets(&protein,target);
+//  options.setResidueNetwork(&protein);
+//  options.setAtomSets(&protein,target);
 
-  IO::readRigidbody( &protein );
+  Selection resNetwork(options.residueNetwork);
+  IO::readRigidbody( &protein, resNetwork );
 //  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
@@ -347,27 +364,27 @@ void targetedSampling(SamplingOptions& options){
   Direction* direction;
   bool blendedDir = false;
   if(options.gradient == 0)
-    direction = new RandomDirection();
+    direction = new RandomDirection(resNetwork);
   else if(options.gradient == 1)
-    direction = new DihedralDirection();
+    direction = new DihedralDirection(resNetwork);
   else if(options.gradient == 2){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(),0);
-    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new DihedralDirection(resNetwork),0);
+    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection();
+    direction = new MSDDirection(resNetwork);
   else if(options.gradient == 4){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(),0);
-    m_direction->addDirection(new RandomDirection({},SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new MSDDirection(resNetwork),0);
+    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient <= 5)
-    direction = new LSNullspaceDirection();
+    direction = new LSNullspaceDirection(resNetwork);
 
   //Initialize planner
   SamplingPlanner* planner;

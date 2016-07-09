@@ -220,8 +220,6 @@ Configuration* RRTPlanner::GenerateRandConf() {
 	}
 
 	pNewSmp->m_id = -1;
-  pNewSmp->updateMolecule();
-	pNewSmp->updateGlobalTorsions();
 	return pNewSmp;
 }
 

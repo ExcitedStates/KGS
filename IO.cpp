@@ -534,7 +534,7 @@ void IO::readRigidbody (Molecule * molecule) {
 
 }
 
-void IO::readRigidbody (Molecule * molecule, vector<int>& movingResidues) {
+void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
   //Create disjoint set
   DisjointSets ds(molecule->getAtoms()[molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
@@ -542,7 +542,8 @@ void IO::readRigidbody (Molecule * molecule, vector<int>& movingResidues) {
   for(auto const& chain: molecule->chains) {
     Atom* lastAtom = nullptr;
     for (auto const& res: chain->getResidues()) {
-      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
+//      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
+      if(movingResidues.inSelection(res))
         continue; //Skip residue if its in movingResidues
 
       for (Atom *const &res_atom: res->getAtoms()){
@@ -1554,8 +1555,10 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
     int currId = c->m_id;
     int treeDepth = c->m_treeDepth;
 
-    double alignVal = metrics::RMSD::align(molecule,target);
-    double distance = metrics::RMSD::distance_noOptimization(cFinalFwd,c);
+    Selection allSel;
+    metrics::RMSD rmsd(allSel);
+    double alignVal = rmsd.align(molecule,target);
+    double distance = rmsd.distance_noOptimization(cFinalFwd,c);
 
     output << "REMARK\tAdding reversePlanning path of "<<treeDepth<<" samples."<<endl;
     output << "REMARK\tOverall path length is "<<firstPathLength+treeDepth<<" samples."<<endl;

@@ -748,12 +748,12 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
 
 void Molecule::alignReferencePositionsTo(Molecule * base){
   this->restoreAtomPos();
-  //Align conformations
-  metrics::RMSD::align(this,base);
+  Selection allSel;
+  metrics::RMSD rmsd(allSel);
+  rmsd.align(this,base);
 
-  for (vector<Atom*>::const_iterator it=m_atoms.begin(); it!=m_atoms.end(); ++it) {
-    (*it)->m_referencePosition = (*it)->m_position;
-  }
+  for (auto const& atom: m_atoms)
+    atom->m_referencePosition = atom->m_position;
 }
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
@@ -790,10 +790,10 @@ void Molecule::setConfiguration(Configuration *q){
 
   _SetConfiguration(q);
 
-  if(q->getGlobalTorsions() == nullptr){
-    log("dominik")<<"Now updating global torsions"<<endl;
-    q->updateGlobalTorsions();
-  }
+//  if(q->getGlobalTorsions() == nullptr){
+//    log("dominik")<<"Now updating global torsions"<<endl;
+//    q->updateGlobalTorsions();
+//  }
 }
 
 

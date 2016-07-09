@@ -293,7 +293,10 @@ int main(int argc, char* argv[]){
 			}
       aligned->setConfiguration(conf);
 			//RRTPlanner::align(aligned, native, nullptr);
-			metrics::RMSD::align(aligned, native);
+      Selection sel;
+
+			metrics::RMSD rmsd(sel);
+      rmsd.align(aligned, native);
 			stringstream ss;ss<<"comp_"<<component<<"_"<<a<<".pdb";
 			IO::writePdb(aligned, ss.str());
 			cout<<".";cout.flush();

@@ -28,9 +28,11 @@
 
 #include <SamplingOptions.h>
 #include <cassert>
+#include <cmath>
 #include "core/Molecule.h"
 
-DihedralDirection::DihedralDirection()
+DihedralDirection::DihedralDirection(Selection& resNetwork):
+    m_resNetwork(resNetwork)
 {}
 
 
@@ -38,26 +40,27 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
 {
   assert(target!=nullptr);
   Molecule * protein = conf->updatedMolecule();
-  const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
-  bool allResidues = resNetwork.size() == 0 ? true:false;
-
-  if(target->getGlobalTorsions() == nullptr){
-    std::cerr<<"DihedralDirection::computeGradient - No global torsions, please calculate them first!"<<std::endl;
-    exit(-1);
-  }
+//  const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
+//  bool allResidues = resNetwork.size() == 0 ? true:false;
 
   for (auto const& edge: protein->m_spanning_tree->Edges){
-    if(edge->getBond()==nullptr) continue;
+    if( edge->getBond()==nullptr ) continue;
+    if( !m_resNetwork.inSelection(edge->getBond()) ) continue;
+
     int dofId = edge->getDOF()->getIndex();
-    int resId = edge->getBond()->Atom1->getResidue()->getId();
+//    int resId = edge->getBond()->Atom1->getResidue()->getId();
     double angle_diff =target->getGlobalTorsion(dofId) - conf->getGlobalTorsion(dofId);
     angle_diff = formatRangeRadian(angle_diff);
 
-    if(allResidues){//gradient for all residues
-      gsl_vector_set(ret,dofId,angle_diff);
-    }
-    else if( std::find(resNetwork.begin(), resNetwork.end(), resId)!= resNetwork.end() ){//only for specified residues
-      gsl_vector_set(ret,dofId,angle_diff);
-    }
+    gsl_vector_set(ret,dofId,angle_diff);
+
+    assert( !std::isnan(angle_diff) );
+
+//    if(allResidues){//gradient for all residues
+//      gsl_vector_set(ret,dofId,angle_diff);
+//    }
+//    else if( std::find(resNetwork.begin(), resNetwork.end(), resId)!= resNetwork.end() ){//only for specified residues
+//      gsl_vector_set(ret,dofId,angle_diff);
+//    }
   }
 }

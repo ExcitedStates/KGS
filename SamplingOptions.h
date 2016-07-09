@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <stdio.h>
+#include "Selection.h"
 
 class Molecule;
 class Atom;
@@ -81,7 +82,8 @@ class SamplingOptions
   /** Sample in reverse direction as well */
   bool sampleReverse;
   /** List of residues supposed active in transition*/
-  std::vector<int> residueNetwork;
+//  std::vector<int> residueNetwork;
+  std::string residueNetwork;
   /** Percentage to bias random sample to target conf*/
   double convergeDistance;
   /** Align configs to initial. */
@@ -111,10 +113,10 @@ class SamplingOptions
 
   void print();
 
-  void setResidueNetwork(const Molecule * protein);
-  void setAtomSets(const Molecule * protein, Molecule * target);
-  const std::vector<Atom*>* getAtomsAlign() const { return &m_atomsAlign;} //pointer return, as nullptr required
-  const std::vector<Atom*>* getAtomsMoving() const { return &m_atomsMoving;} //pointer return, as nullptr required
+//  void setResidueNetwork(const Molecule * protein);
+//  void setAtomSets(const Molecule * protein, Molecule * target);
+//  const std::vector<Atom*>* getAtomsAlign() const { return &m_atomsAlign;} //pointer return, as nullptr required
+//  const std::vector<Atom*>* getAtomsMoving() const { return &m_atomsMoving;} //pointer return, as nullptr required
 
  private:
   SamplingOptions();
