@@ -40,6 +40,7 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
   m_fwdRoot = new Configuration( m_protein );
   m_fwdRoot->updateMolecule();
   //m_fwdRoot->computeCycleJacobianAndNullSpace();
+  m_revRoot->m_id = 0;
   m_fwdRoot->m_vdwEnergy = (m_protein->vdwEnergy(&(m_protein->m_initialCollisions),SamplingOptions::getOptions()->collisionCheck)).second;
   m_fwdSamples.push_back( m_fwdRoot );
   m_fwdFront.push_back( m_fwdRoot );
@@ -55,14 +56,14 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
   //closest configs and distance measures
   m_minDistance = m_metric.distance(m_fwdRoot,m_revRoot);
   m_closestFwdSample = m_fwdRoot;
-  m_closestRevSample =  m_revRoot;
+  m_closestRevSample = m_revRoot;
   m_currentGlobalTarget = m_revRoot;//target configuration for this iteration
   m_addedToFront = true;
 
   m_max_depth=0;
 
   m_nCDCall = 0;
-  m_nMetricsCall = 1;
+
 
   movesRejected = 0;
   movesAccepted = 0;
@@ -90,7 +91,6 @@ std::list<Configuration*>& BidirectionalMovingFront::Samples(){
 void BidirectionalMovingFront::GenerateSamples() {
 
   static int numSamples = 0, failedTrials = 0, totalTrials = 0;
-  static double accept_ratio;
   double stepSize = SamplingOptions::getOptions()->stepSize;
 
   int samplesTillSwap = SamplingOptions::getOptions()->switchAfter;

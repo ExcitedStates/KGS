@@ -33,8 +33,8 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
   Molecule * protein = c1->updatedMolecule();
   int atom_num = atomsRMSD1.size();
   assert(atom_num>3);
-  float* v1 = new float[atom_num*3];
-  float* v2 = new float[atom_num*3];
+  double* v1 = new double[atom_num*3];
+  double* v2 = new double[atom_num*3];
 
 //  int resId;
 //  string name, chainName;
@@ -53,6 +53,12 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     v1[i++] = atom->m_position.x;
     v1[i++] = atom->m_position.y;
     v1[i++] = atom->m_position.z;
+    assert(!std::isnan(atom->m_position.x));
+    assert(!std::isnan(atom->m_position.y));
+    assert(!std::isnan(atom->m_position.z));
+    assert(atom->m_position.x<10000.0);
+    assert(atom->m_position.y<10000.0);
+    assert(atom->m_position.z<10000.0);
   }
 
   protein= c2->updatedMolecule();
@@ -66,16 +72,26 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
     v2[i++] = a2->m_position.x;
     v2[i++] = a2->m_position.y;
     v2[i++] = a2->m_position.z;
+    assert(!std::isnan(a2->m_position.x));
+    assert(!std::isnan(a2->m_position.y));
+    assert(!std::isnan(a2->m_position.z));
+    assert(a2->m_position.x<10000.0);
+    assert(a2->m_position.y<10000.0);
+    assert(a2->m_position.z<10000.0);
   }
 
   // Prepare the m_transformation matrix
   MATRIX mtx;
   // Call the rmsd procedure
-  double diff = rmsd(v1,v2,atom_num,(float *) mtx.m);
+  double diff = rmsd(v1,v2,atom_num,(double *) mtx.m);
 
   // clear memory
   delete[] v1;
   delete[] v2;
+
+  if(std::isnan(diff)){
+    diff = rmsd(v1,v2,atom_num,(double *) mtx.m);
+  }
 
   assert(!std::isnan(diff));
   return diff;
@@ -155,8 +171,8 @@ double RMSD::align(Molecule * other, Molecule * base) {
 
   int atom_size = atomsRMSD2.size();
   int coord_num = atom_size * 3;
-  float* v1 = new float[coord_num];
-  float* v2 = new float[coord_num];
+  double* v1 = new double[coord_num];
+  double* v2 = new double[coord_num];
   unsigned int i=0;
   Coordinate c1, c2;
   Atom* a2;
@@ -185,10 +201,10 @@ double RMSD::align(Molecule * other, Molecule * base) {
   // Prepare the m_transformation matrix
   MATRIX mtx;
   // Call the rmsd procedure, v1 is base, v2 is mobile
-  double diff = rmsd(v1,v2,atom_size,(float *) mtx.m);
+  double diff = rmsd(v1,v2,atom_size,(double *) mtx.m);
 
   // Transform position in m_molecule other
-  float* v3 = new float[3];
+  double* v3 = new double[3];
   for (auto const& aIt : other->getAtoms()) {
     Coordinate pos = aIt->m_position;
     v3[0] = pos.x;
@@ -209,23 +225,21 @@ double RMSD::align(Molecule * other, Molecule * base) {
 }
 
 
-double rmsd(float *v1, float *v2, int N, float *mtx) {
-  float cent1[3];
-  float cent2[3];
+double rmsd(double *v1, double *v2, int N, double *mtx) {
+  double cent1[3];
+  double cent2[3];
   MATRIX tmtx;
   MATRIX tempmtx;
   MATRIX move1;
   MATRIX move2;
   int i;
   double answer;
-  float *temp1 = 0;
-  float *temp2 = 0;
   int err;
 
   assert(N > 3);
 
-  temp1 = (float*) malloc(N * 3 * sizeof(float));
-  temp2 = (float*) malloc(N * 3 * sizeof(float));
+  double* temp1 = (double*) malloc(N * 3 * sizeof(double));
+  double* temp2 = (double*) malloc(N * 3 * sizeof(double));
   if(!temp1 || !temp2)
     goto error_exit;
 
@@ -250,14 +264,14 @@ double rmsd(float *v1, float *v2, int N, float *mtx) {
   mtx_mul(&tempmtx, &move1, &tmtx);
   mtx_trans(&move2, cent1[0], cent1[1], cent1[2]);
   mtx_mul(&tmtx, &tempmtx, &move2);
-  memcpy(temp2, v2, N * sizeof(float) * 3);
+  memcpy(temp2, v2, N * sizeof(double) * 3);
   for(i=0;i<N;i++)
     mulpt(&tmtx, temp2 + i * 3);
   answer = alignedrmsd(v1, temp2, N);
   free(temp1);
   free(temp2);
   if(mtx)
-    memcpy(mtx, &tmtx.m, 16 * sizeof(float));
+    memcpy(mtx, &tmtx.m, 16 * sizeof(double));
 
   return answer;
   error_exit:
@@ -278,7 +292,7 @@ v2 - second structure
 N - number of points
 Returns: rmsd
 */
-  double alignedrmsd(float *v1, float *v2, int N)
+  double alignedrmsd(double *v1, double *v2, int N)
   {
     double answer =0;
     int i;
@@ -288,26 +302,26 @@ Returns: rmsd
     return sqrt(answer/N);
   }
 
-  /*
-     compute the centroid
-     */
-  void centroid(float *ret, float *v, int N)
-  {
-    int i;
+/* compute the centroid */
+void centroid(double *ret, double *v, int N)
+{
+  int i;
 
-    ret[0] = 0;
-    ret[1] = 0;
-    ret[2] = 0;
-    for(i=0;i<N;i++)
-    {
-      ret[0] += v[i*3+0];
-      ret[1] += v[i*3+1];
-      ret[2] += v[i*3+2];
-    }
-    ret[0] /= N;
-    ret[1] /= N;
-    ret[2] /= N;
+  ret[0] = 0;
+  ret[1] = 0;
+  ret[2] = 0;
+  for(i=0;i<N;i++){
+    ret[0] += v[i*3+0]/N;
+    ret[1] += v[i*3+1]/N;
+    ret[2] += v[i*3+2]/N;
+    assert(ret[0]<10000);
+    assert(ret[1]<10000);
+    assert(ret[2]<10000);
   }
+//    ret[0] /= N;
+//    ret[1] /= N;
+//    ret[2] /= N;
+}
 
   /*
      get the matrix needed to align two structures
@@ -318,19 +332,19 @@ mtx - return for rigid body alignment matrix
 Notes: only calculates rotation part of matrix.
 assumes input has been aligned to centroids
 */
-  int getalignmtx(float *v1, float *v2, int N, MATRIX *mtx)
+  int getalignmtx(double *v1, double *v2, int N, MATRIX *mtx)
   {
     MATRIX A = { {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,1}} };
     MATRIX At;
     MATRIX Ainv;
     MATRIX temp;
-    float tv[3];
-    float tw[3];
-    float tv2[3];
-    float tw2[3];
+    double tv[3];
+    double tw[3];
+    double tv2[3];
+    double tw2[3];
     int k, i, j;
     int flag = 0;
-    float correction;
+    double correction;
 
     correction = absmaxv(v1, N * 3) * absmaxv(v2, N * 3);
 
@@ -347,7 +361,7 @@ assumes input has been aligned to centroids
 
       memcpy(&Ainv, &A, sizeof(MATRIX));
       /* this will happen if all points are in a plane */
-      if( mtx_invert((float *) &Ainv, 4) == -1)
+      if( mtx_invert((double *) &Ainv, 4) == -1)
       {
         if(flag == 0)
         {
@@ -358,8 +372,8 @@ assumes input has been aligned to centroids
         {
           crossproduct(tv2, tv, v1);
           crossproduct(tw2, tw, v2);
-          memcpy(tv, tv2, 3 * sizeof(float));
-          memcpy(tw, tw2, 3 * sizeof(float));
+          memcpy(tv, tv2, 3 * sizeof(double));
+          memcpy(tw, tw2, 3 * sizeof(double));
         }
         for(i=0;i<3;i++)
           for(j=0;j<3;j++)
@@ -386,7 +400,7 @@ pt1 - first vector
 pt2 - second vector.
 Notes: crossproduct is at right angles to the two vectors.
 */
-  void crossproduct(float *ans, float *pt1, float *pt2)
+  void crossproduct(double *ans, double *pt1, double *pt2)
   {
     ans[0] = pt1[1] * pt2[2] - pt1[2] * pt2[1];
     ans[1] = pt1[0] * pt2[2] - pt1[2] * pt2[0];
@@ -414,9 +428,9 @@ Notes: crossproduct is at right angles to the two vectors.
     {
       invY = Y;
       invZ = Z;
-      if( mtx_invert((float *) &invY, 4) == -1)
+      if( mtx_invert((double *) &invY, 4) == -1)
         return;
-      if( mtx_invert((float *) &invZ, 4) == -1)
+      if( mtx_invert((double *) &invZ, 4) == -1)
         return;
       for(i=0;i<4;i++)
         for(ii=0;ii<4;ii++)
@@ -443,7 +457,7 @@ Returns: 1 if almost equal, else 0, epsilon 0.0001f.
   int almostequal(MATRIX *a, MATRIX *b)
   {
     int i, ii;
-    float epsilon = 0.001f;
+    double epsilon = 0.001f;
 
     for(i=0;i<4;i++)
       for(ii=0;ii<4;ii++)
@@ -457,9 +471,9 @@ Returns: 1 if almost equal, else 0, epsilon 0.0001f.
 Params: mtx - matrix
 pt - the point (transformed)
 */
-  void mulpt(MATRIX *mtx, float *pt)
+  void mulpt(MATRIX *mtx, double *pt)
   {
-    float ans[4] = {0};
+    double ans[4] = {0};
     int i;
     int ii;
 
@@ -525,7 +539,7 @@ x - x translation.
 y - y translation.
 z - z translation
 */
-  void mtx_trans(MATRIX *mtx, float x, float y, float z)
+  void mtx_trans(MATRIX *mtx, double x, double y, double z)
   {
     mtx->m[0][0] = 1;
     mtx->m[0][1] = 0;
@@ -554,7 +568,7 @@ Params: mtx - the matrix in raw format, in/out
 N - width and height
 Returns: 0 on success, -1 on fail
 */
-  int mtx_invert(float *mtx, int N)
+  int mtx_invert(double *mtx, int N)
   {
     int indxc[100]; /* these 100s are the only restriction on matrix size */
     int indxr[100];
@@ -645,9 +659,9 @@ Returns: 0 on success, -1 on fail
   /*
      get the asolute maximum of an array
      */
-  float absmaxv(float *v, int N)
+  double absmaxv(double *v, int N)
   {
-    float answer=0;
+    double answer=0;
     int i;
 
     for(i=0;i<N;i++)
