@@ -1097,7 +1097,7 @@ void IO::readHbonds_rnaview(Molecule * molecule, string file, bool fillAnnotatio
 
     string chain1 = line.substr(11,1);
     string chain2 = line.substr(30,1);
-    cerr<<"IO::readHbonds_rnaview - TODO: check that chains are read correctly ("<<chain1<<", "<<chain2<<")"<<endl;
+//    cerr<<"IO::readHbonds_rnaview - TODO: check that chains are read correctly ("<<chain1<<", "<<chain2<<")"<<endl;
     int res1 = atoi(Util::trim(line.substr(13,6)).c_str());
     int res2 = atoi(Util::trim(line.substr(23,6)).c_str());
 

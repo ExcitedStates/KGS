@@ -49,13 +49,11 @@ int main( int argc, char* argv[] ) {
 
   string pdb_file = options.initialStructureFile;
   Molecule protein;
-
+  protein.setCollisionFactor(options.collisionFactor);
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-  log() << "Molecule has " << protein.getAtoms().size() << " atoms\n";
-  cout<<"main - 3"<<endl;
-
-  if(!options.annotationFile.empty())
-    IO::readAnnotations(&protein, options.annotationFile);
+//
+//  if(!options.annotationFile.empty())
+//    IO::readAnnotations(&protein, options.annotationFile);
 
   if(options.hydrogenbondMethod=="user")
     IO::readHbonds( &protein, options.hydrogenbondFile );
@@ -68,33 +66,43 @@ int main( int argc, char* argv[] ) {
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
 
-  // Check for collision
-  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
-  protein.m_initialCollisions = protein.getAllCollisions();
-  for(auto const& coll: protein.m_initialCollisions){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
-  }
-  cout<<"main - 4"<<endl;
-
-  // Do the same for the target
-  string target_file = options.targetStructureFile;
-  Molecule * target = new Molecule();
-  IO::readPdb( target, target_file, options.extraCovBonds, &protein);
-
-  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
-  target->setToHbondIntersection(&protein);
-  // Check for collision
-  target->m_initialCollisions = target->getAllCollisions();
-
-  //Todo: fully delete FIRST from this software
   //Read the rigid body of the protein
   IO::readRigidbody( &protein );
-  IO::readRigidbody( target );
+  protein.buildSpanningTree();
 
-  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  target->buildSpanningTree();
-  (new Configuration(&protein))->updatedMolecule();
-  (new Configuration(target))->updatedMolecule();
+  protein.setConfiguration(new Configuration(&protein));
+
+  protein.m_initialCollisions = protein.getAllCollisions();
+
+  string target_pdb_file = options.targetStructureFile;
+  Molecule target;
+  target.setCollisionFactor(options.collisionFactor);
+  IO::readPdb( &target, target_pdb_file, options.extraCovBonds );
+
+  if(options.hydrogenbondMethod=="user")
+    IO::readHbonds( &target, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="rnaview")
+    IO::readHbonds_rnaview( &target, options.hydrogenbondFile, options.annotationFile.empty() );
+  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+    IO::readHbonds_first( &target, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="vadar")
+    IO::readHbonds_vadar( &target, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="dssr")
+    IO::readHbonds_dssr( &target, options.hydrogenbondFile );
+
+  //Read the rigid body of the protein
+  IO::readRigidbody( &target );
+  target.buildSpanningTree();
+
+  target.setConfiguration(new Configuration(&target));
+
+  target.m_initialCollisions = target.getAllCollisions();
+
+  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
+//  target->setToHbondIntersection(&protein);
+  // Check for collision
+//  target->m_initialCollisions = target->getAllCollisions();
+
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -107,10 +115,10 @@ int main( int argc, char* argv[] ) {
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   log("samplingStatus")<<"Target has:"<<endl;
-  log("samplingStatus")<<"> "<<target->getAtoms().size()<<" atoms"<<endl;
-  log("samplingStatus")<<"> "<<target->m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target->m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
+  log("samplingStatus")<<"> "<<target.getAtoms().size()<<" atoms"<<endl;
+  log("samplingStatus")<<"> "<<target.m_initialCollisions.size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<target.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<target.m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target.m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
@@ -171,16 +179,16 @@ int main( int argc, char* argv[] ) {
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
-    IO::writeBondLengthsAndAngles(target, out);
+    IO::writeBondLengthsAndAngles(&target, out);
     if(options.saveData > 1){
       out = options.workingDirectory + "output/" + protein.getName() + "_q_target.txt";
-      IO::writeQ(target,target->m_conf, out);
+      IO::writeQ(&target,target.m_conf, out);
       out = options.workingDirectory + "output/" + protein.getName() + "_q_iniTarget.txt";
-      IO::writeQ(target,protein.m_conf, out);
+      IO::writeQ(&target,protein.m_conf, out);
     }
 
     log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
-    log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
+    log() << "Total DOFs in target: " << target.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target.m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
 
     if(options.saveData > 1){
       string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
@@ -196,7 +204,7 @@ int main( int argc, char* argv[] ) {
     log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
 
-    log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf);
+    log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target.m_conf);
 
     log("samplingStatus")<<"Sampling ...\n";
     CTKTimer timer;
@@ -204,7 +212,7 @@ int main( int argc, char* argv[] ) {
     double start_time = timer.LastElapsedTime();
 
     gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
-    Configuration* target_conf = new Configuration(target);
+    Configuration* target_conf = new Configuration(&target);
     std::list<Configuration*> samples;
     samples.push_back(new Configuration(&protein));
     for(int i=0;i<options.samplesToGenerate;i++){
@@ -241,7 +249,6 @@ int main( int argc, char* argv[] ) {
   }
   log("samplingStatus")<<"Done"<<endl;
   //Clean up
-  delete target;
   delete direction;
 
 

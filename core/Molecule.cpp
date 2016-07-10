@@ -782,6 +782,8 @@ void Molecule::restoreAtomPos(){
 }
 
 void Molecule::setConfiguration(Configuration *q){
+  assert(m_spanning_tree!=nullptr);
+
   if(m_conf==q) return;
 
   restoreAtomPos();
