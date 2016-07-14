@@ -68,20 +68,20 @@ int main( int argc, char* argv[] ) {
   Molecule protein;
   protein.setCollisionFactor(options.collisionFactor);
 
-  Selection resNetwork(options.residueNetwork);
+  if(options.selectionMoving.empty()){
+    cerr<<"Must supply --selectionMoving (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
+    exit(-1);
+  }
+
+  Selection resNetwork(options.selectionMoving);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-//  options.setResidueNetwork(&protein);
   IO::readHbonds( &protein, options.hydrogenbondFile );
   IO::readRigidbody( &protein, resNetwork );
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
   protein.setConfiguration(new Configuration(&protein));
   protein.m_initialCollisions = protein.getAllCollisions();
 
-  if(options.selectionMoving.empty()){
-    cerr<<"Must supply --selectionMoving (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
-    exit(-1);
-  }
 
 
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -94,7 +94,7 @@ int main( int argc, char* argv[] ) {
   metrics::Metric* metric = nullptr;
   try {
     Selection metricSelection(options.metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(SamplingOptions::getOptions()->metric_string=="rmsd")        metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {

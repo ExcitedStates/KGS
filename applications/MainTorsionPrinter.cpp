@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
+#include <stdexcept>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
