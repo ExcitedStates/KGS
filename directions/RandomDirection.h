@@ -39,14 +39,14 @@
  */
 class RandomDirection: public Direction {
  public:
-  RandomDirection(Selection& resNetwork, double maxRotation=0.1745);
+  RandomDirection(Selection& selectionMoving, double maxRotation=0.1745);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
 
  private:
   const double m_maxRotation;
-  Selection& m_resNetwork;
+  Selection& m_selectionMoving;
 };
 
 

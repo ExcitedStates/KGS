@@ -35,10 +35,11 @@
 #include "math.h" //dPi
 #include "math/MathUtility.h"
 
-RandomDirection::RandomDirection(Selection& resNetwork, double maxRotation):
+RandomDirection::RandomDirection(Selection& selectionMoving, double maxRotation):
     m_maxRotation(maxRotation),
-    m_resNetwork(resNetwork)
-{ }
+    m_selectionMoving(selectionMoving)
+{
+}
 
 
 void RandomDirection::computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret)
@@ -51,8 +52,9 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
     int dofId = edge->getDOF()->getIndex();
     double newVal = 0.0;
 
-    if( edge->getBond()!=nullptr && m_resNetwork.inSelection(edge->getBond()))
+    if( edge->getBond()!=nullptr && m_selectionMoving.inSelection(edge->getBond())) {
       newVal = RandomAngleUniform(Math3D::dPi);
+    }
 
     absMax = std::max(absMax, std::fabs(newVal));
 

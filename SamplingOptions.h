@@ -50,10 +50,12 @@ class SamplingOptions
   double stepSize;
   /** Desired norm of step to next sample, can be decreased during collision with decreaseSteps and decreaseFactor */
   bool flexibleRibose;
+  /** Residue selection of residues to rebuild with exactIK */
+  std::string exactIKselection;
   /** Desired metric */
   std::string metric_string;
   /** Selection-pattern passed to metric */
-  std::string metricPattern;
+  std::string metricSelection;
   /** Desired planner */
   std::string planner_string;
   /** Generate new samples from randomly chosen seed samples (instead from last accepted sample). */
@@ -96,7 +98,7 @@ class SamplingOptions
   bool preventClashes;
   /** Specifies the residues of the molecule that will undergo RMSD alignment during sampling. */
   std::string selectionAlign;
-  /** Specifies the residues of the molecule that will undergo RMSD alignment during sampling. */
+  /** Specifies the residues used for gradient computation. */
   std::string selectionMoving;
   /** The root rigid body id. */
   int root;
@@ -127,7 +129,7 @@ class SamplingOptions
   void initializeVariables();
 
   std::vector<Atom*> m_atomsAlign; //atoms used for alignment, specified via selectionAlign
-  std::vector<Atom*> m_atomsMoving; //atoms used for gradient and RMSD computation, specified via selectionMoving
+  std::vector<Atom*> m_atomsMoving; //atoms used for gradient computation, specified via selectionMoving
 
   //Singleton pattern
   static SamplingOptions* instance;

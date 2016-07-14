@@ -50,13 +50,14 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
 		if(arg=="--rejectsBeforeClose"){            poisson_max_rejects_before_close = atoi(argv[++i]); continue; }
 		if(arg=="--metric"){                        metric_string = argv[++i];                          continue; }
-    if(arg=="--metricSelection"){               metricPattern = argv[++i];                          continue; }
+    if(arg=="--metricSelection"){               metricSelection = argv[++i];                        continue; }
 		if(arg=="--planner"   ){                    planner_string = argv[++i];                         continue; }
 		if(arg=="--rebuildLength"){                 rebuild_fragment_length = atoi(argv[++i]);          continue; }
 		if(arg=="--rebuildFrequency"){              rebuild_frequency = atof(argv[++i]);                continue; }
 		if(arg=="--rebuildInitial"){                rebuildInitialStructures = atoi(argv[++i]);         continue; }
 		if(arg=="--rebuildAggression"){             rebuildAggression = atoi(argv[++i]);                continue; }
 		if(arg=="--flexibleRibose"){                flexibleRibose = atoi(argv[++i]);                   continue; }
+    if(arg=="--exactIKselection"){              exactIKselection = argv[++i];                       continue; }
 		if(arg=="--seed"){                          seed = atoi(argv[++i]);                             continue; }
 		if(arg=="--biasToTarget" || arg=="-bias"){  biasToTarget = atof(argv[++i]);                     continue; }
     if(arg=="--convergeDistance"){              convergeDistance = atof(argv[++i]);                 continue; } //Previously rmsdThreshold
@@ -223,13 +224,14 @@ void SamplingOptions::initializeVariables(){
   maxRotation               = 3.1415/18;
   poisson_max_rejects_before_close = 10;
   metric_string             = "rmsd";
-  metricPattern             = "all";
+  metricSelection             = "all";
   planner_string            = "binnedRRT";
   rebuild_fragment_length   = 0;
   rebuild_frequency         = 0.0;
   rebuildInitialStructures  = 0;
   rebuildAggression         = 0;
   flexibleRibose            = false;
+  exactIKselection          = "none";
   seed                      =  418;
   saveData                  =  0;
   sampleReverse             = false;
@@ -271,7 +273,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--maxRotation "<<maxRotation<<endl;
   log("so")<<"\t--rejectsBeforeClose "<<poisson_max_rejects_before_close<<endl;
 	log("so")<<"\t--metric "<<metric_string<<endl;
-  log("so")<<"\t--metricSelection "<<metricPattern<<endl;
+  log("so")<<"\t--metricSelection "<<metricSelection<<endl;
 	log("so")<<"\t--planner "<<planner_string<<endl;
 	log("so")<<"\t--rebuildLength "<<rebuild_fragment_length<<endl;
 	log("so")<<"\t--rebuildFrequency "<<rebuild_frequency<<endl;
@@ -356,8 +358,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--rebuildFrequency <real number> \t: The frequency that rebuild perturbations will occur. The default is 0."<<endl;
 
-	log("so")<<"\t--rebuildInitial <whole number>\t: The number of structures added to the initial pool by rebuilding free ";
-	log("so")<<"loops. The default is 0."<<endl;
+	log("so")<<"\t--rebuildInitial <whole number>\t: The number of structures added to the initial pool by rebuilding free loops. The default is 0."<<endl;
 
 	log("so")<<"\t--rebuildAggression <0|1|2>\t: The aggression level of rebuilding. 0: Only sugars are resampled, backbone used for reclosing. ";
 

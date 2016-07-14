@@ -133,7 +133,7 @@ void randomSampling(SamplingOptions& options){
   //Initialize metric
   metrics::Metric* metric = nullptr;
   try {
-    Selection metricSelection(options.metricPattern);
+    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
@@ -161,20 +161,26 @@ void randomSampling(SamplingOptions& options){
   //Initialize direction
   Direction* direction;
 
-  if(options.gradient == 0) {
-    log("samplingStatus")<<"Using random direction"<<endl;
-    direction = new RandomDirection(resNetwork);
-  }else if(options.gradient <= 2) {
-    log("samplingStatus")<<"Using dihedral direction"<<endl;
-    direction = new DihedralDirection(resNetwork);
-  }else if(options.gradient <= 4) {
-    log("samplingStatus")<<"Using MSD direction"<<endl;
-    direction = new MSDDirection(resNetwork);
-  }else if(options.gradient <= 5) {
-    log("samplingStatus")<<"Using LS direction"<<endl;
-    direction = new LSNullspaceDirection(resNetwork);
-  }else{
-    cerr<<"Unknown gradient specified"<<endl;
+  try {
+    Selection selectionMoving(options.selectionMoving);
+    if (options.gradient == 0) {
+      log("samplingStatus") << "Using random direction" << endl;
+      direction = new RandomDirection(selectionMoving);
+    } else if (options.gradient <= 2) {
+      log("samplingStatus") << "Using dihedral direction" << endl;
+      direction = new DihedralDirection(selectionMoving);
+    } else if (options.gradient <= 4) {
+      log("samplingStatus") << "Using MSD direction" << endl;
+      direction = new MSDDirection(selectionMoving);
+    } else if (options.gradient <= 5) {
+      log("samplingStatus") << "Using LS direction" << endl;
+      direction = new LSNullspaceDirection(selectionMoving);
+    } else {
+      cerr << "Unknown gradient specified" << endl;
+      exit(-1);
+    }
+  }catch(std::runtime_error& error) {
+    cerr<<error.what()<<endl;
     exit(-1);
   }
 
@@ -285,7 +291,6 @@ void targetedSampling(SamplingOptions& options){
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
   protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  cout<<"MainKGS .. spanning tree:"<<endl;
 
   protein.setConfiguration(new Configuration(&protein));
 
@@ -302,7 +307,6 @@ void targetedSampling(SamplingOptions& options){
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   target->buildSpanningTree();
-  cout<<"MainKGS .. target spanning tree:"<<endl;
 
   //Alignment and spanning trees with possibly best m_root
   if(options.alignIni){
@@ -335,7 +339,7 @@ void targetedSampling(SamplingOptions& options){
   //Initialize metric
   metrics::Metric* metric = nullptr;
   try {
-    Selection metricSelection(options.metricPattern);
+    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);

@@ -93,7 +93,7 @@ int main( int argc, char* argv[] ) {
   //Initialize metric
   metrics::Metric* metric = nullptr;
   try {
-    Selection metricSelection(options.metricPattern);
+    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
