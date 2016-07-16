@@ -86,6 +86,7 @@ class Molecule {
   Grid* getGrid();
   void setCollisionFactor(double collisionFactor);
 
+  void forceUpdateConfiguration(Configuration *q);
   void setConfiguration(Configuration *q);
   int countOriginalDofs () const;
   Coordinate centerOfMass () const;

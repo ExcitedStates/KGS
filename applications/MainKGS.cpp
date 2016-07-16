@@ -18,7 +18,7 @@
 #include "planners/BidirectionalMovingFront.h"
 #include <moves/RawMove.h>
 #include <moves/NullspaceMove.h>
-#include <moves/ClashAvoidingMove.h>
+#include <moves/SlowClashAvoidingMove.h>
 #include "moves/CompositeMove.h"
 #include <metrics/Metric.h>
 #include <metrics/Dihedral.h>
@@ -146,7 +146,7 @@ void randomSampling(SamplingOptions& options){
   Move* move;
   if(options.preventClashes){
     log("samplingStatus")<<"Using clash-avoiding move"<<endl;
-    move = new ClashAvoidingMove();
+    move = new SlowClashAvoidingMove();
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
     move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
@@ -352,7 +352,7 @@ void targetedSampling(SamplingOptions& options){
   Move* move;
   if(options.preventClashes){
     log("samplingStatus")<<"Using clash-avoiding move"<<endl;
-    move = new ClashAvoidingMove();
+    move = new SlowClashAvoidingMove();
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
     move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);

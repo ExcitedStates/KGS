@@ -781,6 +781,21 @@ void Molecule::restoreAtomPos(){
 
 }
 
+void Molecule::forceUpdateConfiguration(Configuration *q){
+  assert(m_spanning_tree!=nullptr);
+
+  restoreAtomPos();
+  m_conf = q;
+  if(q==nullptr) return;
+
+  _SetConfiguration(q);
+
+//  if(q->getGlobalTorsions() == nullptr){
+//    log("dominik")<<"Now updating global torsions"<<endl;
+//    q->updateGlobalTorsions();
+//  }
+}
+
 void Molecule::setConfiguration(Configuration *q){
   assert(m_spanning_tree!=nullptr);
 

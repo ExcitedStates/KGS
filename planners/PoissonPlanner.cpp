@@ -100,6 +100,7 @@ void PoissonPlanner::GenerateSamples()
       //cout<<"PoissonPlanner::GenerateSamples() - attempt "<<attempt<<endl;
       move.setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
+      gsl_vector_scale(gradient,1.0);
       Configuration *pert = move.move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
@@ -116,6 +117,7 @@ void PoissonPlanner::GenerateSamples()
 
       if(scaleAttempts==5){
         delete pert;
+        cout<<"Bailing as we can't scale. Final dist: "<<dist<<endl;
         continue;
       }
 

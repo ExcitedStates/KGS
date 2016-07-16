@@ -47,27 +47,16 @@ ClashAvoidingMove::ClashAvoidingMove() :
 }
 
 Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
-//  current->computeJacobians();
-  //cout<<"ClashAvoidingMove::performMove(..)"<<endl;
-  //cout<<"gradient: ";
-  //for(int i=0;i<10;i++)
-  //  cout<<gsl_vector_get(gradient, i)<<" ";
-  //cout<<endl;
-  //gsl_vector_cout(gradient);
-
-  // Get atom positions at current
-  //Molecule *protein = current->updatedMolecule();
-
+  enableLogger("clashBug");
   double currNorm = gsl_vector_length(gradient);
-  double targetNorm = currNorm;//*m_stepSize;
-
   log("dominik") << "Norm of gradient: " << currNorm << endl;
-  //cout << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(current->getNumDOFs());
   current->projectOnCycleNullSpace(gradient, projected_gradient);
-  //protein->ProjectOnCycleNullSpace(gradient, projected_gradient);
+
+  double currProjNorm = gsl_vector_length(projected_gradient);
+  log("dominik") << "Norm of projected gradient: " << currProjNorm << endl;
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
@@ -104,10 +93,13 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
       log("dominik") << "Rejected!" << endl;
-      m_movesRejected++;
 
       previousCollisions = allCollisions;
-      if(trialStep==m_trialSteps-1) return new_q;
+      if(trialStep==m_trialSteps-1){
+        if(true) exit(-1);
+        m_movesRejected++;
+        return new_q;
+      }
 
       delete new_q;
 
@@ -173,6 +165,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
     gsl_vector *gradient,
     set<std::pair<Atom *, Atom *> > &collisions
 ){
+  log("clashBug")<<"projectOnClashNullspace(..)"<<endl;
 
   //Associates general dof ids with constrained dof ids.
   map<int,int> constrainedDofMap = collectConstrainedDofMap(conf, collisions);
@@ -181,6 +174,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
   gsl_vector* reducedGradient = gsl_vector_alloc(constrainedDofMap.size());
   for(auto const& general_clash_pair: constrainedDofMap){
     double generalValue = gsl_vector_get(gradient, general_clash_pair.first);
+    log("clashBug")<<"> dof "<<general_clash_pair.first<<" (general) / "<<general_clash_pair.second<<" (constrained) = "<<generalValue<<endl;
     gsl_vector_set(reducedGradient, general_clash_pair.second, generalValue);
   }
 
@@ -195,6 +189,8 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
   double normBefore = gsl_vector_length(reducedGradient);
   clashNullSpace->ProjectOnNullSpace(reducedGradient, reducedGradient);
   double normAfter = gsl_vector_length(reducedGradient);
+  log("clashBug")<<"> normBefore: "<<normBefore<<endl;
+  log("clashBug")<<"> normAfter:  "<<normAfter<<endl;
 
   //Scale so the length matches the one before
   if(normAfter>0.00000001)
@@ -206,6 +202,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
     double constrainedValue = gsl_vector_get(reducedGradient, general_clash_pair.second);
     gsl_vector_set(projected_gradient, general_clash_pair.first, constrainedValue);
   }
+
   //Clean up
   gsl_vector_free(reducedGradient);
   gsl_matrix_free(clashJac);
@@ -232,15 +229,14 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
     Configuration* conf,
     map<int,int>& dofMap,
     set< std::pair<Atom*,Atom*> >& collisions
-)
-{
+) {
   //The clash Jacobian is the regular Jacobian's constraints, plus one constraint per pair of clashing atoms
 
   //Clashes can occur also for previously free dihedrals!
   //Therefore, we use the full set of dihedrals to determine this matrix!
   conf->updateMolecule();
   //Check that the correct cycle jacobian is used.
-  gsl_matrix* cycleJac = conf->getCycleJacobian();
+  gsl_matrix *cycleJac = conf->getCycleJacobian();
   int numCollisions = collisions.size();
   int rowNum = cycleJac->size1 + numCollisions;
   //int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
@@ -248,14 +244,15 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(
   //No longer uses all dihedrals as it messes with scaling
   int colNum = dofMap.size();
 
-  gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
+  gsl_matrix *ret = gsl_matrix_calloc(rowNum, colNum);
 
   //Copy cycle-jacobian into ret
-  for(int r=0;r<cycleJac->size1;r++){
-    for(int c=0;c<cycleJac->size2;c++){
-      gsl_matrix_set(ret, r, c, gsl_matrix_get(cycleJac,r,c));
+  for (int r = 0; r < cycleJac->size1; r++) {
+    for (int c = 0; c < cycleJac->size2; c++) {
+      gsl_matrix_set(ret, r, c, gsl_matrix_get(cycleJac, r, c));
     }
   }
+
 //  //Convert the cycle Jacobian to a full Jacobian
 //  //Columns correspond to cycle_dof_ids
 //  if(m_projectConstraints){
