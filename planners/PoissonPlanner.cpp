@@ -71,6 +71,9 @@ PoissonPlanner::~PoissonPlanner() {
 
 void PoissonPlanner::GenerateSamples()
 {
+  ofstream reportStream;
+  reportStream.open("kgs_poissonDistances.log");
+  enableLogger("poissonDistances", reportStream);
   //cout<<"PoissonPlanner::GenerateSamples()"<<endl;
   Selection sel(SamplingOptions::getOptions()->selectionMoving);
   Direction* direction = new RandomDirection(sel);
@@ -106,7 +109,7 @@ void PoissonPlanner::GenerateSamples()
       // Scale gradient so move is in Poisson disc
       double dist = m_metric.distance(pert, seed);
       int scaleAttempts = 0;
-      while( dist<m_lilRad || dist>m_bigRad){
+      while( dist<m_lilRad || dist>m_bigRad ){
         if(++scaleAttempts==5) break;
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
@@ -152,6 +155,7 @@ void PoissonPlanner::GenerateSamples()
       pert->m_distanceToParent = memo_distance(pert,seed);
       updateMaxDists(pert);
       writeNewSample(pert, m_root, sample_num);
+      log("poissonDistances")<<"Sample "<<sample_num<<" .. "<<m_distances.size()<<" distance computations"<<endl;
 
       log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
       log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
