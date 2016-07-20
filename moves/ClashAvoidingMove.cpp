@@ -47,7 +47,7 @@ ClashAvoidingMove::ClashAvoidingMove() :
 }
 
 Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
-  enableLogger("clashBug");
+//  enableLogger("clashBug");
   double currNorm = gsl_vector_length(gradient);
   log("dominik") << "Norm of gradient: " << currNorm << endl;
 
@@ -165,7 +165,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
     gsl_vector *gradient,
     set<std::pair<Atom *, Atom *> > &collisions
 ){
-  log("clashBug")<<"projectOnClashNullspace(..)"<<endl;
+//  log("clashBug")<<"projectOnClashNullspace(..)"<<endl;
 
   //Associates general dof ids with constrained dof ids.
   map<int,int> constrainedDofMap = collectConstrainedDofMap(conf, collisions);
@@ -174,7 +174,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
   gsl_vector* reducedGradient = gsl_vector_alloc(constrainedDofMap.size());
   for(auto const& general_clash_pair: constrainedDofMap){
     double generalValue = gsl_vector_get(gradient, general_clash_pair.first);
-    log("clashBug")<<"> dof "<<general_clash_pair.first<<" (general) / "<<general_clash_pair.second<<" (constrained) = "<<generalValue<<endl;
+//    log("clashBug")<<"> dof "<<general_clash_pair.first<<" (general) / "<<general_clash_pair.second<<" (constrained) = "<<generalValue<<endl;
     gsl_vector_set(reducedGradient, general_clash_pair.second, generalValue);
   }
 
@@ -189,8 +189,8 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
   double normBefore = gsl_vector_length(reducedGradient);
   clashNullSpace->ProjectOnNullSpace(reducedGradient, reducedGradient);
   double normAfter = gsl_vector_length(reducedGradient);
-  log("clashBug")<<"> normBefore: "<<normBefore<<endl;
-  log("clashBug")<<"> normAfter:  "<<normAfter<<endl;
+//  log("clashBug")<<"> normBefore: "<<normBefore<<endl;
+//  log("clashBug")<<"> normAfter:  "<<normAfter<<endl;
 
   //Scale so the length matches the one before
   if(normAfter>0.00000001)
