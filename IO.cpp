@@ -399,7 +399,7 @@ void IO::readRigidbody (Molecule * molecule) {
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<molecule->size();i++){
     Atom* atom = molecule->getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 ){//&& atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
     }

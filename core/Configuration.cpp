@@ -337,7 +337,7 @@ void Configuration::readBiggerSet(){
   //For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
   for (int i=0;i< m_molecule->size();i++){
     Atom* atom = m_molecule->getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 ){//&& atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
     }
   }

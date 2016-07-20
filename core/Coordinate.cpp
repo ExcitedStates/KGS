@@ -65,7 +65,7 @@ double Coordinate::getAngle (Coordinate& left, Coordinate& right) const {
 	double a = distanceTo(left);
 	double b = distanceTo(right);
 	double c = left.distanceTo(right);
-	double angle = acos( (pow(a,2)+pow(b,2)-pow(c,2)) / (2*a*b) ) * 180 / CTK_PI;
+	double angle = acos( ( a*a + b*b - c*c) / (2*a*b) ) * 180 / CTK_PI;
 	return angle;
 }
 

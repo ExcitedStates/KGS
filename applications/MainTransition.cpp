@@ -65,6 +65,8 @@ int main( int argc, char* argv[] ) {
     IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="identify")
+    HbondIdentifier::identifyHbonds(&protein);
 
   //Read the rigid body of the protein
   IO::readRigidbody( &protein );

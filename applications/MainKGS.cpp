@@ -105,6 +105,8 @@ void randomSampling(SamplingOptions& options){
     IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="identify")
+    HbondIdentifier::identifyHbonds(&protein);
 
   Selection resNetwork(options.residueNetwork);
   IO::readRigidbody( &protein, resNetwork );

@@ -60,8 +60,6 @@ int main( int argc, char* argv[] ) {
     options.print();
   }
 
-  string out_path = options.workingDirectory;
-  //string pdb_file = path + protein_name + ".pdb";
 
   // Set seed
   srand(options.seed);
@@ -72,12 +70,22 @@ int main( int argc, char* argv[] ) {
   IO::readPdb(&protein, options.initialStructureFile, options.extraCovBonds);
 //  options.setResidueNetwork(&protein);
 
-//  string name = protein.getName();
+  string out_path = options.workingDirectory;
+  string name = protein.getName();
 
-  if (options.hydrogenbondMethod == "user")
-    IO::readHbonds(&protein, options.hydrogenbondFile);
-  else
+  if(options.hydrogenbondMethod=="user")
+    IO::readHbonds( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="rnaview")
+    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
+  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+    IO::readHbonds_first( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="vadar")
+    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="dssr")
+    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="identify")
     HbondIdentifier::identifyHbonds(&protein);
+
 
   string hBondOut = "hBonds_out.txt";
   IO::writeHbonds(&protein,hBondOut );
@@ -110,6 +118,20 @@ int main( int argc, char* argv[] ) {
 
   log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
 
+  if(options.saveData > 1) {
+    string out_file = out_path + "output/" + name + ".pdb";
+    ///save pyMol coloring script
+    string pyMol = out_path + "output/" + name + "_pyMol.pml";
+    string statFile = out_path + "output/" + name + "_stats.txt";
+    string rbFile=out_path + "output/" +  name + "_RBs.txt";
+    ///Write pyMol script
+    IO::writePyMolScript(&protein, out_file, pyMol);
+    ///Write statistics
+    IO::writeStats(&protein, statFile);
+    ///Write rigid bodies
+    IO::writeRBs(&protein, rbFile);
+  }
+
   gsl_vector* projected_gradient = gsl_vector_calloc(numCols);
   gsl_vector* allDofs = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
 
@@ -132,21 +154,10 @@ int main( int argc, char* argv[] ) {
     gsl_vector_view projected_gradient_view = gsl_matrix_column(conf->getNullspace()->getSVD()->V,numCols - i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
 
-    //Identify correct range
-    for (int j=0; j<projected_gradient->size; ++j) {
-      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
-    }
-
     //Scale to desired step size
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
 
-    //Identify predictedViolation from product with constraint Jacobian
-    gsl_vector* violationVec = gsl_matrix_vector_mul(conf->getNullspace()->getSVD()->matrix, projected_gradient);
-    double predictedViolation = gsl_vector_length(violationVec);
-
-    gsl_vector_free(violationVec);
-
-//    // Control the max amount of rotation
+    //    // Control the max amount of rotation
 //    double max_rotation = 0;
 //    for (int j=0; j<projected_gradient->size; ++j) {
 //      double abs_value = Math::Abs(gsl_vector_get(projected_gradient,j));
@@ -158,6 +169,17 @@ int main( int argc, char* argv[] ) {
 //      gsl_vector_scale(projected_gradient, options.maxRotation/max_rotation); // MAX_ROTATION/max_rotation);
 //      log("hierarchy")<<"Scaled projected gradient down to: "<<gsl_vector_length(projected_gradient)<<endl;
 //    }
+
+    //Identify correct range
+    for (int j=0; j<projected_gradient->size; ++j) {
+      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
+    }
+
+    //Identify predictedViolation from product with constraint Jacobian
+    gsl_vector* violationVec = gsl_matrix_vector_mul(conf->getNullspace()->getSVD()->matrix, projected_gradient);
+    double predictedViolation = gsl_vector_length(violationVec);
+
+    gsl_vector_free(violationVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
 

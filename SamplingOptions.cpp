@@ -89,12 +89,14 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 
 	//Usage instructions if hbondFile is blank
 	if( hydrogenbondMethod!="user" && hydrogenbondMethod!="dssr" && hydrogenbondMethod!="rnaview" && hydrogenbondMethod!="first" && hydrogenbondMethod!="FIRST" && hydrogenbondMethod!="vadar" ){
-		enableLogger("so");
-		cerr<<"Error: The hbond method ("<<hydrogenbondMethod<<") is not valid"<<endl;
-		printUsage(argv[0]);
-		exit(-1);
+//		enableLogger("so");
+//		cerr<<"Error: The hbond method ("<<hydrogenbondMethod<<") is not valid"<<endl;
+//		printUsage(argv[0]);
+//		exit(-1);
+		log("so")<<"No known hbond method provided, identifying h-bonds in KGS."<<endl;
+		hydrogenbondMethod = "identify";
 	}
-	if( hydrogenbondFile.empty() ){
+	if( hydrogenbondFile.empty() && hydrogenbondMethod != "identify"){
 		enableLogger("so");
 		if(hydrogenbondMethod=="user"){
 			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nEach line in the file specified with --hbondFile should contain ";
@@ -118,14 +120,13 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
 			log("so")<<"the vadar server (vadar.wishartlab.com) that has been edited so every line has this format (multiple spaces not important) ";
 			log("so")<<"'92A     C      73A    N               1.91'"<<endl;
-		}else{
-			printUsage(argv[0]);
-			log("so")<<"No recognizable hbondMethod was specified ("<<hydrogenbondMethod<<")."<<endl;
-			exit(-1);
 		}
 		exit(3);
 	}else{
-		if(hydrogenbondMethod.empty()) hydrogenbondMethod = "user"; //Default when a file is specified but no method
+		if(hydrogenbondMethod.empty()){
+			log("so")<<"H-bond file provided, choosing user-defined method."<<endl;
+			hydrogenbondMethod = "user"; //Default when a file is specified but no method
+		}
 	}
 
 	//Check initial structure

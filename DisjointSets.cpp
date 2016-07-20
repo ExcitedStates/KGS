@@ -46,7 +46,7 @@ DisjointSets::~DisjointSets()
   m_numSets = 0;
 }
 
-// Note: some internal data is modified for optimization even though this method is consant.
+// Note: some internal data is modified for optimization even though this method is constant.
 int DisjointSets::FindSet(int elementId) const
 {
   assert(elementId < m_numElements);

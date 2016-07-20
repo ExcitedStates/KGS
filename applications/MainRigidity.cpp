@@ -47,7 +47,15 @@ int main( int argc, char* argv[] ){
 
   if(options.hydrogenbondMethod=="user")
     IO::readHbonds( protein, options.hydrogenbondFile );
-  else
+  else if(options.hydrogenbondMethod=="rnaview")
+    IO::readHbonds_rnaview( protein, options.hydrogenbondFile, options.annotationFile.empty() );
+  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+    IO::readHbonds_first( protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="vadar")
+    IO::readHbonds_vadar( protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="dssr")
+    IO::readHbonds_dssr( protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="identify")
     HbondIdentifier::identifyHbonds(protein);
 
   IO::readRigidbody( protein );
