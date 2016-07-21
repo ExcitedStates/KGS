@@ -132,8 +132,10 @@ add_library( libKGS
 
 		math/GSLSVD.cpp
 		math/GSLSVD.h
-		math/MKLSVD.cpp
-		math/MKLSVD.h
+        math/MKLSVD.cpp
+        math/MKLSVD.h
+		math/CudaSVD.cpp
+		math/CudaSVD.h
 		math/gsl_helpers.cpp
 		math/gsl_helpers.h
 		math/Nullspace.cpp
@@ -194,6 +196,14 @@ if(${MKL_FOUND})
 	link_libraries( mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread )
 	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
 endif()
+
+find_package(CUDA)
+if(${CUDA_FOUND})
+    link_libraries(${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
+    include_directories(${CUDA_INCLUDE_DIRS})
+    SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__CUDA_SVD" )
+endif()
+
 
 include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths
 #include_directories(${CMAKE_SOURCE_DIR}/utils/) #LoopTK headers
