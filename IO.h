@@ -50,6 +50,7 @@ class IO {
   static void writeBondLengthsAndAngles (Molecule *molecule, std::string output_file_name);
 	static void writeCovBonds (Molecule *molecule, std::string output_file_name);
 	static void readCovBonds  (Molecule *molecule, std::string input_file_name);
+	static void writeHbondsIn (Molecule * molecule, std::string output_file_name);
 	static void writeHbonds (Molecule * molecule, std::string output_file_name);
 	static void writeHbondsChange (Molecule * molecule, std::string output_file_name);
 	static void readHbonds (Molecule *molecule, std::string hbond_file_name);

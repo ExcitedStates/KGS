@@ -88,7 +88,9 @@ int main( int argc, char* argv[] ) {
 
 
   string hBondOut = "hBonds_out.txt";
+  string hBondIn = "../hBonds_in.txt";
   IO::writeHbonds(&protein,hBondOut );
+  IO::writeHbondsIn(&protein,hBondIn );
 
   IO::readRigidbody(&protein);
   protein.buildSpanningTree();

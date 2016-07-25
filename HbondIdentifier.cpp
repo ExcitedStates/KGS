@@ -97,10 +97,9 @@ void HbondIdentifier::identifyHbonds(Molecule *protein) {
 			//int a_id = (*neighbor_itr)->getId();
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << "\t" << (*atom_itr)->getName() << " " << (*neighbor_itr)->getName() << " " << dist_H_A << " " << dist_D_A << " " << ang_D_H_A << " " << ang_H_A_AA << " " << ang_D_A_AA << endl;
 //			output << Util::i2s(h_id) << "\t" << Util::i2s(a_id) << endl;
+
+      //Assign donors and base atoms
       Hbond * new_hb = new Hbond(*atom_itr, *neighbor_itr, donor, AA);
-      new_hb->setIniLength(dist_H_A);
-      new_hb->setIniAngle_H_A_AA(ang_H_A_AA);
-      new_hb->setIniAngle_D_H_A(ang_D_H_A);
       protein->addHbond(new_hb);
       //cout<<"identifyHbonds(..) - Bonded: "<<(*atom_itr)<<" , "<<(*neighbor_itr)<<" , "<<donor<<" , "<<AA<<endl;
     }

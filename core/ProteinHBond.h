@@ -81,24 +81,13 @@ class Hbond : public Bond {
   double getIniLength() const {
     return m_iniDist_H_A;
   }
-  void setIniLength(double iniDist_H_A) {
-    m_iniDist_H_A = iniDist_H_A;
-  }
 
   double getIniAngle_D_H_A() const {
     return m_iniAngle_D_H_A;
   }
 
-  void setIniAngle_D_H_A(double iniAngle_D_H_A) {
-    m_iniAngle_D_H_A = iniAngle_D_H_A;
-  }
-
   double getIniAngle_H_A_AA() const {
     return m_iniAngle_H_A_AA;
-  }
-
-  void setIniAngle_H_A_AA(double iniAngle_H_A_AA) {
-    m_iniAngle_H_A_AA = iniAngle_H_A_AA;
   }
 
   double getIniEnergy() const {

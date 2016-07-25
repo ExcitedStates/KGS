@@ -847,28 +847,29 @@ void IO::readCovBonds (Molecule *molecule, string in_file_name) {
   cov.close();
 }
 
+void IO::writeHbondsIn (Molecule *molecule, string output_file_name) {
+  ofstream output(output_file_name.c_str());
+
+  int count=0;
+
+  //Header line
+//  output << "H-ID ";
+//  output << "Acc-ID ";
+//  output << "energy"<<endl;
+
+  for (auto const& bond: molecule->getHBonds()){
+    output << bond->Hatom->getId()<<" ";
+    output << bond->Acceptor->getId()<<" ";
+    output << bond->getIniEnergy()<<endl;
+  }
+  output.close();
+}
+
+
 void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
 
-//  //Header line
-//  output << std::right << setw(8) << "H-ID";
-//  output << std::right << setw(8) << "Acc-ID";
-//  output << std::right << setw(16) << "energy";
-  //  output << std::right << setw(6) << "#bars";
-//  output << std::right << setw(16) << "length [AA]";
-//  output << std::right << setw(16) << "angle D_H_A";
-//  output << std::right << setw(16) << "angle H_A_AA"<<endl;
-//
-//  for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
-//    output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
-//    output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
-//    output << std::right << setw(16) << (*hb_itr)->getIniEnergy();
-//    int numBars = (*hb_itr)->constrained? 6:5;
-//    output << std::right << setw(6) << numBars;
-//    output << std::right << setw(16) << (*hb_itr)->getLength();
-//    output << std::right << setw(16) << (*hb_itr)->getAngle_D_H_A();
-//    output << std::right << setw(16) << (*hb_itr)->getAngle_H_A_AA() << endl;
-//  }
+  int count=0;
 
   //Header line
   output << "H-ID ";
@@ -877,7 +878,8 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   output << "#bars ";
   output << "length ";
   output << "angle_D_H_A ";
-  output << "angle_H_A_AA"<<endl;
+  output << "angle_H_A_AA ";
+  output << "H-bond_ID" <<endl;
 
   for (auto const& bond: molecule->getHBonds()){
     output << bond->Hatom->getId()<<" ";
@@ -887,48 +889,16 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
-    output << bond->getAngle_H_A_AA() << endl;
+    output << bond->getAngle_H_A_AA() <<" ";
+    output << ++count<<endl;
   }
   output.close();
 }
 
 void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
-//  //Header line
-//  output << std::right << setw(8) << "H-ID";
-//  output << std::right << setw(8) << "Acc-ID";
-//  output << std::right << setw(16) << "energy";
-//  output << std::right << setw(6) << "#bars";
-//  output << std::right << setw(16) << "length [AA]";
-//  output << std::right << setw(16) << "angle D_H_A";
-//  output << std::right << setw(16) << "angle H_A_AA";
-//  output << std::right << setw(16) << "energy change";
-//  output << std::right << setw(16) << "length change";
-//  output << std::right << setw(16) << "D_H_A change";
-//  output << std::right << setw(16) << "H_A_AA change"<<endl;
-//
-//  for (list<Hbond *>::iterator hb_itr=protein->H_bonds.begin(); hb_itr != protein->H_bonds.end(); ++hb_itr) {
-//    double energy = (*hb_itr)->computeEnergy();
-//    output << std::right << setw(8) << (*hb_itr)->Hatom->getId();
-//    output << std::right << setw(8) << (*hb_itr)->Acceptor->getId();
-//    int numBars = (*hb_itr)->constrained? 6:5;
-//    output << std::right << setw(6) << numBars;
-//    output << std::right << setw(16) << energy;
-//    output << std::right << setw(16) << (*hb_itr)->getLength();
-//    output << std::right << setw(16) << (*hb_itr)->getAngle_D_H_A();
-//    output << std::right << setw(16) << (*hb_itr)->getAngle_H_A_AA();
-//
-//    double energyChange = energy - (*hb_itr)->getIniEnergy();
-//    double distanceChange = (*hb_itr)->getLength() - (*hb_itr)->getIniLength();
-//    double H_A_AA_Change = formatRangeRadian( (*hb_itr)->getAngle_H_A_AA() - (*hb_itr)->getIniAngle_H_A_AA() );
-//    double D_H_A_Change = formatRangeRadian( (*hb_itr)->getAngle_D_H_A() - (*hb_itr)->getIniAngle_D_H_A() );
-//
-//    output << std::right << setw(16) << energyChange;
-//    output << std::right << setw(16) << distanceChange;
-//    output << std::right << setw(16) << D_H_A_Change;
-//    output << std::right << setw(16) << H_A_AA_Change<<endl;
-//  }
 
+  int count=0;
   //Header line
   output << "H-ID ";
   output << "Acc-ID ";
@@ -940,7 +910,8 @@ void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
   output << "energy_change ";
   output << "length_change ";
   output << "D_H_A_change ";
-  output << "H_A_AA_change "<<endl;
+  output << "H_A_AA_change ";
+  output << "H-bond_ID" <<endl;
 
   for (auto const& bond: molecule->getHBonds()){
     double energy = bond->computeEnergy();
@@ -961,7 +932,8 @@ void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
     output << energyChange<<" ";
     output << distanceChange<<" ";
     output << D_H_A_Change<<" ";
-    output << H_A_AA_Change<<endl;
+    output << H_A_AA_Change<<" ";
+    output << ++count<<endl;
   }
   output.close();
 }
