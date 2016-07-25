@@ -33,12 +33,15 @@
 using namespace std;
 
 
-Selection::Selection() : Selection("all") {}
+Selection::Selection() : Selection("all") 
+{
+}
 
 Selection::Selection(const string& selectionPattern) :
     m_selectionPattern(selectionPattern),
     m_rootClause(parseClause(selectionPattern))
-{}
+{
+}
 
 vector<Atom*>& Selection::getSelectedAtoms( const Molecule* mol )
 {

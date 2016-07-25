@@ -1,6 +1,9 @@
 #include "CudaSVD.h"
 
 #include <algorithm>
+#include <iostream>
+
+using namespace std;
 
 #ifdef __CUDA_SVD
 
@@ -8,11 +11,9 @@
 #include <device_launch_parameters.h>
 #include <cusolverDn.h>
 #include <cuda_runtime_api.h>
-#include <iostream>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector_double.h>
 
-using namespace std;
 
 void gpuAssert(cudaError_t code, char *file, int line, bool abort=true);
 void gpuErrchk(cudaError_t ans);
