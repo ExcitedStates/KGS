@@ -1,4 +1,5 @@
 #include <string>
+#include <ctime>
 #include <Logger.h>
 #include <math/MKLSVD.h>
 #include <math/GSLSVD.h>
@@ -21,25 +22,48 @@ using namespace std;
 int main( int argc, char* argv[] ) {
   enableLogger("default");
 
-  cout<<"Hello world"<<endl;
-
-  int m = 10;
-  int n = 5;
+  srand(101);
+  int m = 1000;
+  int n = 1000;
   gsl_matrix* A  = gsl_matrix_calloc(m,n);
+  rand();rand();rand();
   for(int i=0;i<m;i++)
     for(int j=0;j<n;j++)
-      gsl_matrix_set(A, i, j, rand()*3.0/RAND_MAX);
+      gsl_matrix_set(A, i, j, (rand()*4.0/RAND_MAX));
 
-  gsl_matrix_cout(A);
+//  gsl_matrix_cout(A);
 
+  time_t start = clock();
   SVD* mklsvd = new MKLSVD(A);
   mklsvd->UpdateFromMatrix();
-  mklsvd->print();
+//  mklsvd->print();
+  double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+  cout<<"MKL took  "<<duration<<"secs"<<endl;
 
+
+//  gsl_matrix* S = gsl_matrix_calloc(A->size1, A->size2);
+//  for(int i=0;i<std::min(A->size1,A->size2);i++){
+//    gsl_matrix_set(S, i,i, gsl_vector_get(mklsvd->S, i));
+//  }
+//  cout<<"Product: "<<endl;
+//  gsl_matrix_cout( gsl_matrix_mul(mklsvd->U, gsl_matrix_mul(S, gsl_matrix_trans(mklsvd->V))) );
+
+  cout<<" ------------------------------------- "<<endl;
+
+  start = clock();
   SVD* cudasvd = new CudaSVD(A);
   cudasvd->UpdateFromMatrix();
-  cudasvd->print();
+//  cudasvd->print();
+  duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+  cout<<"CUDA took "<<duration<<"secs"<<endl;
 
+//  S = gsl_matrix_calloc(A->size1, A->size2);
+//  for(int i=0;i<std::min(A->size1,A->size2);i++){
+//    gsl_matrix_set(S, i,i, gsl_vector_get(cudasvd->S, i));
+//  }
+//
+//  cout<<"Product: "<<endl;
+//  gsl_matrix_cout( gsl_matrix_mul(cudasvd->U, gsl_matrix_mul(S, gsl_matrix_trans(cudasvd->V))) );
   /*
   try {
     Molecule mol;

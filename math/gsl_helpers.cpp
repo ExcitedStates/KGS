@@ -132,6 +132,7 @@ gsl_vector* gsl_matrix_vector_mul(gsl_matrix* A, gsl_vector* v){
 
   return ret;
 }
+
 gsl_matrix* gsl_matrix_mul(gsl_matrix* A, gsl_matrix* B){
   int MA = A->size1;
   int NA = A->size2;
