@@ -138,16 +138,12 @@ void BidirectionalMovingFront::GenerateSamples() {
 
     if(qNew->updatedMolecule()->inCollision() ){
       failedTrials++;
-      totalTrials++;
       delete qNew;
       qNew = nullptr;
       //Could not find a new conformation, swap search directions
       swapFwdRev();
     }
     else{//collision-free
-      //Potentially reject new config if large violations?
-      double violationNorm = m_protein->checkCycleClosure(qNew);
-
       numSamples++;
       samplesTillSwap--;
       gsl_vector_free(gradient);
@@ -155,6 +151,9 @@ void BidirectionalMovingFront::GenerateSamples() {
       //Push-back in forward tree
       m_fwdSamples.push_back(qNew);
       qNew->m_id = numSamples;
+
+      //Potentially reject new config if large violations?
+      double violationNorm = m_protein->checkCycleClosure(qNew);
 
       //Distance computations
       evaluateDistances(qNew);

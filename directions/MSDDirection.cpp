@@ -114,7 +114,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 //    if(counts[i]>0)
 //      gradient[i] *= 2.0 / counts[i];
     gradient[i] *= 2.0 / count;
-    gradient[i] = formatRangeRadian(gradient[i]);
+//    gradient[i] = formatRangeRadian(gradient[i]);
   }
   std::copy(&gradient[0], &gradient[ret->size], ret->data);
   //double factor = 2.0 / count;

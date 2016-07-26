@@ -64,7 +64,8 @@ void BlendedDirection::computeGradient(Configuration* conf, Configuration* targe
 
     for (int entry=0; entry < ret->size; ++entry){
       double val = m_weights[i] * gsl_vector_get(tmp,entry) + m_weights[0] * gsl_vector_get(ret,entry);
-      gsl_vector_set(ret,i,formatRangeRadian(val));
+//      gsl_vector_set(ret,i,formatRangeRadian(val));
+      gsl_vector_set(ret,i,val);
     }
   }
 

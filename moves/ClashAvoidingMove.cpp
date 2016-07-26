@@ -60,7 +60,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
-    new_q->m_dofs[i] = current->m_dofs[i] + gsl_vector_get(projected_gradient, i);
+    new_q->m_dofs[i] = formatRangeRadian( current->m_dofs[i] + gsl_vector_get(projected_gradient, i) );
   gsl_vector_free(projected_gradient);
 
   //If no clash return
@@ -212,7 +212,7 @@ Configuration* ClashAvoidingMove::projectOnClashNullspace(
   Configuration* new_q = new Configuration(conf);
 //  log("dominik")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
-    new_q->m_dofs[i] = conf->m_dofs[i] + gsl_vector_get(projected_gradient, i);
+    new_q->m_dofs[i] = formatRangeRadian( conf->m_dofs[i] + gsl_vector_get(projected_gradient, i) );
   gsl_vector_free(projected_gradient);
 
   new_q->m_usedClashPrevention = true;
