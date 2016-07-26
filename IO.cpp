@@ -1158,6 +1158,50 @@ void IO::readHbonds_first(Molecule * molecule, string file){
   }
 }
 
+void IO::readHbonds_kinari (Molecule *molecule, string hbond_file_name) {
+  ifstream input(hbond_file_name.c_str());
+  std::string line;
+  string atom1_sid, atom2_sid, energy_s;
+  int hatom_id, oatom_id;
+  double energy;
+  string nullInput;
+  Atom *hatom, *oatom, *donor, *AA;
+  while(std::getline(input,line)){
+    std::istringstream input(line);
+    input >> nullInput;
+    input >> atom1_sid;
+    input >> nullInput;
+    input >> atom2_sid;
+    input >> energy_s;
+
+//    if (input >> energy_s){
+//      energy = atof(energy_s.c_str());
+//    }else{
+    energy = DEFAULT_HBOND_ENERGY;
+//    }
+
+    hatom_id = atoi(atom1_sid.c_str());
+    oatom_id = atoi(atom2_sid.c_str());
+
+    hatom = molecule->getAtom(hatom_id);
+    if(hatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<hatom_id<<endl; exit(-1); }
+    oatom = molecule->getAtom(oatom_id);
+    if(oatom==nullptr){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
+
+    //Check if hatom and oatom were assigned correctly
+    if( hatom->isHeavyAtom() ) {
+      oatom = hatom;
+      hatom = molecule->getAtom(oatom_id);
+    }
+
+    //Assign donors and base atoms
+    donor = hatom->getFirstCovNeighbor();
+    AA = oatom->getFirstCovNeighbor();
+    Hbond * new_hb = new Hbond(hatom, oatom, donor, AA, energy);
+    molecule->addHbond(new_hb);
+  }
+  input.close();
+}
 
 void IO::readHbonds_vadar(Molecule * molecule, string file){
   ifstream input(file.c_str());

@@ -61,6 +61,8 @@ int main( int argc, char* argv[] ) {
     IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
   else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
     IO::readHbonds_first( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="vadar")
     IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
@@ -79,18 +81,23 @@ int main( int argc, char* argv[] ) {
   string target_pdb_file = options.targetStructureFile;
   Molecule target;
   target.setCollisionFactor(options.collisionFactor);
-  IO::readPdb( &target, target_pdb_file, options.extraCovBonds );
+  IO::readPdb( &target, target_pdb_file, options.extraCovBonds, &protein);
 
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( &target, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( &target, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( &target, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( &target, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( &target, options.hydrogenbondFile );
+//  if(options.hydrogenbondMethod=="user")
+//    IO::readHbonds( &target, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="rnaview")
+//    IO::readHbonds_rnaview( &target, options.hydrogenbondFile, options.annotationFile.empty() );
+//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+//    IO::readHbonds_first( &target, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+//    IO::readHbonds_kinari( &target, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="vadar")
+//    IO::readHbonds_vadar( &target, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="dssr")
+//    IO::readHbonds_dssr( &target, options.hydrogenbondFile );
+
+  //makes sure we have the same hydrogen bonds in target and protein (protein hbonds is adapted as well)
+  target.setToHbondIntersection(&protein);
 
   //Read the rigid body of the protein
   IO::readRigidbody( &target );
@@ -99,12 +106,6 @@ int main( int argc, char* argv[] ) {
   target.setConfiguration(new Configuration(&target));
 
   target.m_initialCollisions = target.getAllCollisions();
-
-  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
-//  target->setToHbondIntersection(&protein);
-  // Check for collision
-//  target->m_initialCollisions = target->getAllCollisions();
-
 
 //	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;

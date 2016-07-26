@@ -58,6 +58,7 @@ class IO {
 	static void readHbonds_dssr(Molecule * molecule, std::string dssrFile);
 	static void readHbonds_rnaview(Molecule * molecule, std::string file, bool fillAnnotations);
 	static void readHbonds_first(Molecule * molecule, std::string file);
+	static void readHbonds_kinari(Molecule * molecule, std::string file);
 	static void readHbonds_vadar(Molecule * molecule, std::string file);
 	static void writeRBs(Molecule * molecule, std::string output_file_name);
 	static void writeStats(Molecule * molecule, std::string output_file_name);

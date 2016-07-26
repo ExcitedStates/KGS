@@ -64,6 +64,7 @@ void HbondIdentifier::identifyHbonds(Molecule *protein) {
       continue;
     if (donor_type=="N" && donor->getResidue()->getProperName()=="PRO")
       continue;
+    //Check number of covalently bound atoms to donor --> trigonal planar or tetrahedral
     // Check acceptor
     vector<Atom*> neighbors = grid.getNeighboringAtoms(*atom_itr,false,false,false);
     for (vector<Atom*>::iterator neighbor_itr=neighbors.begin(); neighbor_itr!=neighbors.end(); ++neighbor_itr) {

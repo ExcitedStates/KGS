@@ -101,6 +101,8 @@ void randomSampling(SamplingOptions& options){
     IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
   else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
     IO::readHbonds_first( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="vadar")
     IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
@@ -268,6 +270,8 @@ void targetedSampling(SamplingOptions& options){
     IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
   else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
     IO::readHbonds_first( &protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="vadar")
     IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
@@ -282,13 +286,14 @@ void targetedSampling(SamplingOptions& options){
   //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(&protein);
 
-
   /// Rigid bodies, spanning trees, and initial collisions
 //  options.setResidueNetwork(&protein);
 //  options.setAtomSets(&protein,target);
 
   Selection resNetwork(options.residueNetwork);
-  IO::readRigidbody( &protein, resNetwork );
+//  IO::readRigidbody( &protein, resNetwork );
+  IO::readRigidbody( &protein);
+
 //  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed

@@ -1010,9 +1010,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   return energy;
 }
 
-
-
-///Create a set of hbonds from the hbond list of another protein
+///Create a set of common hbonds from the hbond list of another protein
 void Molecule::setToHbondIntersection (Molecule * p2) {
   Hbond * hBond;
   Atom *hatom, *acceptor, *donor, *AAatom;
@@ -1040,7 +1038,7 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
       Atom* acceptor = hBond->Acceptor;
       hAtom->removeHbond(hBond);
       acceptor->removeHbond(hBond);
-//			p2->H_bonds.erase(itr2);
+//			p2->m_hBonds.erase(itr2);
       count2++;
     }
   }
