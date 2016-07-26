@@ -61,12 +61,12 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
   m_addedToFront = true;
 
   m_max_depth=0;
-
   m_nCDCall = 0;
-
 
   movesRejected = 0;
   movesAccepted = 0;
+
+  m_samplingForward = true;
 }
 
 BidirectionalMovingFront::~BidirectionalMovingFront() {
@@ -81,11 +81,18 @@ BidirectionalMovingFront::~BidirectionalMovingFront() {
   }
 }
 
-std::list<Configuration*>& BidirectionalMovingFront::Samples(){
+std::list<Configuration*>& BidirectionalMovingFront::Samples() {
 
-  std::list<Configuration*>& allSamples = m_fwdSamples;
-  allSamples.merge(m_revSamples);
-  return allSamples;
+  std::list<Configuration *> *allSamples;
+  if (m_samplingForward) {
+    allSamples = &m_fwdSamples;
+    allSamples->merge(m_revSamples);
+  }
+  else{
+    allSamples = &m_revSamples;
+    allSamples->merge(m_fwdSamples);
+  }
+  return *allSamples;
 }
 
 void BidirectionalMovingFront::GenerateSamples() {
@@ -171,11 +178,11 @@ void BidirectionalMovingFront::GenerateSamples() {
       log("dominik") << "> New structure: "<<qNew->getMolecule()->getName()<<"_new_"<<numSamples<<".pdb, accessible dofs: "<<qNew->m_clashFreeDofs<<endl<<endl;
 
       log("samplingStatus") << "> New structure: " << qNew->getMolecule()->getName()<<"_new_" << numSamples << ".pdb";
-      log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << qNew->m_distanceToIni;
-      log("samplingStatus") << " .. Distance to moving-front target: " << setprecision(3) << qNew->m_paretoFrontDistance;
-      log("samplingStatus") << " .. accessible dofs: "<<qNew->m_clashFreeDofs<<endl;
-      log("samplingStatus") << " .. norm constraint violation: "<<violationNorm<<endl;
-      log("samplingStatus")<<"Current shortest distance between both trees at configs "<<m_closestFwdSample->m_id <<" and "<<m_closestRevSample->m_id<<", Distance: "<<m_minDistance<<endl;
+      log("samplingStatus") << " .. Dist initial: " << setprecision(6) << qNew->m_distanceToIni;
+      log("samplingStatus") << " .. Dist moving-front target: " << setprecision(3) << qNew->m_paretoFrontDistance;
+      log("samplingStatus") << " .. access dofs: "<<qNew->m_clashFreeDofs;
+      log("samplingStatus") << " .. norm constr. viol.: "<<violationNorm<<endl;
+      log("samplingStatus")<<"Current shortest distance between both trees at configs "<<m_closestFwdSample->m_id <<" and "<<m_closestRevSample->m_id<<", Distance: "<<m_minDistance<<endl<<endl;
 
       writeNewSample(qNew, m_fwdRoot,qNew->m_id);
 
@@ -349,13 +356,21 @@ void BidirectionalMovingFront::swapFwdRev(){
   std::swap(m_protein,m_target);
   std::swap(m_closestFwdSample,m_closestRevSample);
 
+  //Maintain information which direction is being sampled
+  m_samplingForward = !m_samplingForward;
+
 }
 
 
 void BidirectionalMovingFront::createTrajectory(){
 
+  if(!m_samplingForward){//have to swap, we were last going in reverse
+    swapFwdRev();
+  }
+
   m_closestFwdSample->updateMolecule();
   m_closestRevSample->updateMolecule();
+
   log()<<"The forward trajectory ends at sample "<<m_closestFwdSample->m_id<<endl;
   log()<<"The reverse trajectory ends at sample "<<m_closestRevSample->m_id<<endl;
 
@@ -368,6 +383,6 @@ void BidirectionalMovingFront::createTrajectory(){
   ///save pyMol movie script
   string out_pyMol=out_path + "output/" +  name + "_pathMov.pml";
 
-  IO::writeTrajectory(m_protein, out_collPdb, out_pyMol);
+  IO::writeTrajectory(m_protein, out_collPdb, out_pyMol, m_target);
 }
 

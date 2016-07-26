@@ -291,8 +291,7 @@ void targetedSampling(SamplingOptions& options){
 //  options.setAtomSets(&protein,target);
 
   Selection resNetwork(options.residueNetwork);
-//  IO::readRigidbody( &protein, resNetwork );
-  IO::readRigidbody( &protein);
+  IO::readRigidbody( &protein, resNetwork );
 
 //  unsigned int bestProteinRBId = protein.findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
 //  protein.buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration

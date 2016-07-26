@@ -49,7 +49,7 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
 
     int dofId = edge->getDOF()->getIndex();
 //    int resId = edge->getBond()->Atom1->getResidue()->getId();
-    double angle_diff =target->getGlobalTorsion(dofId) - conf->getGlobalTorsion(dofId);
+    double angle_diff = target->getGlobalTorsion(dofId) - conf->getGlobalTorsion(dofId);
     angle_diff = formatRangeRadian(angle_diff);
 
     gsl_vector_set(ret,dofId,angle_diff);

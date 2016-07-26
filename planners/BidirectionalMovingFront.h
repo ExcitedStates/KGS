@@ -86,6 +86,8 @@ class BidirectionalMovingFront : public SamplingPlanner{
   int m_frontSize;
   bool m_isBlended;
 
+  bool m_samplingForward;
+
   int m_nCDCall = 0;
   int m_nMetricsCall = 0;
 
