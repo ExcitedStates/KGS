@@ -28,8 +28,10 @@ int main( int argc, char* argv[] ) {
   gsl_matrix* A  = gsl_matrix_calloc(m,n);
   rand();rand();rand();
   for(int i=0;i<m;i++)
-    for(int j=0;j<n;j++)
-      gsl_matrix_set(A, i, j, (rand()*4.0/RAND_MAX));
+    for(int j=0;j<n;j++) {
+      if((rand()*1.0/RAND_MAX)<0.1)
+        gsl_matrix_set(A, i, j, (rand() * 4.0 / RAND_MAX));
+    }
 
 //  gsl_matrix_cout(A);
 
