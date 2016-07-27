@@ -75,7 +75,7 @@ void PoissonPlanner::GenerateSamples()
   reportStream.open("kgs_poissonDistances.log");
   enableLogger("poissonDistances", reportStream);
   //cout<<"PoissonPlanner::GenerateSamples()"<<endl;
-  Selection sel(SamplingOptions::getOptions()->selectionMoving);
+  Selection sel(SamplingOptions::getOptions()->gradientSelection);
   Direction* direction = new RandomDirection(sel);
   gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
   double origStepSize = move.getStepSize();

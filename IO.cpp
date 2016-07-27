@@ -399,7 +399,7 @@ void IO::readRigidbody (Molecule * molecule) {
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<molecule->size();i++){
     Atom* atom = molecule->getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 ){//&& atom->Hbond_neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
     }
@@ -731,10 +731,10 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
     Atom* atom = *atom_itr;
     Residue* res = (*atom_itr)->getResidue();
     char buffer[100];
-    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s  ",
+    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6d          %2s  ",
         atom->getId(),atom->getName().c_str(),
         res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
-        atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getType().c_str());
+        atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str());
     string line(buffer);
     output << line << endl;
   }

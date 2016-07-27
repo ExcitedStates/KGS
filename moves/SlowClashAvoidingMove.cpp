@@ -56,7 +56,7 @@ Configuration* SlowClashAvoidingMove::performMove(Configuration* current, gsl_ve
 
 
     for (int i = 0; i < new_q->getNumDOFs(); ++i) {
-      new_q->m_dofs[i] = current->m_dofs[i] + gsl_vector_get(projected_gradient, i); //added as transformation always starts from original coordinates
+      new_q->m_dofs[i] = formatRangeRadian( current->m_dofs[i] + gsl_vector_get(projected_gradient, i) ); //added as transformation always starts from original coordinates
     }
 
     new_q->getMolecule()->forceUpdateConfiguration(new_q);

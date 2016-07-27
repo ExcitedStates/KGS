@@ -68,12 +68,12 @@ int main( int argc, char* argv[] ) {
   Molecule protein;
   protein.setCollisionFactor(options.collisionFactor);
 
-  if(options.selectionMoving.empty()){
-    cerr<<"Must supply --selectionMoving (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
+  if(options.gradientSelection.empty()){
+    cerr<<"Must supply --gradientSelection (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
     exit(-1);
   }
 
-  Selection resNetwork(options.selectionMoving);
+  Selection resNetwork(options.gradientSelection);
 
   IO::readPdb( &protein, pdb_file, options.extraCovBonds );
   IO::readHbonds( &protein, options.hydrogenbondFile );

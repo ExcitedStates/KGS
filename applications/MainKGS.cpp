@@ -166,7 +166,7 @@ void randomSampling(SamplingOptions& options){
   Direction* direction;
 
   try {
-    Selection selectionMoving(options.selectionMoving);
+    Selection selectionMoving(options.gradientSelection);
     if (options.gradient == 0) {
       log("samplingStatus") << "Using random direction" << endl;
       direction = new RandomDirection(selectionMoving);
@@ -308,7 +308,7 @@ void targetedSampling(SamplingOptions& options){
   }
 
   /// Rigid bodies, spanning trees, and initial collisions for the target
-  IO::readRigidbody( target );
+  IO::readRigidbody( target, resNetwork );
   //Build rigid body tree for target
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
@@ -373,28 +373,32 @@ void targetedSampling(SamplingOptions& options){
   //Initialize direction
   Direction* direction;
   bool blendedDir = false;
+
+  Selection gradientSelection(options.gradientSelection);
   if(options.gradient == 0)
-    direction = new RandomDirection(resNetwork);
+    direction = new RandomDirection(gradientSelection);
   else if(options.gradient == 1)
-    direction = new DihedralDirection(resNetwork);
+    direction = new DihedralDirection(gradientSelection);
   else if(options.gradient == 2){
+    Selection blendedSelection("all");
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new DihedralDirection(gradientSelection),0);
+    m_direction->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(resNetwork);
+    direction = new MSDDirection(gradientSelection);
   else if(options.gradient == 4){
+    Selection blendedSelection("all");
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new MSDDirection(gradientSelection),0);
+    m_direction->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient <= 5)
-    direction = new LSNullspaceDirection(resNetwork);
+    direction = new LSNullspaceDirection(gradientSelection);
 
   //Initialize planner
   SamplingPlanner* planner;

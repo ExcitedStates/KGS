@@ -97,9 +97,9 @@ class SamplingOptions
   /** Atom selection for gradients, distance computation etc., e.g. heavy, name Ca, backbone, all. Default is heavy*/
   bool preventClashes;
   /** Specifies the residues of the molecule that will undergo RMSD alignment during sampling. */
-  std::string selectionAlign;
+  std::string alignSelection;
   /** Specifies the residues used for gradient computation. */
-  std::string selectionMoving;
+  std::string gradientSelection;
   /** The root rigid body id. */
   int root;
   /** Whether or not to project the gradient onto the constraint manifold. */
@@ -128,8 +128,8 @@ class SamplingOptions
   inline bool fileExists ( const std::string& name);
   void initializeVariables();
 
-  std::vector<Atom*> m_atomsAlign; //atoms used for alignment, specified via selectionAlign
-  std::vector<Atom*> m_atomsMoving; //atoms used for gradient computation, specified via selectionMoving
+  std::vector<Atom*> m_atomsAlign; //atoms used for alignment, specified via alignSelection
+  std::vector<Atom*> m_atomsMoving; //atoms used for gradient computation, specified via gradientSelection
 
   //Singleton pattern
   static SamplingOptions* instance;

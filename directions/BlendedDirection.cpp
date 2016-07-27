@@ -30,6 +30,7 @@
 #include <gsl/gsl_blas.h>
 #include "math/gsl_helpers.h"
 #include "BlendedDirection.h"
+#include <iostream>
 
 BlendedDirection::BlendedDirection():
     m_totalWeight(0)
@@ -55,7 +56,6 @@ void BlendedDirection::computeGradient(Configuration* conf, Configuration* targe
 
   m_directions[0]->gradient(conf,target,ret);
   double magnitude = gsl_vector_length(ret);
-  //std::cout<<"BlendedDirection::computeGradient - rand norm: "<<gsl_blas_dnrm2(ret)<<std::endl;
 
   gsl_vector* tmp = gsl_vector_calloc(ret->size);
   for(size_t i=1;i<m_directions.size();i++){
@@ -68,5 +68,4 @@ void BlendedDirection::computeGradient(Configuration* conf, Configuration* targe
       gsl_vector_set(ret,i,val);
     }
   }
-
 }

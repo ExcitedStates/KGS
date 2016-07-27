@@ -432,7 +432,7 @@ void Molecule::buildSpanningTree() {
 
   list<KinEdge *> cycleEdges;
 
-  //Initialize chain-roots but adding them to the queue and setting up edges from the super-root
+  //Initialize chain-roots by adding them to the queue and setting up edges from the super-root
 //  list<KinVertex *> queue;
   auto my_comp = [](const KinVertex* v1, const KinVertex* v2){
     int id1 = v1->m_rigidbody == nullptr ? 0: v1->m_rigidbody->id();
@@ -442,14 +442,14 @@ void Molecule::buildSpanningTree() {
   std::priority_queue<KinVertex*,vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
 
   for( auto const &chain: chains ) {
-    //Add first vertex in chain to queue
+    //Add first vertex in chain to queue --> this becomes the chain root
     Residue *firstRes=chain->getResidues()[0];
     Atom *firstAtom=firstRes->getAtoms().front();
     KinVertex *firstVertex=firstAtom->getRigidbody()->getVertex();
 //    queue.push_back(firstVertex);
     queue.push(firstVertex);
 
-    //Connect to super-m_root
+    //Connect to super-m_root with six global chain dofs
     KinVertex *v2=m_spanning_tree->addVertex(nullptr);
     KinVertex *v3=m_spanning_tree->addVertex(nullptr);
     KinVertex *v4=m_spanning_tree->addVertex(nullptr);
@@ -506,7 +506,7 @@ void Molecule::buildSpanningTree() {
       visitedBonds.insert(bond);
 
       if( bond->isHbond()) {
-        // If it's a H-bond, it closes a cycle. Add it in CycleAnchorEdges.
+        // If it's an H-bond, it closes a cycle. Add it in CycleAnchorEdges.
         KinEdge *edge=new KinEdge(current_vertex, bonded_vertex,
                                   bond);//TODO: Might be a problem. Idx changed from -1 to 0
         cycleEdges.push_back(edge);

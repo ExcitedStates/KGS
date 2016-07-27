@@ -64,7 +64,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     m_rmsd.align(target, protein);
   }
 
-  //TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
+  //TODO: change this to a solid selection using options "gradientSelection" and "selectAtoms"
 //  const vector<int> &resNetwork=options->residueNetwork;
 //  bool allResidues=resNetwork.size() == 0 ? true : false;
 //  string atom_selection="HEAVY"; // "CA" "ALL" "BACKBONE" "RES" "RESCA" "HEAVY" "RESHEAVY"
@@ -143,7 +143,7 @@ if(options->alignAlways){
   metrics::RMSD::align(target, protein);
 }
 
-//TODO: change this to a solid selection using options "selectionMoving" and "selectAtoms"
+//TODO: change this to a solid selection using options "gradientSelection" and "selectAtoms"
 const vector<int>& resNetwork = options->residueNetwork;
 bool allResidues = resNetwork.size() == 0 ? true:false;
 string atom_selection="HEAVY"; // "CA" "ALL" "BACKBONE" "RES" "RESCA" "HEAVY" "RESHEAVY"

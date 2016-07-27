@@ -68,10 +68,9 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 //    if(arg=="--residueNetwork" || arg=="-res"){ Util::split( argv[++i],',',residueNetwork);    continue; }
     if(arg=="--alignAlways"){                   alignAlways = Util::stob(argv[++i]);                continue; } //Previously align
 		if(arg=="--alignIni"){                      alignIni = Util::stob(argv[++i]);                   continue; }
-		if(arg=="--selectAtoms"){                   selectAtoms = argv[++i];                            continue; }
 		if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
-		if(arg=="--selectionAlign"){                selectionAlign = argv[++i];                         continue; }
-		if(arg=="--selectionMoving"){               selectionMoving = argv[++i];                        continue; }
+		if(arg=="--alignSelection"){                alignSelection = argv[++i];                         continue; }
+		if(arg=="--gradientSelection"){               gradientSelection = argv[++i];                        continue; }
 		if(arg=="--root"){                          root = atoi(argv[++i]);                             continue; }
     if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
 		if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
@@ -230,7 +229,7 @@ void SamplingOptions::initializeVariables(){
   maxRotation               = 3.1415/18;
   poisson_max_rejects_before_close = 10;
   metric_string             = "rmsd";
-  metricSelection             = "all";
+  metricSelection           = "heavy";
   planner_string            = "binnedRRT";
   rebuild_fragment_length   = 0;
   rebuild_frequency         = 0.0;
@@ -245,10 +244,10 @@ void SamplingOptions::initializeVariables(){
   convergeDistance          = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
   alignAlways               = false;
   alignIni                  = false;
-  selectAtoms               = "heavy";
   preventClashes            = false;
-  selectionAlign            = "";
-  selectionMoving           = "";
+  alignSelection            = "heavy";
+  gradientSelection         = "heavy";
+	residueNetwork  					= "all";
   root                      = 0;
   projectConstraints        = true;
   collisionCheck            = "all";
@@ -293,10 +292,9 @@ void SamplingOptions::print(){
 	log("so")<<"\t--sampleReverse "<<sampleReverse<<endl;
 	log("so")<<"\t--alignAlways "<<alignAlways<<endl;
 	log("so")<<"\t--alignIni "<<alignIni<<endl;
-	log("so")<<"\t--selectAtoms "<<selectAtoms<<endl;
 	log("so")<<"\t--preventClashes "<<preventClashes<<endl;
-	log("so")<<"\t--selectionAlign "<<selectionAlign<<endl;
-	log("so")<<"\t--selectionMoving "<<selectionMoving<<endl;
+	log("so")<<"\t--alignSelection "<<alignSelection<<endl;
+	log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
 	log("so")<<"\t--root "<<root<<endl;
 	log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
 	log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
@@ -356,7 +354,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
 
-  log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'all'."<<endl;
+  log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
 
 	log("so")<<"\t--planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
 
@@ -384,13 +382,13 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--alignIni "<<(alignIni?"true":"false: Align initial and target configuration in the beginning. Default false.")<<endl;
 
-	log("so")<<"\t--selectAtoms <string atom selection> \t: Atom selection for gradients, distance computation etc., e.g. \"heavy\", \"name CA\", \"name C5\", \"backbone\", \"all\". Default heavy."<<endl;
+ 	log("so")<<"\t--preventClashes "<<(preventClashes?"true":"false: Use clashing atoms to define additional constraints and prevent clash. Default true.")<<endl;
 
-	log("so")<<"\t--preventClashes "<<(preventClashes?"true":"false: Use clashing atoms to define additional constraints and prevent clash. Default true.")<<endl;
+	log("so")<<"\t--alignSelection < A pymol-like pattern that indicates which subset of atoms are used during alignment (if specified). Default is 'heavy'."<<endl;
 
-	log("so")<<"\t--selectionAlign <string of residue selection of molecule, e.g. \"resid 10 to 25 30 35 to 40\"> \t: Specifies the residues of the molecule that will undergo RMSD alignment during sampling."<<endl;
+	log("so")<<"\t--gradientSelection <selection-pattern>\\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
 
-	log("so")<<"\t--selectionMoving <string of residue selection of molecule, e.g. \"resid 10 to 25 30 35 to 40\"> \t: Specifies the residues of the molecule that are used to determine the gradient."<<endl;
+	log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
 
 	log("so")<<"\t--root <integer>\t: The rigid body id for the root. Choose -1 to select the closest rigid body between m_molecule and target."<<endl;
 
@@ -449,10 +447,10 @@ SamplingOptions* SamplingOptions::createOptions()
 }
 
 ////Todo: remove, but check in directions for usage
-////uses the selectionMoving and stores a "residueNetwork" list of ints
+////uses the gradientSelection and stores a "residueNetwork" list of ints
 //void SamplingOptions::setResidueNetwork(const Molecule * protein){
 //	//Determine if only certain residues shall be perturbed
-//	string selGradient = selectionMoving;
+//	string selGradient = gradientSelection;
 //	if(selGradient != ""){
 //    try {
 //      Selection gradientSelection(selGradient);
@@ -475,11 +473,11 @@ SamplingOptions* SamplingOptions::createOptions()
 //
 //	//Within the user-provided selection of residues, we choose <selectAtoms> atoms (user-provided string, default "heavy")
 //
-//	Selection alignSelection(selectionAlign);
+//	Selection alignSelection(alignSelection);
 //	vector<Atom*> atomsAlign;
 //	vector<Atom*> atomsMoving;
 //
-//	if(selectionAlign != ""){
+//	if(alignSelection != ""){
 ////		vector<Residue*> residuesAlign = alignSelection.getSelectedResidues(protein);
 ////		alignSelection.selection( selectAtoms ); // will use heavy atoms // TODO: What is this even supposed to do?
 ////		atomsAlign = alignSelection.getSelectedAtoms( residuesAlign );
@@ -511,8 +509,8 @@ SamplingOptions* SamplingOptions::createOptions()
 //
 //	Selection movingSelection;
 //
-//	if(selectionMoving != ""){
-////		Selection movingSelection(selectionMoving);
+//	if(gradientSelection != ""){
+////		Selection movingSelection(gradientSelection);
 ////		vector<Residue*> residuesMoving = movingSelection.getSelectedResidues(protein);
 ////		movingSelection.selection( selectAtoms ); // will use selected atoms only, default heavy
 ////		atomsMoving = movingSelection.getSelectedAtoms( residuesMoving );
