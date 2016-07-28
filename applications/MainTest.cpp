@@ -9,6 +9,7 @@
 #include <moves/Move.h>
 #include <moves/NullspaceMove.h>
 #include <moves/RawMove.h>
+#include <sys/time.h>
 
 #include "core/Chain.h"
 #include "IO.h"
@@ -18,6 +19,16 @@
 #include "core/Configuration.h"
 
 using namespace std;
+
+//From http://stackoverflow.com/questions/17432502/how-can-i-measure-cpu-time-and-wall-clock-time-on-both-linux-windows
+double get_wall_time(){
+  struct timeval time;
+  if (gettimeofday(&time,NULL)){
+    //  Handle error
+    return 0;
+  }
+  return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 void testGlobalGradient();
 
@@ -87,18 +98,18 @@ void testCuda(){
   gsl_matrix* A  = gsl_matrix_calloc(m,n);
   rand();rand();rand();
   for(int i=0;i<m;i++)
-    for(int j=0;j<n;j++) {
-      if((rand()*1.0/RAND_MAX)<0.1)
-        gsl_matrix_set(A, i, j, (rand() * 4.0 / RAND_MAX));
+    for(int j=0;j<n;j++){
+      if(rand()%100<10)
+        gsl_matrix_set(A, i, j, (rand()*4.0/RAND_MAX));
     }
 
 //  gsl_matrix_cout(A);
 
-  time_t start = clock();
+  double start = get_wall_time();
   SVD* mklsvd = new MKLSVD(A);
   mklsvd->UpdateFromMatrix();
 //  mklsvd->print();
-  double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+  double duration = ( get_wall_time() - start );
   cout<<"MKL took  "<<duration<<"secs"<<endl;
 
 
@@ -109,14 +120,20 @@ void testCuda(){
 //  cout<<"Product: "<<endl;
 //  gsl_matrix_cout( gsl_matrix_mul(mklsvd->U, gsl_matrix_mul(S, gsl_matrix_trans(mklsvd->V))) );
 
-  cout<<" ------------------------------------- "<<endl;
+//  cout<<" ------------------------------------- "<<endl;
 
-  start = clock();
+  start = get_wall_time();
   SVD* cudasvd = new CudaSVD(A);
   cudasvd->UpdateFromMatrix();
 //  cudasvd->print();
-  duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+  duration = ( get_wall_time() - start );
   cout<<"CUDA took "<<duration<<"secs"<<endl;
+
+  start = get_wall_time();
+  SVD* gslsvd = new GSLSVD(A);
+  gslsvd->UpdateFromMatrix();
+  duration = ( get_wall_time() - start );
+  cout<<"GSL took  "<<duration<<"secs"<<endl;
 
 //  S = gsl_matrix_calloc(A->size1, A->size2);
 //  for(int i=0;i<std::min(A->size1,A->size2);i++){
