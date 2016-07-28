@@ -63,8 +63,8 @@ add_library( libKGS
 		moves/CompositeMove.h
 		moves/NullspaceMove.h
 		moves/RebuildMove.h
+		moves/FastClashAvoidingMove.h
 		moves/ClashAvoidingMove.h
-        moves/SlowClashAvoidingMove.h
 		directions/Direction.h
 		directions/BlendedDirection.h
 		directions/RandomDirection.h
@@ -114,8 +114,8 @@ add_library( libKGS
 		moves/CompositeMove.cpp
 		moves/NullspaceMove.cpp
 		moves/RebuildMove.cpp
+		moves/FastClashAvoidingMove.cpp
 		moves/ClashAvoidingMove.cpp
-        moves/SlowClashAvoidingMove.cpp
 		directions/Direction.cpp
 		directions/BlendedDirection.cpp
 		directions/RandomDirection.cpp

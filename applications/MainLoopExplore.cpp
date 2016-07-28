@@ -19,7 +19,7 @@
 #include "planners/PoissonPlanner2.h"
 #include "planners/BidirectionalMovingFront.h"
 #include <moves/NullspaceMove.h>
-#include <moves/ClashAvoidingMove.h>
+#include <moves/FastClashAvoidingMove.h>
 #include <metrics/Dihedral.h>
 #include <directions/RandomDirection.h>
 #include <directions/DihedralDirection.h>
@@ -106,7 +106,7 @@ int main( int argc, char* argv[] ) {
   Move* move = nullptr;
   if(options.preventClashes){
     log("samplingStatus")<<"Using clash-avoiding move"<<endl;
-    move = new ClashAvoidingMove();
+    move = new FastClashAvoidingMove();
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
     move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);

@@ -2,8 +2,8 @@
 // Created by Dominik Budday on 15.03.16.
 //
 
-#ifndef KGS_SLOWCLASHAVOIDINGMOVE_H
-#define KGS_SLOWCLASHAVOIDINGMOVE_H
+#ifndef KGS_FASTCLASHAVOIDINGMOVE_H
+#define KGS_FASTCLASHAVOIDINGMOVE_H
 
 #include <vector>
 
@@ -15,10 +15,10 @@
 #include "moves/Move.h"
 #include "core/Configuration.h"
 
-class SlowClashAvoidingMove : public Move
+class FastClashAvoidingMove : public Move
 {
  public:
-  SlowClashAvoidingMove();
+  FastClashAvoidingMove();
 
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
@@ -29,9 +29,11 @@ class SlowClashAvoidingMove : public Move
                                       std::set<std::pair<Atom *, Atom *> > &collisions);
 
   gsl_matrix* computeClashAvoidingJacobian( Configuration* conf,
-                                            std::set< std::pair<Atom*,Atom*> >& allCollisions);
+                                            std::map<int,int>& dofMap,
+                                            std::set< std::pair<Atom*,Atom*> >& collisions);
 
   /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
+  std::map<int,int> collectConstrainedDofMap(Configuration* conf, std::set< std::pair<Atom*,Atom*> >& allCollisions);
   const double m_maxRotation;
   const int m_trialSteps;
   const bool m_projectConstraints;
@@ -39,4 +41,4 @@ class SlowClashAvoidingMove : public Move
 };
 
 
-#endif //KGS_CLASHAVOIDINGMOVE_H
+#endif //KGS_FASTCLASHAVOIDINGMOVE_H
