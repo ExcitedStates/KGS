@@ -20,8 +20,11 @@ void CudaSVD::UpdateFromMatrix()
 
   int O = std::min(m,n);
 
+  //time_t start = clock();
   gsl_matrix* matrixTranspose = gsl_matrix_alloc(n,m);
   gsl_matrix_transpose_memcpy(matrixTranspose, matrix);
+  //double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+  //cout<<"CudaSVD::UpdateFromMatrix - tranposition took "<<duration<<" secs"<<endl;
 
   // Setting the device matrix and moving the host matrix to the device
   double *d_A;
