@@ -136,8 +136,8 @@ void randomSampling(SamplingOptions& options){
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
+  Selection metricSelection(options.metricSelection);
   try {
-    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
@@ -164,9 +164,9 @@ void randomSampling(SamplingOptions& options){
 
   //Initialize direction
   Direction* direction;
+  Selection selectionMoving(options.gradientSelection);
 
   try {
-    Selection selectionMoving(options.gradientSelection);
     if (options.gradient == 0) {
       log("samplingStatus") << "Using random direction" << endl;
       direction = new RandomDirection(selectionMoving);
@@ -344,8 +344,8 @@ void targetedSampling(SamplingOptions& options){
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
+  Selection metricSelection(options.metricSelection);
   try {
-    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
@@ -373,28 +373,26 @@ void targetedSampling(SamplingOptions& options){
   //Initialize direction
   Direction* direction;
   bool blendedDir = false;
-
+  Selection blendedSelection("all");
   Selection gradientSelection(options.gradientSelection);
   if(options.gradient == 0)
     direction = new RandomDirection(gradientSelection);
   else if(options.gradient == 1)
     direction = new DihedralDirection(gradientSelection);
   else if(options.gradient == 2){
-    Selection blendedSelection("all");
-    BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(gradientSelection),0);
-    m_direction->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
-    direction = m_direction;
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(new DihedralDirection(gradientSelection),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    direction = bdir;
     blendedDir = true;
   }
   else if(options.gradient == 3)
     direction = new MSDDirection(gradientSelection);
   else if(options.gradient == 4){
-    Selection blendedSelection("all");
-    BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(gradientSelection),0);
-    m_direction->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
-    direction = m_direction;
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(new MSDDirection(gradientSelection),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    direction = bdir;
     blendedDir = true;
   }
   else if(options.gradient <= 5)
@@ -422,41 +420,41 @@ void targetedSampling(SamplingOptions& options){
     }
 
     log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs()
-          << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+    << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
     log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs()
-          << ", Max accessible DOFs: " << target->m_spanning_tree->getNumDOFs() - target->m_spanning_tree->getNumCycleDOFs() + target->m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+    << ", Max accessible DOFs: " << target->m_spanning_tree->getNumDOFs() - target->m_spanning_tree->getNumCycleDOFs() + target->m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
 
-  if(options.saveData > 1){
-    string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
-    IO::writeQ(&protein, protein.m_conf, out);
-  }
+    if(options.saveData > 1){
+      string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
+      IO::writeQ(&protein, protein.m_conf, out);
+    }
 
-  log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
-  log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
-  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
-  //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
-  log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl;
+    log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
+    log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
+    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
+    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
+    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl;
 
 
-  log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf)<<endl;
+    log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf)<<endl;
 
-  log("samplingStatus")<<"Sampling ...\n"<<endl;
-  CTKTimer timer;
-  timer.Reset();
-  double start_time = timer.LastElapsedTime();
+    log("samplingStatus")<<"Sampling ...\n"<<endl;
+    CTKTimer timer;
+    timer.Reset();
+    double start_time = timer.LastElapsedTime();
 
-  //Start exploring
-  planner->GenerateSamples();
+    //Start exploring
+    planner->GenerateSamples();
 
-  //Print final status
-  double end_time = timer.ElapsedTime();
-  std::list<Configuration*> m_samples = planner->Samples();
-  log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
-  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
-  log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
-  log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
+    //Print final status
+    double end_time = timer.ElapsedTime();
+    std::list<Configuration*> m_samples = planner->Samples();
+    log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
+    log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
+    log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
+    log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
 //    log("samplingStatus")<< planner->initialRebuildsAccepted<<" initial rebuild perturbations accepted (RI_ACC)"<<endl;
 //    log("samplingStatus")<< planner->initialRebuildsRejected<<" initial rebuild perturbations rejected for clashing (RI_CLASH)"<<endl;
 //    log("samplingStatus")<< planner->rebuildsAccepted<<" rebuild perturbations accepted (R_ACC)"<<endl;
@@ -465,9 +463,9 @@ void targetedSampling(SamplingOptions& options){
 //    log("samplingStatus")<< planner->getNullspace()sRejected<<" nullspace perturbations rejected for clashing (NS_CLASH)"<<endl;
 
 
-  if(options.saveData > 0){
-    log("samplingStatus")<<"Creating trajectory"<<endl;
-  }
+    if(options.saveData > 0){
+      log("samplingStatus")<<"Creating trajectory"<<endl;
+    }
     planner->createTrajectory();
   }
   log("samplingStatus")<<"Done"<<endl;

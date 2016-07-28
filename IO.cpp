@@ -121,6 +121,23 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   }
   pdb.close();
 
+  if(protein->getAtoms().size()==0){
+    cerr<<"IO::readPdb - No atoms read from file "<<pdb_file<<endl;
+    exit(-1);
+  }
+  bool foundHydro = false;
+  for(auto const& atom: protein->getAtoms()){
+    if(atom->Element==AtomType::atomH){
+      foundHydro = true;
+      break;
+    }
+  }
+  if(!foundHydro){
+    cerr<<"IO::readPdb - Warning: No hydrogens found in file. Consider running `reduce`"<<endl;
+  }
+
+
+
   ResidueProfile residue_profile=readResidueProfile();
 
   for( auto const &cur_chain: protein->chains ) {
@@ -393,6 +410,7 @@ void IO::readDssp (Molecule * protein, string dssp_file) {
 
 
 void IO::readRigidbody (Molecule * molecule) {
+  assert(molecule->getAtoms().size()>0);
   //Create disjoint set
   DisjointSets ds(molecule->getAtoms()[molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
@@ -543,8 +561,12 @@ void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
     Atom* lastAtom = nullptr;
     for (auto const& res: chain->getResidues()) {
 //      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
-      if(movingResidues.inSelection(res))
+      if(movingResidues.inSelection(res)) {
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
         continue; //Skip residue if its in movingResidues
+      }else {
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
+      }
 
       for (Atom *const &res_atom: res->getAtoms()){
         if(lastAtom==nullptr) {
@@ -552,6 +574,7 @@ void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
           continue;
         }
         ds.Union(lastAtom->getId(), res_atom->getId());
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
       }
     }
   }
@@ -561,6 +584,7 @@ void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
     Atom* atom = molecule->getAtoms()[i];
     if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
     }
   }
@@ -592,6 +616,7 @@ void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
     if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
       //cout<<"IO::readRigidBody - Bars=6"<<endl;
       ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
       continue;
     }
 
@@ -618,6 +643,7 @@ void IO::readRigidbody (Molecule * molecule, Selection& movingResidues) {
 
     if(fixedBonds.find(query1)!=fixedBonds.end() || fixedBonds.find(query2)!=fixedBonds.end()){
       ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
       ///Set the number of bars to six for all these bonds!
       bond->Bars = 6;
     }

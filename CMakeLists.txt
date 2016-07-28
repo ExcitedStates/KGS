@@ -197,12 +197,12 @@ if(${MKL_FOUND})
 	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
 endif()
 
-find_package(CUDA)
-if(${CUDA_FOUND})
-    link_libraries(${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
-    include_directories(${CUDA_INCLUDE_DIRS})
-    SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__CUDA_SVD" )
-endif()
+#find_package(CUDA)
+#if(${CUDA_FOUND})
+#    link_libraries(${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY} ${CUDA_CUBLAS_LIBRARIES})
+#    include_directories(${CUDA_INCLUDE_DIRS})
+#    SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__CUDA_SVD" )
+#endif()
 
 
 include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths

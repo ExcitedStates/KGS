@@ -19,9 +19,68 @@
 
 using namespace std;
 
+void testGlobalGradient();
+
 int main( int argc, char* argv[] ) {
   enableLogger("default");
+  testGlobalGradient();
+}
 
+
+void testGlobalGradient(){
+  try {
+    enableLogger("debug");
+    Molecule* mol = new Molecule();
+    std::vector<std::string> extraCovBonds;
+    IO::readPdb(mol, "/Users/rfonseca/Y.pdb", extraCovBonds);
+    Selection sel("all");
+    IO::readRigidbody( mol, sel );
+    mol->buildSpanningTree();
+
+    Configuration* conf = new Configuration(mol);
+    cout<<"DOFS: "<<conf->getNumDOFs()<<endl;
+
+    int dof = 8;
+    Coordinate pos = conf->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
+    cout<<"Old OH pos: "<<pos<<endl;
+    Math3D::Vector3 der = mol->m_spanning_tree->Edges.at(dof)->getDOF()->getDerivative(pos);
+    der = der*0.01;
+    cout<<der<<endl;
+    Configuration* conf2 = new Configuration(conf);
+    conf2->m_dofs[dof]+=0.01;
+    Coordinate pos2 = conf2->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
+    cout<<"New OH pos: "<<pos2<<endl;
+    cout<<"Expected:   "<<(pos+der)<<endl;
+    if(mol->m_spanning_tree->Edges.at(dof)->getBond()==nullptr) {
+      cout << "Global DOF" << endl;
+    }else {
+      cout << "DOF bond:   " << (*mol->m_spanning_tree->Edges.at(dof)->getBond()) << endl;
+    }
+
+  } catch (const std::string& ex) {
+    cerr<<ex<<endl;
+  }
+
+
+}
+
+void testGetTorsion(){
+  try {
+    Molecule mol;
+    std::vector<std::string> extraCovBonds;
+    IO::readPdb(&mol, "/Users/rfonseca/1crn.pdb", extraCovBonds);
+    IO::readRigidbody( &mol );
+    mol.buildSpanningTree();
+    Selection sel("backbone");
+    for (auto const &b: sel.getSelectedBonds(&mol)) {
+      cout << b << " " << b->getTorsion() <<endl;
+    }
+  } catch (const std::string& ex) {
+    cerr<<ex<<endl;
+  }
+}
+
+void testCuda(){
   srand(101);
   int m = 1000;
   int n = 1000;
@@ -66,20 +125,5 @@ int main( int argc, char* argv[] ) {
 //
 //  cout<<"Product: "<<endl;
 //  gsl_matrix_cout( gsl_matrix_mul(cudasvd->U, gsl_matrix_mul(S, gsl_matrix_trans(cudasvd->V))) );
-  /*
-  try {
-    Molecule mol;
-    std::vector<std::string> extraCovBonds;
-    IO::readPdb(&mol, "/Users/rfonseca/1crn.pdb", extraCovBonds);
-    IO::readRigidbody( &mol );
-    mol.buildSpanningTree();
-    Selection sel("backbone");
-    for (auto const &b: sel.getSelectedBonds(&mol)) {
-      cout << b << " " << b->getTorsion() <<endl;
-    }
-  } catch (const std::string& ex) {
-    cerr<<ex<<endl;
-  }
-   */
 
 }
