@@ -53,12 +53,19 @@ int main( int argc, char* argv[] ){
     IO::readHbonds_first( protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
     IO::readHbonds_kinari( protein, options.hydrogenbondFile );
+  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
+    IO::readHbonds_hbPlus( protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="vadar")
     IO::readHbonds_vadar( protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="dssr")
     IO::readHbonds_dssr( protein, options.hydrogenbondFile );
   else if(options.hydrogenbondMethod=="identify")
     HbondIdentifier::identifyHbonds(protein);
+
+  cout<<"Rigidity: "<<options.hydrogenbondMethod<<endl;
+
+  string hBondIn = "../hBonds_in.txt";
+  IO::writeHbondsIn(protein,hBondIn );
 
   IO::readRigidbody( protein );
   protein->buildSpanningTree();

@@ -964,38 +964,6 @@ void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
   output.close();
 }
 
-//void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
-//	ifstream input(hbond_file_name.c_str());
-//	std::string line;
-//	string atom1_sid, atom2_sid, energy_s;
-//	int hatom_id, oatom_id;
-//	double energy;
-//	Atom *hatom, *oatom, *donor, *AA;
-//	while(std::getline(input,line)){
-//		std::istringstream input(line);
-//		input >> atom1_sid;
-//		input >> atom2_sid;
-//		if (input >> energy_s){
-//			energy = atof(energy_s.c_str());
-//		}else{
-//			energy = DEFAULT_HBOND_ENERGY;
-//		}
-//		hatom_id = atoi(atom1_sid.c_str());
-//		oatom_id = atoi(atom2_sid.c_str());
-//
-//		hatom = protein->getAtom(hatom_id);
-//		if(hatom==NULL){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<hatom_id<<endl; exit(-1); }
-//		oatom = protein->getAtom(oatom_id);
-//		if(oatom==NULL){ cerr<<"IO::readHbonds - Invalid atom-id specified: "<<oatom_id<<endl; exit(-1); }
-//
-//		donor = hatom->getFirstCovNeighbor();
-//		AA = oatom->getFirstCovNeighbor();
-//		Hbond * new_hb = new Hbond(hatom, oatom, donor, AA, energy);
-//		protein->addHbond(new_hb);
-//	}
-//	input.close();
-//}
-
 void IO::readHbonds (Molecule *molecule, string hbond_file_name) {
   ifstream input(hbond_file_name.c_str());
   std::string line;
@@ -1228,6 +1196,71 @@ void IO::readHbonds_kinari (Molecule *molecule, string hbond_file_name) {
   }
   input.close();
 }
+
+void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
+	ifstream input(hbond_file_name.c_str());
+	std::string line;
+	string donorString,donorType, acceptorString, acceptorType, distanceHAString, hybridState, rest;
+	int hatomID, acceptorID;
+	Atom *hatom, *acceptor, *donor, *AA;
+  int lineCount = 1;
+
+	while(std::getline(input,line)){
+    if (lineCount < 9){
+      ++lineCount;
+      continue;
+    }
+
+		std::istringstream input(line);
+		input >> donorString;
+		input >> donorType;
+    input >> acceptorString;
+    input >> acceptorType;
+    input >> rest;
+    input >> hybridState;
+    for( int i=0; i<3 ; i++){
+      input >> rest;
+    }
+    input >> distanceHAString;
+    double distanceHA = atof(distanceHAString.c_str());
+
+    //Identify donor
+    string donorChain = donorString.substr(0,1);
+    int donorResId = atoi( (donorString.substr(1,4)).c_str() );
+    donor = protein->getAtom(donorChain, donorResId,donorType );
+    if(donor==NULL){ cerr<<"IO::readHbonds - Invalid donor specified: "<<donorString<<" "<<donorType<<endl; exit(-1); }
+
+    //Identify acceptor
+    string acceptorChain = acceptorString.substr(0,1);
+    int acceptorResId = atoi( (acceptorString.substr(1,4)).c_str() );
+    acceptor = protein->getAtom(acceptorChain, acceptorResId,acceptorType );
+    if(acceptor==NULL){ cerr<<"IO::readHbonds - Invalid acceptor specified: "<<acceptorString<<" "<<acceptorType<<endl; exit(-1); }
+
+    //Identify hydrogen
+    double minDistance = 99999;
+    hatom = nullptr;
+    for( auto neighbor : donor->Cov_neighbor_list ){
+      if( !neighbor->isHeavyAtom()){
+        double distance = acceptor->distanceTo(neighbor);
+        distance = distance*distance - distanceHA*distanceHA;
+        if( distance < minDistance ){
+          minDistance = distance;
+          hatom = neighbor;
+        }
+      }
+    }
+
+		if(hatom==nullptr){ cerr<<"IO::readHbonds - Could not find suitable hydrogen for given donor and acceptor: "<<donorString<<" "<<donorType<<" ; "<<acceptorString<<" "<<acceptorType<<" Skipping."<<endl; continue; }
+
+		AA = acceptor->getFirstCovNeighbor();
+		Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
+		protein->addHbond(new_hb);
+
+    lineCount++;
+	}
+	input.close();
+}
+
 
 void IO::readHbonds_vadar(Molecule * molecule, string file){
   ifstream input(file.c_str());
