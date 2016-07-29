@@ -23,6 +23,7 @@ class GlobalRotateDOF: public DOF {
 
  private:
   int m_axis;
+  Atom* m_firstAtom;
 };
 
 

@@ -426,7 +426,7 @@ SamplingOptions* SamplingOptions::getOptions()
 {
   if(instance==nullptr) {
 		cerr << "SamplingOptions::getInstance - Sampling options haven't been initialized"<<endl;
-		exit(-1);
+    throw "SamplingOptions::getInstance - Sampling options haven't been initialized";
 	}
 
   return instance;

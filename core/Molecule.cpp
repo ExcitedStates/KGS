@@ -463,12 +463,12 @@ void Molecule::buildSpanningTree() {
     KinEdge *e5=m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
     KinEdge *e6=m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);
 
-    e1->setDOF(new GlobalRotateDOF(e1, 0));
-    e2->setDOF(new GlobalRotateDOF(e2, 1));
-    e3->setDOF(new GlobalRotateDOF(e3, 2));
-    e4->setDOF(new GlobalTranslateDOF(e4, 0));
-    e5->setDOF(new GlobalTranslateDOF(e5, 1));
-    e6->setDOF(new GlobalTranslateDOF(e6, 2));
+    e1->setDOF(new GlobalTranslateDOF(e1, 0));
+    e2->setDOF(new GlobalTranslateDOF(e2, 1));
+    e3->setDOF(new GlobalTranslateDOF(e3, 2));
+    e4->setDOF(new GlobalRotateDOF(e4, 0));
+    e5->setDOF(new GlobalRotateDOF(e5, 1));
+    e6->setDOF(new GlobalRotateDOF(e6, 2));
     log("debug") << "Molecule::buildSpanningTree() - Connecting " << firstAtom << " to super-root using 6 dofs" << endl;
   }
 

@@ -32,10 +32,9 @@ Configuration* RawMove::performMove(Configuration* current, gsl_vector* gradient
 {
   Configuration* new_q = new Configuration( current );
 
-  double stepSize = SamplingOptions::getOptions()->stepSize;
-
   for (int i=0; i<new_q->getNumDOFs(); ++i){
-    new_q->m_dofs[i] = formatRangeRadian(current->m_dofs[i] + stepSize * gsl_vector_get(gradient, i));
+    //new_q->m_dofs[i] = formatRangeRadian(current->m_dofs[i] + m_stepSize*gsl_vector_get(gradient, i));
+    new_q->m_dofs[i] = (current->m_dofs[i] + m_stepSize*gsl_vector_get(gradient, i));
   }
 
   return new_q;

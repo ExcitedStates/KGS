@@ -90,6 +90,7 @@ class Atom {
 	double getMass() const;    ///< Return the atomic mass (depends on element)
   double getRadius() const;  ///< Return the van der Waals radius (depends on element)
   double getEpsilon() const; ///< Return the van der Waals radius (depends on element)
+  const std::string getElement() const;
   Residue* getResidue() const;
 
 	void printSummaryInfo() const;
@@ -139,7 +140,7 @@ class Atom {
 	std::vector<Atom*> Hbond_neighbor_list;
 	std::vector<Atom*> Second_cov_neighbor_list; // 2nd immediate covalent bond neighbors
 
-  AtomType Element;
+  AtomType m_element;
 
  private:
   const int Id;

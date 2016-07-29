@@ -127,7 +127,7 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   }
   bool foundHydro = false;
   for(auto const& atom: protein->getAtoms()){
-    if(atom->Element==AtomType::atomH){
+    if(atom->m_element==AtomType::atomH){
       foundHydro = true;
       break;
     }
@@ -753,14 +753,18 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
     output<<"REMARK\tMin collision factor = "<<setprecision(3)<<molecule->m_conf->m_minCollisionFactor<<endl;
     output<<"REMARK\tVdw energy = "<<setprecision(6)<<molecule->m_conf->m_vdwEnergy<<endl;
   }
-  for (vector<Atom*>::iterator atom_itr=molecule->getAtoms().begin(); atom_itr != molecule->getAtoms().end(); ++atom_itr) {
-    Atom* atom = *atom_itr;
-    Residue* res = (*atom_itr)->getResidue();
+//  for (vector<Atom*>::iterator atom_itr=molecule->getAtoms().begin(); atom_itr != molecule->getAtoms().end(); ++atom_itr) {
+  for(auto const& atom: molecule->getAtoms()){
+//    Atom* atom = *atom_itr;
+    Residue* res = atom->getResidue();
     char buffer[100];
+    int bigRBId = atom->getBiggerRigidbody()==nullptr?0:atom->getBiggerRigidbody()->id();
     sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6d          %2s  ",
-        atom->getId(),atom->getName().c_str(),
-        res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
-        atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str());
+            atom->getId(),atom->getName().c_str(),
+            res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
+            atom->m_position.x,atom->m_position.y,atom->m_position.z,
+            bigRBId,
+            atom->getType().c_str() );
     string line(buffer);
     output << line << endl;
   }
@@ -1098,7 +1102,7 @@ void IO::readHbonds_rnaview(Molecule * molecule, string file, bool fillAnnotatio
     Atom* hatom = nullptr;
     for(vector<Atom*>::iterator ait = donor->Cov_neighbor_list.begin(); ait != donor->Cov_neighbor_list.end(); ait++){
       Atom* a = *ait;
-      if(a->Element==atomH){ hatom = a; break; }
+      if(a->m_element==atomH){ hatom = a; break; }
     }
     if(hatom==nullptr){//TODO: Manually create H-atom
       //int newId = *(m_molecule->atoms.end()-1)

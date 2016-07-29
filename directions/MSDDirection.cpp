@@ -37,10 +37,11 @@
 
 using namespace std;
 
-MSDDirection::MSDDirection(Selection& resNetwork):
+MSDDirection::MSDDirection(Selection& resNetwork, bool alignAlways):
     m_preprocessedTree(nullptr),
     m_resNetwork(resNetwork),
-    m_rmsd(resNetwork)
+    m_rmsd(resNetwork),
+    m_alignAlways(alignAlways)
 {
 }
 
@@ -54,36 +55,20 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
     exit(-1);
   }
   if( target == protein ) {
-    std::cerr << "MSDDirection::computeGradient - Source and target m_molecule must differ" << std::endl;
+    std::cerr << "MSDDirection::computeGradient - Source and target molecule must differ" << std::endl;
     exit(-1);
   }
 
-  SamplingOptions *options;
-  options=SamplingOptions::getOptions();
-  if( options->alignAlways ) {
+  if( m_alignAlways ) {
     m_rmsd.align(target, protein);
   }
 
-  //TODO: change this to a solid selection using options "gradientSelection" and "selectAtoms"
-//  const vector<int> &resNetwork=options->residueNetwork;
-//  bool allResidues=resNetwork.size() == 0 ? true : false;
-//  string atom_selection="HEAVY"; // "CA" "ALL" "BACKBONE" "RES" "RESCA" "HEAVY" "RESHEAVY"
-//  if( !allResidues ) {
-//    atom_selection="RESHEAVY";
-//  }
-
   vector<double> gradient(ret->size, 0.0);
-//  vector<int> counts(ret->size, 0);
-  int count=0;
+  vector<int> counts(ret->size, 0);
+//  int count=0;
 
-//  for( auto const &atom: protein->getAtoms() ) {
-    //Filter atoms
-//    if( atom_selection == "HEAVY" && !atom->isHeavyAtom()) continue;
-//    if( atom_selection == "RESHEAVY" && ( !atom->isHeavyAtom() || //HEAVY atom not in residue selection
-//                                          find(resNetwork.begin(), resNetwork.end(), atom->getResidue()->getId()) ==
-//                                          resNetwork.end()))
-//      continue;
   for( auto const &atom: m_resNetwork.getSelectedAtoms(protein) ) {
+
 
     //get corresponding target atom (if existing) - not based on ID
     Atom *aTarget=target->getAtom(atom->getResidue()->getChain()->getName(),
@@ -102,18 +87,18 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 
       gradient[dof_id] += deriv.dot(diff);
       assert( !std::isnan(gradient[dof_id]) );
-//      counts[dof_id]++;
+      counts[dof_id]++;
 
       v = v->m_parent;
     }
-    count++;
+//    count++;
   }
 
   //Scaling with appropriate pre-factor from derivative of MSD
   for(int i=0;i<ret->size;i++){
-//    if(counts[i]>0)
-//      gradient[i] *= 2.0 / counts[i];
-    gradient[i] *= 2.0 / count;
+    if(counts[i]>0)
+      gradient[i] *= 2.0 / counts[i];
+//    gradient[i] *= 2.0 / count;
 //    gradient[i] = formatRangeRadian(gradient[i]);
   }
   std::copy(&gradient[0], &gradient[ret->size], ret->data);

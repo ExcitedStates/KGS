@@ -177,7 +177,7 @@ void randomSampling(SamplingOptions& options){
       direction = new DihedralDirection(selectionMoving);
     } else if (options.gradient <= 4) {
       log("samplingStatus") << "Using MSD direction" << endl;
-      direction = new MSDDirection(selectionMoving);
+      direction = new MSDDirection(selectionMoving, SamplingOptions::getOptions()->alignAlways);
     } else if (options.gradient <= 5) {
       log("samplingStatus") << "Using LS direction" << endl;
       direction = new LSNullspaceDirection(selectionMoving);
@@ -391,10 +391,10 @@ void targetedSampling(SamplingOptions& options){
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(gradientSelection);
+    direction = new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways);
   else if(options.gradient == 4){
     BlendedDirection* bdir = new BlendedDirection();
-    bdir->addDirection(new MSDDirection(gradientSelection),0);
+    bdir->addDirection(new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways),0);
     bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
     direction = bdir;
     blendedDir = true;

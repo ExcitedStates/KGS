@@ -72,11 +72,11 @@ void Bond::print () {
 
 bool Bond::isLocked () {
 	bool result = false;
-	if ( Atom1->Element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->Element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
+	if ( Atom1->m_element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
-	else if ( Atom1->Element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->Element==atomN && Atom2->Cov_neighbor_list.size()<=3 )
+	else if ( Atom1->m_element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomN && Atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
-	else if ( Atom1->Element==atomN && Atom1->Cov_neighbor_list.size()<=3 && Atom2->Element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
+	else if ( Atom1->m_element==atomN && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
 	if(constrained)
 		result = true;

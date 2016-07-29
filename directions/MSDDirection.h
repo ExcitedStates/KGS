@@ -35,7 +35,7 @@
 
 class MSDDirection: public Direction {
  public:
-  MSDDirection(Selection& resNetwork);
+  MSDDirection(Selection& resNetwork, bool alignAlways = false);
 
  protected:
   void computeGradient(Configuration* conf, Configuration* target, gsl_vector* ret);
@@ -51,6 +51,7 @@ class MSDDirection: public Direction {
 
   Selection& m_resNetwork;
   metrics::RMSD m_rmsd;
+  bool m_alignAlways;
 };
 
 

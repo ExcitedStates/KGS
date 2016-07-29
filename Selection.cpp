@@ -119,6 +119,7 @@ Selection::Clause* Selection::parseClause(const std::string &input) {
   if(Util::startsWith(input, "resi ")) return new ResiClause(input);
   if(Util::startsWith(input, "resn ")) return new ResnClause(input);
   if(Util::startsWith(input, "name ")) return new NameClause(input);
+  if(Util::startsWith(input, "elem ")) return new ElemClause(input);
   if(input=="all")      return new AllClause(input);
   if(input=="")         return new AllClause(input);
   if(input=="heavy")    return new HeavyClause(input);
@@ -250,7 +251,7 @@ Selection::ElemClause::ElemClause(const std::string& input)
 }
 bool Selection::ElemClause::inSelection(const Atom* a) const
 {
-  return std::find( m_atomElements.begin(), m_atomElements.end(), a->getName() )
+  return std::find( m_atomElements.begin(), m_atomElements.end(), a->getElement() )
          != m_atomElements.end();
 }
 

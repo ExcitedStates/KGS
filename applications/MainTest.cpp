@@ -9,6 +9,11 @@
 #include <moves/Move.h>
 #include <moves/NullspaceMove.h>
 #include <moves/RawMove.h>
+#include <directions/Direction.h>
+#include <directions/MSDDirection.h>
+#include <metrics/RMSDnosuper.h>
+#include <directions/BlendedDirection.h>
+#include <directions/RandomDirection.h>
 #include <sys/time.h>
 
 #include "core/Chain.h"
@@ -20,6 +25,16 @@
 
 using namespace std;
 
+void testGlobalMSD();
+void testGlobalGradient();
+
+int main( int argc, char* argv[] ) {
+  enableLogger("default");
+  testGlobalMSD();
+//  testGlobalGradient();
+}
+
+
 //From http://stackoverflow.com/questions/17432502/how-can-i-measure-cpu-time-and-wall-clock-time-on-both-linux-windows
 double get_wall_time(){
   struct timeval time;
@@ -30,13 +45,7 @@ double get_wall_time(){
   return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
-void testGlobalGradient();
-
-int main( int argc, char* argv[] ) {
-  enableLogger("default");
-  testGlobalGradient();
-}
-
+using namespace metrics;
 
 void testGlobalGradient(){
   try {
@@ -66,6 +75,48 @@ void testGlobalGradient(){
       cout << "Global DOF" << endl;
     }else {
       cout << "DOF bond:   " << (*mol->m_spanning_tree->Edges.at(dof)->getBond()) << endl;
+    }
+
+  } catch (const std::string& ex) {
+    cerr<<ex<<endl;
+  }
+}
+
+void testGlobalMSD(){
+  try {
+    enableLogger("debug");
+    Molecule* mol = new Molecule();
+    std::vector<std::string> extraCovBonds;
+    IO::readPdb(mol, "/Users/rfonseca/Y.pdb", extraCovBonds);
+    Selection sel("all");
+    IO::readRigidbody( mol, sel );
+    mol->buildSpanningTree();
+
+    Molecule* tar = new Molecule();
+    IO::readPdb(tar, "/Users/rfonseca/Y_target.pdb", extraCovBonds);
+    IO::readRigidbody( tar, sel );
+    tar->buildSpanningTree();
+
+    Selection dirSelection("heavy");
+//    Selection dirSelection("elem O + elem N");
+    BlendedDirection* dir = new BlendedDirection();
+    dir->addDirection(new MSDDirection(dirSelection), 1.0);
+//    dir->addDirection(new RandomDirection(dirSelection, 3.14), 0.3);
+    Move* move = new RawMove();
+    move->setStepSize(0.01);
+    Metric* dist = new RMSDnosuper(dirSelection);
+
+    Configuration* conf = new Configuration(mol);
+    Configuration* tarConf = new Configuration(tar);
+    gsl_vector* gradient = gsl_vector_calloc(conf->getNumDOFs());
+
+    cout<<"Initial dist: "<<dist->distance(conf, tarConf)<<endl;
+
+    for(int i=0;i<400;i++){
+      dir->gradient(conf, tarConf, gradient);
+      conf = move->move(conf, gradient);
+      cout<<"Dist after iteration "<<i<<": "<<dist->distance(conf, tarConf)<<endl;
+      IO::writePdb(conf->updatedMolecule(), "/Users/rfonseca/Y_"+to_string(i)+".pdb");
     }
 
   } catch (const std::string& ex) {

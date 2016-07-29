@@ -53,29 +53,33 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
 		exit(1);
 	}
 	
-	if ( Name.find_first_of("H")!=string::npos ) { // H atom
-		Element = atomH;
-	}
-	else if ( Name.find("SE")!=string::npos ) { // SE atom
-		Element = atomSE;
+//	if ( Name.find_first_of("H")!=string::npos ) { // H atom
+//		Element = atomH;
+//	}
+//	else if ( Name.find("SE")!=string::npos ) { // SE atom
+  if ( Name.find("SE")!=string::npos ) { // SE atom
+		m_element = atomSE;
 	}
 	else {
 		char first_char = Name[char_start];
 		switch (first_char) {
 			case 'C':
-				Element = atomC;
+				m_element = atomC;
 				break;
 			case 'N':
-				Element = atomN;
+				m_element = atomN;
 				break;
 			case 'O':
-				Element = atomO;
+				m_element = atomO;
 				break;
 			case 'S':
-				Element = atomS;
+				m_element = atomS;
 				break;
+      case 'H':
+        m_element = atomH;
+        break;
 			default:
-				Element = atomOther;
+				m_element = atomOther;
 				break;
 		}
 	}
@@ -90,7 +94,7 @@ int Atom::getId () const {
 }
 
 double Atom::getMass () const {
-  switch (Element) {
+  switch (m_element) {
     case atomC: return MASS_C;
     case atomH: return MASS_H;
     case atomN: return MASS_N;
@@ -102,7 +106,7 @@ double Atom::getMass () const {
 }
 
 double Atom::getRadius() const {
-	switch (Element) {
+	switch (m_element) {
 		case atomC: return VDW_RADIUS_C;
 		case atomH: return VDW_RADIUS_H;
 		case atomN: return VDW_RADIUS_N;
@@ -114,7 +118,7 @@ double Atom::getRadius() const {
 }
 
 double Atom::getEpsilon() const {
-  switch (Element) {
+  switch (m_element) {
     case atomC: return VDW_EPSILON_C;
     case atomH: return VDW_EPSILON_H;
     case atomN: return VDW_EPSILON_N;
@@ -125,11 +129,22 @@ double Atom::getEpsilon() const {
   }
 }
 
+const std::string Atom::getElement() const{
+  switch(m_element) {
+    case atomC: return "C"; break;
+    case atomH: return "H"; break;
+    case atomN: return "N"; break;
+    case atomO: return "O"; break;
+    case atomS: return "S"; break;
+    case atomSE:return "SE";break;
+    default: return "?";
+  }
+}
 
 
 void Atom::printSummaryInfo() const {
 	cout << "Atom " << Id << " " << Name << " ";
-	switch (Element) {
+	switch (m_element) {
 		case atomC: cout << "C"; break;
 		case atomH: cout << "H"; break;
 		case atomN: cout << "N"; break;
