@@ -112,7 +112,7 @@ void testGlobalMSD(){
 
     cout<<"Initial dist: "<<dist->distance(conf, tarConf)<<endl;
 
-    for(int i=0;i<400;i++){
+    for(size_t i=0;i<400;i++){
       dir->gradient(conf, tarConf, gradient);
       conf = move->move(conf, gradient);
       cout<<"Dist after iteration "<<i<<": "<<dist->distance(conf, tarConf)<<endl;
