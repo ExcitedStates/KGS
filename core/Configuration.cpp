@@ -580,7 +580,7 @@ void Configuration::computeJacobians() {
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
         Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
-        Math3D::Vector3 jacobianEntryTrans=derivativeP1 + derivativeP2;
+        Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
         double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
         double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
         gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
@@ -620,7 +620,7 @@ void Configuration::computeJacobians() {
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
         Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
 
-        Math3D::Vector3 jacobianEntryTrans= - (derivativeP1 + derivativeP2);
+        Math3D::Vector3 jacobianEntryTrans= -0.5*(derivativeP1 + derivativeP2);
         double jacobianEntryRot1 = dot((p1 - p1_prev),(derivativeP2-derivativeP1));
         double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;

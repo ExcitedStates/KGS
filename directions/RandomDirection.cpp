@@ -53,7 +53,7 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
     double newVal = 0.0;
 
     if( edge->getBond()!=nullptr && m_selectionMoving.inSelection(edge->getBond())) {
-      newVal = RandomAngleUniform(Math3D::dPi);
+      newVal = edge->getDOF()->getRandomPerturbation();
     }
 
     absMax = std::max(absMax, std::fabs(newVal));

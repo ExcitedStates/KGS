@@ -17,6 +17,9 @@ class GlobalRotateDOF: public DOF {
   double getGlobalValue() const;
 
   double getMaxValue() const;
+
+  double getRandomPerturbation() const;
+
  protected:
 
   void updateEndVertexTransformation();
@@ -24,6 +27,7 @@ class GlobalRotateDOF: public DOF {
  private:
   int m_axis;
   Atom* m_firstAtom;
+  static const double m_maxValue;
 };
 
 

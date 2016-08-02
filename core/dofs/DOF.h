@@ -45,6 +45,8 @@ class DOF {
    */
   virtual double getGlobalValue() const = 0;
 
+  virtual double getRandomPerturbation() const = 0;
+
   unsigned int getIndex() const;
 
   unsigned int getCycleIndex() const;

@@ -5,6 +5,8 @@
 #include "GlobalRotateDOF.h"
 #include "math3d/primitives.h"
 
+const double GlobalRotateDOF::m_maxValue = 0.01;
+
 GlobalRotateDOF::GlobalRotateDOF(const KinEdge* edge, int axis):
     DOF(edge),
     m_axis(axis)
@@ -22,7 +24,7 @@ Math3D::Vector3 GlobalRotateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 axis(0,0,0);
   axis[m_axis]=1.0;
-  //Rotation around origin
+//  Rotation around origin
 //  return Math3D::cross( axis, coord ) ;
 
   //Rotation around first atom
@@ -39,7 +41,12 @@ double GlobalRotateDOF::getGlobalValue() const
 
 double GlobalRotateDOF::getMaxValue() const
 {
-  return 0.01;
+  return m_maxValue;
+}
+
+double GlobalRotateDOF::getRandomPerturbation() const
+{
+  return 0.0; //m_maxValue*RandomAngleUniform(Math3D::dPi);
 }
 
 void GlobalRotateDOF::updateEndVertexTransformation()
@@ -71,4 +78,3 @@ void GlobalRotateDOF::updateEndVertexTransformation()
       m_edge->StartVertex->m_transformation * m1 * tr * m3;
 
 }
-

@@ -4,6 +4,9 @@
 #include "math3d/primitives.h"
 #include "Logger.h"
 
+
+const double TorsionDOF::m_maxValue = 0.01;
+
 Math3D::Vector3 TorsionDOF::getDerivative(Coordinate& coord) const
 {
   Coordinate& p1 = m_edge->getBond()->Atom1->m_position;
@@ -21,7 +24,12 @@ double TorsionDOF::getGlobalValue() const
 
 double TorsionDOF::getMaxValue() const
 {
-  return 0.01;
+  return m_maxValue;
+}
+
+double TorsionDOF::getRandomPerturbation() const
+{
+  return RandomAngleUniform(Math3D::dPi);
 }
 
 void TorsionDOF::updateEndVertexTransformation()

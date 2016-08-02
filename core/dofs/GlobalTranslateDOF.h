@@ -17,12 +17,16 @@ class GlobalTranslateDOF: public DOF {
   double getGlobalValue() const;
 
   double getMaxValue() const;
+
+  double getRandomPerturbation() const;
+
  protected:
 
   void updateEndVertexTransformation();
 
  private:
   int m_axis;
+  static const double m_maxValue;
 };
 
 

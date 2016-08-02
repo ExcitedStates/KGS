@@ -4,18 +4,22 @@
 
 #include "GlobalTranslateDOF.h"
 #include "math3d/primitives.h"
+#include <iostream>
+
+const double GlobalTranslateDOF::m_maxValue = 5.0;
 
 GlobalTranslateDOF::GlobalTranslateDOF(const KinEdge* edge, int axis):
     DOF(edge),
     m_axis(axis)
 {
   assert(axis>=0 && axis<=2);
+
 }
 
 Math3D::Vector3 GlobalTranslateDOF::getDerivative(Coordinate& coord) const
 {
   Math3D::Vector3 ret(0,0,0);
-  ret[m_axis]=1;
+  ret[m_axis]=1.0;
   return ret;
 }
 
@@ -28,7 +32,12 @@ double GlobalTranslateDOF::getGlobalValue() const
 
 double GlobalTranslateDOF::getMaxValue() const
 {
-  return 5.0;
+  return m_maxValue;
+}
+
+double GlobalTranslateDOF::getRandomPerturbation() const
+{
+  return 0.0; //m_maxValue*RandomN1P1();
 }
 
 void GlobalTranslateDOF::updateEndVertexTransformation()
@@ -44,4 +53,3 @@ void GlobalTranslateDOF::updateEndVertexTransformation()
 
   m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * tr;
 }
-

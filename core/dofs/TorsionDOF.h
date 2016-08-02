@@ -17,9 +17,15 @@ class TorsionDOF: public DOF {
   double getGlobalValue() const;
 
   double getMaxValue() const;
+
+  double getRandomPerturbation() const;
+
  protected:
 
   void updateEndVertexTransformation();
+
+ private:
+  static const double m_maxValue;
 };
 
 
