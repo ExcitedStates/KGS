@@ -30,10 +30,6 @@
 
 #include "RandomDirection.h"
 #include "SamplingOptions.h"
-#include "core/graph/KinGraph.h"
-#include "core/Molecule.h"
-#include "math.h" //dPi
-#include "math/MathUtility.h"
 
 RandomDirection::RandomDirection(Selection& selectionMoving, double maxRotation):
     m_maxRotation(maxRotation),

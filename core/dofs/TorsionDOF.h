@@ -12,17 +12,15 @@ class TorsionDOF: public DOF {
  public:
   TorsionDOF(const KinEdge* edge): DOF(edge){}
 
-  Math3D::Vector3 getDerivative(Coordinate& coord) const;
+  Math3D::Vector3 getDerivative(Coordinate& coord) const override;
 
-  double getGlobalValue() const;
+  double getGlobalValue() const override;
 
-  double getMaxValue() const;
-
-  double getRandomPerturbation() const;
+  double getRandomPerturbation() const override;
 
  protected:
 
-  void updateEndVertexTransformation();
+  void updateEndVertexTransformation() override;
 
  private:
   static const double m_maxValue;

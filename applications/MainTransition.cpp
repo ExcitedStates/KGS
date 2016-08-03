@@ -269,7 +269,7 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol)
     DOF* dof = mol->m_spanning_tree->getDOF(i);
     int idx = dof->getIndex();
     double val = gsl_vector_get(gradient, idx);
-    double maxval = dof->getMaxValue();
+    double maxval = dof->getMaxPerturbation();
     if(fabs(maxval/val)<factor)
       factor = fabs(maxval/val);
   }

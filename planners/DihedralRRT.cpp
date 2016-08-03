@@ -40,7 +40,6 @@ DihedralRRT::DihedralRRT(Molecule *protein, Move& move, metrics::Metric& metric,
   //pSmp->updateMolecule();
   //pSmp->computeCycleJacobianAndNullSpace();
 	m_protein->m_conf = pSmp;
-	m_protein->m_conf_backup = pSmp;
 	m_target = nullptr;
 	m_samples.push_back(pSmp);
 	pSmp->m_vdwEnergy = 99999;

@@ -5,7 +5,7 @@
 #include "GlobalRotateDOF.h"
 #include "math3d/primitives.h"
 
-const double GlobalRotateDOF::m_maxValue = 0.01;
+const double GlobalRotateDOF::m_maxValue = 0.05;
 
 GlobalRotateDOF::GlobalRotateDOF(const KinEdge* edge, int axis):
     DOF(edge),
@@ -39,14 +39,10 @@ double GlobalRotateDOF::getGlobalValue() const
   return 0;
 }
 
-double GlobalRotateDOF::getMaxValue() const
-{
-  return m_maxValue;
-}
 
 double GlobalRotateDOF::getRandomPerturbation() const
 {
-  return 0.0; //m_maxValue*RandomAngleUniform(Math3D::dPi);
+  return m_maxValue*RandomAngleUniform(m_maxValue);
 }
 
 void GlobalRotateDOF::updateEndVertexTransformation()

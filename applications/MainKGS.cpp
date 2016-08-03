@@ -53,6 +53,10 @@ int main( int argc, char* argv[] ) {
   plannerStream.open("kgs_planner.log");
   enableLogger("dominik", plannerStream);
 
+  ofstream debugStream;
+  debugStream.open("kgs_debug.log");
+  enableLogger("debug", debugStream);
+
   SamplingOptions::createOptions(argc, argv);
 
   SamplingOptions &options = *(SamplingOptions::getOptions());

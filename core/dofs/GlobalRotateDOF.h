@@ -12,17 +12,15 @@ class GlobalRotateDOF: public DOF {
  public:
   GlobalRotateDOF(const KinEdge* edge, int axis);
 
-  Math3D::Vector3 getDerivative(Coordinate& coord) const;
+  Math3D::Vector3 getDerivative(Coordinate& coord) const override;
 
-  double getGlobalValue() const;
+  double getGlobalValue() const override;
 
-  double getMaxValue() const;
-
-  double getRandomPerturbation() const;
+  double getRandomPerturbation() const override;
 
  protected:
 
-  void updateEndVertexTransformation();
+  void updateEndVertexTransformation() override;
 
  private:
   int m_axis;

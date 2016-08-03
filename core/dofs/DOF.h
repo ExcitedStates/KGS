@@ -38,13 +38,14 @@ class DOF {
    */
   double getValue() const;
 
-  virtual double getMaxValue() const = 0;
-
   /**
    * Get the global value of this DOF.
    */
   virtual double getGlobalValue() const = 0;
 
+  /**
+   * Generate a random perturbation-value of this DOF. Used to control magnitude of perturbations.
+   */
   virtual double getRandomPerturbation() const = 0;
 
   unsigned int getIndex() const;
