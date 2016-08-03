@@ -225,7 +225,7 @@ int main( int argc, char* argv[] ) {
       Configuration* seed = samples.back();
       direction->gradient(seed, target_conf, gradient);
       //gsl_vector_scale_max_component(gradient, options.maxRotation);
-      scale_gradient(gradient, &protein);
+//      scale_gradient(gradient, &protein);
       gsl_vector_scale(gradient, options.stepSize);
       Configuration* new_conf = move->move(seed, gradient);
       IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string((long long)i)+".pdb");
@@ -268,10 +268,10 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol)
   for(int i=0;i<mol->m_spanning_tree->getNumDOFs();i++){
     DOF* dof = mol->m_spanning_tree->getDOF(i);
     int idx = dof->getIndex();
-    double val = gsl_vector_get(gradient, idx);
-    double maxval = dof->getMaxPerturbation();
-    if(fabs(maxval/val)<factor)
-      factor = fabs(maxval/val);
+//    double val = gsl_vector_get(gradient, idx);
+//    double maxval = dof->getMaxPerturbation();
+//    if(fabs(maxval/val)<factor)
+//      factor = fabs(maxval/val);
   }
   gsl_vector_scale(gradient, factor);
 }
