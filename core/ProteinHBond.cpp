@@ -280,67 +280,72 @@ void Hbond::identifyHybridization() {
   Atom *a1, *a2, *a3;
   //Donor
 
-//  a3 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
-//  angleD = VectorAngle(Hatom->m_position - Donor->m_position, a3->m_position - Donor->m_position);
-
-  if(Donor->Cov_neighbor_list.size() >= 3) {
-    a2 = Donor->Cov_neighbor_list[0];
-    a3 = Donor->Cov_neighbor_list[1];
-    if (a2 == Hatom)
-      a2 = Donor->Cov_neighbor_list[2];
-    if (a3 == Hatom)
-      a3 = Donor->Cov_neighbor_list[2];
-    a1 = Hatom;
-
-    angleD = Angle(a1->m_position, Donor->m_position, a2->m_position);
-    angleD += Angle(a2->m_position, Donor->m_position, a3->m_position);
-    angleD += Angle(a3->m_position, Donor->m_position, a1->m_position);
-
-    angleD = angleD/3.0; //mean angle
-  }
-  else{
-    a1 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
-    angleD = Angle(a1->m_position, Donor->m_position, Hatom->m_position);
-  }
-
-  log("report")<<"Donor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleD)<<endl;
-  if(angleD <= cutoff_sp2_sp3 )
-    m_D_sp3 = true;
-  else
+  if(Donor->Cov_neighbor_list.size() < 2){
     m_D_sp2 = true;
+  }
+  else {
+    if (Donor->Cov_neighbor_list.size() >= 3) {
+      a2 = Donor->Cov_neighbor_list[0];
+      a3 = Donor->Cov_neighbor_list[1];
+      if (a2 == Hatom)
+        a2 = Donor->Cov_neighbor_list[2];
+      if (a3 == Hatom)
+        a3 = Donor->Cov_neighbor_list[2];
+      a1 = Hatom;
+
+      angleD = Angle(a1->m_position, Donor->m_position, a2->m_position);
+      angleD += Angle(a2->m_position, Donor->m_position, a3->m_position);
+      angleD += Angle(a3->m_position, Donor->m_position, a1->m_position);
+
+      angleD = angleD / 3.0; //mean angle
+    }
+    else {
+      a1 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
+      angleD = Angle(a1->m_position, Donor->m_position, Hatom->m_position);
+    }
+
+    log("report") << "Donor angle at hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": "
+                  << Math::RtoD(angleD) << endl;
+    if (angleD <= cutoff_sp2_sp3)
+      m_D_sp3 = true;
+    else
+      m_D_sp2 = true;
+  }
 
   //Acceptor
   double angleA = 0.0;
 
-//  a3 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
-//  angleA = VectorAngle(Acceptor->m_position - AA->m_position, a3->m_position - AA->m_position);
-
-  if(AA->Cov_neighbor_list.size() >= 3) {
-    a2 = AA->Cov_neighbor_list[0];
-    a3 = AA->Cov_neighbor_list[1];
-    if (a2 == Acceptor)
-      a2 = AA->Cov_neighbor_list[2];
-    if (a3 == Acceptor)
-      a3 = AA->Cov_neighbor_list[2];
-    a1 = Acceptor;
-
-    angleA = Angle(a1->m_position, AA->m_position, a2->m_position);
-    angleA += Angle(a2->m_position, AA->m_position, a3->m_position);
-    angleA += Angle(a3->m_position, AA->m_position, a1->m_position);
-
-    angleA = angleA/3.0; //mean angle
+  if(AA->Cov_neighbor_list.size() < 2){
+    m_A_sp2 = true;//Don't need to check for angles anymore, it's sp2
   }
-  else{
-    a1 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
-    angleA = Angle(a1->m_position, AA->m_position, Acceptor->m_position);
+  else {
+    if (AA->Cov_neighbor_list.size() >= 3) {
+      a2 = AA->Cov_neighbor_list[0];
+      a3 = AA->Cov_neighbor_list[1];
+      if (a2 == Acceptor)
+        a2 = AA->Cov_neighbor_list[2];
+      if (a3 == Acceptor)
+        a3 = AA->Cov_neighbor_list[2];
+      a1 = Acceptor;
+
+      angleA = Angle(a1->m_position, AA->m_position, a2->m_position);
+      angleA += Angle(a2->m_position, AA->m_position, a3->m_position);
+      angleA += Angle(a3->m_position, AA->m_position, a1->m_position);
+
+      angleA = angleA / 3.0; //mean angle
+    }
+    else {
+      a1 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
+      angleA = Angle(a1->m_position, AA->m_position, Acceptor->m_position);
+    }
+
+    log("report") << "Acceptor angle at hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": "
+                  << Math::RtoD(angleA) << endl;
+    if (angleA <= cutoff_sp2_sp3)
+      m_A_sp3 = true;
+    else
+      m_A_sp2 = true;
   }
-
-  log("report")<<"Acceptor angle at hbond "<<Hatom->getId()<<", "<<Acceptor->getId()<<": "<<Math::RtoD(angleA)<<endl;
-  if(angleA <= cutoff_sp2_sp3 )
-    m_A_sp3 = true;
-  else
-    m_A_sp2 = true;
-
 }
 
 bool Hbond::evaluateGeometry() {

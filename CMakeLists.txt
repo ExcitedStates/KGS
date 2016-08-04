@@ -65,6 +65,7 @@ add_library( libKGS
 		moves/RebuildMove.h
 		moves/FastClashAvoidingMove.h
 		moves/ClashAvoidingMove.h
+		moves/DecreaseStepMove.h
 		directions/Direction.h
 		directions/BlendedDirection.h
 		directions/RandomDirection.h
@@ -75,14 +76,16 @@ add_library( libKGS
 		math/infnan.h
 		math/math.h
 		math3d/primitives.h
-
+		metrics/Metric.h
+		metrics/RMSD.h
+		metrics/RMSDnosuper.h
 
 		core/Atom.cpp
-        core/Chain.cpp
-        Color.cpp
-        core/Configuration.cpp
-        core/Coordinate.cpp
-        CTKTimer.cpp
+        	core/Chain.cpp
+        	Color.cpp
+        	core/Configuration.cpp
+        	core/Coordinate.cpp
+        	CTKTimer.cpp
 		DisjointSets.cpp
 		core/Grid.cpp
 		HbondIdentifier.cpp
@@ -109,13 +112,14 @@ add_library( libKGS
 		Util.cpp
 		KGSExceptions.cpp
 		freeMKL.cpp
-		moves/Move.cpp
+	moves/Move.cpp
 		moves/RawMove.cpp
 		moves/CompositeMove.cpp
 		moves/NullspaceMove.cpp
 		moves/RebuildMove.cpp
 		moves/FastClashAvoidingMove.cpp
 		moves/ClashAvoidingMove.cpp
+		moves/DecreaseStepMove.cpp
 		directions/Direction.cpp
 		directions/BlendedDirection.cpp
 		directions/RandomDirection.cpp
@@ -124,41 +128,39 @@ add_library( libKGS
 		directions/LSNullspaceDirection.cpp
 		directions/VDWDirection.cpp
 		metrics/Dihedral.cpp
+	metrics/Metric.cpp
 		metrics/RMSD.cpp
 		metrics/RMSDnosuper.cpp
-		metrics/RMSD.h
-		metrics/RMSDnosuper.h
         math3d/primitives.cpp
 
 		math/GSLSVD.cpp
 		math/GSLSVD.h
         math/MKLSVD.cpp
-        math/MKLSVD.h
+        	math/MKLSVD.h
 		math/CudaSVD.cpp
 		math/CudaSVD.h
 		math/gsl_helpers.cpp
 		math/gsl_helpers.h
 		math/Nullspace.cpp
 		math/Nullspace.h
-		loopclosure/ExactIK.cpp
+	loopclosure/ExactIK.cpp
 		loopclosure/ExactIK.h
         core/dofs/DOF.cpp
-        core/dofs/DOF.h
-        core/dofs/TorsionDOF.cpp
-        core/dofs/TorsionDOF.h
-        core/dofs/GlobalTranslateDOF.cpp
-        core/dofs/GlobalTranslateDOF.h
+        	core/dofs/DOF.h
+        	core/dofs/TorsionDOF.cpp
+        	core/dofs/TorsionDOF.h
+        	core/dofs/GlobalTranslateDOF.cpp
+        	core/dofs/GlobalTranslateDOF.h
 		core/dofs/GlobalRotateDOF.cpp
 		core/dofs/GlobalRotateDOF.h
+		core/dofs/FixedLink.cpp 
+		core/dofs/FixedLink.h
 		core/graph/KinEdge.cpp
 		core/graph/KinEdge.h
 		core/graph/KinVertex.cpp
 		core/graph/KinVertex.h
 		core/graph/KinTree.cpp
 		core/graph/KinTree.h
-		moves/DecreaseStepMove.cpp moves/DecreaseStepMove.h
-		metrics/Metric.h
-		metrics/Metric.cpp
 		)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
