@@ -35,6 +35,11 @@ double GlobalTranslateDOF::getRandomPerturbation() const
   return m_maxValue*RandomN1P1();
 }
 
+double GlobalTranslateDOF::getMaxPerturbation() const
+{
+  return m_maxValue;
+}
+
 void GlobalTranslateDOF::updateEndVertexTransformation()
 {
   //if( std::fabs(m_value)<0.000001 ) {

@@ -17,6 +17,7 @@ class TorsionDOF: public DOF {
   double getGlobalValue() const override;
 
   double getRandomPerturbation() const override;
+  double getMaxPerturbation() const override;
 
  protected:
 

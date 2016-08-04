@@ -9,8 +9,6 @@
 
 /**
  * Computes, stores, and maintains a singular value decomposition of a gsl_matrix.
- * A couple of matrix operations are supported such as getting the pseudo-inverse
- * and extracting the null-space.
  *
  * A matrix-pointer is passed to the SVD on construction. This pointer is kept through
  * the life-time of the SVD object (but ownership is not assumed). If the contents

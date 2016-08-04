@@ -19,6 +19,8 @@ class FixedLink: public DOF {
 
   double getRandomPerturbation() const;
 
+  double getMaxPerturbation() const;
+
  protected:
 
   void updateEndVertexTransformation();

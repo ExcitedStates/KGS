@@ -664,7 +664,7 @@ void Configuration::ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pai
       delete ClashAvoidingNullSpace;
     }
     ClashAvoidingNullSpace = new Nullspace(JacobianSVD);
-    ClashAvoidingNullSpace->UpdateFromMatrix();
+    ClashAvoidingNullSpace->updateFromMatrix();
   }
 
 //	double new_time = timer.ElapsedTime();

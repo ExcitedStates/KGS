@@ -58,6 +58,10 @@ class Hbond : public Bond {
   bool evaluateGeometry();
   double computeEnergy();
 
+  /**
+   * Called from constructor only and sets sp2 and sp3 states for acceptor and donor.
+   * See the m_D_sp2, m_D_sp3, m_A_sp2, m_A_sp3 members.
+   */
   void identifyHybridization();
 
 // private:

@@ -48,9 +48,12 @@ class DOF {
    */
   virtual double getRandomPerturbation() const = 0;
 
+  virtual double getMaxPerturbation() const = 0;
+
   unsigned int getIndex() const;
 
   unsigned int getCycleIndex() const;
+
 
  protected:
   friend class KinEdge;

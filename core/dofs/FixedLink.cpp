@@ -27,6 +27,11 @@ double FixedLink::getMaxValue() const
 
 double FixedLink::getRandomPerturbation() const
 {
+  return 0.0;
+}
+
+double FixedLink::getMaxPerturbation() const
+{
   return m_maxValue;
 }
 

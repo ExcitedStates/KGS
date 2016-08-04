@@ -53,5 +53,4 @@ class KinTree: public KinGraph
 };
 
 
-
 #endif //KGS_KINTREE_H

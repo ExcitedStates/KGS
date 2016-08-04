@@ -27,6 +27,11 @@ double TorsionDOF::getRandomPerturbation() const
   return RandomAngleUniform(m_maxValue);
 }
 
+double TorsionDOF::getMaxPerturbation() const
+{
+  return m_maxValue;
+}
+
 void TorsionDOF::updateEndVertexTransformation()
 {
   //if( std::fabs(m_value)<0.000001 ) {

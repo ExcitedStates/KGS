@@ -18,6 +18,8 @@ class GlobalRotateDOF: public DOF {
 
   double getRandomPerturbation() const override;
 
+  double getMaxPerturbation() const override;
+
  protected:
 
   void updateEndVertexTransformation() override;

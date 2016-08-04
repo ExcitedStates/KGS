@@ -45,6 +45,11 @@ double GlobalRotateDOF::getRandomPerturbation() const
   return m_maxValue*RandomAngleUniform(m_maxValue);
 }
 
+double GlobalRotateDOF::getMaxPerturbation() const
+{
+  return m_maxValue;
+}
+
 void GlobalRotateDOF::updateEndVertexTransformation()
 {
   //if( std::fabs(m_value)<0.000001 ) {
