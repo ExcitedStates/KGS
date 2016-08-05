@@ -257,7 +257,7 @@ void SamplingOptions::initializeVariables(){
   collisionCheck            = "all";
   frontSize                 = 50;
   switchAfter               = 20000;
-	svdCutoff 								= 1.0e-12;
+  svdCutoff                 = 1.0e-12;
 }
 
 void SamplingOptions::print(){

@@ -37,6 +37,7 @@ using namespace std;
 extern double jacobianTime;
 extern double rigidityTime;
 extern double selectNodeTime;
+extern double SINGVAL_TOL;
 
 void randomSampling(SamplingOptions& options); ///< randomized exploration without target structure
 void targetedSampling(SamplingOptions& options); ///< directed/randomized exploration with target structure
@@ -68,6 +69,9 @@ int main( int argc, char* argv[] ) {
 
   // Set seed
   srand(options.seed);
+
+  // Set SVD cutoff
+  SINGVAL_TOL = options.svdCutoff;
 
   // Do the same for the target
   string target_file = options.targetStructureFile;

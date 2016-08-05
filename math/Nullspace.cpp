@@ -6,6 +6,8 @@
 #include "Logger.h"
 #include "gsl_helpers.h"
 
+double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
+
 using namespace std;
 
 Nullspace::Nullspace(SVD * svd) :
