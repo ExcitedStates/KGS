@@ -164,35 +164,35 @@ double Hbond::getOutOfPlaneAngle() {
 	Atom *a1, *a2, *a3;
 
   if(Donor->Cov_neighbor_list.size() >= 3) {
-    a2 = Donor->Cov_neighbor_list[0];
-    a3 = Donor->Cov_neighbor_list[1];
+    a2 = Donor->Cov_neighbor_list.at(0);
+    a3 = Donor->Cov_neighbor_list.at(1);
     if (a2 == Hatom)
-      a2 = Donor->Cov_neighbor_list[2];
+      a2 = Donor->Cov_neighbor_list.at(2);
     if (a3 == Hatom)
-      a3 = Donor->Cov_neighbor_list[2];
+      a3 = Donor->Cov_neighbor_list.at(2);
     a1 = Hatom;
   }
   else{
-    a1=Donor;
+    a1 = Donor;
     a2 = Hatom;
-    a3 =  Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list[1] : Donor->Cov_neighbor_list[0];
+    a3 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list.at(1) : Donor->Cov_neighbor_list.at(0);
   }
 
   Math3D::Vector3 normal1 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);
 
   if(AA->Cov_neighbor_list.size() >= 3) {
-    a2 = AA->Cov_neighbor_list[0];
-    a3 = AA->Cov_neighbor_list[1];
+    a2 = AA->Cov_neighbor_list.at(0);
+    a3 = AA->Cov_neighbor_list.at(1);
     if (a2 == Acceptor)
-      a2 = AA->Cov_neighbor_list[2];
+      a2 = AA->Cov_neighbor_list.at(2);
     if (a3 == Acceptor)
-      a3 = AA->Cov_neighbor_list[2];
+      a3 = AA->Cov_neighbor_list.at(2);
     a1 = Acceptor;
   }
   else{
     a1 = AA;
     a2 = Acceptor;
-    a3 =  AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list[1] : AA->Cov_neighbor_list[0];
+    a3 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list.at(1) : AA->Cov_neighbor_list.at(0);
   }
 
   Math3D::Vector3 normal2 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);

@@ -27,7 +27,6 @@
 */
 #include <regex>
 #include "Selection.h"
-#include "Logger.h"
 #include "Util.h"
 
 using namespace std;
@@ -126,7 +125,7 @@ Selection::Clause* Selection::parseClause(const std::string &input) {
   if(input=="hydro")    return new HydroClause(input);
   if(input=="backbone") return new BackboneClause(input);
 
-  throw std::runtime_error("KGS error: Unrecognized pattern: "+input);
+  throw std::runtime_error("KGS error: Unrecognized pattern: \""+input+"\"");
 }
 
 Selection::OrClause::OrClause(const std::string& input)
