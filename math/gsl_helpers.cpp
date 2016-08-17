@@ -20,7 +20,7 @@ void gsl_matrix_cout (const gsl_matrix *m) {
     for (int j=0; j<m->size2; ++j){
       log() << gsl_matrix_get(m,i,j);
       if(j == (m->size2-1))
-        log() << ";" << endl;
+        log() << endl;
       else
         log() << ",\t";
     }

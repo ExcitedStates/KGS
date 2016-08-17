@@ -34,6 +34,9 @@ void QR::print() const{
 }
 
 
+gsl_matrix* QR::getMatrix() const { return m_matrix; }
+gsl_matrix* QR::getQ() const { return m_Q; }
+gsl_matrix* QR::getR() const { return m_R; }
 
 
 QR* QR::createQR(gsl_matrix* M)

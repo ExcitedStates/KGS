@@ -12,6 +12,7 @@ using namespace std;
 
 Nullspace::Nullspace(SVD * svd) :
     svd(svd),
+    qr(nullptr),
     m(svd->matrix->size1),
     n(svd->matrix->size2),
     numCoordinatedDihedrals( 0 ),
@@ -21,6 +22,22 @@ Nullspace::Nullspace(SVD * svd) :
     rigidAngles(gsl_vector_alloc(n)),
     rigidHBonds(gsl_vector_alloc(n))
 {
+}
+
+Nullspace::Nullspace(gsl_matrix* matrix) :
+    svd(nullptr),
+    m(matrix->size1),
+    n(matrix->size2),
+    numCoordinatedDihedrals( 0 ),
+    numRigidDihedrals( 0 ),
+    numRigidHBonds( 0 ),
+    m_nullspaceBasis(nullptr),
+    rigidAngles(gsl_vector_alloc(n)),
+    rigidHBonds(gsl_vector_alloc(n))
+{
+  gsl_matrix* matrixTrans = gsl_matrix_alloc(n,m);
+  gsl_matrix_transpose_memcpy(matrixTrans, matrix);
+  qr = QR::createQR(matrixTrans);
 }
 
 Nullspace::~Nullspace ()
@@ -35,37 +52,74 @@ Nullspace::~Nullspace ()
 
 void Nullspace::UpdateFromMatrix()
 {
-  svd->UpdateFromMatrix();
+  if(svd!=nullptr) {
+    svd->UpdateFromMatrix();
 
-  //Compute nullspacesize
-  double maxSingularValue = gsl_vector_get(svd->S,0);
+    //Compute nullspacesize
+    double maxSingularValue = gsl_vector_get(svd->S, 0);
 
-  //Case with m < n and all singular values non-zero
-  m_nullspaceSize = std::max( (int)(svd->V->size2 - svd->matrix->size1),0);
+    //Case with m < n and all singular values non-zero
+    m_nullspaceSize = std::max((int) (svd->V->size2 - svd->matrix->size1), 0);
 
-  for (int i=0; i<svd->S->size ; ++i){
-    if ( gsl_vector_get(svd->S,i) / maxSingularValue < SINGVAL_TOL ) {
-      m_nullspaceSize = svd->V->size2-i;
-      break;
+    for (int i = 0; i < svd->S->size; ++i) {
+      if (gsl_vector_get(svd->S, i) / maxSingularValue < SINGVAL_TOL) {
+        m_nullspaceSize = svd->V->size2 - i;
+        break;
+      }
     }
-  }
 
-  //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
-  if(m_nullspaceBasis)
-    gsl_matrix_free(m_nullspaceBasis);
+    //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
+    if (m_nullspaceBasis)
+      gsl_matrix_free(m_nullspaceBasis);
 
-  if(m_nullspaceSize > 0) {
-    gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
-                                                               0,                               //Row
-                                                               svd->V->size2 - m_nullspaceSize, //Col
-                                                               svd->V->size2,                 //Height
-                                                               m_nullspaceSize);                  //Width
+    if (m_nullspaceSize > 0) {
+      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
+                                                                 0,                               //Row
+                                                                 svd->V->size2 - m_nullspaceSize, //Col
+                                                                 svd->V->size2,                 //Height
+                                                                 m_nullspaceSize);                  //Width
 
-    m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
-    gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
-  }
-  else{
-    m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2,1);//1-dim vector with zeros as entries
+      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
+      gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
+    }
+    else {
+      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, 1);//1-dim vector with zeros as entries
+    }
+
+  }else if(qr!=nullptr){
+    qr->updateFromMatrix();
+
+    //Compute nullspacesize
+    double maxDiagValue = gsl_matrix_get(qr->getR(), 0,0);
+
+    //Case with m < n and all singular values non-zero
+    m_nullspaceSize = std::max((int) (qr->getQ()->size2 - svd->matrix->size1), 0);
+
+    for (int i = 0; i < svd->S->size; ++i) {
+      if (gsl_vector_get(svd->S, i) / maxDiagValue < SINGVAL_TOL) {
+        m_nullspaceSize = svd->V->size2 - i;
+        break;
+      }
+    }
+
+    //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
+    if (m_nullspaceBasis)
+      gsl_matrix_free(m_nullspaceBasis);
+
+    if (m_nullspaceSize > 0) {
+      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
+                                                                 0,                               //Row
+                                                                 svd->V->size2 - m_nullspaceSize, //Col
+                                                                 svd->V->size2,                 //Height
+                                                                 m_nullspaceSize);                  //Width
+
+      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
+      gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
+    }
+    else {
+      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, 1);//1-dim vector with zeros as entries
+    }
+
   }
 }
 

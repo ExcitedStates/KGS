@@ -7,6 +7,7 @@
 #include <string>
 
 #include "math/SVD.h"
+#include "QR.h"
 
 /**
  * Computes, stores, and maintains the nullspace of a gsl_matrix.
@@ -22,7 +23,10 @@
  */
 class Nullspace {
  public:
+  /** Will construct a nullspace using the SVD decomposition */
   Nullspace(SVD * svd);
+  /** Will construct a nullspace using the QR decomposition */
+  Nullspace(gsl_matrix * matrix);
   ~Nullspace();
 
   /** Print the nullspace to standard output */
@@ -73,6 +77,7 @@ class Nullspace {
 
 private:
   SVD* svd;                    ///< SVD underlying this nullspace
+  QR* qr;                      ///< QR underlying this nullspace
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)
 

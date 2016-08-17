@@ -49,11 +49,11 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	m_iniAngle_D_H_A = getAngle_D_H_A();
 	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
-  identifyHybridization();
-
-  m_iniEnergy = energy;
-  if(energy == DEFAULT_HBOND_ENERGY)
-    m_iniEnergy = computeEnergy();
+//  identifyHybridization();
+//
+//  m_iniEnergy = energy;
+//  if(energy == DEFAULT_HBOND_ENERGY)
+//    m_iniEnergy = computeEnergy();
 
 //  Vector3 x,y,z;
 //  coordinateSystem(hatom, x,y,z);

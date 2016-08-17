@@ -37,6 +37,10 @@ class QR{
 
   /** Print the QR to standard out */
   void print() const;
+
+  gsl_matrix* getMatrix() const;
+  gsl_matrix* getQ() const;
+  gsl_matrix* getR() const;
  protected:
   gsl_matrix * const m_matrix;
   gsl_matrix * const m_Q;
