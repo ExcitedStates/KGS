@@ -49,11 +49,11 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	m_iniAngle_D_H_A = getAngle_D_H_A();
 	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
-//  identifyHybridization();
-//
-//  m_iniEnergy = energy;
-//  if(energy == DEFAULT_HBOND_ENERGY)
-//    m_iniEnergy = computeEnergy();
+  identifyHybridization();
+
+  m_iniEnergy = energy;
+  if(energy == DEFAULT_HBOND_ENERGY)
+    m_iniEnergy = computeEnergy();
 
 //  Vector3 x,y,z;
 //  coordinateSystem(hatom, x,y,z);
@@ -172,10 +172,15 @@ double Hbond::getOutOfPlaneAngle() {
       a3 = Donor->Cov_neighbor_list.at(2);
     a1 = Hatom;
   }
-  else{
+  else if(Donor->Cov_neighbor_list.size() >= 2){
     a1 = Donor;
     a2 = Hatom;
     a3 = Donor->Cov_neighbor_list[0] == Hatom ? Donor->Cov_neighbor_list.at(1) : Donor->Cov_neighbor_list.at(0);
+  }
+  else{
+    a1 = Donor;
+    a2 = Hatom;
+    a3 = Acceptor;
   }
 
   Math3D::Vector3 normal1 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);
@@ -189,10 +194,15 @@ double Hbond::getOutOfPlaneAngle() {
       a3 = AA->Cov_neighbor_list.at(2);
     a1 = Acceptor;
   }
-  else{
+  else if(AA->Cov_neighbor_list.size() >= 2){
     a1 = AA;
     a2 = Acceptor;
     a3 = AA->Cov_neighbor_list[0] == Acceptor ? AA->Cov_neighbor_list.at(1) : AA->Cov_neighbor_list.at(0);
+  }
+  else{
+    a1 = AA;
+    a2 = Acceptor;
+    a3 = Hatom;
   }
 
   Math3D::Vector3 normal2 = UnitNormal(a1->m_position,a2->m_position, a3->m_position);
@@ -210,7 +220,6 @@ double Hbond::computeEnergy() {
 
   // Mayo energy function, from Dahiyat, Gordon, and Mayo (1997).
   // Automated design of the surface positions of protein helices. Protein Science 6: 1333-1337.
-
   const double d0 = 8.0; //energy well-depth
   const double r0 = 2.8; //h-bond equilibrium distance
   const double psi0 = toRadian(109.5); // sp3 optimal angle
@@ -219,7 +228,6 @@ double Hbond::computeEnergy() {
   double ratioSquared = r0 * r0 / distance_D_A / distance_D_A;
   double energyDist = d0 * (5 * pow(ratioSquared, 6) - 6 * pow(ratioSquared, 5)); //distance-dependent part
 //  log("report")<<"Distance energy part: "<<energyDist<<endl;
-
   double theta = getAngle_D_H_A();
 
   //Now we compute the angular term, dependent on the four different cases
@@ -227,7 +235,6 @@ double Hbond::computeEnergy() {
 
   double angularEnergy = cos(theta) * cos(theta); //This is a factor present in all cases
   double energy, psi, phi;
-
   /// Case 1: donor sp3 and acceptor sp3
   if (m_D_sp3 && m_A_sp3 ) {
 //    log("report")<<"Using case D_sp3 A_sp3"<<endl;
@@ -259,7 +266,6 @@ double Hbond::computeEnergy() {
   }
 
 //  log("report")<<"Donor SP2: "<<m_D_sp2<<", Acceptor SP2: "<<m_A_sp2<<", Donor SP3: "<<m_D_sp3<<", Acceptor SP3: "<<m_A_sp3<<endl;
-
   return energy;
 }
 
