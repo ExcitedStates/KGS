@@ -100,8 +100,8 @@ class SamplingOptions
   std::string alignSelection;
   /** Specifies the residues used for gradient computation. */
   std::string gradientSelection;
-  /** The root rigid body id. */
-  int root;
+  /** The vector of atom IDs that will be part of root rigid bodies */
+  std::vector<int> roots;
   /** Whether or not to project the gradient onto the constraint manifold. */
   bool projectConstraints;
   /** Atoms used for collision detection and clash constraints: "all, backbone, heavy" */

@@ -119,9 +119,15 @@ vector<string>& Util::split( const string& s, char delim, vector<string>& words 
   return words;
 }
 
-vector<int>& Util::split( const string& s, char delim, vector<int>& numbers ) {
-//See outcommented section of Selection
-  return numbers;
+vector<int>& Util::split( const string &s, char delim, vector<int> &numbers ) {
+	numbers.clear();
+	stringstream ss(s);
+	string item;
+	while( getline(ss, item, delim) ){
+		int itemNum = atoi(item.c_str());
+		numbers.push_back(itemNum);
+	}
+	return numbers;
 }
 
 vector<string> Util::split( const string& s, char delim ) {

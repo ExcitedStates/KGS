@@ -77,7 +77,7 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 	}
 
 
-	if(SamplingOptions::getOptions()->saveData > 3){
+	if(SamplingOptions::getOptions()->saveData > 2){
 		Molecule * protein = conf->updatedMolecule();
 
 		// Save Jacobian and Nullspace to file

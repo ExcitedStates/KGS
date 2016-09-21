@@ -358,6 +358,25 @@ bool Atom::isCollisionCheckAtom (string collisionCheckAtoms ) const {
 		return true;
 }
 
+/* Return heavy-atom valence for this atom */
+int Atom::getHAV() const {
+	int ret=0;
+	for(auto const& neighbor: Cov_neighbor_list){
+		if (neighbor->isHeavyAtom())
+			++ret;
+	}
+	return ret;
+}
+
+std::vector<Atom*> Atom::heavyAtomNeighbors() const{
+	std::vector<Atom*> heavyNeighbors;
+	for(auto const& neighbor: Cov_neighbor_list){
+		if (neighbor->isHeavyAtom())
+			heavyNeighbors.push_back(neighbor);
+	}
+	return heavyNeighbors;
+}
+
 /* Output operator overloading for easy printing. */
 
 ostream& operator<<(ostream& os, const Atom& a) {

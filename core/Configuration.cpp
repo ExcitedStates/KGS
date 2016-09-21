@@ -539,6 +539,10 @@ void Configuration::computeJacobians() {
 
     KinVertex* vertex1 = edge_ptr->StartVertex;
     KinVertex* vertex2 = edge_ptr->EndVertex;
+    if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
+      vertex1=edge_ptr->EndVertex;
+      vertex2=edge_ptr->StartVertex;
+    }
 
     //Use the covalently bonded atoms to find A-1 and B-1
     Atom* atom1_prev = atom1->Cov_neighbor_list[0] == atom2 ? atom1->Cov_neighbor_list[1] : atom1->Cov_neighbor_list[0];

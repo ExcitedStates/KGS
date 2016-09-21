@@ -70,8 +70,8 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--alignIni"){                      alignIni = Util::stob(argv[++i]);                   continue; }
 		if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
 		if(arg=="--alignSelection"){                alignSelection = argv[++i];                         continue; }
-		if(arg=="--gradientSelection"){               gradientSelection = argv[++i];                        continue; }
-		if(arg=="--root"){                          root = atoi(argv[++i]);                             continue; }
+		if(arg=="--gradientSelection"){             gradientSelection = argv[++i];                      continue; }
+		if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
 		if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
 		if(arg=="--frontSize"){                     frontSize = atoi(argv[++i]);                        continue; }
@@ -252,7 +252,7 @@ void SamplingOptions::initializeVariables(){
   alignSelection            = "heavy";
   gradientSelection         = "heavy";
 	residueNetwork  					= "all";
-  root                      = 0;
+  roots                     = {1}; //Choose the first atom
   projectConstraints        = true;
   collisionCheck            = "all";
   frontSize                 = 50;
@@ -299,7 +299,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--preventClashes "<<preventClashes<<endl;
 	log("so")<<"\t--alignSelection "<<alignSelection<<endl;
 	log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
-	log("so")<<"\t--root "<<root<<endl;
+	log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
 	log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
 	log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
 	log("so")<<"\t--frontSize "<<frontSize<<endl;
@@ -394,7 +394,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
 
-	log("so")<<"\t--root <integer>\t: The rigid body id for the root. Choose -1 to select the closest rigid body between m_molecule and target."<<endl;
+	log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
 
 	log("so")<<"\t--projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
 

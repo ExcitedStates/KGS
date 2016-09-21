@@ -39,6 +39,7 @@ class HbondIdentifier {
 	static void identifyHbonds(Molecule *protein); //own implementation of identifying H-bonds
 	static double computeHbondEnergy(Molecule *protein);
 	static double computeHbondEnergy(Configuration *conf);
+	static double computeHbondNormedEnergyDifference(Configuration *conf);
 	static void selectHbonds(Molecule *protein, std::string path, std::string protein_name);
 };
 

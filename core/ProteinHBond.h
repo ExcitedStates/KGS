@@ -60,7 +60,6 @@ class Hbond : public Bond {
 
   /**
    * Called from constructor only and sets sp2 and sp3 states for acceptor and donor.
-   * See the m_D_sp2, m_D_sp3, m_A_sp2, m_A_sp3 members.
    */
   void identifyHybridization();
 
@@ -75,10 +74,8 @@ class Hbond : public Bond {
   double m_iniAngle_D_H_A;
   double m_iniAngle_H_A_AA;
   double m_iniEnergy;
-  bool m_D_sp2;
-  bool m_D_sp3;
-  bool m_A_sp2;
-  bool m_A_sp3;
+  int m_donorHybridization; //2 for sp2, 3 for sp3
+  int m_acceptorHybridization; //2 for sp2, 3 for sp3
 
   //Getters and Setters for initially determined values
  public:
@@ -102,22 +99,13 @@ class Hbond : public Bond {
     m_iniEnergy = energy;
   }
 
-  bool donorSP2() const {
-    return m_D_sp2;
+  int donorHybridization() const {
+    return m_donorHybridization;
   }
 
-  bool donorSP3() const {
-    return m_D_sp3;
+  int acceptorHybridization() const {
+    return m_acceptorHybridization;
   }
-
-  bool acceptorSP2() const {
-    return m_A_sp2;
-  }
-
-  bool acceptorSP3() const {
-    return m_A_sp3;
-  }
-
 };
 
 #endif

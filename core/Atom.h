@@ -126,6 +126,8 @@ class Atom {
   bool isBackboneAtom() const;
   bool isHeavyAtom() const;
   bool isCollisionCheckAtom (std::string collisionCheckAtoms="all") const;
+	int getHAV() const; //Heavy-Atom Valence
+	std::vector<Atom*> heavyAtomNeighbors() const;
 
 	bool compareName(std::string atomName) const;
 	bool compareType(std::string atomType) const;

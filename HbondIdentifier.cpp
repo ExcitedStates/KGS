@@ -158,6 +158,41 @@ double HbondIdentifier::computeHbondEnergy(Configuration *conf) {
   return completeHbondEnergy;
 }
 
+double HbondIdentifier::computeHbondNormedEnergyDifference(Configuration *conf) {
+
+  // Mayo energy function, from Dahiyat, Gordon, and Mayo (1997).
+  // Automated design of the surface positions of protein helices. Protein Science 6: 1333-1337.
+
+  Molecule* protein = conf->updatedMolecule();
+
+  double completeHbondEnergy = 0.0;
+  int count=0;
+
+  log("report")<<"Conformation "<<conf->m_id<<endl;
+
+  for(auto const& hBond: protein->getHBonds()) {
+
+    if( hBond->evaluateGeometry() ) {
+      double energyDiff = hBond->computeEnergy() - hBond->getIniEnergy();
+      log("report") << "Energy change at bond " << ++count << ": " << energyDiff << endl;
+      completeHbondEnergy += energyDiff*energyDiff;
+    }
+    else{
+      log("report") << "Geometry violated at bond " << ++count << ": " << endl;
+    }
+//			cout<<"Distance DA: "<<hBond->getDistance_D_A()<<endl;
+//			cout<<"Length: "<<hBond->getLength()<<", ini length: "<<hBond->getIniLength()<<endl;
+//			cout<<"DHA angle: "<<hBond->getAngle_D_H_A()<<", ini DHA angle: "<<hBond->getIniAngle_D_H_A()<<endl;
+//			cout<<"HAAA angle: "<<hBond->getAngle_H_A_AA()<<", ini HAAA angle: "<<hBond->getIniAngle_H_A_AA()<<endl;
+//			cout<<"Outofplane angle: "<<hBond->getOutOfPlaneAngle()<<endl;
+//			cout<<"Donor residue: "<<hBond->Donor->getResidue()->getName()<<", Acceptor residue: "<<hBond->Acceptor->getResidue()->getName()<<endl;
+//			cout<<"Energy: "<<energy<<", ini energy: "<<hBond->getIniEnergy()<<endl;
+  }
+  log("report")<<endl;fflush(stdout);
+
+  return sqrt(completeHbondEnergy);
+}
+
 void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protein_name) {
   // identify hbonds if not yet
   if ( protein->getHBonds().empty() ) { identifyHbonds(protein);	}

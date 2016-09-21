@@ -890,7 +890,9 @@ void IO::writeHbondsIn (Molecule *molecule, string output_file_name) {
   for (auto const& bond: molecule->getHBonds()){
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
-    output << bond->getIniEnergy()<<endl;
+    output << bond->getIniEnergy()<<" "; //<<endl;
+    output << bond->donorHybridization()<<" ";
+    output << bond->acceptorHybridization()<<endl;
   }
   output.close();
 }
@@ -925,8 +927,9 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   output.close();
 }
 
-void IO::writeHbondsChange (Molecule *molecule, string output_file_name) {
+void IO::writeHbondsChange (Configuration *conf, string output_file_name) {
   ofstream output(output_file_name.c_str());
+  Molecule* molecule = conf->updatedMolecule();
 
   int count=0;
   //Header line
@@ -1209,33 +1212,38 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
 	Atom *hatom, *acceptor, *donor, *AA;
   int lineCount = 1;
 
-	while(std::getline(input,line)){
-    if (lineCount < 9){
+	while(std::getline(input,line)) {
+    if (lineCount < 9) {
       ++lineCount;
       continue;
     }
 
-		std::istringstream input(line);
-		input >> donorString;
-		input >> donorType;
+    std::istringstream input(line);
+    input >> donorString;
+    input >> donorType;
     input >> acceptorString;
     input >> acceptorType;
     input >> rest;
     input >> hybridState;
-    for( int i=0; i<3 ; i++){
+    for (int i = 0; i < 3; i++) {
       input >> rest;
     }
     input >> distanceHAString;
     double distanceHA = atof(distanceHAString.c_str());
 
     //Identify donor
-    string donorChain = donorString.substr(0,1);
+    string donorChain = donorString.substr(0, 1);
+    if (donorChain == "-") //Default from hb2, if chain is empty
+      donorChain = protein->chains[0]->getName();
+
     int donorResId = atoi( (donorString.substr(1,4)).c_str() );
     donor = protein->getAtom(donorChain, donorResId,donorType );
     if(donor==NULL){ cerr<<"IO::readHbonds - Invalid donor specified: "<<donorString<<" "<<donorType<<endl; exit(-1); }
 
     //Identify acceptor
     string acceptorChain = acceptorString.substr(0,1);
+    if (acceptorChain == "-") //Default from hb2, if chain is empty
+      acceptorChain = protein->chains[0]->getName();
     int acceptorResId = atoi( (acceptorString.substr(1,4)).c_str() );
     acceptor = protein->getAtom(acceptorChain, acceptorResId,acceptorType );
     if(acceptor==NULL){ cerr<<"IO::readHbonds - Invalid acceptor specified: "<<acceptorString<<" "<<acceptorType<<endl; exit(-1); }

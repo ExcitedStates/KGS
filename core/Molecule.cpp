@@ -421,14 +421,15 @@ void Molecule::buildSpanningTree() {
   //log() << "In buildSpanningTree" << endl;
   m_spanning_tree=new KinTree();
 
+  // Add the super-root
+  m_spanning_tree->m_root=m_spanning_tree->addVertex(nullptr);
+//  size_t numVertices = Rigidbody_map_by_id.size();
+
   // add all rigid bodies as vertices into Rigidbody_graph
   for( auto const &id_rb_pair: Rigidbody_map_by_id ) {
     Rigidbody *rb=id_rb_pair.second;
     m_spanning_tree->addVertex(rb);
   }
-
-  m_spanning_tree->m_root=m_spanning_tree->addVertex(nullptr);
-//  size_t numVertices = Rigidbody_map_by_id.size();
 
   list<KinEdge *> cycleEdges;
 
@@ -472,14 +473,44 @@ void Molecule::buildSpanningTree() {
 //    log("debug") << "Molecule::buildSpanningTree() - Connecting " << firstAtom << " to super-root using 6 dofs" << endl;
 //  }
 
+  //Build new vector with chain roots given by the user at the front
+  //Iterate through this vector instead of vertex_map to use correct chain roots
+  std::map<unsigned int,KinVertex*> secondPriorityMap;
+  std::vector<KinVertex*> vertexPriorityList;
+  std::vector<int> roots = SamplingOptions::getOptions()->roots;
+
+  //Push the chain roots into Vertex Map, others to second prio map
+  bool foundChainRoot = false;
+  for( auto const &id_vertex_pair: m_spanning_tree->Vertex_map ) {
+    KinVertex *vertex=id_vertex_pair.second;
+
+    for(auto const &rootAtomId: roots) {
+      if (vertex->m_rigidbody->containsAtom(this->getAtom(rootAtomId))) {
+        vertexPriorityList.push_back(vertex);
+        foundChainRoot=true;
+        break;
+      }
+    }
+    if(!foundChainRoot)
+      secondPriorityMap[id_vertex_pair.first] = vertex;
+    else
+      foundChainRoot=false;
+  }
+
+  // add all rigid bodies as vertices into Rigidbody_graph
+  for( auto const &id_vertex_pair: secondPriorityMap ) {
+    vertexPriorityList.push_back(id_vertex_pair.second);
+  }
+
   //Perform breadth-first-search from all queue vertices and construct KinEdges
   //A variant of Prims algorithm is used to get the orientation of the tree correct in the first go
   std::set<Bond *> visitedBonds;
   std::set<KinVertex *> visitedVertices;
 
-  for(auto const& id_vertex_pair: m_spanning_tree->Vertex_map) {
+//  for(auto const& id_vertex_pair: m_spanning_tree->Vertex_map) {
+  for(auto const& chainRoot: vertexPriorityList) {
     //If the vertex has been visited before, ignore it, otherwise make it the root of a new tree
-    KinVertex* chainRoot = id_vertex_pair.second;
+//    KinVertex* chainRoot = id_vertex_pair.second;
     if( visitedVertices.count(chainRoot)>0) continue;
 
     //Connect to super-root with six global chain dofs
@@ -1116,7 +1147,7 @@ double Molecule::checkCycleClosure(Configuration *q){
   setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
-  KinEdge *pEdge;
+  KinEdge *hBondEdge;
   int id=1;
   double maxViolation = 0.0;
   double normOfViolation = 0.0;
@@ -1124,15 +1155,43 @@ double Molecule::checkCycleClosure(Configuration *q){
   log("report")<<"Conformation "<<q->m_id<<endl;
 
   for (pair_it=m_spanning_tree->CycleAnchorEdges.begin(); pair_it!=m_spanning_tree->CycleAnchorEdges.end(); ++pair_it) {
-    pEdge = pair_it->first;
-    Atom* atom1 = pEdge->getBond()->Atom1;
-    Atom* atom2 = pEdge->getBond()->Atom2;
-    Hbond * hBond = reinterpret_cast<Hbond *>(pEdge->getBond());
-    float distanceChange = hBond->getLength() - hBond->getIniLength();
-    float rightAngleChange = formatRangeRadian( hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA() );
-    float leftAngleChange = formatRangeRadian( hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A() );
 
-    normOfViolation += distanceChange * distanceChange + rightAngleChange * rightAngleChange + leftAngleChange * leftAngleChange; //sum of all squares
+    // get end-effectors
+    hBondEdge = pair_it->first;
+    KinVertex* common_ancestor = pair_it->second;
+    Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
+
+    //End-effectors and their positions, corresponds to a and b
+    Atom* atom1 = hBond->Atom1;
+    Atom* atom2 = hBond->Atom2;
+    Coordinate p1 = atom1->m_position; //end-effector, position 1
+    Coordinate p2 = atom2->m_position; //end-effector, position 2
+
+    KinVertex* vertex1 = hBondEdge->StartVertex;
+    KinVertex* vertex2 = hBondEdge->EndVertex;
+    if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
+      vertex1=hBondEdge->EndVertex;
+      vertex2=hBondEdge->StartVertex;
+    }
+
+
+    Math3D::Vector3 p2_test = vertex1->m_transformation * atom2->m_referencePosition;
+    Math3D::Vector3 p1_test = vertex2->m_transformation * atom1->m_referencePosition;
+    Math3D::Vector3 translationCons = 0.5*( (p1+p2_test) - (p1_test+p2) );
+
+    //3 translation constraints, violation is difference to 0
+    double translationViol = translationCons.normSquared();
+
+    // Only to validate the distance violation as well
+    double distanceChange = hBond->getLength() - hBond->getIniLength();
+
+    //Angular violations
+    double rightAngleChange = formatRangeRadian( hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA() );
+    double leftAngleChange = formatRangeRadian( hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A() );
+
+    //Norm
+    double absoluteViolation = translationViol + rightAngleChange * rightAngleChange + leftAngleChange * leftAngleChange; //sum of all squares
+    normOfViolation += absoluteViolation;
 
     double distanceViolation = std::fabs(distanceChange / hBond->getIniLength() * 100 );
     rightAngleChange = Math::RtoD( rightAngleChange );
@@ -1141,10 +1200,12 @@ double Molecule::checkCycleClosure(Configuration *q){
     log("report")<<"hBond strain at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %";
     log("report")<<", "<<rightAngleChange<<" deg rangle, "<<leftAngleChange<<" deg langle"<<endl;
 
-    if(distanceViolation > maxViolation){
-      q->m_maxConstraintViolation = distanceViolation;
-      maxViolation = distanceViolation;
+    if(absoluteViolation > maxViolation){
+      q->m_maxConstraintViolation = absoluteViolation;
+      maxViolation = absoluteViolation;
     }
+
+
 //		if(distanceViolation > 10){//10 % change of length
 //			log("report") <<"Distance violation at "<<id<<" between "<<atom1->getId()<<" and "<<atom2->getId()<<" in res "<<atom1->getResidue()->getName()<<atom1->getResidue()->getId()<<": " << distanceViolation <<" %"<<endl;
 //		}

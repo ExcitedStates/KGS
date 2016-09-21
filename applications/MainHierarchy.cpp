@@ -101,10 +101,12 @@ int main( int argc, char* argv[] ) {
 
   Configuration *conf = new Configuration(&protein);
   protein.setConfiguration(conf);
+  conf->updateMolecule();
 
   protein.m_initialCollisions = protein.getAllCollisions();
 
   double initialHbondEnergy = HbondIdentifier::computeHbondEnergy(conf);
+  double initialVdwEnergy = protein.vdwEnergy(options.collisionCheck);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;
@@ -124,19 +126,22 @@ int main( int argc, char* argv[] ) {
 
   log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
 
-  if(options.saveData > 1) {
+  if(options.saveData > 2) {
     string out_file = out_path + "output/" + name + ".pdb";
     ///save pyMol coloring script
     string pyMol = out_path + "output/" + name + "_pyMol.pml";
     string statFile = out_path + "output/" + name + "_stats.txt";
     string rbFile=out_path + "output/" +  name + "_RBs.txt";
+    string singVals = out_path + "output/singVals.txt";
     ///Write pyMol script
     IO::writePyMolScript(&protein, out_file, pyMol);
     ///Write statistics
     IO::writeStats(&protein, statFile);
     ///Write rigid bodies
     IO::writeRBs(&protein, rbFile);
+    gsl_vector_outtofile(conf->getNullspace()->getSVD()->S,singVals);
   }
+//  cout<<"First conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
 
   gsl_vector* projected_gradient = gsl_vector_calloc(numCols);
   gsl_vector* allDofs = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
@@ -151,7 +156,7 @@ int main( int argc, char* argv[] ) {
   log("data")<<"sample inCollision inNullspace gradientNorm violation hbondDelta"<<endl;
 
   for( int i = 0; i < numCols; ++i) {
-
+    conf->updateMolecule();
     bool inNullspace = i< nullspaceCols;
     if( i == nullspaceCols){
       log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
@@ -177,14 +182,15 @@ int main( int argc, char* argv[] ) {
 //    }
 
     //Identify correct range
-    for (int j=0; j<projected_gradient->size; ++j) {
-      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
-    }
+//    for (int j=0; j<projected_gradient->size; ++j) {
+//      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
+//    }
 
     //Identify predictedViolation from product with constraint Jacobian
     gsl_vector* violationVec = gsl_matrix_vector_mul(conf->getNullspace()->getSVD()->matrix, projected_gradient);
     double predictedViolation = gsl_vector_length(violationVec);
-
+//    cout<<"Pred norm: "<<predictedViolation<<", sing vec norm: "<<gsl_vector_get(conf->getNullspace()->getSVD()->S,numCols - i - 1)<<endl;
+//    cout<<"Second conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
     gsl_vector_free(violationVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
@@ -222,19 +228,21 @@ int main( int argc, char* argv[] ) {
     //Potentially reject new config if large violations?
     double observedViolation = protein.checkCycleClosure(qNew);
     qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(SamplingOptions::getOptions()->collisionCheck);
-    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
-    double deltaH = initialHbondEnergy-hBondEnergy;
+//    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
+//    double normDeltaHEnergy = hBondEnergy - initialHbondEnergy;
+    double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);
+    double deltaVdwEnergy = qNew->getMolecule()->vdwEnergy(options.collisionCheck) - initialVdwEnergy;
 
     log("hierarchy") << "> New structure: " << ++sampleCount << " of a total of " <<
-    conf->getNullspace()->Matrix()->size2 << " samples. Delta hbond energy: " << deltaH<<", pred. violation: "<<predictedViolation<<", obs. violation: "<<observedViolation<<endl;
+    conf->getNullspace()->Matrix()->size2 << " samples. Delta hbond energy: " << normDeltaHEnergy<<", pred. violation: "<<predictedViolation<<", obs. violation: "<<observedViolation<<", delta vdw: "<<deltaVdwEnergy<<endl;
     SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
 
     hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(i+1))+".txt";
-    IO::writeHbondsChange(&protein,hBondOut);
+    IO::writeHbondsChange(qNew,hBondOut);
 
     //Store output data in this file, space-separated in this order
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
-    log("data")<<sampleCount<<" "<<inCollision<<" "<<inNullspace<<" "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<deltaH<<endl;
+    log("data")<<sampleCount<<" "<<inCollision<<" "<<inNullspace<<" "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<normDeltaHEnergy<<endl;
   }
   gsl_vector_free(projected_gradient);
   gsl_vector_free(allDofs);
