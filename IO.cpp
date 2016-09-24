@@ -1867,3 +1867,54 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 
   pymol_script.close();
 }
+
+
+
+std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const std::string& fname, Molecule* mol){
+  ifstream input(fname.c_str());
+  if(!input.is_open()) {cerr<<"IO::readrelativeDistances(..) - Error: Couldnt open "<<fname<<" for reading"<<endl; exit(-1);}
+
+  std::vector< std::tuple<Atom*, Atom*, double> > ret;
+  string line, sel1Str, sel2Str;
+  double dist;
+  while( input.good() ){
+    input>>sel1Str;
+    input>>sel2Str;
+    input>>dist;
+
+    Selection s1(sel1Str);
+    Selection s2(sel2Str);
+
+    Atom* a1 = nullptr;
+    if(s1.getSelectedResidues(mol).size()==1) {
+      a1 = s1.getSelectedResidues(mol)[0]->getAtom("CA");
+      if(a1==nullptr) a1 = s1.getSelectedResidues(mol)[0]->getAtoms().front();
+    }else{
+      if(s1.getSelectedAtoms(mol).size()==1) {
+        a1 = s1.getSelectedAtoms(mol).at(0);
+      }else{
+        cerr<<"IO::readRelativeDistances("<<fname<<") - error: Restraint selections must match exactly 1 atom or 1 residue"<<endl;
+        exit(-1);
+      }
+    }
+
+    Atom* a2 = nullptr;
+    if(s2.getSelectedResidues(mol).size()==1) {
+      a2 = s2.getSelectedResidues(mol)[0]->getAtom("CA");
+      if(a2==nullptr) a2 = s2.getSelectedResidues(mol)[0]->getAtoms().front();
+    }else{
+      if(s2.getSelectedAtoms(mol).size()==1) {
+        a2 = s2.getSelectedAtoms(mol).at(0);
+      }else{
+        cerr<<"IO::readRelativeDistances("<<fname<<") - error: Restraint selections must match exactly 1 atom or 1 residue"<<endl;
+        exit(-1);
+      }
+    }
+
+    getline(input,line);
+
+    ret.push_back( std::make_tuple( a1,a2, dist ) );
+  }
+
+  return ret;
+};

@@ -193,14 +193,17 @@ find_package(GSL REQUIRED)
 link_directories(   ${GSL_LIBRARY_DIR} )
 include_directories(${GSL_INCLUDE_DIR} )
 
+option(ForceGSL "ForceGSL" OFF)
 
-# Attempt to find MKL
-find_package(MKL REQUIRED)
-if(${MKL_FOUND})
-	include_directories(${MKL_INCLUDE_DIR})
-	#list(APPEND CMAKE_EXE_LINKER_FLAGS -lmkl_intel_lp64)
-	link_libraries( mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread )
-	SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
+if( NOT ${ForceGSL} )
+  # Attempt to find MKL
+  find_package(MKL REQUIRED)
+  if(${MKL_FOUND})
+    include_directories(${MKL_INCLUDE_DIR})
+    #list(APPEND CMAKE_EXE_LINKER_FLAGS -lmkl_intel_lp64)
+    link_libraries( mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread )
+    SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__INTEL_MKL" )
+  endif()
 endif()
 
 #find_package(CUDA)

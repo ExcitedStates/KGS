@@ -259,7 +259,7 @@ void SamplingOptions::initializeVariables(){
   frontSize                 = 50;
   switchAfter               = 20000;
   svdCutoff                 = 1.0e-12;
-  relativeDistances = "double";
+  relativeDistances         = "";
 }
 
 void SamplingOptions::print(){

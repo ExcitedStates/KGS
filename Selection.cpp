@@ -119,8 +119,10 @@ Selection::Clause* Selection::parseClause(const std::string &input) {
   if(Util::startsWith(input, "resn ")) return new ResnClause(input);
   if(Util::startsWith(input, "name ")) return new NameClause(input);
   if(Util::startsWith(input, "elem ")) return new ElemClause(input);
+  if(Util::startsWith(input, "id ")) return new IDClause(input);
+  if(Util::startsWith(input, "chain ")) return new ChainClause(input);
   if(input=="all")      return new AllClause(input);
-  if(input=="")         return new AllClause(input);
+  if(input=="")         return new NotClause(input);
   if(input=="heavy")    return new HeavyClause(input);
   if(input=="hydro")    return new HydroClause(input);
   if(input=="backbone") return new BackboneClause(input);
@@ -236,6 +238,49 @@ bool Selection::NameClause::inSelection(const Atom* a) const
          != m_atomNames.end();
 }
 
+Selection::IDClause::IDClause(const std::string& input)
+{
+  regex intListPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
+  const string elemInput = input.substr(3);
+
+  if( regex_match(elemInput, intListPat) ){
+    vector<string> tokens = Util::split(elemInput, '+');
+    for(const string& token: tokens){
+      int id = std::stoi(token);
+      m_atomIDs.push_back(id);
+    }
+  }
+}
+bool Selection::IDClause::inSelection(const Atom* a) const
+{
+  return std::find( m_atomIDs.begin(), m_atomIDs.end(), a->getId() )!= m_atomIDs.end();
+}
+
+Selection::ChainClause::ChainClause(const std::string& input)
+{
+  regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
+  const string elemInput = input.substr(6);
+
+  if( regex_match(elemInput, strListPat) ){
+    vector<string> tokens = Util::split(elemInput, '+');
+    for(const string& token: tokens){
+      if( token.length()!=1 ){
+        std::cerr<<"Warning - Selection::ChainClause: Chain name longer than 1 character: \""<<token<<"\"";
+      }
+      m_atomChains.push_back(token);
+    }
+  }
+}
+
+bool Selection::ChainClause::inSelection(const Atom* a) const
+{
+  return std::find(
+      m_atomChains.begin(),
+      m_atomChains.end(),
+      a->getResidue()->getChain()->getName()
+  ) != m_atomChains.end();
+}
+
 Selection::ElemClause::ElemClause(const std::string& input)
 {
   regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
@@ -248,6 +293,7 @@ Selection::ElemClause::ElemClause(const std::string& input)
     }
   }
 }
+
 bool Selection::ElemClause::inSelection(const Atom* a) const
 {
   return std::find( m_atomElements.begin(), m_atomElements.end(), a->getElement() )
@@ -257,6 +303,11 @@ bool Selection::ElemClause::inSelection(const Atom* a) const
 Selection::AllClause::AllClause(const std::string& input){}
 bool Selection::AllClause::inSelection(const Atom* a) const{
   return true;
+}
+
+Selection::NoneClause::NoneClause(const std::string& input){}
+bool Selection::NoneClause::inSelection(const Atom* a) const{
+  return false;
 }
 
 Selection::BackboneClause::BackboneClause(const std::string& input):

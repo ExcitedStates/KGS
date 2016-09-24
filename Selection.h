@@ -55,6 +55,8 @@
  *     :== resn STRINGLIST   # Residue name list
  *     :== name STRINGLIST   # Atom name list
  *     :== elem STRINGLIST   # Element name list
+ *     :== chain STRINGLIST  # Chain name list
+ *     :== id INTLIST        # Atom ID list
  *     :== all               # All atoms selected
  *     :== backbone          # Backbone atoms only: "name CA+C+N+P+O5'+C5'+C4'+C3'+O3'"
  *     :== heavy             # Heavy atoms only: "not elem H"
@@ -205,9 +207,31 @@ class Selection {
     std::vector<std::string> m_atomElements;
   };
 
+  class ChainClause: public Clause{
+   public:
+    ChainClause(const std::string& input);
+    bool inSelection(const Atom* a) const;
+   private:
+    std::vector<std::string> m_atomChains;
+  };
+
+  class IDClause: public Clause{
+   public:
+    IDClause(const std::string& input);
+    bool inSelection(const Atom* a) const;
+   private:
+    std::vector<int> m_atomIDs;
+  };
+
   class AllClause: public Clause{
    public:
     AllClause(const std::string& input);
+    bool inSelection(const Atom* a) const;
+  };
+
+  class NoneClause: public Clause{
+   public:
+    NoneClause(const std::string& input);
     bool inSelection(const Atom* a) const;
   };
 

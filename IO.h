@@ -65,6 +65,7 @@ class IO {
 	static void writeStats(Molecule * molecule, std::string output_file_name);
 	static void writeQ (Molecule *molecule, Configuration* referenceConf, std::string output_file_name);
   static void writeTrajectory (Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
+  static std::vector< std::tuple<Atom*, Atom*, double> > readRelativeDistances(const std::string& fname, Molecule* mol);
   private:
 	static void makeCovBond (Residue* res1, Residue* res2, std::string atom_name1, std::string atom_name2);
 };

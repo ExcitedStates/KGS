@@ -7,12 +7,13 @@
 #include "gsl_helpers.h"
 
 double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
+double RDIAVAL_TOL = 1.0e-6;
 
 using namespace std;
 
 Nullspace::Nullspace(SVD * svd) :
-    svd(svd),
-    qr(nullptr),
+    m_svd(svd),
+    m_qr(nullptr),
     m(svd->matrix->size1),
     n(svd->matrix->size2),
     numCoordinatedDihedrals( 0 ),
@@ -25,7 +26,7 @@ Nullspace::Nullspace(SVD * svd) :
 }
 
 Nullspace::Nullspace(gsl_matrix* matrix) :
-    svd(nullptr),
+    m_svd(nullptr),
     m(matrix->size1),
     n(matrix->size2),
     numCoordinatedDihedrals( 0 ),
@@ -37,7 +38,8 @@ Nullspace::Nullspace(gsl_matrix* matrix) :
 {
   gsl_matrix* matrixTrans = gsl_matrix_alloc(n,m);
   gsl_matrix_transpose_memcpy(matrixTrans, matrix);
-  qr = QR::createQR(matrixTrans);
+  m_qr = QR::createQR(matrixTrans);
+  m_matrix = matrix;
 }
 
 Nullspace::~Nullspace ()
@@ -52,18 +54,18 @@ Nullspace::~Nullspace ()
 
 void Nullspace::UpdateFromMatrix()
 {
-  if(svd!=nullptr) {
-    svd->UpdateFromMatrix();
+  if(m_svd!=nullptr) {
+    m_svd->UpdateFromMatrix();
 
     //Compute nullspacesize
-    double maxSingularValue = gsl_vector_get(svd->S, 0);
+    double maxSingularValue = gsl_vector_get(m_svd->S, 0);
 
     //Case with m < n and all singular values non-zero
-    m_nullspaceSize = std::max((int) (svd->V->size2 - svd->matrix->size1), 0);
+    m_nullspaceSize = std::max((int) (m_svd->V->size2 - m_svd->matrix->size1), 0);
 
-    for (int i = 0; i < svd->S->size; ++i) {
-      if (gsl_vector_get(svd->S, i) / maxSingularValue < SINGVAL_TOL) {
-        m_nullspaceSize = svd->V->size2 - i;
+    for (int i = 0; i < m_svd->S->size; ++i) {
+      if (gsl_vector_get(m_svd->S, i) / maxSingularValue < SINGVAL_TOL) {
+        m_nullspaceSize = m_svd->V->size2 - i;
         break;
       }
     }
@@ -73,51 +75,46 @@ void Nullspace::UpdateFromMatrix()
       gsl_matrix_free(m_nullspaceBasis);
 
     if (m_nullspaceSize > 0) {
-      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
+      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_svd->V,
                                                                  0,                               //Row
-                                                                 svd->V->size2 - m_nullspaceSize, //Col
-                                                                 svd->V->size2,                 //Height
+                                                                 m_svd->V->size2 - m_nullspaceSize, //Col
+                                                                 m_svd->V->size2,                 //Height
                                                                  m_nullspaceSize);                  //Width
 
-      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
+      m_nullspaceBasis = gsl_matrix_calloc(m_svd->V->size2, m_nullspaceSize);
       gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
     }
     else {
-      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, 1);//1-dim vector with zeros as entries
+      m_nullspaceBasis = gsl_matrix_calloc(m_svd->V->size2, 1);//1-dim vector with zeros as entries
     }
 
-  }else if(qr!=nullptr){
-    qr->updateFromMatrix();
+  }else if(m_qr!=nullptr){
+    gsl_matrix_transpose_memcpy(m_qr->getMatrix(), m_matrix);
+    m_qr->updateFromMatrix();
 
     //Compute nullspacesize
-    double maxDiagValue = gsl_matrix_get(qr->getR(), 0,0);
+    int rank = 0;
 
-    //Case with m < n and all singular values non-zero
-    m_nullspaceSize = std::max((int) (qr->getQ()->size2 - svd->matrix->size1), 0);
+    for(int i=0;i<std::min(m,n);i++)
+      if(gsl_matrix_get(m_qr->getR(),i,i)>RDIAVAL_TOL) rank++;
 
-    for (int i = 0; i < svd->S->size; ++i) {
-      if (gsl_vector_get(svd->S, i) / maxDiagValue < SINGVAL_TOL) {
-        m_nullspaceSize = svd->V->size2 - i;
-        break;
-      }
-    }
+    m_nullspaceSize = m-rank;
 
-    //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
     if (m_nullspaceBasis)
       gsl_matrix_free(m_nullspaceBasis);
 
     if (m_nullspaceSize > 0) {
-      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(svd->V,
-                                                                 0,                               //Row
-                                                                 svd->V->size2 - m_nullspaceSize, //Col
-                                                                 svd->V->size2,                 //Height
-                                                                 m_nullspaceSize);                  //Width
+      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_qr->getQ(),
+                                                                 0,                                     //Row
+                                                                 m_qr->getQ()->size2 - m_nullspaceSize, //Col
+                                                                 m_qr->getQ()->size2,                   //Height
+                                                                 m_nullspaceSize);                      //Width
 
-      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, m_nullspaceSize);
+      m_nullspaceBasis = gsl_matrix_calloc(m_qr->getQ()->size2, m_nullspaceSize);
       gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
     }
     else {
-      m_nullspaceBasis = gsl_matrix_calloc(svd->V->size2, 1);//1-dim vector with zeros as entries
+      m_nullspaceBasis = gsl_matrix_calloc(m_matrix->size2, 1);//1-dim vector with zeros as entries
     }
 
   }
@@ -140,7 +137,7 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
   numRigidDihedrals = 0;
 
   for(int i=0; i<n; i++){
-    gsl_matrix_get_row(currentRow,svd->V,i);
+    gsl_matrix_get_row(currentRow,m_svd->V,i);
 
     for(int j=n-m_nullspaceSize; j<n; j++){
       double val = fabs( gsl_vector_get(currentRow,j) );
@@ -237,9 +234,9 @@ void Nullspace::WriteMatricesToFiles(
     const std::string& null_file,
     const std::string& sval_file) const
 {
-  gsl_matrix_outtofile(svd->matrix, jac_file);
-  gsl_matrix_outtofile(svd->V, null_file);
-  gsl_vector_outtofile(svd->S, sval_file);
+  gsl_matrix_outtofile(m_svd->matrix, jac_file);
+  gsl_matrix_outtofile(m_svd->V, null_file);
+  gsl_vector_outtofile(m_svd->S, sval_file);
 }
 
 gsl_matrix *Nullspace::getBasis() const {
@@ -247,6 +244,6 @@ gsl_matrix *Nullspace::getBasis() const {
 }
 
 SVD *Nullspace::getSVD() const {
-  return svd;
+  return m_svd;
 }
 

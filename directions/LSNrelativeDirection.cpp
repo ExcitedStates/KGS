@@ -44,7 +44,7 @@ using namespace std;
 
 
 
-LSNrelativeDirection::LSNrelativeDirection(Selection& atomsMoving, std::vector<double> goal):
+LSNrelativeDirection::LSNrelativeDirection(Selection& atomsMoving, std::vector< std::tuple<Atom*, Atom*, double> > goal):
         m_atomsMovingSelection(atomsMoving), goal_distances(goal)
 {
 //  int numMovingAtoms = SamplingOptions::getOptions()->getAtomsMoving()->size();

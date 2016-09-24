@@ -31,12 +31,14 @@ using namespace std;
 void testGlobalMSD();
 void testGlobalGradient();
 void testQR();
+void testSelection();
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
 //  testGlobalMSD();
 //  testGlobalGradient();
-  testQR();
+//  testQR();
+  testSelection();
 }
 
 
@@ -52,6 +54,21 @@ double get_wall_time(){
 
 using namespace metrics;
 
+void testSelection(){
+  try {
+    enableLogger("debug");
+    Molecule* mol = new Molecule();
+    std::vector<std::string> extraCovBonds;
+    IO::readPdb(mol, "/Users/rfonseca/2kmj_1.pdb", extraCovBonds);
+    Selection sel("resi 17 and id 4+7");
+    for(auto a: sel.getSelectedAtoms(mol)){
+      std::cout<<a<<endl;
+    }
+
+  } catch (const std::string& ex) {
+    cerr<<ex<<endl;
+  }
+}
 void testGlobalGradient(){
   try {
     enableLogger("debug");
@@ -215,10 +232,10 @@ void testQR(){
   int m = 4;
   int n = 3;
   gsl_matrix* A  = gsl_matrix_calloc(m,n);
-  gsl_matrix_set(A, 0,0, 3);gsl_matrix_set(A, 0,1, 6);gsl_matrix_set(A, 0,2, 2.9);
-  gsl_matrix_set(A, 1,0, 1);gsl_matrix_set(A, 1,1, 2);gsl_matrix_set(A, 1,2, 1);
-  gsl_matrix_set(A, 2,0, 1);gsl_matrix_set(A, 2,1, 2);gsl_matrix_set(A, 2,2, 1);
-  gsl_matrix_set(A, 3,0, 1.01);gsl_matrix_set(A, 3,1, 2);gsl_matrix_set(A, 3,2, 1);
+  gsl_matrix_set(A, 0,0, 3.00);gsl_matrix_set(A, 0,2, 6);gsl_matrix_set(A, 0,1, 3);
+  gsl_matrix_set(A, 1,0, 1.00);gsl_matrix_set(A, 1,2, 2);gsl_matrix_set(A, 1,1, 1);
+  gsl_matrix_set(A, 2,0, 1.00);gsl_matrix_set(A, 2,2, 2);gsl_matrix_set(A, 2,1, 1);
+  gsl_matrix_set(A, 3,0, 1.01);gsl_matrix_set(A, 3,2, 2);gsl_matrix_set(A, 3,1, 1);
   std::cout<<"A:"<<endl;
   for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(A,i,j)); std::cout<<std::endl;}
   gsl_matrix* Q = gsl_matrix_alloc(m,m);
