@@ -1875,15 +1875,17 @@ std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const 
   if(!input.is_open()) {cerr<<"IO::readrelativeDistances(..) - Error: Couldnt open "<<fname<<" for reading"<<endl; exit(-1);}
 
   std::vector< std::tuple<Atom*, Atom*, double> > ret;
-  string line, sel1Str, sel2Str;
-  double dist;
-  while( input.good() ){
-    input>>sel1Str;
-    input>>sel2Str;
-    input>>dist;
+  string line;
+  while( getline(input,line) ){
+    vector<string> tokens = Util::split(line, ",");
+    if(tokens.size()!=3){
+      cerr<<"IO::readRelativeDistances("<<fname<<") - error: Each restraint file line must have 2 atom selections and 1 distance that are comma-separated"<<endl;
+      exit(-1);
+    }
 
-    Selection s1(sel1Str);
-    Selection s2(sel2Str);
+    Selection s1(tokens[0]);
+    Selection s2(tokens[1]);
+    double dist = std::stod(tokens[2]);
 
     Atom* a1 = nullptr;
     if(s1.getSelectedResidues(mol).size()==1) {
@@ -1911,7 +1913,6 @@ std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const 
       }
     }
 
-    getline(input,line);
 
     ret.push_back( std::make_tuple( a1,a2, dist ) );
   }
