@@ -76,7 +76,8 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
 		if(arg=="--frontSize"){                     frontSize = atoi(argv[++i]);                        continue; }
 		if(arg=="--switchAfter"){                   switchAfter = atoi(argv[++i]);                      continue; }
-		if(arg=="--svdCutoff"){ 										svdCutoff = atof(argv[++i]); 												continue; }
+		if(arg=="--svdCutoff"){ 					svdCutoff = atof(argv[++i]); 						continue; }
+		if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                     continue; }
 
 		if(arg.at(0)=='-'){
 			cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -258,6 +259,7 @@ void SamplingOptions::initializeVariables(){
   frontSize                 = 50;
   switchAfter               = 20000;
   svdCutoff                 = 1.0e-12;
+  relativeDistances = "double";
 }
 
 void SamplingOptions::print(){
@@ -405,6 +407,8 @@ void SamplingOptions::printUsage(char* pname){
 	log("so")<<"\t--switchAfter <integer>\t: Max number of steps before switching search directions (if bidirectional is active)."<<endl;
 
 	log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
+
+	log("so")<<"\t --relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
 
 }
 

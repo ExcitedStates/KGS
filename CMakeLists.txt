@@ -165,7 +165,7 @@ add_library( libKGS
         core/graph/KinVertex.h
         core/graph/KinTree.cpp
         core/graph/KinTree.h
-        )
+		directions/LSNrelativeDirection.cpp directions/LSNrelativeDirection.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -225,6 +225,7 @@ add_executable( transition      applications/MainTransition.cpp )
 add_executable( loopexplore     applications/MainLoopExplore.cpp )
 add_executable( hierarchy       applications/MainHierarchy.cpp )
 add_executable( mcmc            applications/MainMCMC.cpp )
+add_executable( relative_transition            applications/MainRelativeTransition.cpp )
 
 target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
@@ -237,6 +238,7 @@ target_link_libraries( transition       libKGS ${GSL_LIBRARIES} )
 target_link_libraries( loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( hierarchy        libKGS ${GSL_LIBRARIES} )
 target_link_libraries( mcmc             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( relative_transition             libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 

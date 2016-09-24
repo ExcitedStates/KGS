@@ -112,6 +112,8 @@ class SamplingOptions
   int switchAfter;
   /** Cut-off for svd computation (magnitude of smallest singular value in the nullspace)*/
   double svdCutoff;
+  /** Specified distance to reach between couple of atoms */
+  std::string relativeDistances;
 
   void print();
 

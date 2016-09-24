@@ -164,17 +164,17 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
   gsl_matrix* Mn = gsl_matrix_mul(targetJacobian,N);
   SVD* svd2 = SVD::createSVD(Mn);//new MKLSVD(Mn);
   // gsl_matrix* inv=svd2->pseudoInverse();
-
+    svd2->UpdateFromMatrix();
   gsl_vector* S=svd2->S;
   gsl_matrix* V=svd2->V;
   gsl_matrix* U=svd2->U;
   gsl_matrix* Ut=gsl_matrix_trans(U);
   gsl_matrix* Tbis=gsl_matrix_mul(Ut,TargetPosition);
   gsl_matrix_free(Ut);
-  gsl_matrix* moveb = gsl_matrix_calloc(S->size,1); //TODO: Was S->size2. Make sure its correct
+  gsl_matrix* moveb = gsl_matrix_calloc(V->size1,1); //TODO: Was S->size2. Make sure its correct. Amelie S->size2 is V->size1 now I guess
   gsl_matrix_set_zero(moveb);
-  for( int i=0;i<S->size;i++){ //TODO: Same here
-    if (i<S->size){ //TODO: Same here
+  for( int i=0;i<V->size1;i++){ //TODO: Same here Amelie S->size2 is V->size1 now I guess
+    if (i<U->size1){ //TODO: Same here Amelie S->size1 is U->size1 now I guess
       if(gsl_vector_get(S,i)*gsl_vector_get(S,i)>0.0000000000001){
         gsl_matrix_set(moveb,i,0,gsl_matrix_get(Tbis,i,0)/gsl_vector_get(S,i));
       }
