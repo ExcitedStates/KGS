@@ -78,8 +78,8 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
     }
 
 //  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
-    gsl_matrix* TargetJacobian = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
-    gsl_matrix* TargetDirection = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
+    gsl_matrix* TargetJacobian = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
+    gsl_matrix* TargetDirection = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
 //  gsl_matrix_set_zero(m_TargetJacobian); //Already done by calloc
 //  gsl_matrix_set_zero(m_TargetPosition);
     fillmatrices(conf, TargetJacobian, TargetDirection);
@@ -117,7 +117,6 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
 //    exit(-1);
 //  }
     int nb_couple = goal_distances.size();
-    //cout<<nb_atom<<endl;
     //for(auto const& atom : atomList){//only use to extract res IDs and names
     gsl_vector* u = gsl_vector_alloc(3);//contains the direction between each couple of atoms.
     for (int i=0;i<nb_couple;i++){

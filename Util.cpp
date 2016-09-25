@@ -141,10 +141,9 @@ vector<string> Util::split( const string& s, const string& delim ) {
   auto i = 0, pos = 0;
   do{
     pos = s.find(delim, i);
-    words.push_back(s.substr(i, pos));
+    words.push_back(s.substr(i, pos-i));
     i = pos+delim.size();
   }while(pos!=string::npos);
-
   return words;
 }
 
