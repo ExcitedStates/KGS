@@ -37,7 +37,7 @@
 
 class LSNrelativeDirection: public Direction  {
 public:
-    LSNrelativeDirection(Selection& atomsMoving, std::vector< std::tuple<Atom*, Atom*, double> > goal);
+    LSNrelativeDirection(Selection& atomsMoving, std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
 
 private:
     void computeGradient(Configuration* conf, Configuration* conf2, gsl_vector* ret);
