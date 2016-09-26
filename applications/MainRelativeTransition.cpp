@@ -31,6 +31,7 @@ extern double rigidityTime;
 extern double selectNodeTime;
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol, double maxRotation);
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
@@ -121,10 +122,8 @@ int main( int argc, char* argv[] ) {
   std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
       IO::readRelativeDistances(options.relativeDistances, &protein);
 
-  BlendedDirection* m_direction = new BlendedDirection();
-  m_direction->addDirection(new LSNrelativeDirection(resNetwork, goal_distances),1);
-  m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 4);
-  Direction* direction = m_direction;
+  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
+  Direction* d2 = new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation);
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
@@ -159,17 +158,43 @@ int main( int argc, char* argv[] ) {
     CTKTimer timer;
     timer.Reset();
     double start_time = timer.LastElapsedTime();
-
+    gsl_vector* tmp1 = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
+    gsl_vector* tmp2 = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
     gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
     //Configuration* target_conf = new Configuration(&target);
     std::list<Configuration*> samples;
     samples.push_back(new Configuration(&protein));
     cout<<options.samplesToGenerate<<endl;
     for(int i=0;i<options.samplesToGenerate;i++){
+        double dist = dist_to_objective(goal_distances);
+        if (dist<0.00001)
+            break;
       cout<<"Iteration "<<i<<endl;
       Configuration* seed = samples.back();
-      direction->gradient(seed, seed, gradient);
-      //gsl_vector_scale_max_component(gradient, options.maxRotation);
+      d1->gradient(seed, seed, tmp1); //directed move
+      d2->gradient(seed, seed, tmp2); //random move
+      scale_gradient(tmp2, &protein, options.maxRotation);
+      double max_val1 = 0;
+      double max_val2 = 0;
+      for (int j=0;j<protein.m_spanning_tree->getNumDOFs();j++){ //looking for the maximal rotation
+        if ( fabs(gsl_vector_get(tmp1,j)) > max_val1)
+          max_val1 = fabs(gsl_vector_get(tmp1,j));
+        if ( fabs(gsl_vector_get(tmp2,j)) > max_val2)
+          max_val2 = fabs(gsl_vector_get(tmp2,j));
+      }
+      if (max_val2==0){ //if the random gradient is null we don't use it
+        for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
+          gsl_vector_set(gradient, j, gsl_vector_get(tmp1,j));
+        }
+      }
+      else { // we scale the random gradient so it has the 1/4 the max rotation as the directed gradient
+        gsl_vector_scale(tmp2, max_val1 / (4*max_val2));
+        for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
+          gsl_vector_set(gradient, j, gsl_vector_get(tmp1,j)+gsl_vector_get(tmp2,j));
+        }
+        //gsl_vector_scale_max_component(gradient, options.maxRotation);
+      }
+
       scale_gradient(gradient, &protein, options.maxRotation);
       //gsl_vector_scale(gradient, options.stepSize);
       Configuration* new_conf = move->move(seed, gradient);
@@ -199,7 +224,8 @@ int main( int argc, char* argv[] ) {
   }
   log("samplingStatus")<<"Done"<<endl;
   //Clean up
-  delete direction;
+  delete d1;
+  delete d2;
 
 
   return 0;
@@ -218,4 +244,17 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol,double maxRotation)
       max = fabs(val/maxRotation);
   }
   gsl_vector_scale(gradient, 1/max);
+}
+
+
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances)
+{
+    double d=0;
+    for (int i=0; i< goal_distances.size();i++){
+        Coordinate c1= get<0>(goal_distances[i])->m_position;
+        Coordinate c2= get<1>(goal_distances[i])->m_position;
+
+        d=d+fabs((sqrt((c1.x-c2.x)*(c1.x-c2.x)+(c1.y-c2.y)*(c1.y-c2.y)+(c1.z-c2.z)*(c1.z-c2.z))-get<2>(goal_distances[i])));
+    }
+    return d;
 }
