@@ -165,6 +165,7 @@ int main( int argc, char* argv[] ) {
     std::list<Configuration*> samples;
     samples.push_back(new Configuration(&protein));
     cout<<options.samplesToGenerate<<endl;
+    double bias = options.biasToTarget;
     for(int i=0;i<options.samplesToGenerate;i++){
         double dist = dist_to_objective(goal_distances);
         if (dist<0.00001)
@@ -182,17 +183,24 @@ int main( int argc, char* argv[] ) {
         if ( fabs(gsl_vector_get(tmp2,j)) > max_val2)
           max_val2 = fabs(gsl_vector_get(tmp2,j));
       }
-      if (max_val2==0){ //if the random gradient is null we don't use it
+      if (max_val2==0 || bias==1){ //if the random gradient is null we don't use it
         for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
           gsl_vector_set(gradient, j, gsl_vector_get(tmp1,j));
         }
       }
-      else { // we scale the random gradient so it has the 1/4 the max rotation as the directed gradient
-        gsl_vector_scale(tmp2, max_val1 / (4*max_val2));
-        for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
-          gsl_vector_set(gradient, j, gsl_vector_get(tmp1,j)+gsl_vector_get(tmp2,j));
+      else{
+        if (bias==0){ //only random
+          for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
+            gsl_vector_set(gradient, j, gsl_vector_get(tmp2,j));
+          }
         }
-        //gsl_vector_scale_max_component(gradient, options.maxRotation);
+        else { // we scale the random gradient so it has the 1/4 the max rotation as the directed gradient
+          gsl_vector_scale(tmp2, max_val1 / (max_val2)*(1-bias)/bias);
+          for (int j = 0; j<protein.m_spanning_tree->getNumDOFs();j++){
+            gsl_vector_set(gradient, j, gsl_vector_get(tmp1,j)+gsl_vector_get(tmp2,j));
+          }
+          //gsl_vector_scale_max_component(gradient, options.maxRotation);
+        }
       }
 
       scale_gradient(gradient, &protein, options.maxRotation);
