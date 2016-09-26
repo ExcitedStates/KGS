@@ -123,7 +123,7 @@ int main( int argc, char* argv[] ) {
 
   BlendedDirection* m_direction = new BlendedDirection();
   m_direction->addDirection(new LSNrelativeDirection(resNetwork, goal_distances),1);
-  m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation/2), 1);
+  m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 4);
   Direction* direction = m_direction;
 
   if(options.saveData > 0){

@@ -21,7 +21,7 @@ elseif(COMPILER_SUPPORTS_CXX0X)
 else()
 	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
-
+	message (STATUS "${CMAKE_CXX_COMPILER} ${CMAKE_CXX_FLAGS}")
 add_library( libKGS
 
         core/Atom.h
