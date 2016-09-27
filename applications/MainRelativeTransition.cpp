@@ -168,7 +168,7 @@ int main( int argc, char* argv[] ) {
     double bias = options.biasToTarget;
     for(int i=0;i<options.samplesToGenerate;i++){
         double dist = dist_to_objective(goal_distances);
-        if (dist<0.00001)
+        if (dist<options.convergeDistance)
             break;
       cout<<"Iteration "<<i<<endl;
       Configuration* seed = samples.back();
