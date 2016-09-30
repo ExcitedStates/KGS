@@ -1,9 +1,9 @@
 
 #include <algorithm>
 #include <iostream>
-#include "GSLQR.h"
+#include "QRGSL.h"
 
-void GSLQR::updateFromMatrix()
+void QRGSL::updateFromMatrix()
 {
   gsl_vector *tau = gsl_vector_alloc(std::min(m, n));
   gsl_permutation* perm = gsl_permutation_alloc(n);

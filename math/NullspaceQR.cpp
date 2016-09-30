@@ -2,13 +2,13 @@
 #include "NullspaceQR.h"
 #include "Logger.h"
 #include "gsl_helpers.h"
-#include "math/QRTranspose.h"
+#include "math/TransposeQR.h"
 
 double RDIAVAL_TOL = 1.0e-6;
 
 using namespace std;
 
-NullspaceQR::NullspaceQR(QRTranspose * qr) :
+NullspaceQR::NullspaceQR(TransposeQR * qr) :
     Nullspace(qr->getMatrix()),
     m_qr(qr)
 {

@@ -22,6 +22,9 @@
  * abstract UpdateFromMatrix function.
  */
 class Nullspace {
+ protected:
+  Nullspace(gsl_matrix* M);
+
  public:
 
   virtual ~Nullspace();
@@ -32,7 +35,7 @@ class Nullspace {
   /** Analyzes which dihedrals and hydrogen bonds are rigidified by constraints */
   void RigidityAnalysis(gsl_matrix* HBondJacobian);
 
-  /** Update the Nullspace (and underlying SVD) to reflect an updated state of the matrix */
+  /** Update the Nullspace (and underlying SVD/QR) to reflect an updated state of the matrix */
   void UpdateFromMatrix();
 
   /** Return the nullspace size */
@@ -48,13 +51,10 @@ class Nullspace {
   int NumRigidHBonds() const { return numRigidHBonds; }
 
   /** Return the underlying matrix. */
-  gsl_matrix* Matrix() const{ return m_svd->matrix; }
+  gsl_matrix* Matrix() const{ return m_matrix; }
 
   /** Return the basis of the nullspace as columns of a matrix */
   gsl_matrix *getBasis() const;
-
-  /** Return the SVD of the nullspace as columns of a matrix */
-  SVD *getSVD() const;
 
   /**
    * Returns true iff the angle specified by the argument is rigidified.

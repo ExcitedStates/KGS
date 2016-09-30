@@ -4,8 +4,8 @@
 
 #include "SVD.h"
 #include "math/gsl_helpers.h"
-#include "MKLSVD.h"
-#include "GSLSVD.h"
+#include "SVDMKL.h"
+#include "SVDGSL.h"
 
 using namespace std;
 
@@ -98,8 +98,8 @@ void SVD::print() const{
 SVD* SVD::createSVD(gsl_matrix* M)
 {
 #ifdef __INTEL_MKL
-  return new MKLSVD(M);
+  return new SVDMKL(M);
 #else
-  return new GSLSVD(M);
+  return new SVDGSL(M);
 #endif
 }

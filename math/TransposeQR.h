@@ -3,6 +3,7 @@
 #define QRTRANSPOSE_H
 
 #include <gsl/gsl_matrix.h>
+#include "QR.h"
 
 
 /**
@@ -12,9 +13,9 @@
  *
  * Convenient for computation of QR-backed nullspace (see NullspaceQR)
  */
-class QRTranspose{
+class TransposeQR{
  public:
-  QRTranspose(gsl_matrix* M);
+  TransposeQR(gsl_matrix* M);
 
   void updateFromMatrix();
 

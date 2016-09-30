@@ -1,7 +1,7 @@
 
-#include "GSLSVD.h"
+#include "SVDGSL.h"
 
-void GSLSVD::UpdateFromMatrix()
+void SVDGSL::UpdateFromMatrix()
 {
   if (m<n) {
     //TODO: Memorize U_t, work tau and R for later calls to update

@@ -5,8 +5,8 @@
 #include "NullspaceSVD.h"
 #include "Logger.h"
 #include "gsl_helpers.h"
-#include "GSLQR.h"
-#include "MKLQR.h"
+#include "QRGSL.h"
+#include "QRMKL.h"
 
 double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
 double RDIAVAL_TOL = 1.0e-6;

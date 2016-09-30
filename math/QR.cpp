@@ -4,8 +4,8 @@
 
 #include "QR.h"
 #include "math/gsl_helpers.h"
-#include "MKLQR.h"
-#include "GSLQR.h"
+#include "QRMKL.h"
+#include "QRGSL.h"
 
 using namespace std;
 
@@ -42,7 +42,7 @@ gsl_matrix* QR::getR() const { return m_R; }
 QR* QR::createQR(gsl_matrix* M)
 {
 #ifdef __INTEL_MKL
-  return new MKLQR(M);
+  return new QRMKL(M);
 #else
   return new GSLQR(M);
 #endif

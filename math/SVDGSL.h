@@ -5,9 +5,9 @@
 #include "math/SVD.h"
 #include <gsl/gsl_matrix.h>
 
-class GSLSVD: public SVD {
+class SVDGSL: public SVD {
  public:
-  GSLSVD(gsl_matrix* M): SVD(M){}
+  SVDGSL(gsl_matrix* M): SVD(M){}
 
  protected:
 

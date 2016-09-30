@@ -1,11 +1,11 @@
-#include "MKLSVD.h"
+#include "SVDMKL.h"
 
 #include <algorithm>
 
 #ifdef __INTEL_MKL
 #include <mkl_lapack.h>
 
-void MKLSVD::UpdateFromMatrix()
+void SVDMKL::UpdateFromMatrix()
 {
     int lwrk;
     const int mn = m*n;
@@ -61,9 +61,9 @@ void MKLSVD::UpdateFromMatrix()
 
 #else
 
-void MKLSVD::UpdateFromMatrix()
+void SVDMKL::UpdateFromMatrix()
 {
-    throw "MKLSVD::update_from_matrix error! MKL not supported. Install MKL and compile with -D__INTEL_MKL";
+    throw "SVDMKL::update_from_matrix error! MKL not supported. Install MKL and compile with -D__INTEL_MKL";
 }
 
 #endif

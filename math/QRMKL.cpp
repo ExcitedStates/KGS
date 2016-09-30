@@ -1,4 +1,4 @@
-#include "MKLQR.h"
+#include "QRMKL.h"
 #include "gsl_helpers.h"
 
 #include <algorithm>
@@ -7,7 +7,7 @@
 #ifdef __INTEL_MKL
 #include <mkl.h>
 
-void MKLQR::updateFromMatrix()
+void QRMKL::updateFromMatrix()
 {
   //Use m_R to store input to and then output from dgeqp3 temporarily
   gsl_matrix_memcpy(m_R, m_matrix);
@@ -18,13 +18,13 @@ void MKLQR::updateFromMatrix()
   double* tau = (double*)calloc(reflectors, sizeof(double));
   //Documentation for dgeqp3: https://software.intel.com/en-us/node/521004
   int status = LAPACKE_dgeqp3(LAPACK_ROW_MAJOR, m, n, m_R->data, n, jpvt, tau);
-  if(status!=0) throw "MKLQR::updateFromMatrix error: Call to LAPACKE_dgeqp3 failed";
+  if(status!=0) throw "QRMKL::updateFromMatrix error: Call to LAPACKE_dgeqp3 failed";
 
   //Use dormqr to multiply the implicitly encoded Q-matrix with the identity matrix to get the explicit Q
   gsl_matrix_set_identity(m_Q);
   //Documentation for dormqr: https://software.intel.com/en-us/node/521011
   status = LAPACKE_dormqr(LAPACK_ROW_MAJOR, 'L', 'N', m, m, reflectors, m_R->data, n, tau, m_Q->data, m);
-  if(status!=0) throw "MKLQR::updateFromMatrix error: Call to LAPACKE_dormqr failed";
+  if(status!=0) throw "QRMKL::updateFromMatrix error: Call to LAPACKE_dormqr failed";
 
   //The upper triangle of m_R contains the actual R matrix and the lower triangle contains the
   //implicitly encoded Q matrix, so now simply reset the lower triangle to 0.0
@@ -38,9 +38,9 @@ void MKLQR::updateFromMatrix()
 
 #else
 
-void MKLQR::updateFromMatrix()
+void QRMKL::updateFromMatrix()
 {
-    throw "MKLQR::updateFromMatrix error! MKL not supported. Install MKL and compile with -D__INTEL_MKL";
+    throw "QRMKL::updateFromMatrix error! MKL not supported. Install MKL and compile with -D__INTEL_MKL";
 }
 
 #endif

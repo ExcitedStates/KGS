@@ -5,9 +5,9 @@
 #include "math/QR.h"
 #include <gsl/gsl_matrix.h>
 
-class GSLQR: public QR {
+class QRGSL: public QR {
  public:
-  GSLQR(gsl_matrix* M): QR(M){}
+  QRGSL(gsl_matrix* M): QR(M){}
 
  protected:
 
