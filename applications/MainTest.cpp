@@ -37,8 +37,8 @@ int main( int argc, char* argv[] ) {
   enableLogger("default");
 //  testGlobalMSD();
 //  testGlobalGradient();
-//  testQR();
-  testSelection();
+  testQR();
+//  testSelection();
 }
 
 
@@ -229,32 +229,52 @@ void testQR(){
 //      gsl_matrix_set(A, i, j, rand() % 4);
 //    }
 //  }
-  int m = 4;
-  int n = 3;
+  srand(14);
+  rand();rand();rand();
+//  int m = 7;
+//  int n = 10;
+  int m = 5000;
+  int n = 1000;
+  cout<<m<<" x "<<n<<endl;
   gsl_matrix* A  = gsl_matrix_calloc(m,n);
-  gsl_matrix_set(A, 0,0, 3.00);gsl_matrix_set(A, 0,2, 6);gsl_matrix_set(A, 0,1, 3);
-  gsl_matrix_set(A, 1,0, 1.00);gsl_matrix_set(A, 1,2, 2);gsl_matrix_set(A, 1,1, 1);
-  gsl_matrix_set(A, 2,0, 1.00);gsl_matrix_set(A, 2,2, 2);gsl_matrix_set(A, 2,1, 1);
-  gsl_matrix_set(A, 3,0, 1.01);gsl_matrix_set(A, 3,2, 2);gsl_matrix_set(A, 3,1, 1);
-  std::cout<<"A:"<<endl;
-  for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(A,i,j)); std::cout<<std::endl;}
-  gsl_matrix* Q = gsl_matrix_alloc(m,m);
-  gsl_matrix* R = gsl_matrix_alloc(m,n);
+  for(int i=0;i<m;i++) {
+    for (int j = 0; j < n; j++) {
+      gsl_matrix_set(A, i, j, (rand()%2==0)?(rand()*1.0/RAND_MAX):(0.0));
+//      gsl_matrix_set(A, i, j, rand()%3);
+    }
+  }
 
-  gsl_vector* tau = gsl_vector_alloc(std::min(m,n));
-  gsl_linalg_QR_decomp(A, tau);
-  gsl_linalg_QR_unpack(A, tau, Q, R);
-//  gsl_vector* tau = gsl_vector_alloc(std::min(m,n));
-//  gsl_permutation* perm = gsl_permutation_alloc(n);
-//  gsl_vector* norm = gsl_vector_alloc(n);
-//  int* sign = new int(); *sign = 1;
-//  gsl_linalg_QRPT_decomp2(A, Q, R, tau, perm, sign, norm );
-  std::cout<<"Q:"<<endl;
-  for(int i=0;i<m;i++){ for(int j=0;j<m;j++) printf(" %5.2f",gsl_matrix_get(Q,i,j)); std::cout<<std::endl;}
-  std::cout<<"R:"<<endl;
-  for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(R,i,j)); std::cout<<std::endl;}
-//  std::cout<<"Perm:"<<endl;
-//  for(int i=0;i<n;i++) std::cout<<" "<<gsl_permutation_get(perm,i);
+  for(int j=0;j<n;j++){
+    gsl_matrix_set(A,3,j, gsl_matrix_get(A,2,j));
+  }
+
+//  std::cout<<"A:"<<endl;
+//  for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(A,i,j)); std::cout<<std::endl;}
+
+
+  double start, duration;
+
+  start = get_wall_time();
+  SVD* svd = new MKLSVD(A);//SVD::createSVD(A);
+  Nullspace ns2(svd);
+  ns2.UpdateFromMatrix();
+  duration = ( get_wall_time() - start );
+  cout<<"SVD took "<<duration<<"secs"<<endl;
+//  std::cout<<"N_SVD:"<<endl;
+//  gsl_matrix_cout(ns2.getBasis());
+
+  start = get_wall_time();
+  Nullspace ns(A);
+  ns.UpdateFromMatrix();
+  duration = ( get_wall_time() - start );
+  cout<<"QR took "<<duration<<"secs"<<endl;
+//  std::cout<<"N:"<<endl;
+//  gsl_matrix_cout(ns.getBasis());
+
+//  std::cout<<"A·N:"<<endl;
+//  gsl_matrix_cout(gsl_matrix_mul(A, ns.getBasis()));
+//  std::cout<<"A·N_SVD:"<<endl;
+//  gsl_matrix_cout(gsl_matrix_mul(A, ns2.getBasis()));
 
 
 //  gsl_matrix_cout(A);

@@ -31,9 +31,6 @@ class Nullspace {
 
   ~Nullspace();
 
-  /** Print the nullspace to standard output */
-  void print() const;
-
   /** Projects a vector on the nullspace */
   void ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const;
 

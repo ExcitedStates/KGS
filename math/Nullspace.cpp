@@ -5,6 +5,8 @@
 #include "Nullspace.h"
 #include "Logger.h"
 #include "gsl_helpers.h"
+#include "GSLQR.h"
+#include "MKLQR.h"
 
 double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
 double RDIAVAL_TOL = 1.0e-6;
@@ -38,7 +40,9 @@ Nullspace::Nullspace(gsl_matrix* matrix) :
 {
   gsl_matrix* matrixTrans = gsl_matrix_alloc(n,m);
   gsl_matrix_transpose_memcpy(matrixTrans, matrix);
-  m_qr = QR::createQR(matrixTrans);
+  //m_qr = QR::createQR(matrixTrans);
+//  m_qr = new GSLQR(matrixTrans);
+  m_qr = new MKLQR(matrixTrans);
   m_matrix = matrix;
 }
 
@@ -95,10 +99,11 @@ void Nullspace::UpdateFromMatrix()
     //Compute nullspacesize
     int rank = 0;
 
-    for(int i=0;i<std::min(m,n);i++)
-      if(gsl_matrix_get(m_qr->getR(),i,i)>RDIAVAL_TOL) rank++;
-
-    m_nullspaceSize = m-rank;
+    for(int i=0;i<std::min(m,n);i++) {
+      double val = gsl_matrix_get(m_qr->getR(), i, i);
+      if (fabs(val) > RDIAVAL_TOL) rank++;
+    }
+    m_nullspaceSize = n-rank;
 
     if (m_nullspaceBasis)
       gsl_matrix_free(m_nullspaceBasis);
@@ -106,11 +111,11 @@ void Nullspace::UpdateFromMatrix()
     if (m_nullspaceSize > 0) {
       gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_qr->getQ(),
                                                                  0,                                     //Row
-                                                                 m_qr->getQ()->size2 - m_nullspaceSize, //Col
-                                                                 m_qr->getQ()->size2,                   //Height
+                                                                 n - m_nullspaceSize, //Col
+                                                                 n,                   //Height
                                                                  m_nullspaceSize);                      //Width
 
-      m_nullspaceBasis = gsl_matrix_calloc(m_qr->getQ()->size2, m_nullspaceSize);
+      m_nullspaceBasis = gsl_matrix_calloc(n, m_nullspaceSize);
       gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
     }
     else {
