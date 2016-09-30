@@ -5,13 +5,6 @@
 
 void GSLQR::updateFromMatrix()
 {
-//  gsl_matrix* mCopy = gsl_matrix_alloc(m,n);
-//  gsl_matrix_memcpy(mCopy, m_matrix);
-//
-//  gsl_vector* tau = gsl_vector_alloc(std::min(m,n));
-//  gsl_linalg_QR_decomp(mCopy, tau);
-//  gsl_linalg_QR_unpack(mCopy, tau, m_Q, m_R);
-
   gsl_vector *tau = gsl_vector_alloc(std::min(m, n));
   gsl_permutation* perm = gsl_permutation_alloc(n);
   gsl_vector* norm = gsl_vector_alloc(n);
@@ -21,10 +14,5 @@ void GSLQR::updateFromMatrix()
   gsl_vector_free(tau);
   gsl_permutation_free(perm);
   gsl_vector_free(norm);
-
-//  std::cout<<"Permutation: ";
-//  for(size_t i=0;i<n;i++) {
-//    std::cout<<" "<<gsl_permutation_get(perm, i);
-//  }
-//  std::cout<<std::endl;
+  free(sign);
 }

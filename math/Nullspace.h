@@ -1,6 +1,6 @@
 
-#ifndef KGS_nullptrSPACE_H
-#define KGS_nullptrSPACE_H
+#ifndef KGS_NULLSPACE_H
+#define KGS_NULLSPACE_H
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
@@ -23,13 +23,8 @@
  */
 class Nullspace {
  public:
-  /** Will construct a nullspace using the SVD decomposition */
-  Nullspace(SVD * svd);
 
-  /** Will construct a nullspace using the QR decomposition */
-  Nullspace(gsl_matrix * matrix);
-
-  ~Nullspace();
+  virtual ~Nullspace();
 
   /** Projects a vector on the nullspace */
   void ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const;
@@ -68,15 +63,15 @@ class Nullspace {
    */
   bool IsAngleRigid(int angle_id){ return fabs(gsl_vector_get(rigidAngles, angle_id)-1.0)<0.001; }
 
-  void WriteMatricesToFiles(const std::string& jac_file,
-                            const std::string& null_file,
-                            const std::string& sval_file) const;
 
+  /**
+   * Constructs a Nullspace object. By default this will be an SVD-backed Nullspace but that
+   * might change to a QR-backed in the future.
+   */
+  static Nullspace* createNullspace(gsl_matrix* M);
 
 
 private:
-  SVD* m_svd;                  ///< SVD underlying this nullspace
-  QR* m_qr;                    ///< QR underlying this nullspace
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)
   gsl_matrix* m_matrix;        ///< Original matrix. Only set if using QR decomp (as it needs to be transposed)

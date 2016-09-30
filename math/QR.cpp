@@ -47,3 +47,10 @@ QR* QR::createQR(gsl_matrix* M)
   return new GSLQR(M);
 #endif
 }
+
+
+
+QRTranspose::QRTranspose(gsl_matrix* matrix):
+    QR(gsl_matrix_alloc(matrix->size2, matrix->size1)),
+    m_origMatrix(matrix)
+{}

@@ -32,7 +32,7 @@ class QR{
 
   virtual ~QR();
 
-  /** Update Q adn R to reflect the decomposition of the matrix. */
+  /** Update Q and R to reflect the decomposition of the matrix. */
   virtual void updateFromMatrix() = 0;
 
   /** Print the QR to standard out */
@@ -47,5 +47,7 @@ class QR{
   gsl_matrix * const m_R;
 
 };
+
+
 
 #endif
