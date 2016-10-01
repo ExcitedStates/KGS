@@ -30,28 +30,28 @@ class Nullspace {
   virtual ~Nullspace();
 
   /** Projects a vector on the nullspace */
-  void ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const;
+  void projectOnNullSpace(gsl_vector *to_project, gsl_vector *after_project) const;
 
   /** Analyzes which dihedrals and hydrogen bonds are rigidified by constraints */
-  void RigidityAnalysis(gsl_matrix* HBondJacobian);
+  void performRigidityAnalysis(gsl_matrix *HBondJacobian);
 
   /** Update the Nullspace (and underlying SVD/QR) to reflect an updated state of the matrix */
-  void UpdateFromMatrix();
+  virtual void updateFromMatrix() = 0;
 
   /** Return the nullspace size */
-  int NullspaceSize() const { return m_nullspaceSize; }
+  int getNullspaceSize() const { return m_nullspaceSize; }
 
   /** Return number of cycle DOFs */
   int getNumDOFs() const { return n; }
 
   /** Return number of dihedral DOFs that were rigidified in the last call to RigidityAnalysis. */
-  int NumRigidDihedrals() const { return numRigidDihedrals; }
+  int getNumRigidDihedrals() const { return numRigidDihedrals; }
 
   /** Return number of h-bond dihedrals that were rigidified in the last call to RigidityAnalysis. */
-  int NumRigidHBonds() const { return numRigidHBonds; }
+  int getNumRigidHBonds() const { return numRigidHBonds; }
 
   /** Return the underlying matrix. */
-  gsl_matrix* Matrix() const{ return m_matrix; }
+  gsl_matrix* getMatrix() const{ return m_matrix; }
 
   /** Return the basis of the nullspace as columns of a matrix */
   gsl_matrix *getBasis() const;
@@ -61,31 +61,23 @@ class Nullspace {
    * This result is only accurate if UpdateFromMatrix and RigidityAnalysis have both
    * been called.
    */
-  bool IsAngleRigid(int angle_id){ return fabs(gsl_vector_get(rigidAngles, angle_id)-1.0)<0.001; }
+  bool isAngleRigid(int angle_id){ return fabs(gsl_vector_get(rigidAngles, angle_id)-1.0)<0.001; }
 
 
-  /**
-   * Constructs a Nullspace object. By default this will be an SVD-backed Nullspace but that
-   * might change to a QR-backed in the future.
-   */
-  static Nullspace* createNullspace(gsl_matrix* M);
-
-
-private:
+ protected:
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)
   gsl_matrix* m_matrix;        ///< Original matrix. Only set if using QR decomp (as it needs to be transposed)
 
   gsl_matrix* m_nullspaceBasis;///< Basis of the nullspace
 
+ private:
   gsl_vector* rigidAngles;     ///< Binary vector indicating which m_dofs are rigid
   gsl_vector* rigidHBonds;     ///< Binary vector indicating which h-bonds are rigid
 
   int numCoordinatedDihedrals; ///< Coordinated dihedrals
   int numRigidDihedrals;       ///< Rigid dihedrals
   int numRigidHBonds;          ///< Rigid hydrogen bonds
-
-
 
   /// These values have to be chosen according to the numerical analysis
 //  static constexpr double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12

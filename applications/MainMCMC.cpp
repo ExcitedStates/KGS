@@ -148,9 +148,10 @@ int main( int argc, char* argv[] ) {
     log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-    log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
-    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<< protein.m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
+    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-
+                        protein.m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<< protein.m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
     double bigRad = options.stepSize*4/3;
     double lilRad = bigRad/2;

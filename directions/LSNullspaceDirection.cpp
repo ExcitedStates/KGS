@@ -162,7 +162,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q,
 gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition){
 
   gsl_matrix* Mn = gsl_matrix_mul(targetJacobian,N);
-  SVD* svd2 = SVD::createSVD(Mn);//new MKLSVD(Mn);
+  SVD* svd2 = SVD::createSVD(Mn);//new SVDMKL(Mn);
   // gsl_matrix* inv=svd2->pseudoInverse();
     svd2->UpdateFromMatrix();
   gsl_vector* S=svd2->S;

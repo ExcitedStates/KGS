@@ -131,22 +131,28 @@ add_library( libKGS
         metrics/RMSDnosuper.cpp
         math3d/primitives.cpp
 
-        math/GSLSVD.cpp
-        math/GSLSVD.h
-        math/MKLSVD.cpp
-        math/MKLSVD.h
+        math/SVDGSL.cpp
+        math/SVDGSL.h
+        math/SVDMKL.cpp
+        math/SVDMKL.h
         math/CudaSVD.cpp
         math/CudaSVD.h
         math/QR.cpp
         math/QR.h
-        math/GSLQR.cpp
-        math/GSLQR.h
-        math/MKLQR.cpp
-        math/MKLQR.h
+        math/QRGSL.cpp
+        math/QRGSL.h
+        math/QRMKL.cpp
+        math/QRMKL.h
         math/gsl_helpers.cpp
         math/gsl_helpers.h
         math/Nullspace.cpp
         math/Nullspace.h
+        math/NullspaceSVD.cpp
+        math/NullspaceSVD.h
+        math/NullspaceQR.cpp
+        math/NullspaceQR.h
+        math/TransposeQR.cpp
+        math/TransposeQR.h
         loopclosure/ExactIK.cpp
         loopclosure/ExactIK.h
         core/dofs/DOF.cpp

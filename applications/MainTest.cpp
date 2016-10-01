@@ -1,8 +1,8 @@
 #include <string>
 #include <ctime>
 #include <Logger.h>
-#include <math/MKLSVD.h>
-#include <math/GSLSVD.h>
+#include <math/SVDMKL.h>
+#include <math/SVDGSL.h>
 #include <math/CudaSVD.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_matrix.h>
@@ -16,8 +16,10 @@
 #include <directions/RandomDirection.h>
 #include <sys/time.h>
 #include <math/QR.h>
-#include <math/MKLQR.h>
-#include <math/GSLQR.h>
+#include <math/QRMKL.h>
+#include <math/QRGSL.h>
+#include <math/NullspaceSVD.h>
+#include <math/NullspaceQR.h>
 
 #include "core/Chain.h"
 #include "IO.h"
@@ -179,7 +181,7 @@ void testCuda(){
 //  gsl_matrix_cout(A);
 
   double start = get_wall_time();
-  SVD* mklsvd = new MKLSVD(A);
+  SVD* mklsvd = new SVDMKL(A);
   mklsvd->UpdateFromMatrix();
 //  mklsvd->print();
   double duration = ( get_wall_time() - start );
@@ -203,7 +205,7 @@ void testCuda(){
   cout<<"CUDA took "<<duration<<"secs"<<endl;
 
   start = get_wall_time();
-  SVD* gslsvd = new GSLSVD(A);
+  SVD* gslsvd = new SVDGSL(A);
   gslsvd->UpdateFromMatrix();
   duration = ( get_wall_time() - start );
   cout<<"GSL took  "<<duration<<"secs"<<endl;
@@ -255,17 +257,18 @@ void testQR(){
   double start, duration;
 
   start = get_wall_time();
-  SVD* svd = new MKLSVD(A);//SVD::createSVD(A);
-  Nullspace ns2(svd);
-  ns2.UpdateFromMatrix();
+  SVD* svd = new SVDMKL(A);//SVD::createSVD(A);
+  Nullspace* ns2 = new NullspaceSVD(svd);
+  ns2->updateFromMatrix();
   duration = ( get_wall_time() - start );
   cout<<"SVD took "<<duration<<"secs"<<endl;
 //  std::cout<<"N_SVD:"<<endl;
 //  gsl_matrix_cout(ns2.getBasis());
 
   start = get_wall_time();
-  Nullspace ns(A);
-  ns.UpdateFromMatrix();
+  TransposeQR* qr = new TransposeQR(A);
+  Nullspace* ns = new NullspaceQR(qr);
+  ns->updateFromMatrix();
   duration = ( get_wall_time() - start );
   cout<<"QR took "<<duration<<"secs"<<endl;
 //  std::cout<<"N:"<<endl;
@@ -282,7 +285,7 @@ void testQR(){
 //  double start, duration;
 
 //  start = get_wall_time();
-//  QR* mklqr = new MKLQR(A);
+//  QR* mklqr = new QRMKL(A);
 //  mklqr->updateFromMatrix();
 //  mklqr->print();
 //  duration = ( get_wall_time() - start );
@@ -299,7 +302,7 @@ void testQR(){
 //  cout<<" ------------------------------------- "<<endl;
 
 //  start = get_wall_time();
-//  QR* gslqr = new GSLQR(A);
+//  QR* gslqr = new QRGSL(A);
 //  gslqr->updateFromMatrix();
 //  gslqr->print();
 //  duration = ( get_wall_time() - start );

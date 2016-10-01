@@ -15,18 +15,15 @@
 class NullspaceSVD: public Nullspace {
  public:
   /** Will construct a nullspace of `matrix` using the SVD decomposition */
-  NullspaceSVD(gsl_matrix* matrix);
-
-  ~NullspaceSVD();
-
+  NullspaceSVD(SVD* svd);
 
   /** Update the Nullspace (and underlying SVD) to reflect an updated state of the matrix */
-  void UpdateFromMatrix();
+  void updateFromMatrix() override;
 
   /** Return the SVD of the nullspace as columns of a matrix */
   SVD *getSVD() const;
 
-  void Nullspace::WriteMatricesToFiles(
+  void writeMatricesToFiles(
       const std::string& jac_file,
       const std::string& null_file,
       const std::string& sval_file) const;

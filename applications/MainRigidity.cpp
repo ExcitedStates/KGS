@@ -7,6 +7,7 @@
 #include <gsl/gsl_matrix.h>
 #include <math/gsl_helpers.h>
 #include <gsl/gsl_matrix_double.h>
+#include <math/NullspaceSVD.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -82,9 +83,9 @@ int main( int argc, char* argv[] ){
   protein->setConfiguration(conf);
   //conf->computeCycleJacobianAndNullSpace();
 
-  log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->Matrix()->size1 << " rows, ";
-  log("rigidity")<<conf->getNullspace()->Matrix()->size2<<" columns"<<endl;
-  log("rigidity")<<"Dimension of kernel "<<conf->getNullspace()->NullspaceSize()<<endl;
+  log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->getMatrix()->size1 << " rows, ";
+  log("rigidity")<< conf->getNullspace()->getMatrix()->size2<<" columns"<<endl;
+  log("rigidity")<<"Dimension of kernel "<< conf->getNullspace()->getNullspaceSize()<<endl;
 
   int sample_id = 1;
   string out_file = out_path + "output/" + name + "_new_" +
@@ -140,7 +141,9 @@ int main( int argc, char* argv[] ){
       //gsl_matrix_outtofile(conf->CycleNullSpace->m_nullspaceBasis,outNull);
       /////Write Singular values
       //gsl_vector_outtofile(NullSpaceRet::singularValues,outSing);
-      conf->getNullspace()->WriteMatricesToFiles(outJac, outNull, outSing);
+      if (NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace())) {
+        derived->writeMatricesToFiles(outJac, outNull, outSing);
+      }
 
       ///Write rigid bodies
       IO::writeRBs(protein, rbFile);

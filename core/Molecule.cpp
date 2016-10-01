@@ -49,7 +49,7 @@
 #include "SamplingOptions.h"
 #include <fstream>
 #include <sstream>
-#include <math/MKLSVD.h>
+#include <math/SVDMKL.h>
 #include <set>
 #include <core/dofs/GlobalRotateDOF.h>
 #include <core/dofs/GlobalTranslateDOF.h>
@@ -776,7 +776,7 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
 //    // Project onto the null space
 //    double normBefore = gsl_vector_length(to_proj_short);
 //    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->getNumDOFs());
-//    m_conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
+//    m_conf->getNullspace()->projectOnNullSpace(to_proj_short, after_proj_short);
 //    double normAfter = gsl_vector_length(after_proj_short);
 //
 //    //Scale projected gradient to same norm as unprojected
@@ -799,7 +799,7 @@ void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
 //  }
 //  else {
 //    double normBefore = gsl_vector_length(to_project);
-//    m_conf->getNullspace()->ProjectOnNullSpace(to_project, after_project);
+//    m_conf->getNullspace()->projectOnNullSpace(to_project, after_project);
 //    double normAfter = gsl_vector_length(after_project);
 //    gsl_vector_scale(after_project, normBefore/normAfter);
 //  }
@@ -1495,7 +1495,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
 
     //Find pseudo-inverse
-    MKLSVD svd(J);
+    SVDMKL svd(J);
     //svd.print();
     gsl_matrix* J_dag = svd.PseudoInverse();
     //log("debugRas")<<"J_dag"<<endl;

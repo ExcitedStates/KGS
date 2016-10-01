@@ -9,7 +9,6 @@
 #include "QRMKL.h"
 
 double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
-double RDIAVAL_TOL = 1.0e-6;
 
 using namespace std;
 
@@ -19,11 +18,7 @@ NullspaceSVD::NullspaceSVD(SVD * svd) :
 {
 }
 
-NullspaceSVD::~NullspaceSVD()
-{
-}
-
-void NullspaceSVD::UpdateFromMatrix()
+void NullspaceSVD::updateFromMatrix()
 {
   m_svd->UpdateFromMatrix();
 
@@ -60,7 +55,7 @@ void NullspaceSVD::UpdateFromMatrix()
 }
 
 
-void Nullspace::WriteMatricesToFiles(
+void NullspaceSVD::writeMatricesToFiles(
     const std::string& jac_file,
     const std::string& null_file,
     const std::string& sval_file) const
@@ -70,15 +65,7 @@ void Nullspace::WriteMatricesToFiles(
   gsl_vector_outtofile(m_svd->S, sval_file);
 }
 
-gsl_matrix *Nullspace::getBasis() const {
-  return m_nullspaceBasis;
-}
-
-SVD *Nullspace::getSVD() const {
+SVD *NullspaceSVD::getSVD() const {
   return m_svd;
 }
 
-Nullspace* Nullspace::createNullspace(gsl_matrix* M)
-{
-  return new SVDNullspace(M);
-}

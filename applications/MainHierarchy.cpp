@@ -12,6 +12,7 @@
 #include <gsl/gsl_blas.h>
 #include <math/gsl_helpers.h>
 #include <gsl/gsl_matrix_double.h>
+#include <math/NullspaceSVD.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -116,11 +117,12 @@ int main( int argc, char* argv[] ) {
   log("hierarchy") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " <<
   protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
-  int numCols = conf->getNullspace()->Matrix()->size2;
-  int nullspaceCols = conf->getNullspace()->NullspaceSize();
+  NullspaceSVD* ns = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
+  int numCols = ns->getMatrix()->size2;
+  int nullspaceCols = ns->getNullspaceSize();
   int sampleCount = 0;
 
-  log("hierarchy") << "Dimension of Jacobian: " << conf->getNullspace()->Matrix()->size1 << " rows, ";
+  log("hierarchy") << "Dimension of Jacobian: " << ns->getMatrix()->size1 << " rows, ";
   log("hierarchy") << numCols << " columns" << endl;
   log("hierarchy") << "Dimension of kernel " << nullspaceCols << endl;
 
@@ -139,7 +141,7 @@ int main( int argc, char* argv[] ) {
     IO::writeStats(&protein, statFile);
     ///Write rigid bodies
     IO::writeRBs(&protein, rbFile);
-    gsl_vector_outtofile(conf->getNullspace()->getSVD()->S,singVals);
+    gsl_vector_outtofile(ns->getSVD()->S, singVals);
   }
 //  cout<<"First conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
 
@@ -147,8 +149,8 @@ int main( int argc, char* argv[] ) {
   gsl_vector* allDofs = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
 
   //Write the complete J*V product out to file
-  gsl_matrix* fullProduct = gsl_matrix_alloc(conf->getNullspace()->Matrix()->size1, numCols);
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, conf->getNullspace()->Matrix(), conf->getNullspace()->getSVD()->V, 0.0, fullProduct);
+  gsl_matrix* fullProduct = gsl_matrix_alloc(ns->getMatrix()->size1, numCols);
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, ns->getMatrix(), ns->getSVD()->V, 0.0, fullProduct);
   string outProd="fullProduct_JV.txt";
   gsl_matrix_outtofile(fullProduct, outProd);
 
@@ -162,7 +164,7 @@ int main( int argc, char* argv[] ) {
       log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
     }
 
-    gsl_vector_view projected_gradient_view = gsl_matrix_column(conf->getNullspace()->getSVD()->V,numCols - i - 1);
+    gsl_vector_view projected_gradient_view = gsl_matrix_column(ns->getSVD()->V,numCols - i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
 
     //Scale to desired step size
@@ -187,10 +189,10 @@ int main( int argc, char* argv[] ) {
 //    }
 
     //Identify predictedViolation from product with constraint Jacobian
-    gsl_vector* violationVec = gsl_matrix_vector_mul(conf->getNullspace()->getSVD()->matrix, projected_gradient);
+    gsl_vector* violationVec = gsl_matrix_vector_mul(ns->getSVD()->matrix, projected_gradient);
     double predictedViolation = gsl_vector_length(violationVec);
-//    cout<<"Pred norm: "<<predictedViolation<<", sing vec norm: "<<gsl_vector_get(conf->getNullspace()->getSVD()->S,numCols - i - 1)<<endl;
-//    cout<<"Second conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
+//    cout<<"Pred norm: "<<predictedViolation<<", sing vec norm: "<<gsl_vector_get(ns->getSVD()->S,numCols - i - 1)<<endl;
+//    cout<<"Second conf "<<conf<<", S: "<<ns->getSVD()->S<<endl;
     gsl_vector_free(violationVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
@@ -233,8 +235,12 @@ int main( int argc, char* argv[] ) {
     double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);
     double deltaVdwEnergy = qNew->getMolecule()->vdwEnergy(options.collisionCheck) - initialVdwEnergy;
 
-    log("hierarchy") << "> New structure: " << ++sampleCount << " of a total of " <<
-    conf->getNullspace()->Matrix()->size2 << " samples. Delta hbond energy: " << normDeltaHEnergy<<", pred. violation: "<<predictedViolation<<", obs. violation: "<<observedViolation<<", delta vdw: "<<deltaVdwEnergy<<endl;
+    log("hierarchy") << "> New structure: " << ++sampleCount;
+    log("hierarchy") << " of a total of " << ns->getMatrix()->size2 << " samples.";
+    log("hierarchy") << " Delta hbond energy: " << normDeltaHEnergy;
+    log("hierarchy") << ", pred. violation: "<<predictedViolation;
+    log("hierarchy") << ", obs. violation: "<<observedViolation;
+    log("hierarchy") << ", delta vdw: "<<deltaVdwEnergy<<endl;
     SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
 
     hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(i+1))+".txt";

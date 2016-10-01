@@ -60,7 +60,7 @@ gsl_vector* NullspaceMove::projectOnNullspace(Configuration* conf, gsl_vector* g
     //Project reduced gradient
     double normBefore = gsl_vector_length(to_proj_short);
     gsl_vector *after_proj_short = gsl_vector_calloc(conf->getNullspace()->getNumDOFs());
-    conf->getNullspace()->ProjectOnNullSpace(to_proj_short, after_proj_short);
+    conf->getNullspace()->projectOnNullSpace(to_proj_short, after_proj_short);
     double normAfter = gsl_vector_length(after_proj_short);
 
     //Scale so the norm is the same as before projection
@@ -81,7 +81,7 @@ gsl_vector* NullspaceMove::projectOnNullspace(Configuration* conf, gsl_vector* g
     gsl_vector_free(after_proj_short);
   } else {
     double normBefore = gsl_vector_length(gradient);
-    conf->getNullspace()->ProjectOnNullSpace(gradient, ret);
+    conf->getNullspace()->projectOnNullSpace(gradient, ret);
     double normAfter = gsl_vector_length(ret);
     gsl_vector_scale(ret, normBefore/normAfter);
   }

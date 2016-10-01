@@ -5,7 +5,8 @@
 #include "ClashAvoidingMove.h"
 
 #include <math/gsl_helpers.h>
-#include <math/MKLSVD.h>
+#include <math/SVDMKL.h>
+#include <math/NullspaceSVD.h>
 #include "Logger.h"
 
 using namespace std;
@@ -39,7 +40,8 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
-  new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs() + new_q->getNullspace()->NullspaceSize();
+  new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs() +
+      new_q->getNullspace()->getNullspaceSize();
 
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
@@ -92,15 +94,15 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       }
 
       gsl_matrix* clashAvoidingJacobian = computeClashAvoidingJacobian( current, allCollisions);
-      SVD* clashAvoidingSVD  = new MKLSVD(clashAvoidingJacobian);
-      Nullspace* clashAvoidingNullSpace = new Nullspace(clashAvoidingSVD);
-      clashAvoidingNullSpace->UpdateFromMatrix();
-      clashAvoidingNullSpace->ProjectOnNullSpace(projected_gradient, projected_gradient);
+      SVD* clashAvoidingSVD  = new SVDMKL(clashAvoidingJacobian);
+      Nullspace* clashAvoidingNullSpace = new NullspaceSVD(clashAvoidingSVD);
+      clashAvoidingNullSpace->updateFromMatrix();
+      clashAvoidingNullSpace->projectOnNullSpace(projected_gradient, projected_gradient);
 
       new_q->m_usedClashPrevention = true;
-      new_q->m_clashFreeDofs = clashAvoidingNullSpace->NullspaceSize();
+      new_q->m_clashFreeDofs = clashAvoidingNullSpace->getNullspaceSize();
 
-      log("dominik")<<"New nullspace dimension: "<<clashAvoidingNullSpace->NullspaceSize()<<endl;
+      log("dominik")<<"New nullspace dimension: "<< clashAvoidingNullSpace->getNullspaceSize()<<endl;
 
       delete clashAvoidingNullSpace;
       delete clashAvoidingSVD;

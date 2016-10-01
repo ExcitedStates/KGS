@@ -176,7 +176,7 @@ void RRTPlanner::GenerateSamples() {
 				log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << pNewSmp->m_distanceToIni;
 				log("samplingStatus") << " .. Distance to current target: " << setprecision(3) << distToRandGoal;
 				//TODO: Dont just calculate nullspace for this
-				log("samplingStatus") << " .. Null-space dimension: " << pNewSmp->getNullspace()->NullspaceSize();
+				log("samplingStatus") << " .. Null-space dimension: " << pNewSmp->getNullspace()->getNullspaceSize();
 				log("samplingStatus") << endl;
 
 				if (distToRandGoal <= MOV_DIH_THRESHOLD) {//current target reached

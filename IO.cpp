@@ -797,7 +797,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     int second = 1;
     if(cycleDOF_id == -1)
       second = 0;
-    else if( protein->m_conf->getNullspace()->IsAngleRigid(cycleDOF_id) )
+    else if(protein->m_conf->getNullspace()->isAngleRigid(cycleDOF_id) )
       second = 2;
     double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsion(dof_id) -
                                               referenceConf->getGlobalTorsion(dof_id));
@@ -1477,7 +1477,7 @@ void IO::writeStats(Molecule * protein, string output_file_name){
   }
   if(protein->m_conf!=nullptr){
     int diff= protein->m_spanning_tree->getNumDOFs() - protein->m_spanning_tree->getNumCycleDOFs();
-    int sum = protein->m_conf->getNullspace()->NullspaceSize() + diff;
+    int sum = protein->m_conf->getNullspace()->getNullspaceSize() + diff;
     //int sum = m_molecule->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
     output <<"************* Statistics on the molecular structure *************"<<endl;
@@ -1489,12 +1489,12 @@ void IO::writeStats(Molecule * protein, string output_file_name){
     output <<"Number of free DOFs: " << diff << endl;
     output <<"Number of cycle DOFs: " << protein->m_spanning_tree->getNumCycleDOFs() << endl<<endl;
     output <<"************* Statistics on rigidity analysis *************"<<endl;
-    output <<"Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->NullspaceSize() << endl;
+    output <<"Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize() << endl;
     //output <<"Number of internal m_dofs (nullspace dimension): " << m_molecule->m_conf->CycleNullSpace->getNullspace()Size <<endl;
     output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
-    output <<"Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->NumRigidDihedrals() << endl;
+    output <<"Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals() << endl;
     //output <<"Number of rigidified covalent bonds: " << m_molecule->m_conf->CycleNullSpace->m_numRigid<<endl;
-    output <<"Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->NumRigidHBonds() << endl;
+    output <<"Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
     //output <<"Number of rigidified hydrogen bonds: " << m_molecule->m_conf->CycleNullSpace->m_numRigidHBonds<<endl;
     output << "Number of rigid clusters: " << protein->m_conf->m_numClusters << endl;
     output << "Size of biggest cluster: " << protein->m_conf->m_maxSize << endl;

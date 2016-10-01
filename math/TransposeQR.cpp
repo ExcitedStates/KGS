@@ -6,13 +6,9 @@ using namespace std;
 
 TransposeQR::TransposeQR(gsl_matrix* M):
     m_origMatrix(M),
-    m_qr(gsl_matrix_alloc(M->size2, M->size1))
+    m_qr(QR::createQR(gsl_matrix_alloc(M->size2, M->size1)))
 {}
 
-TransposeQR::~QRTranspose(){
-  gsl_matrix_free(m_qr->getMatrix());
-  delete m_qr;
-}
 
 void TransposeQR::updateFromMatrix()
 {

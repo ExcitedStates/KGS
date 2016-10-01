@@ -1,4 +1,5 @@
 #include <math/gsl_helpers.h>
+#include <math/NullspaceSVD.h>
 
 #include "SamplingPlanner.h"
 
@@ -113,7 +114,9 @@ void SamplingPlanner::writeNewSample(Configuration* conf, Configuration* ref, in
 		//gsl_matrix_outtofile(conf->CycleNullSpace->V,outNull);
 		//gsl_vector_outtofile(conf->CycleNullSpace->singularValues,outSing);
 
-		conf->getNullspace()->WriteMatricesToFiles(outJac, outNull, outSing);
+    if (NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace())) {
+      derived->writeMatricesToFiles(outJac, outNull, outSing);
+    }
 		IO::writeRBs(protein, rbFile);
 		IO::writeStats(protein,statFile);
 

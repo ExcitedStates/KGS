@@ -198,7 +198,7 @@ gsl_matrix* LSNrelativeDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
             cout<<gsl_matrix_get(Mn,i,j)<<" ";
         cout<<endl;
     }*/
-    SVD *svd2 = SVD::createSVD(Mn);//new MKLSVD(Mn);
+    SVD *svd2 = SVD::createSVD(Mn);//new SVDMKL(Mn);
     // gsl_matrix* inv=svd2->pseudoInverse();
     svd2->UpdateFromMatrix();
     gsl_vector *S = svd2->S;

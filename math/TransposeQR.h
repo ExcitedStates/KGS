@@ -28,8 +28,8 @@ class TransposeQR{
   gsl_matrix* getR() const;
 
  private:
-  const QR* m_qr;
-  const gsl_matrix* m_origMatrix;
+  QR * const m_qr;
+  gsl_matrix * const m_origMatrix;
 };
 
 #endif

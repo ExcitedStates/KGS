@@ -29,9 +29,10 @@
 #include "FastClashAvoidingMove.h"
 
 #include <math/gsl_helpers.h>
-#include <math/MKLSVD.h>
+#include <math/SVDMKL.h>
 #include <gsl/gsl_vector_double.h>
 #include <gsl/gsl_matrix.h>
+#include <math/NullspaceSVD.h>
 #include "Logger.h"
 
 using namespace std;
@@ -181,13 +182,13 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   //Compute clash-avoiding jacobian, svd, and nullspace
   //Todo: This could be optimized, we only have to compute the Jacobian the first time...
   gsl_matrix* clashJac = computeClashAvoidingJacobian(conf, constrainedDofMap, collisions);
-  SVD* clashSVD = SVD::createSVD(clashJac);//new MKLSVD(clashAvoidingJacobian);
-  Nullspace* clashNullSpace = new Nullspace(clashSVD);
-  clashNullSpace->UpdateFromMatrix();
+  SVD* clashSVD = SVD::createSVD(clashJac);//new SVDMKL(clashAvoidingJacobian);
+  Nullspace* clashNullSpace = new NullspaceSVD(clashSVD);
+  clashNullSpace->updateFromMatrix();
 
   //Project reducedGradient
   double normBefore = gsl_vector_length(reducedGradient);
-  clashNullSpace->ProjectOnNullSpace(reducedGradient, reducedGradient);
+  clashNullSpace->projectOnNullSpace(reducedGradient, reducedGradient);
   double normAfter = gsl_vector_length(reducedGradient);
 //  log("clashBug")<<"> normBefore: "<<normBefore<<endl;
 //  log("clashBug")<<"> normAfter:  "<<normAfter<<endl;
@@ -216,7 +217,7 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   gsl_vector_free(projected_gradient);
 
   new_q->m_usedClashPrevention = true;
-  new_q->m_clashFreeDofs = new_q->getNumDOFs() - constrainedDofMap.size() + clashNullSpace->NullspaceSize();
+  new_q->m_clashFreeDofs = new_q->getNumDOFs() - constrainedDofMap.size() + clashNullSpace->getNullspaceSize();
 
   //Clean up
   delete clashNullSpace;

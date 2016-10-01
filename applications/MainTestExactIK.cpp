@@ -4,8 +4,8 @@
 
 #include <string>
 #include <Logger.h>
-#include <math/MKLSVD.h>
-#include <math/GSLSVD.h>
+#include <math/SVDMKL.h>
+#include <math/SVDGSL.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_matrix.h>
 

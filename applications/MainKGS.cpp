@@ -215,7 +215,8 @@ void randomSampling(SamplingOptions& options){
   }
 
   log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs()
-        << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+        << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() +
+      protein.m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
@@ -226,9 +227,10 @@ void randomSampling(SamplingOptions& options){
   log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
   //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
   //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
-  log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-  log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
+  log()<< protein.m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
+  log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-
+                      protein.m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+  log()<< protein.m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
   log("samplingStatus")<<"Sampling ...\n";
   CTKTimer timer;
@@ -432,9 +434,11 @@ void targetedSampling(SamplingOptions& options){
     }
 
     log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs()
-    << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() + protein.m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+    << ", Max accessible DOFs: " << protein.m_spanning_tree->getNumDOFs() - protein.m_spanning_tree->getNumCycleDOFs() +
+        protein.m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
     log() << "Total DOFs in target: " << target->m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanning_tree->getNumCycleDOFs()
-    << ", Max accessible DOFs: " << target->m_spanning_tree->getNumDOFs() - target->m_spanning_tree->getNumCycleDOFs() + target->m_conf->getNullspace()->NullspaceSize() << endl;fflush(stdout);
+    << ", Max accessible DOFs: " << target->m_spanning_tree->getNumDOFs() - target->m_spanning_tree->getNumCycleDOFs() +
+        target->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
 
     if(options.saveData > 1){
       string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
@@ -445,9 +449,10 @@ void targetedSampling(SamplingOptions& options){
     log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-    log()<<protein.m_conf->getNullspace()->NumRigidDihedrals() << " rigidified";
-    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-protein.m_conf->getNullspace()->NumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<<protein.m_conf->getNullspace()->NumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl;
+    log()<< protein.m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
+    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-
+                        protein.m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<< protein.m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl;
 
 
     log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target->m_conf)<<endl;

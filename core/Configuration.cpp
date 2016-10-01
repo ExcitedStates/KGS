@@ -31,10 +31,11 @@
 #include <math/math.h>
 #include <assert.h>
 #include <set>
-#include <math/GSLSVD.h>
-#include <math/MKLSVD.h>
+#include <math/SVDGSL.h>
+#include <math/SVDMKL.h>
 #include <gsl/gsl_matrix_double.h>
 #include <math/gsl_helpers.h>
+#include <math/NullspaceSVD.h>
 
 #include "Configuration.h"
 #include "Molecule.h"
@@ -161,15 +162,15 @@ void Configuration::computeCycleJacobianAndNullSpace() {
   computeJacobians();
 
   if (JacobianSVD!=nullptr) {
-    nullspace = new Nullspace(JacobianSVD);
-    nullspace->UpdateFromMatrix();
+    nullspace = new NullspaceSVD(JacobianSVD);
+    nullspace->updateFromMatrix();
   }
 
   double new_time = timer.ElapsedTime();
   jacobianTime += new_time - old_time;
 
   if(CycleJacobian!=nullptr) {
-    nullspace->RigidityAnalysis(HBondJacobian);
+    nullspace->performRigidityAnalysis(HBondJacobian);
     identifyBiggerRigidBodies();
   }
 
@@ -501,13 +502,13 @@ void Configuration::computeJacobians() {
 
   if(CycleJacobian==nullptr){
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
-    JacobianSVD = SVD::createSVD(CycleJacobian);//new MKLSVD(CycleJacobian);
+    JacobianSVD = SVD::createSVD(CycleJacobian);//new SVDMKL(CycleJacobian);
   }else if(CycleJacobian->size1==row_num && CycleJacobian->size2==col_num){
     gsl_matrix_set_zero(CycleJacobian);
   }else{
     gsl_matrix_free(CycleJacobian);
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
-    JacobianSVD = SVD::createSVD(CycleJacobian);//new MKLSVD(CycleJacobian);
+    JacobianSVD = SVD::createSVD(CycleJacobian);//new SVDMKL(CycleJacobian);
   }
 
   ///HBond Jacobian
@@ -698,14 +699,14 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
   if(ClashAvoidingJacobian==nullptr){
     ClashAvoidingJacobian = gsl_matrix_calloc(rowNum,colNum);
-    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new MKLSVD(ClashAvoidingJacobian);
+    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new SVDMKL(ClashAvoidingJacobian);
   }else if(ClashAvoidingJacobian->size1==rowNum && ClashAvoidingJacobian->size2==colNum){
     gsl_matrix_set_zero(ClashAvoidingJacobian);
   }else{
     gsl_matrix_free(ClashAvoidingJacobian);
     ClashAvoidingJacobian = gsl_matrix_calloc(rowNum,colNum);
     delete JacobianSVD;
-    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new MKLSVD(ClashAvoidingJacobian);
+    JacobianSVD = SVD::createSVD(ClashAvoidingJacobian);//new SVDMKL(ClashAvoidingJacobian);
   }
 
   //Convert the cycle Jacobian to a full Jacobian
@@ -841,7 +842,7 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
     // Project onto the null space
     double normBefore = gsl_vector_length(to_proj_short);
     gsl_vector *after_proj_short = gsl_vector_calloc(N->getNumDOFs());
-    N->ProjectOnNullSpace(to_proj_short, after_proj_short);
+    N->projectOnNullSpace(to_proj_short, after_proj_short);
     double normAfter = gsl_vector_length(after_proj_short);
 
     //Scale projected gradient to same norm as unprojected
@@ -864,7 +865,7 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
   }
   else {
     double normBefore = gsl_vector_length(to_project);
-    N->ProjectOnNullSpace(to_project, after_project);
+    N->projectOnNullSpace(to_project, after_project);
     double normAfter = gsl_vector_length(after_project);
     gsl_vector_scale(after_project, normBefore/normAfter);
   }

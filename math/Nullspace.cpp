@@ -9,9 +9,6 @@
 #include "QRMKL.h"
 #include "NullspaceSVD.h"
 
-double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
-double RDIAVAL_TOL = 1.0e-6;
-
 using namespace std;
 
 Nullspace::Nullspace(gsl_matrix* M) :
@@ -36,78 +33,9 @@ Nullspace::~Nullspace ()
   gsl_vector_free(rigidHBonds);
 }
 
-void Nullspace::UpdateFromMatrix()
-{
-  if(m_svd!=nullptr) {
-    m_svd->UpdateFromMatrix();
-
-    //Compute nullspacesize
-    double maxSingularValue = gsl_vector_get(m_svd->S, 0);
-
-    //Case with m < n and all singular values non-zero
-    m_nullspaceSize = std::max((int) (m_svd->V->size2 - m_svd->matrix->size1), 0);
-
-    for (int i = 0; i < m_svd->S->size; ++i) {
-      if (gsl_vector_get(m_svd->S, i) / maxSingularValue < SINGVAL_TOL) {
-        m_nullspaceSize = m_svd->V->size2 - i;
-        break;
-      }
-    }
-
-    //TODO: If an existing basis of proper size is allocated we might not need to reallocate here
-    if (m_nullspaceBasis)
-      gsl_matrix_free(m_nullspaceBasis);
-
-    if (m_nullspaceSize > 0) {
-      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_svd->V,
-                                                                 0,                               //Row
-                                                                 m_svd->V->size2 - m_nullspaceSize, //Col
-                                                                 m_svd->V->size2,                 //Height
-                                                                 m_nullspaceSize);                  //Width
-
-      m_nullspaceBasis = gsl_matrix_calloc(m_svd->V->size2, m_nullspaceSize);
-      gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
-    }
-    else {
-      m_nullspaceBasis = gsl_matrix_calloc(m_svd->V->size2, 1);//1-dim vector with zeros as entries
-    }
-
-  }else if(m_qr!=nullptr){
-    gsl_matrix_transpose_memcpy(m_qr->getMatrix(), m_matrix);
-    m_qr->updateFromMatrix();
-
-    //Compute nullspacesize
-    int rank = 0;
-
-    for(int i=0;i<std::min(m,n);i++) {
-      double val = gsl_matrix_get(m_qr->getR(), i, i);
-      if (fabs(val) > RDIAVAL_TOL) rank++;
-    }
-    m_nullspaceSize = n-rank;
-
-    if (m_nullspaceBasis)
-      gsl_matrix_free(m_nullspaceBasis);
-
-    if (m_nullspaceSize > 0) {
-      gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_qr->getQ(),
-                                                                 0,                                     //Row
-                                                                 n - m_nullspaceSize, //Col
-                                                                 n,                   //Height
-                                                                 m_nullspaceSize);                      //Width
-
-      m_nullspaceBasis = gsl_matrix_calloc(n, m_nullspaceSize);
-      gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
-    }
-    else {
-      m_nullspaceBasis = gsl_matrix_calloc(m_matrix->size2, 1);//1-dim vector with zeros as entries
-    }
-
-  }
-}
-
 
 /** Analyzes which dihedrals and hydrogen bonds are rigidified by constraints */
-void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
+void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 {
   // First, check the dihedral angles for rigidity
 
@@ -117,41 +45,36 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
   gsl_vector_set_zero(rigidAngles);
   gsl_vector_set_zero(rigidHBonds);
 
-  bool moving=false;
   numCoordinatedDihedrals = 0;
   numRigidDihedrals = 0;
+  gsl_matrix* N = getBasis();
 
   for(int i=0; i<n; i++){
-    gsl_matrix_get_row(currentRow,m_svd->V,i);
+    bool moving=false;
 
     for(int j=n-m_nullspaceSize; j<n; j++){
-      double val = fabs( gsl_vector_get(currentRow,j) );
-      if( val > RIGID_TOL ){
+      double val = fabs( gsl_matrix_get(N,i,j) );
+      if( val > RIGID_TOL ) {
         moving = true;
+        break;
       }
     }
 
     // at least one entry was greater than threshold --> dihedral is coordinated
     if( moving ) {
       numCoordinatedDihedrals++;
-    }
-    else {
+    } else {
       gsl_vector_set(rigidAngles,i,1); /// binary list of rigid dihedrals, complement to coordinated version
       numRigidDihedrals++;
     }
-    // reset for the next dihedral / row
-    moving = false;
   }
 
   log("constraints")<<"There are "<<numRigidDihedrals << " rigidified and " << numCoordinatedDihedrals << " coordinated dihedrals" << endl;
 
-  // Free memory
-  gsl_vector_free(currentRow);
-
   // Now, check the hydrogen Bonds for rigidity
   int numHBonds = HBondJacobian->size1;
-  gsl_matrix* hBondNullspace;// = gsl_matrix_alloc(numHBonds,nullspaceSize);
-  gsl_vector* currentHBondRow;// = gsl_vector_alloc(nullspaceSize);
+  gsl_matrix* hBondNullspace;// = gsl_matrix_alloc(numHBonds,getNullspaceSize);
+  gsl_vector* currentHBondRow;// = gsl_vector_alloc(getNullspaceSize);
   if(m_nullspaceSize==0){
     hBondNullspace = gsl_matrix_calloc(numHBonds,1);
     currentHBondRow = gsl_vector_calloc(1);
@@ -190,7 +113,7 @@ void Nullspace::RigidityAnalysis(gsl_matrix* HBondJacobian)
   gsl_matrix_free(hBondNullspace);
 }
 
-void Nullspace::ProjectOnNullSpace (gsl_vector *to_project, gsl_vector *after_project) const {
+void Nullspace::projectOnNullSpace(gsl_vector *to_project, gsl_vector *after_project) const {
 
   if(m_nullspaceSize==0){
     gsl_vector_set_zero(after_project);
@@ -218,7 +141,3 @@ gsl_matrix *Nullspace::getBasis() const {
   return m_nullspaceBasis;
 }
 
-Nullspace* Nullspace::createNullspace(gsl_matrix* M)
-{
-  return new NullspaceSVD(M);
-}
