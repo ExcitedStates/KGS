@@ -1,6 +1,7 @@
 
 #include <gsl/gsl_matrix_double.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_matrix.h>
 
 #include "Nullspace.h"
 #include "Logger.h"
@@ -39,9 +40,6 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 {
   // First, check the dihedral angles for rigidity
 
-  // Nullspace dimension
-  gsl_vector* currentRow = gsl_vector_alloc(n);
-
   gsl_vector_set_zero(rigidAngles);
   gsl_vector_set_zero(rigidHBonds);
 
@@ -49,10 +47,11 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
   numRigidDihedrals = 0;
   gsl_matrix* N = getBasis();
 
-  for(int i=0; i<n; i++){
+  for(int i=0; i<m; i++){ //TODO: Changed this from i<n to i<m .. thats correct, right?
     bool moving=false;
+    gsl_matrix_get_row()
 
-    for(int j=n-m_nullspaceSize; j<n; j++){
+    for(int j=m; j<N->size2; j++){
       double val = fabs( gsl_matrix_get(N,i,j) );
       if( val > RIGID_TOL ) {
         moving = true;
