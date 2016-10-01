@@ -49,7 +49,6 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 
   for(int i=0; i<m; i++){ //TODO: Changed this from i<n to i<m .. thats correct, right?
     bool moving=false;
-    gsl_matrix_get_row()
 
     for(int j=m; j<N->size2; j++){
       double val = fabs( gsl_matrix_get(N,i,j) );
