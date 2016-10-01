@@ -47,10 +47,10 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
   numRigidDihedrals = 0;
   gsl_matrix* N = getBasis();
 
-  for(int i=0; i<m; i++){ //TODO: Changed this from i<n to i<m .. thats correct, right?
+  for(int i=0; i<n; i++){
     bool moving=false;
 
-    for(int j=m; j<N->size2; j++){
+    for(int j=0; j<N->size2; j++){
       double val = fabs( gsl_matrix_get(N,i,j) );
       if( val > RIGID_TOL ) {
         moving = true;
