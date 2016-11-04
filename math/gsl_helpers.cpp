@@ -143,16 +143,16 @@ gsl_matrix* gsl_matrix_mul(gsl_matrix* A, gsl_matrix* B){
     exit(-1);
   }
   gsl_matrix* ret = gsl_matrix_alloc(MA,NB);
-  for(int i=0; i<MA; i++){
-    for(int j=0; j<NB; j++){
-      double val = 0;
-      for(int k=0; k<NA; k++)
-        val += gsl_matrix_get(A,i,k)*gsl_matrix_get(B,k,j);
-      //c[i][j] = c[i][j] + a[i][k]*b[k][j];
-
-      gsl_matrix_set(ret,i,j, val);
-    }
-  }
+  //for(int i=0; i<MA; i++){
+  //  for(int j=0; j<NB; j++){
+  //    double val = 0;
+  //    for(int k=0; k<NA; k++)
+  //      val += gsl_matrix_get(A,i,k)*gsl_matrix_get(B,k,j);
+  //    //c[i][j] = c[i][j] + a[i][k]*b[k][j];
+  //    gsl_matrix_set(ret,i,j, val);
+  //  }
+  //}
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, ret);
   return ret;
 }
 

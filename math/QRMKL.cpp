@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <cstdlib>
 
 #ifdef __INTEL_MKL
 #include <mkl.h>
