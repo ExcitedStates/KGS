@@ -6,9 +6,10 @@
 #include "Nullspace.h"
 #include "Logger.h"
 #include "gsl_helpers.h"
-#include "QRGSL.h"
-#include "QRMKL.h"
+//#include "QRGSL.h"
+//#include "QRMKL.h"
 #include "NullspaceSVD.h"
+//#include "NullspaceQR.h"
 
 using namespace std;
 

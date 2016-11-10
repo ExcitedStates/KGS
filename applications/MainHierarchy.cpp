@@ -13,6 +13,7 @@
 #include <math/gsl_helpers.h>
 #include <gsl/gsl_matrix_double.h>
 #include <math/NullspaceSVD.h>
+#include <gsl/gsl_vector_double.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -61,7 +62,6 @@ int main( int argc, char* argv[] ) {
     options.print();
   }
 
-
   // Set seed
   srand(options.seed);
 
@@ -93,7 +93,7 @@ int main( int argc, char* argv[] ) {
 
 
   string hBondOut = "hBonds_out.txt";
-  string hBondIn = "../hBonds_in.txt";
+  string hBondIn = "hBonds_in.txt";
   IO::writeHbonds(&protein,hBondOut );
   IO::writeHbondsIn(&protein,hBondIn );
 
@@ -117,18 +117,24 @@ int main( int argc, char* argv[] ) {
   log("hierarchy") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " <<
   protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
-  NullspaceSVD* ns = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
-  int numCols = ns->getMatrix()->size2;
-  int nullspaceCols = ns->getNullspaceSize();
+  NullspaceSVD ns = *(dynamic_cast<NullspaceSVD*>(conf->getNullspace()));
+  //Copy to local variable
+  int numCols = ns.getMatrix()->size2;
+  int nullspaceCols = ns.getNullspaceSize();
   int sampleCount = 0;
+  gsl_vector* singValVector = gsl_vector_copy(ns.getSVD()->S);
+  gsl_matrix* baseNullspaceV = gsl_matrix_calloc(ns.getSVD()->V->size1,ns.getSVD()->V->size2);
+  gsl_matrix_memcpy(baseNullspaceV, ns.getSVD()->V);
+  gsl_matrix* baseJacobian = gsl_matrix_calloc(ns.getMatrix()->size1,ns.getMatrix()->size2);
+  gsl_matrix_memcpy(baseJacobian, ns.getMatrix());
 
-  log("hierarchy") << "Dimension of Jacobian: " << ns->getMatrix()->size1 << " rows, ";
+  log("hierarchy") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
   log("hierarchy") << numCols << " columns" << endl;
   log("hierarchy") << "Dimension of kernel " << nullspaceCols << endl;
 
   log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
 
-  if(options.saveData > 2) {
+  if(options.saveData > 1) {
     string out_file = out_path + "output/" + name + ".pdb";
     ///save pyMol coloring script
     string pyMol = out_path + "output/" + name + "_pyMol.pml";
@@ -141,7 +147,7 @@ int main( int argc, char* argv[] ) {
     IO::writeStats(&protein, statFile);
     ///Write rigid bodies
     IO::writeRBs(&protein, rbFile);
-    gsl_vector_outtofile(ns->getSVD()->S, singVals);
+    gsl_vector_outtofile(singValVector, singVals);
   }
 //  cout<<"First conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
 
@@ -149,22 +155,26 @@ int main( int argc, char* argv[] ) {
   gsl_vector* allDofs = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
 
   //Write the complete J*V product out to file
-  gsl_matrix* fullProduct = gsl_matrix_alloc(ns->getMatrix()->size1, numCols);
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, ns->getMatrix(), ns->getSVD()->V, 0.0, fullProduct);
+  gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
   string outProd="fullProduct_JV.txt";
   gsl_matrix_outtofile(fullProduct, outProd);
+  gsl_matrix_free(fullProduct);
+
+  string outMat="Vmatrix.txt";
+  gsl_matrix_outtofile(baseNullspaceV, outMat);
 
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm violation hbondDelta"<<endl;
 
-  for( int i = 0; i < numCols; ++i) {
+  for( int v_i = 0; v_i < numCols; ++v_i) {
     conf->updateMolecule();
-    bool inNullspace = i< nullspaceCols;
-    if( i == nullspaceCols){
+    bool inNullspace = v_i< nullspaceCols;
+    if( v_i == nullspaceCols){
       log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
     }
 
-    gsl_vector_view projected_gradient_view = gsl_matrix_column(ns->getSVD()->V,numCols - i - 1);
+    gsl_vector_view projected_gradient_view = gsl_matrix_column(baseNullspaceV,numCols - v_i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
 
     //Scale to desired step size
@@ -188,15 +198,14 @@ int main( int argc, char* argv[] ) {
 //      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
 //    }
 
-    //Identify predictedViolation from product with constraint Jacobian
-    gsl_vector* violationVec = gsl_matrix_vector_mul(ns->getSVD()->matrix, projected_gradient);
+    //Identify predictedViolation
+//    double predictedViolation = gsl_vector_get(singValVector,numCols - v_i - 1)*options.stepSize;
+    //Use the multiplication to ensure it works, even for systems with 5m < n (where the singular value does not exist)
+    gsl_vector* violationVec= gsl_matrix_vector_mul(baseJacobian,projected_gradient);
     double predictedViolation = gsl_vector_length(violationVec);
-//    cout<<"Pred norm: "<<predictedViolation<<", sing vec norm: "<<gsl_vector_get(ns->getSVD()->S,numCols - i - 1)<<endl;
-//    cout<<"Second conf "<<conf<<", S: "<<ns->getSVD()->S<<endl;
     gsl_vector_free(violationVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
-
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
     // Convert back to full length DOFs vector
     for( auto const& edge: protein.m_spanning_tree->Edges){
@@ -211,24 +220,70 @@ int main( int argc, char* argv[] ) {
     }
 
     Configuration *qNew = new Configuration(conf);
-    qNew->m_id = i+1;
+    qNew->m_id = v_i+1;
     std::copy(
         allDofs->data,
         allDofs->data + qNew->getNumDOFs(),
         qNew->m_dofs);
 
-    string outFile = "output/allDofs_"+std::to_string(static_cast<long long>(i+1))+".txt";
+    string outFile = "output/allDofs_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
     gsl_vector_outtofile(allDofs, outFile);
 
     bool inCollision = qNew->updatedMolecule()->inCollision();
     if (inCollision) {
-      log("hierarchy") << "Configuration in direction " << i+1 << " is in collision. " << endl;
+      log("hierarchy") << "Configuration in direction " << v_i+1 << " is in collision. " << endl;
     }
 //    else {//collision-free //todo: do we want to reject colliding configurations?
     qNew->updateMolecule();
 
     //Potentially reject new config if large violations?
     double observedViolation = protein.checkCycleClosure(qNew);
+
+    /// New test with reclosing the cycles to obtain reduced energy violations etc.
+//    double eps = 1e-12;
+//    int maxIts = 10;
+//    gsl_vector* currentViolation = gsl_vector_alloc(qNew->getCycleJacobian()->size1);
+//    gsl_vector* qSol = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
+//    int count = 0;
+//    while(observedViolation > eps && count <maxIts){
+//      cout<<"Iteration "<<count++<<", violation: "<<observedViolation<<endl;
+//      protein.computeCycleViolation(qNew,currentViolation);//compute residuum vector
+//      NullspaceSVD* ns_svd = static_cast<NullspaceSVD*> (qNew->getNullspace() ); //updates Jacobian and nullspace
+//      ns_svd->updateFromMatrix();
+//      gsl_matrix* Jinv = ns_svd->getSVD()->PseudoInverse();
+//      cout<<"Jinv dims: "<<Jinv->size1<<", "<<Jinv->size2<<endl;
+//      //delta vetor, on small dimensions
+//      gsl_vector* deltaQ = gsl_matrix_vector_mul( Jinv, currentViolation );
+//
+//      for( auto const& edge: protein.m_spanning_tree->Edges){
+//        int dof_id = edge->getDOF()->getIndex();
+//        int cycle_dof_id = edge->getDOF()->getCycleIndex();
+//        if ( cycle_dof_id!=-1 ) {
+//          gsl_vector_set(qSol,dof_id,gsl_vector_get(allDofs,dof_id) - gsl_vector_get(deltaQ,cycle_dof_id));
+//        }
+//        else if ( dof_id!=-1 ) {//use zeros for free dofs
+//          gsl_vector_set(qSol,dof_id,0);
+//        }
+//      }
+//      gsl_vector_free(deltaQ);
+//      for (int ind = 0; ind < qSol->size; ++ind)
+//        gsl_vector_set(allDofs, ind, gsl_vector_get(qSol,ind));
+//
+//      delete qNew; //delete previous trial
+//      Configuration *qNew = new Configuration(conf);
+//      qNew->m_id = v_i+1;
+//      std::copy(
+//          qSol->data,
+//          qSol->data + qNew->getNumDOFs(),
+//          qNew->m_dofs);
+//
+//      qNew->updateMolecule();
+//      observedViolation = protein.checkCycleClosure(qNew);
+//    }
+//    gsl_vector_free(currentViolation);
+//    gsl_vector_free(qSol);
+//    /// END NEW TEST
+
     qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(SamplingOptions::getOptions()->collisionCheck);
 //    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
 //    double normDeltaHEnergy = hBondEnergy - initialHbondEnergy;
@@ -236,14 +291,14 @@ int main( int argc, char* argv[] ) {
     double deltaVdwEnergy = qNew->getMolecule()->vdwEnergy(options.collisionCheck) - initialVdwEnergy;
 
     log("hierarchy") << "> New structure: " << ++sampleCount;
-    log("hierarchy") << " of a total of " << ns->getMatrix()->size2 << " samples.";
+    log("hierarchy") << " of a total of " << ns.getMatrix()->size2 << " samples.";
     log("hierarchy") << " Delta hbond energy: " << normDeltaHEnergy;
     log("hierarchy") << ", pred. violation: "<<predictedViolation;
     log("hierarchy") << ", obs. violation: "<<observedViolation;
     log("hierarchy") << ", delta vdw: "<<deltaVdwEnergy<<endl;
     SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
 
-    hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(i+1))+".txt";
+    hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
     IO::writeHbondsChange(qNew,hBondOut);
 
     //Store output data in this file, space-separated in this order
@@ -252,6 +307,10 @@ int main( int argc, char* argv[] ) {
   }
   gsl_vector_free(projected_gradient);
   gsl_vector_free(allDofs);
+  gsl_vector_free(singValVector);
+  gsl_matrix_free(baseJacobian);
+  gsl_matrix_free(baseNullspaceV);
+
 
   reportStream.close();
   dataStream.close();

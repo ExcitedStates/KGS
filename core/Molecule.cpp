@@ -555,7 +555,7 @@ void Molecule::buildSpanningTree() {
 
         if (current_vertex == bonded_vertex) {
           log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
-          continue;
+            continue;
         }
         //if(visitedVertices.count(bonded_vertex)>0){
         if (visitedBonds.count(bond) > 0) {
@@ -1226,7 +1226,54 @@ double Molecule::checkCycleClosure(Configuration *q){
   return normOfViolation;
 }
 
+void Molecule::computeCycleViolation(Configuration *q, gsl_vector* currentViolation){
+  setConfiguration(q);
+  //Todo: Use intervals for hydrogen bond angles and lengths
+  vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
+  KinEdge *hBondEdge;
+  int id=0;
+  double maxViolation = 0.0;
+  double normOfViolation = 0.0;
 
+  log("report")<<"Conformation "<<q->m_id<<endl;
+
+  for (pair_it=m_spanning_tree->CycleAnchorEdges.begin(); pair_it!=m_spanning_tree->CycleAnchorEdges.end(); ++pair_it) {
+
+    // get end-effectors
+    hBondEdge = pair_it->first;
+    KinVertex* common_ancestor = pair_it->second;
+    Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
+
+    //End-effectors and their positions, corresponds to a and b
+    Atom* atom1 = hBond->Atom1;
+    Atom* atom2 = hBond->Atom2;
+    Coordinate p1 = atom1->m_position; //end-effector, position 1
+    Coordinate p2 = atom2->m_position; //end-effector, position 2
+
+    KinVertex* vertex1 = hBondEdge->StartVertex;
+    KinVertex* vertex2 = hBondEdge->EndVertex;
+    if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
+      vertex1=hBondEdge->EndVertex;
+      vertex2=hBondEdge->StartVertex;
+    }
+
+    Math3D::Vector3 p2_test = vertex1->m_transformation * atom2->m_referencePosition;
+    Math3D::Vector3 p1_test = vertex2->m_transformation * atom1->m_referencePosition;
+    Math3D::Vector3 translationCons = 0.5*( (p1+p2_test) - (p1_test+p2) );
+    //Angular violations
+    double rightAngleChange = formatRangeRadian( hBond->getAngle_H_A_AA() - hBond->getIniAngle_H_A_AA() );
+    double leftAngleChange = formatRangeRadian( hBond->getAngle_D_H_A() - hBond->getIniAngle_D_H_A() );
+
+    gsl_vector_set(currentViolation,id*5+0,translationCons.x);
+    gsl_vector_set(currentViolation,id*5+1,translationCons.y);
+    gsl_vector_set(currentViolation,id*5+2,translationCons.z);
+    gsl_vector_set(currentViolation,id*5+3,rightAngleChange);
+    gsl_vector_set(currentViolation,id*5+4,leftAngleChange);
+
+    id++;
+  }
+
+}
 
 /* Resample all sugar conformations in a segment of an RNA/DNA chain specified by startRes (included) and
  * endRes (not included) and reclose using the localRebuild method.

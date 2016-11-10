@@ -92,6 +92,7 @@ class Molecule {
   Coordinate centerOfMass () const;
   Coordinate centerOfGeometry () const;
   double checkCycleClosure(Configuration *q);//Todo: Move this to configuration, this is conf dependent, not topology
+  void computeCycleViolation(Configuration *q, gsl_vector *currentViolation);
 
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);

@@ -7,7 +7,7 @@
 #include <string>
 
 #include "math/SVD.h"
-#include "QR.h"
+//#include "math/QR.h"
 
 /**
  * Computes, stores, and maintains the nullspace of a gsl_matrix.
@@ -81,7 +81,7 @@ class Nullspace {
 
   /// These values have to be chosen according to the numerical analysis
 //  static constexpr double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
-  static constexpr double RIGID_TOL =   1.0e-10; //0.0000000001; //depends on molecule, but 10^-10 seems a good fit!
+  static constexpr double RIGID_TOL =   1.0e-9; //0.0000000001; //most molecules work between 1e-4 and 1e-10, exceptions only between 1e-8 and 1e-10
 
   friend class Configuration;
 };

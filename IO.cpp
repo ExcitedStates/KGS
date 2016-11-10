@@ -92,9 +92,21 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
     exit(1);
   }
   string line, temp;
+  vector< vector<int > > conectRecords;
+  int conectCount = 0;
   while( !pdb.eof()) {
     getline(pdb, line);
     if( pdb.eof()) break;
+    if( line.substr(0, 6) == "CONECT" ){//read in conect records for extra cov. bonds
+      vector<int> conectEntry;
+      conectRecords.push_back(conectEntry);
+      conectEntry = Util::split(line.substr(7),' ',conectEntry);//vector of ints
+      for(auto num: conectEntry) {
+        conectRecords[conectCount].push_back(num);
+      }
+      conectCount++;
+      continue;
+    }
     if( line.substr(0, 4) != "ATOM" && line.substr(0, 6) != "HETATM" ) // skip if it is not an ATOM line
       continue;
     // chain info
@@ -135,7 +147,6 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
   if(!foundHydro){
     cerr<<"IO::readPdb - Warning: No hydrogens found in file. Consider running `reduce`"<<endl;
   }
-
 
 
   ResidueProfile residue_profile=readResidueProfile();
@@ -226,6 +237,64 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
         exit(-1);
       }
       makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
+    }
+  }
+
+  //Check conect records and add covalent bonds
+  if( reference == nullptr ) {
+    for( unsigned int i=0; i<conectRecords.size(); i++ ) {
+      vector<int> row = conectRecords[i];
+      Atom *a1=protein->getAtom(row[0]);
+      if( a1 == nullptr ) {
+        cerr << "Cannot find atom with id " << row[0] << endl;
+        exit(-1);
+      }
+      for(unsigned int j = 1; j < row.size(); j++ ){
+        Atom *a2=protein->getAtom(row[j]);
+        if( a2 == nullptr ) {
+          cerr << "Cannot find atom with id " << row[j] << endl;
+          exit(-1);
+        }
+        makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
+        cout << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << protein->getName() << endl;
+      }
+    }
+  }
+  else {
+    for( unsigned int i=0; i<conectRecords.size(); i++ ) {
+      vector<int> row = conectRecords[i];
+      Atom *a1 = reference->getAtom(row[0]);
+      if (a1 == nullptr) {
+        cerr << "Cannot find atom with id " << row[0] << endl;
+        exit(-1);
+      }
+      int resId1 = a1->getResidue()->getId();
+      string name1 = a1->getName();
+      string chainName1 = a1->getResidue()->getChain()->getName();
+      Atom *a3 = protein->getAtom(chainName1, resId1, name1);
+      if (a3 == nullptr) {
+        cerr << "Cannot find atom with residue id " << resId1 << " and name " << name1 << endl;
+        exit(-1);
+      }
+      for (unsigned int j = 1; j < row.size(); j++) {
+        Atom *a2 = reference->getAtom(row[j]);
+        if (a2 == nullptr) {
+          cerr << "Cannot find atom with id " << row[j] << endl;
+          exit(-1);
+        }
+        int resId2 = a2->getResidue()->getId();
+        string name2 = a2->getName();
+        string chainName2 = a2->getResidue()->getChain()->getName();
+        //use names to identify atoms in protein
+        Atom *a4 = protein->getAtom(chainName2, resId2, name2);
+        if (a4 == nullptr) {
+          cerr << "Cannot find atom with residue id " << resId2 << " and name " << name2 << endl;
+          exit(-1);
+        }
+        makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
+        cout << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << protein->getName()
+             << endl;
+      }
     }
   }
 
@@ -1217,7 +1286,6 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
       ++lineCount;
       continue;
     }
-
     std::istringstream input(line);
     input >> donorString;
     input >> donorType;
@@ -1234,7 +1302,8 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
     //Identify donor
     string donorChain = donorString.substr(0, 1);
     if (donorChain == "-") //Default from hb2, if chain is empty
-      donorChain = protein->chains[0]->getName();
+//      donorChain = protein->chains[0]->getName();
+      donorChain = " ";
 
     int donorResId = atoi( (donorString.substr(1,4)).c_str() );
     donor = protein->getAtom(donorChain, donorResId,donorType );
@@ -1243,7 +1312,9 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
     //Identify acceptor
     string acceptorChain = acceptorString.substr(0,1);
     if (acceptorChain == "-") //Default from hb2, if chain is empty
-      acceptorChain = protein->chains[0]->getName();
+//      acceptorChain = protein->chains[0]->getName();
+      acceptorChain = " ";
+
     int acceptorResId = atoi( (acceptorString.substr(1,4)).c_str() );
     acceptor = protein->getAtom(acceptorChain, acceptorResId,acceptorType );
     if(acceptor==NULL){ cerr<<"IO::readHbonds - Invalid acceptor specified: "<<acceptorString<<" "<<acceptorType<<endl; exit(-1); }

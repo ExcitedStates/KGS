@@ -703,6 +703,8 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASP","CB","CG"},
     {"ASP","CG","OD1"},
     {"ASP","CG","OD2"},
+    {"ASP","OD1","HD1"},//added for ASP protonated state
+    {"ASP","OD2","HD2"},//added for ASP protonated state
     {"ASP","C","O"},
     {"ASP","C","OT"},
     {"ASP","C","OT1"},
@@ -1341,28 +1343,27 @@ const char* const COV_BOND_PROFILES [][3] = {
 
 const char* const FIXED_BOND_PROFILES [][3] = {
     {"ALA","-C","N"},
-    {"ALA","CA","CB"},
-    {"GLY","-C","N"},
-    {"SER","-C","N"},
-    {"THR","-C","N"},
-    {"LEU","-C","N"},
-    {"LEU","CG","CD1"},
-    {"LEU","CG","CD2"},
-    {"ILE","-C","N"},
-    {"ILE","CB","CG2"},
-    {"ILE","CG1","CD1"},
-    {"VAL","-C","N"},
+    {"ARG","-C","N"},
+    //{"ARG","CD","NE"}, //in KINARI
+    {"ARG","NE","CZ"}, //in ccp4, in KINARI, but 99% at 180 deg rotation
+    {"ARG","CZ","NH1"}, //added
+    {"ARG","CZ","NH2"}, //added
     {"ASN","-C","N"},
     {"ASN","CG","OD1"}, //added
     {"ASN","CG","ND2"}, //added
+    {"ASP","-C","N"},
+    {"ASP","CG","OD1"}, //added
+    {"ASP","CG","OD2"}, //added
+    {"CYS","-C","N"},
+    {"CYX","-C","N"},
+    {"CYS2","-C","N"},
     {"GLN","-C","N"},
     {"GLN","CD","OE1"}, //added
     {"GLN","CD","NE2"}, //added
-    {"ARG","-C","N"},
-    //{"ARG","CD","NE"}, //in KINARI
-    {"ARG","NE","CZ"}, //in KINARI
-    {"ARG","CZ","NH1"}, //added
-    {"ARG","CZ","NH2"}, //added
+    {"GLU","-C","N"},
+    {"GLU","CD","OE1"}, //added
+    {"GLU","CD","OE2"}, //added
+    {"GLY","-C","N"},
     {"HIS","-C","N"},
     {"HIS","CG","CD2"},
     {"HIS","CG","ND1"},
@@ -1370,26 +1371,30 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"HIS","CD2","NE2"},
     {"HIS","CE1","NE2"},
     //{"HIS","CB","CG"}, //in KINARI
-    {"HIE","-C","N"},
-    {"HIP","-C","N"},
-    {"HSD","-C","N"},
-    {"HSD","CG","CD2"},
-    {"HSD","CG","ND1"},
-    {"HSD","ND1","CE1"},
-    {"HSD","CD2","NE2"},
-    {"HSD","CE1","NE2"},
-    {"HSE","-C","N"},
-    {"HSE","CG","CD2"},
-    {"HSE","CG","ND1"},
-    {"HSE","ND1","CE1"},
-    {"HSE","CD2","NE2"},
-    {"HSE","CE1","NE2"},
-    {"HSP","-C","N"},
-    {"HSP","CG","CD2"},
-    {"HSP","CG","ND1"},
-    {"HSP","ND1","CE1"},
-    {"HSP","CD2","NE2"},
-    {"HSP","CE1","NE2"},
+    {"ILE","-C","N"},
+    {"ILE","CB","CG2"},
+    {"ILE","CG1","CD1"},
+    {"LEU","-C","N"},
+    {"LEU","CG","CD1"},
+    {"LEU","CG","CD2"},
+    {"LYS","-C","N"},
+    {"MET","-C","N"},
+    {"PHE","-C","N"},
+    {"PHE","CG","CD1"},
+    {"PHE","CG","CD2"},
+    {"PHE","CD1","CE1"},
+    {"PHE","CE1","CZ"},
+    {"PHE","CZ","CE2"},
+    {"PHE","CE2","CD2"},
+    //Makes sure prolines are considered rigid bodies
+    {"PRO","-C","N"},
+    {"PRO","N","CD"}, //added
+    {"PRO","CA","CB"},
+    {"PRO","CB","CG"},
+    {"PRO","CG","CD"},
+    {"PRO","CD","N"},
+    {"SER","-C","N"},
+    {"THR","-C","N"},
     {"TRP","-C","N"},
     {"TRP","CG","CD1"},
     {"TRP","CG","CD2"},
@@ -1403,13 +1408,6 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"TRP","CZ3","CE3"},
     {"TRP","CZ3","CH2"}, //added
     {"TRP","CE3","CD2"},
-    {"PHE","-C","N"},
-    {"PHE","CG","CD1"},
-    {"PHE","CG","CD2"},
-    {"PHE","CD1","CE1"},
-    {"PHE","CE1","CZ"},
-    {"PHE","CZ","CE2"},
-    {"PHE","CE2","CD2"},
     {"TYR","-C","N"},
     {"TYR","CG","CD1"},
     {"TYR","CG","CD2"},
@@ -1417,26 +1415,9 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"TYR","CE1","CZ"},
     {"TYR","CZ","CE2"},
     {"TYR","CE2","CD2"},
-    {"GLU","-C","N"},
-    {"GLU","CD","OE1"}, //added
-    {"GLU","CD","OE2"}, //added
-    {"ASP","-C","N"},
-    {"ASP","CG","OD1"}, //added
-    {"ASP","CG","OD2"}, //added
-    {"LYS","-C","N"},
-    {"ORN","-C","N"},
-    {"DAB","-C","N"},
-    {"LYN","-C","N"},
-    {"PRO","-C","N"},
-    {"PRO","N","CD"}, //added
-    {"CYS","-C","N"},
-    {"CYX","-C","N"},
-    {"CYS2","-C","N"},
-    {"MET","-C","N"},
-    {"MET","SD","CE"},
-    {"ASH","-C","N"},
-    {"GLH","-C","N"},
+    {"VAL","-C","N"},
 
+    //RNA and DNA
     {"G","N9","C4"},
     {"G","N9","C8"},
     {"G","C4","C5"},
@@ -1554,58 +1535,95 @@ const char* const FIXED_BOND_PROFILES [][3] = {
     {"DT","C3'","C4'"},
     {"DT","C4'","O4'"},
     {"DT","O4'","C1'"},
-
-
-    //Makes sure prolines are considered rigid bodies
-    {"PRO","CA","CB"},
-    {"PRO","CB","CG"},
-    {"PRO","CG","CD"},
-    {"PRO","CD","N"},
     
     //Makes sure that C-O bonds are rigid
-	{"URE","C","O"},
-	{"ACE","C","O"},
-	{"ALA","C","O"},
-	{"GLY","C","O"},
-	{"SER","C","O"},
-	{"THR","C","O"},
-	{"LEU","C","O"},
-	{"ILE","C","O"},
-	{"VAL","C","O"},
-	{"ASN","C","O"},
-	{"GLN","C","O"},
-	{"ARG","C","O"},
-	{"HIS","C","O"},
-	{"HIE","C","O"},
-	{"HIP","C","O"},
-	{"HSD","C","O"},
-	{"HSE","C","O"},
-	{"HSP","C","O"},
-	{"TRP","C","O"},
-	{"PHE","C","O"},
-	{"TYR","C","O"},
-	{"GLU","C","O"},
-	{"ASP","C","O"},
-	{"LYS","C","O"},
-	{"ORN","C","O"},
-	{"DAB","C","O"},
-	{"LYN","C","O"},
-	{"PRO","C","O"},
-	{"CYS","C","O"},
-	{"CYX","C","O"},
-	{"CYS2","C","O"},
-	{"MET","C","O"},
-	{"ASH","C","O"},
-	{"GLH","C","O"},
-	{"CYS","C","O"},
+    {"URE","C","O"},
+    {"ACE","C","O"},
+    {"ALA","C","O"},
+    {"GLY","C","O"},
+    {"SER","C","O"},
+    {"THR","C","O"},
+    {"LEU","C","O"},
+    {"ILE","C","O"},
+    {"VAL","C","O"},
+    {"ASN","C","O"},
+    {"GLN","C","O"},
+    {"ARG","C","O"},
+    {"HIS","C","O"},
+    {"HIE","C","O"},
+    {"HIP","C","O"},
+    {"HSD","C","O"},
+    {"HSE","C","O"},
+    {"HSP","C","O"},
+    {"TRP","C","O"},
+    {"PHE","C","O"},
+    {"TYR","C","O"},
+    {"GLU","C","O"},
+    {"ASP","C","O"},
+    {"LYS","C","O"},
+    {"ORN","C","O"},
+    {"DAB","C","O"},
+    {"LYN","C","O"},
+    {"PRO","C","O"},
+    {"CYS","C","O"},
+    {"CYX","C","O"},
+    {"CYS2","C","O"},
+    {"MET","C","O"},
+    {"ASH","C","O"},
+    {"GLH","C","O"},
+    {"ARN","C","O"},
+    {"ASH","C","O"},
+    {"CSO","C","O"},
+    {"LYN","C","O"},
+    {"ORN","C","O"},
 
     //Todo: Terminal bonds to OT, OXT etc.
     
-    //Non-standard residues / ligands
+    //Non-standard residues / protonation states / ligands
+    {"ARN","-C","N"},
+    {"ARN","CZ","NH1"}, //added
+    {"ARN","CZ","NH2"}, //added
+    {"ASH","-C","N"},
+    {"ASH","-C","N"},
+    {"ASH","CG","OD1"}, //added
+    {"ASH","CG","OD2"}, //added
     {"CSO","-C","N"},
-    
-    //Non-standard residues: C-O bonds
-    {"CSO","C","O"},
+    {"DAB","-C","N"},
+    {"GLH","-C","N"},
+    {"GLH","CD","OE1"}, //added
+    {"GLH","CD","OE2"}, //added
+    {"HIE","-C","N"},
+    {"HIE","CG","CD2"},
+    {"HIE","CG","ND1"},
+    {"HIE","ND1","CE1"},
+    {"HIE","CD2","NE2"},
+    {"HIE","CE1","NE2"},
+    {"HIP","-C","N"},
+    {"HIP","CG","CD2"},
+    {"HIP","CG","ND1"},
+    {"HIP","ND1","CE1"},
+    {"HIP","CD2","NE2"},
+    {"HIP","CE1","NE2"},
+    {"HSD","-C","N"},
+    {"HSD","CG","CD2"},
+    {"HSD","CG","ND1"},
+    {"HSD","ND1","CE1"},
+    {"HSD","CD2","NE2"},
+    {"HSD","CE1","NE2"},
+    {"HSE","-C","N"},
+    {"HSE","CG","CD2"},
+    {"HSE","CG","ND1"},
+    {"HSE","ND1","CE1"},
+    {"HSE","CD2","NE2"},
+    {"HSE","CE1","NE2"},
+    {"HSP","-C","N"},
+    {"HSP","CG","CD2"},
+    {"HSP","CG","ND1"},
+    {"HSP","ND1","CE1"},
+    {"HSP","CD2","NE2"},
+    {"HSP","CE1","NE2"},
+    {"LYN","-C","N"},
+    {"ORN","-C","N"},
     
     {"END","",""}//Must always be LAST
 };

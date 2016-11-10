@@ -65,7 +65,7 @@ int main( int argc, char* argv[] ){
 
   cout<<"Rigidity: "<<options.hydrogenbondMethod<<endl;
 
-  string hBondIn = "../hBonds_in.txt";
+  string hBondIn = "hBonds_in.txt";
   IO::writeHbondsIn(protein,hBondIn );
 
   IO::readRigidbody( protein );

@@ -137,22 +137,12 @@ add_library( libKGS
         math/SVDMKL.h
         math/CudaSVD.cpp
         math/CudaSVD.h
-        math/QR.cpp
-        math/QR.h
-        math/QRGSL.cpp
-        math/QRGSL.h
-        math/QRMKL.cpp
-        math/QRMKL.h
         math/gsl_helpers.cpp
         math/gsl_helpers.h
         math/Nullspace.cpp
         math/Nullspace.h
         math/NullspaceSVD.cpp
         math/NullspaceSVD.h
-        math/NullspaceQR.cpp
-        math/NullspaceQR.h
-        math/TransposeQR.cpp
-        math/TransposeQR.h
         loopclosure/ExactIK.cpp
         loopclosure/ExactIK.h
         core/dofs/DOF.cpp
@@ -229,7 +219,7 @@ add_executable( print_torsions  applications/MainTorsionPrinter.cpp )
 add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd            applications/MainRmsd.cpp )
 add_executable( testik          applications/MainTestExactIK.cpp )
-add_executable( mytest          applications/MainTest.cpp )
+#add_executable( mytest          applications/MainTest.cpp )
 add_executable( transition      applications/MainTransition.cpp )
 add_executable( loopexplore     applications/MainLoopExplore.cpp )
 add_executable( hierarchy       applications/MainHierarchy.cpp )
@@ -242,7 +232,7 @@ target_link_libraries( print_torsions   libKGS ${GSL_LIBRARIES} )
 target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( testik           libKGS ${GSL_LIBRARIES} )
-target_link_libraries( mytest           libKGS ${GSL_LIBRARIES} )
+#target_link_libraries( mytest           libKGS ${GSL_LIBRARIES} )
 target_link_libraries( transition       libKGS ${GSL_LIBRARIES} )
 target_link_libraries( loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( hierarchy        libKGS ${GSL_LIBRARIES} )
