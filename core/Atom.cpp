@@ -45,6 +45,7 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
 {
 	m_referencePosition = pos;
 	On_sidechain = true;
+	m_bFactorCol = 0; //b-factor column used for display purposes
 
 	// Assign Element
 	string::size_type char_start = Name.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -317,6 +318,14 @@ bool Atom::compareType (string type) const {
 //	}
 //	return rbs;
 //}
+
+void Atom::setBfactorColumn(float val) {
+  m_bFactorCol = val;
+}
+
+float Atom::getBfactorColumn() {
+	return m_bFactorCol;
+}
 
 bool Atom::inSameRigidbody (Atom* another) const {
   if(getRigidbody()==another->getRigidbody()) return true;

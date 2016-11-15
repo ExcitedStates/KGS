@@ -303,21 +303,6 @@ void Configuration::identifyBiggerRigidBodies(){
 
   sort(vsit, veit,compareSize);
 
-  /// Now, we are done!
-  /// m_biggerRBMap contains the set of all bigger rigid bodies!
-  /// m_sortedRBs contains size and id of the bigger rbs, sorted by size!
-
-  ///More stats!
-//	cout<<"Number of rigid clusters: "<<m_numClusters<<endl;
-//	cout<<"Biggest rigid body: index "<<m_maxIndex<<" with "<<m_maxSize<<" atoms!"<<endl<<endl;
-
-  //For graphical display, it might be helpful to assign a single bigger rb to each atom
-
-  //vector<Atom*>::iterator atomIt;
-  //for( auto const& atom: m_molecule->atoms){
-  //  atom->m_assignedBiggerRB_id = atom->getBiggerRigidbody()->id();
-  //}
-
 }
 
 //---------------------------------------------------------
@@ -392,6 +377,8 @@ void Configuration::readBiggerSet(){
     if (!rb->containsAtom(atom)){
       rb->Atoms.push_back(atom);
       atom->setBiggerRigidbody(rb);
+      //For graphical display, we assign this rb-id to the rbColumn variable of the atom
+      atom->setBfactorColumn( float( rb->id() ) );
     }
 
 //		// Add the covalent neighbors of this atom into its bigger rigid body, if it's not there already
@@ -413,6 +400,18 @@ void Configuration::readBiggerSet(){
 
 }
 
+//------------------------------------------------------
+void Configuration::writeQToBfactor(){
+  for (vector<KinEdge*>::iterator itr= m_molecule->m_spanning_tree->Edges.begin(); itr!= m_molecule->m_spanning_tree->Edges.end(); ++itr) {
+    KinEdge* pEdge = (*itr);
+    if(pEdge->EndVertex->m_rigidbody == NULL)
+      continue; //global dofs
+    float value = m_dofs[pEdge->getDOF()->getIndex() ];
+    for (auto const& atom : pEdge->EndVertex->m_rigidbody->Atoms ){
+      atom->setBfactorColumn(value);
+    }
+  }
+}
 
 //------------------------------------------------------
 void Configuration::updateGlobalTorsions(){

@@ -54,7 +54,7 @@ string Coordinate::tostring () const {
 }
 
 double Coordinate::distanceTo (Coordinate& other) const {
-	return sqrt(pow(x-other.x,2)+pow(y-other.y,2)+pow(z-other.z,2));
+	return sqrt((x-other.x)*(x-other.x) + (y-other.y)*(y-other.y) + (z-other.z)*(z-other.z));
 }
 
 bool Coordinate::isWithinSphere (Coordinate& center, double radius) const {

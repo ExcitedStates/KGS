@@ -94,6 +94,7 @@ class Configuration
 
   static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
+  void writeQToBfactor();
 
   // When the samples are generated as an expanding tree, the m_children and m_parent store the connectivity information of these nodes
   const int m_treeDepth;             ///< Depth in the exploration tree

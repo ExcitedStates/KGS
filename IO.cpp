@@ -100,9 +100,11 @@ void IO::readPdb (Molecule * protein, string pdb_file, vector<string> &extraCovB
     if( line.substr(0, 6) == "CONECT" ){//read in conect records for extra cov. bonds
       vector<int> conectEntry;
       conectRecords.push_back(conectEntry);
-      conectEntry = Util::split(line.substr(7),' ',conectEntry);//vector of ints
-      for(auto num: conectEntry) {
-        conectRecords[conectCount].push_back(num);
+      string remainder = line.substr(6);
+      int numRecs = int(remainder.length()/5);
+      for(int rec=0; rec<numRecs;rec++){
+        int entry = atoi(remainder.substr(rec*5,5).c_str());
+        conectRecords[conectCount].push_back(entry);
       }
       conectCount++;
       continue;
@@ -827,12 +829,13 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
 //    Atom* atom = *atom_itr;
     Residue* res = atom->getResidue();
     char buffer[100];
-    int bigRBId = atom->getBiggerRigidbody()==nullptr?0:atom->getBiggerRigidbody()->id();
-    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6d          %2s  ",
+//    int bigRBId = atom->getBiggerRigidbody()==nullptr?0:atom->getBiggerRigidbody()->id();
+    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             atom->m_position.x,atom->m_position.y,atom->m_position.z,
-            bigRBId,
+            atom->getBfactorColumn(),
+//            bigRBId,
             atom->getType().c_str() );
     string line(buffer);
     output << line << endl;

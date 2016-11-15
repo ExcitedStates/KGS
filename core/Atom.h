@@ -117,6 +117,8 @@ class Atom {
   Rigidbody* getRigidbody() const;
   void setBiggerRigidbody(Rigidbody* rb);
   Rigidbody* getBiggerRigidbody() const;
+  void setBfactorColumn(float val);
+  float getBfactorColumn();
   bool inSameRigidbody(Atom* another) const;
 
 	std::string getType() const; //TODO: Return type should be char or AtomType
@@ -150,6 +152,7 @@ class Atom {
 	Residue* m_parentResidue;
   Rigidbody* m_rigidbody;
   Rigidbody* m_biggerRigidbody;
+	float m_bFactorCol; ///use this to write in b-factor column for pdb output, formatted as integer
 };
 
 std::ostream& operator<<(std::ostream& os, const Atom& a);

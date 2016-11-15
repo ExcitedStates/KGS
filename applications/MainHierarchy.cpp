@@ -290,6 +290,7 @@ int main( int argc, char* argv[] ) {
     double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);
     double deltaVdwEnergy = qNew->getMolecule()->vdwEnergy(options.collisionCheck) - initialVdwEnergy;
 
+    qNew->writeQToBfactor();
     log("hierarchy") << "> New structure: " << ++sampleCount;
     log("hierarchy") << " of a total of " << ns.getMatrix()->size2 << " samples.";
     log("hierarchy") << " Delta hbond energy: " << normDeltaHEnergy;
