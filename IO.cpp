@@ -46,7 +46,7 @@
 #include "core/Atom.h"
 #include "core/Chain.h"
 #include "core/Bond.h"
-#include "core/ProteinHBond.h"
+#include "core/HBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"

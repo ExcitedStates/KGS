@@ -18,7 +18,7 @@
 #include "IO.h"
 #include "math/MathUtility.h"
 #include "DisjointSets.h"
-#include "core/ProteinHBond.h"
+#include "core/HBond.h"
 #include "Logger.h"
 #include "Selection.h"
 

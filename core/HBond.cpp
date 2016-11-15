@@ -25,7 +25,7 @@
 
 
 */
-#include "ProteinHBond.h"
+#include "HBond.h"
 #include "core/Atom.h"
 #include "math/MathUtility.h"
 #include "Logger.h"

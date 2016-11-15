@@ -33,7 +33,7 @@
 #include "Util.h"
 #include "core/Residue.h"
 #include "core/Grid.h"
-#include "core/ProteinHBond.h"
+#include "core/HBond.h"
 #include "IO.h"
 #include "math/MathUtility.h"
 #include "Logger.h"

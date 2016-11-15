@@ -41,7 +41,7 @@
 #include "Molecule.h"
 #include "CTKTimer.h"
 #include "core/Bond.h"
-#include "ProteinHBond.h"
+#include "HBond.h"
 #include "ResidueProfiles.h"
 #include "DisjointSets.h"
 #include "Logger.h"

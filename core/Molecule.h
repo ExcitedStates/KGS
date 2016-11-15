@@ -79,8 +79,6 @@ class Molecule {
   double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
   void printAllCollisions () const;
   bool hasCycle() const;
-//  void backupAtomIndex();
-//  void restoreAtomIndex ();
   void alignReferencePositionsTo(Molecule * base);
   void translateReferencePositionsToRoot(Molecule * base);
   Grid* getGrid();

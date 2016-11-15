@@ -36,7 +36,7 @@
 #include "core/Chain.h"
 #include "Residue.h"
 #include "core/Bond.h"
-#include "ProteinHBond.h"
+#include "HBond.h"
 #include "Grid.h"
 #include "CTKTimer.h"
 #include "metrics/RMSD.h"

@@ -37,7 +37,7 @@ add_library( libKGS
         Logger.h
         core/Molecule.h
         core/Bond.h
-        core/ProteinHBond.h
+        core/HBond.h
         core/Residue.h
         ResidueProfiles.h
         core/Rigidbody.h
@@ -93,7 +93,7 @@ add_library( libKGS
         math/MathUtility.cpp
         core/Molecule.cpp
         core/Bond.cpp
-        core/ProteinHBond.cpp
+        core/HBond.cpp
         core/Residue.cpp
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp

@@ -30,7 +30,7 @@
 #include "Atom.h"
 #include "Util.h"
 #include "Bond.h"
-#include "ProteinHBond.h"
+#include "HBond.h"
 #include "Rigidbody.h"
 
 using namespace std;

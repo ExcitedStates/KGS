@@ -19,7 +19,7 @@
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "core/ProteinHBond.h"
+#include "core/HBond.h"
 #include "Logger.h"
 #include "SamplingOptions.h"
 #include "moves/CompositeMove.h"

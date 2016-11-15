@@ -8,7 +8,7 @@
 
 #include "../IO.h"
 #include "core/Molecule.h"
-#include "core/ProteinHBond.h"
+#include "core/HBond.h"
 #include "core/Atom.h"
 #include "../Logger.h"
 
