@@ -66,4 +66,7 @@ kgs_prepare.py 2ERL.pdb
 kgs --initial 2ERL.kgs.pdb
 ```
 This should create an `output` directory and put 10 generated conformations 
-in it (the default number of samples to generate).
+in it (the default number of samples to generate). The prepared `.kgs.pdb`
+file has the same coordinates as the original, but atom-ids have been 
+renumbered, and REMARK records indicating hydrogen-bonds have been added.
+
