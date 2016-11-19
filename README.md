@@ -1,0 +1,2 @@
+# KGS
+Kino-Geometric Sampling
