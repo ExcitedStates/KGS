@@ -48,8 +48,8 @@ class SamplingOptions
   double maxRotation;
   /** step size factor*/
   double stepSize;
-  /** Desired norm of step to next sample, can be decreased during collision with decreaseSteps and decreaseFactor */
-  bool flexibleRibose;
+//  /** Desired norm of step to next sample, can be decreased during collision with decreaseSteps and decreaseFactor */
+//  bool flexibleRibose;
   /** Residue selection of residues to rebuild with exactIK */
   std::string exactIKselection;
   /** Desired metric */

@@ -80,7 +80,7 @@ void MSDDirection::computeGradient(Configuration* conf, Configuration* c_target,
 
     //Compute gradient contribution all the way to the root
     KinVertex* v = atom->getRigidbody()->getVertex();
-    while(v!=protein->m_spanning_tree->m_root){
+    while(v!=protein->m_spanningTree->m_root){
       KinEdge* parentEdge = v->m_parent->findEdge(v);
       int dof_id = parentEdge->getDOF()->getIndex();
       Math3D::Vector3 deriv = parentEdge->getDOF()->getDerivative(atom->m_position);
@@ -137,10 +137,10 @@ if(!allResidues){
 }
 
 //Ensure that m_sortedVertices is filled with vertices from `protein`.
-if(m_preprocessedTree==nullptr || protein->m_spanning_tree!=m_preprocessedTree){
+if(m_preprocessedTree==nullptr || protein->m_spanningTree!=m_preprocessedTree){
   m_sortedVertices.clear();
-  collectVerticesPostorder(protein->m_spanning_tree->m_root);
-  m_preprocessedTree = protein->m_spanning_tree;
+  collectVerticesPostorder(protein->m_spanningTree->m_root);
+  m_preprocessedTree = protein->m_spanningTree;
 }
 
 Math3D::Vector3 f, g, zeros(0.0);
@@ -153,7 +153,7 @@ for ( KinVertex* const& currVertex: m_sortedVertices ){
   //traverse tree by vertices in a bottom-up fashion (starting at leaves)
 
   //KinVertex *currVertex = vit->second;
-  if(currVertex == protein->m_spanning_tree->m_root)
+  if(currVertex == protein->m_spanningTree->m_root)
     break;
 
   KinEdge* currEdge = currVertex->m_parent->findEdge(currVertex);

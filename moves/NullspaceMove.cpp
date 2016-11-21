@@ -49,7 +49,7 @@ gsl_vector* NullspaceMove::projectOnNullspace(Configuration* conf, gsl_vector* g
 
     //Fill reduced gradient
     gsl_vector *to_proj_short = gsl_vector_calloc(conf->getNullspace()->getNumDOFs());
-    for (auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
+    for (auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -67,7 +67,7 @@ gsl_vector* NullspaceMove::projectOnNullspace(Configuration* conf, gsl_vector* g
     gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     //Convert back to full length DOFs vector
-    for( auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
+    for( auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {

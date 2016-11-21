@@ -17,13 +17,11 @@ Molecule * readProtein(char* path){
 	char* tmp = realpath(path, nullptr);
 	if(tmp==nullptr){ cerr<<path<<" is not a valid PDB-file"<<endl; exit(-1); }
 
-	vector<string> extraCovBonds;
-	Molecule * protein = new Molecule();
-	IO::readPdb( protein, path, extraCovBonds );
-
-	IO::readRigidbody( protein );
-	protein->buildSpanningTree();
-  protein->setConfiguration(new Configuration(protein));
+	Selection movingResidues("all");
+	Molecule* protein = IO::readPdb(
+      path,
+			movingResidues
+	);
 	return protein;
 }
 
@@ -46,17 +44,17 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 	for(int i=0;i<arrSz;i++){
 		Molecule * struc = readProtein(fileList[i]);
 		Configuration* conf = new Configuration(native);
-		//Configuration* conf = new Configuration(native->m_spanning_tree->getNumDOFs());
+		//Configuration* conf = new Configuration(native->m_spanningTree->getNumDOFs());
 
     /*
-		for(auto vit = struc->m_spanning_tree->Vertex_map.begin(); vit != struc->m_spanning_tree->Vertex_map.end(); vit++){
+		for(auto vit = struc->m_spanningTree->Vertex_map.begin(); vit != struc->m_spanningTree->Vertex_map.end(); vit++){
 			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(vertex);
 				double strucTorsion = v->initTorsion;
 				double nativeTorsion = 1000;
 
-				for(auto nvit = native->m_spanning_tree->Vertex_map.begin(); nvit != native->m_spanning_tree->Vertex_map.end(); nvit++){
+				for(auto nvit = native->m_spanningTree->Vertex_map.begin(); nvit != native->m_spanningTree->Vertex_map.end(); nvit++){
 					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
@@ -82,13 +80,13 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		}
      */
 
-		for(vector<KinEdge*>::iterator eit=struc->m_spanning_tree->Edges.begin(); eit!=struc->m_spanning_tree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit=struc->m_spanningTree->Edges.begin(); eit!=struc->m_spanningTree->Edges.end(); ++eit){
 			KinEdge* e = *eit;
 
 			double strucTorsion = torsion(e->getBond());
 			double nativeTorsion = 1000;
 
-			for(vector<KinEdge*>::iterator neit=native->m_spanning_tree->Edges.begin(); neit!=native->m_spanning_tree->Edges.end(); ++neit){
+			for(vector<KinEdge*>::iterator neit=native->m_spanningTree->Edges.begin(); neit!=native->m_spanningTree->Edges.end(); ++neit){
 				KinEdge* ne = *neit;
 				if(ne->getDOF()->getIndex()==e->getDOF()->getIndex()){
 					nativeTorsion = torsion(ne->getBond());
@@ -133,7 +131,7 @@ int main(int argc, char* argv[]){
 	cout<<"done. Total: "<<configurations.size()<<endl;
 
 	cout<<"Calculating covariance matrix .. ";
-	int n = native->m_spanning_tree->getNumDOFs();
+	int n = native->m_spanningTree->getNumDOFs();
 	double* cov = new double[n*n];
 	double* avg = new double[n];
 	for(int i=0;i<n;i++){ avg[i]=0; for(int j=0;j<n;j++) cov[i*n+j] = 0; }
@@ -193,7 +191,7 @@ int main(int argc, char* argv[]){
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		double eval_i = gsl_vector_get(eval, component);
 		
-		for(vector<KinEdge*>::iterator eit = native->m_spanning_tree->Edges.begin(); eit != native->m_spanning_tree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit = native->m_spanningTree->Edges.begin(); eit != native->m_spanningTree->Edges.end(); ++eit){
 			KinEdge* e = *eit;
 			int dof = e->getDOF()->getIndex();
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
@@ -206,7 +204,7 @@ int main(int argc, char* argv[]){
 		}
 
     /*
-		for (auto vit=native->m_spanning_tree->Vertex_map.begin(); vit!=native->m_spanning_tree->Vertex_map.end(); vit++){
+		for (auto vit=native->m_spanningTree->Vertex_map.begin(); vit!=native->m_spanningTree->Vertex_map.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 				int dof = v->getDOF()->getIndex();
@@ -284,7 +282,7 @@ int main(int argc, char* argv[]){
 		cout<<"Writing component "<<component<<" pdb files ";cout.flush();
 		Molecule * aligned = readProtein(argv[1]);
 		Configuration* conf = new Configuration(aligned);
-		//Configuration* conf = new Configuration(native->m_spanning_tree->getNumDOFs());
+		//Configuration* conf = new Configuration(native->m_spanningTree->getNumDOFs());
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		for(double a=-amplitude;a<=amplitude;a+=stepsize){
             if(fabs(a)<0.001) a = 0.0;

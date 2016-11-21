@@ -47,11 +47,11 @@ class Rigidbody {
 
   void id(unsigned int id);
   unsigned int id() const;
-  void setMainchainRb();
-  bool isMainchainRb() const;
+//  void setMainchainRb();
+//  bool isMainchainRb() const;
 
-  bool isWithinResidueRange( unsigned int resid1, unsigned int resid2 ) const;
-  bool isWithinTwoResidueRanges( unsigned int resid1, unsigned int resid2, unsigned int resid3, unsigned int resid4 ) const;
+//  bool isWithinResidueRange( unsigned int resid1, unsigned int resid2 ) const;
+//  bool isWithinTwoResidueRanges( unsigned int resid1, unsigned int resid2, unsigned int resid3, unsigned int resid4 ) const;
 
   Atom* getAtom(std::string name);
   void addAtom(Atom* atom);
@@ -60,20 +60,20 @@ class Rigidbody {
   void makeBiggerRigidBody( Rigidbody* rb, Bond * bond);
   int size() const;
   void print() const;
-  void printAtoms() const;
-  void printAtomsBonds() const;
-  bool containsResidue( Residue* res ) const;
+//  void printAtoms() const;
+//  void printAtomsBonds() const;
+//  bool containsResidue( Residue* res ) const;
   bool containsAtom (Atom* atom) const;
   //bool containsAtomAtPosition( const clipper::Coord_orth& pos ) const;
-  bool containsMainchainAtoms() const;
-  bool containsAlongMainchainAtoms() const;
+//  bool containsMainchainAtoms() const;
+//  bool containsAlongMainchainAtoms() const;
 
   void setVertex (KinVertex* vertex);
   KinVertex* getVertex();
 
  private:
-  unsigned int rbId_;
-  bool isMainchainRb_;
+  unsigned int m_id;
+//  bool m_isMainchainRb;
   KinVertex* m_rbVertex;
 };
 

@@ -64,48 +64,45 @@ int main( int argc, char* argv[] ) {
   // Set seed
   srand(options.seed);
 
-  string pdb_file = options.initialStructureFile;
-  Molecule protein;
-  protein.setCollisionFactor(options.collisionFactor);
+  Selection resNetwork(options.gradientSelection);
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      resNetwork,
+      options.extraCovBonds,
+      options.roots,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
+  protein->setCollisionFactor(options.collisionFactor);
 
   if(options.gradientSelection.empty()){
     cerr<<"Must supply --gradientSelection (e.g. \"resi 17-22 and resi 50-55\")"<<endl;
     exit(-1);
   }
 
-  Selection resNetwork(options.gradientSelection);
-
-  IO::readPdb( &protein, pdb_file, options.extraCovBonds );
-
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-    IO::readHbonds_hbPlus( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="identify")
-    HbondIdentifier::identifyHbonds(&protein);
-
-  IO::readRigidbody( &protein, resNetwork );
-  protein.buildSpanningTree();//with the rigid body tree in place, we can generate a configuration
-  protein.setConfiguration(new Configuration(&protein));
-  protein.m_initialCollisions = protein.getAllCollisions();
-
+//  if(options.hydrogenbondMethod=="user")
+//    IO::readHbonds( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="rnaview")
+//    IO::readHbonds_rnaview( protein, options.hydrogenbondFile, options.annotationFile.empty() );
+//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+//    IO::readHbonds_first( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+//    IO::readHbonds_kinari( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
+//    IO::readHbonds_hbPlus( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="vadar")
+//    IO::readHbonds_vadar( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="dssr")
+//    IO::readHbonds_dssr( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="identify")
+//    HbondIdentifier::identifyHbonds(protein);
 
 
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
@@ -159,9 +156,9 @@ int main( int argc, char* argv[] ) {
     for( int r1=ival.first; r1<=ival.second; r1++ ) {
       for( int r2=r1 + 1; r2<=ival.second; r2++ ) {
         for( int r3=r2 + 1; r3<=ival.second; r3++ ) {
-          Residue* res1 = protein.getChain("A")->getResidue(r1);
-          Residue* res2 = protein.getChain("A")->getResidue(r2);
-          Residue* res3 = protein.getChain("A")->getResidue(r3);
+          Residue* res1 = protein->getChain("A")->getResidue(r1);
+          Residue* res2 = protein->getChain("A")->getResidue(r2);
+          Residue* res3 = protein->getChain("A")->getResidue(r3);
           if(ik.validRebuildLoop(res1,res2,res3))
             ikTriples.push_back(make_tuple(res1, res2, res3));
         }
@@ -171,19 +168,19 @@ int main( int argc, char* argv[] ) {
 
   //Initialize planner
   SamplingPlanner* planner = nullptr;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
-  else if(options.planner_string.empty())         planner = new RRTPlanner(     &protein, *move, *metric, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(    &protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner( &protein, *move, *metric );
-  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(&protein, *move, *metric, ikTriples );
+  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(     protein, *move, *metric, *direction );
+  else if(options.planner_string.empty())         planner = new RRTPlanner(     protein, *move, *metric, *direction );
+  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(    protein, *move, *metric, *direction );
+  else if(options.planner_string=="poisson")      planner = new PoissonPlanner( protein, *move, *metric );
+  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(protein, *move, *metric, ikTriples );
   else{
     cerr<<"Unknown --planner option specified!"<<endl;
     exit(-1);
   }
 
   if(options.saveData > 1){
-    string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
-    IO::writeQ(&protein, protein.m_conf, out);
+    string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
+    IO::writeQ(protein, protein->m_conf, out);
   }
 
   log("samplingStatus")<<"Sampling ...\n";

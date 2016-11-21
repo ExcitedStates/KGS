@@ -67,28 +67,7 @@ Grid::~Grid () {
 	}
 }
 
-Grid::Grid(): m_collisionFactor(1.0) {
-}
-
-Grid* Grid::deepClone () const {
-	Grid* grid_copy = new Grid();
-
-	grid_copy->Max_x = Max_x;
-	grid_copy->Min_x = Min_x;
-	grid_copy->Max_y = Max_y;
-	grid_copy->Min_y = Min_y;
-	grid_copy->Max_z = Max_z;
-	grid_copy->Min_z = Min_z;
-
-	for (map<Coordinate,vector<Atom*>*,Coordinate_cmp>::const_iterator mit=Atom_map.begin(); mit!=Atom_map.end(); ++mit) {
-		vector<Atom*> *list = new vector<Atom*>();
-		for (vector<Atom*>::const_iterator vit=mit->second->begin(); vit!=mit->second->end(); ++vit)
-			list->push_back(*vit);
-		grid_copy->Atom_map[mit->first] = list;
-	}
-
-	return grid_copy;
-}
+Grid::Grid(): m_collisionFactor(1.0) { }
 
 void Grid::print() const {
 	for (map<Coordinate,vector<Atom*>*,Coordinate_cmp>::const_iterator mit=Atom_map.begin(); mit!=Atom_map.end(); ++mit) {
@@ -286,10 +265,15 @@ bool Grid::removeAtom (Atom* atom) {
 }
 
 void Grid::addAtom (Atom* atom) {
-        Coordinate key = makeKey(atom->m_position);
-        if (Atom_map.find(key)==Atom_map.end()) {
-                vector<Atom*> *list = new vector<Atom*>; // this delocated? @D
-                Atom_map.insert( make_pair(key,list) );
-        }
-        Atom_map.find(key)->second->push_back(atom);
+	Coordinate key = makeKey(atom->m_position);
+	if (Atom_map.find(key)==Atom_map.end()) {
+		vector<Atom*> *list = new vector<Atom*>; // this delocated? @D
+		Atom_map.insert( make_pair(key,list) );
+	}
+	Atom_map.find(key)->second->push_back(atom);
+}
+
+void Grid::setCollisionFactor(double collisionFactor)
+{
+  m_collisionFactor = collisionFactor;
 }

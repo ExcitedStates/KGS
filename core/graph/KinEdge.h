@@ -52,9 +52,6 @@ class KinEdge {
 
   void print() const;
 
-  void printVerbose() const;
-  void printShort() const;
-
   Bond *getBond() const;
   DOF* getDOF() const;
 

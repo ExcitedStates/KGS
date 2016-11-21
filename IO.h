@@ -39,9 +39,18 @@
 
 
 class IO {
-  public:
+ public:
 	static ResidueProfile readResidueProfile ();
-	static void readPdb (Molecule * protein, std::string pdb_file, std::vector<std::string> &hbondsAsCov, Molecule * reference = nullptr);
+	static Molecule* readPdb (
+			const std::string& pdb_file,
+      Selection& movingResidues,
+			const std::vector<std::string>& extraCovBonds = {},
+      const std::vector<int>& roots = {},
+      const std::string& hbondMethod = "",
+      const std::string& hbondFile = "",
+			const Molecule* reference = nullptr
+  );
+  static void readHbonds(const std::string& hbondMethod, const std::string& hbondFile, Molecule* mol);
 	static void readDssp (Molecule * protein, std::string dssp_file);
 	static void readRigidbody (Molecule * molecule);
   static void readRigidbody (Molecule * molecule, Selection& movingResidues);

@@ -44,7 +44,7 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
   //TODO: Just set all entries in ret to random values (?)
   Molecule * protein = conf->getMolecule();
   double absMax = 0.0;
-  for (auto const& edge: protein->m_spanning_tree->Edges) {
+  for (auto const& edge: protein->m_spanningTree->Edges) {
     int dofId = edge->getDOF()->getIndex();
     double newVal = 0.0;
 

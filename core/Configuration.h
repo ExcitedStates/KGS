@@ -88,10 +88,6 @@ class Configuration
 
   void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
 
-  //Clash-avoiding Jacobian and nullspace
-  //void ComputeClashAvoidingJacobianAndNullSpace (std::map< std::pair<Atom*,Atom*>,int >  allCollisions,bool firstTime,bool projectConstraints);
-  //void computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom*>,int > allCollisions,bool projectConstraints);
-
   static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
   void writeQToBfactor();

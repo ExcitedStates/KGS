@@ -63,7 +63,7 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
     gsl_matrix* fullN = gsl_matrix_calloc(dof,N->size2+dof-N->size1);
     gsl_matrix_set_zero(fullN);
     int fulldof=0;
-    for (auto const& edge: protein->m_spanning_tree->Edges) {
+    for (auto const& edge: protein->m_spanningTree->Edges) {
         int dof_id = edge->getDOF()->getIndex();
         int cycle_dof_id = edge->getDOF()->getCycleIndex();
         if ( cycle_dof_id!=-1 ) {

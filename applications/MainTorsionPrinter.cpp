@@ -94,12 +94,8 @@ int main( int argc, char* argv[] ) {
     int pos = protein_name.rfind(".pdb");
     if (pos != string::npos) protein_name = protein_name.substr(0, pos);
 
-    vector<string> extraCovBonds;
-    Molecule *protein = new Molecule();
-    IO::readPdb(protein, argv[a], extraCovBonds);
-
-    IO::readRigidbody(protein);
-    protein->buildSpanningTree();
+    Selection movingResidues("all");
+    Molecule* protein = IO::readPdb( argv[a], movingResidues );
 
     bool rna = true;
     for(auto const& atom: protein->getAtoms()){

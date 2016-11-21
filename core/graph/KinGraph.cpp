@@ -100,12 +100,10 @@ KinEdge* KinGraph::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond 
 	return edge1;
 }
 
-bool KinGraph::hasVertex (int rb_id) {
-	return (Vertex_map.find(rb_id)!=Vertex_map.end());
-}
-
 KinVertex* KinGraph::getVertex (int rb_id) {
-	return Vertex_map.find(rb_id)->second;
+  auto vmapIt = Vertex_map.find(rb_id);
+  if( vmapIt==Vertex_map.end() ) return nullptr;
+  return vmapIt->second;
 }
 
 

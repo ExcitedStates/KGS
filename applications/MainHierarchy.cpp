@@ -65,57 +65,37 @@ int main( int argc, char* argv[] ) {
   // Set seed
   srand(options.seed);
 
-  Molecule protein;
-  protein.setCollisionFactor(options.collisionFactor);
-
-  IO::readPdb(&protein, options.initialStructureFile, options.extraCovBonds);
-//  options.setResidueNetwork(&protein);
+  Selection movingResidues(options.residueNetwork);
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      movingResidues,
+      options.extraCovBonds,
+      options.roots,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
+  protein->setCollisionFactor(options.collisionFactor);
 
   string out_path = options.workingDirectory;
-  string name = protein.getName();
-
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-    IO::readHbonds_hbPlus( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="identify")
-    HbondIdentifier::identifyHbonds(&protein);
-
+  string name = protein->getName();
 
   string hBondOut = "hBonds_out.txt";
   string hBondIn = "hBonds_in.txt";
-  IO::writeHbonds(&protein,hBondOut );
-  IO::writeHbondsIn(&protein,hBondIn );
+  IO::writeHbonds(protein,hBondOut );
+  IO::writeHbondsIn(protein,hBondIn );
 
-  IO::readRigidbody(&protein);
-  protein.buildSpanningTree();
-
-  Configuration *conf = new Configuration(&protein);
-  protein.setConfiguration(conf);
-  conf->updateMolecule();
-
-  protein.m_initialCollisions = protein.getAllCollisions();
+  Configuration* conf = protein->m_conf;
 
   double initialHbondEnergy = HbondIdentifier::computeHbondEnergy(conf);
-  double initialVdwEnergy = protein.vdwEnergy(options.collisionCheck);
+  double initialVdwEnergy = protein->vdwEnergy(options.collisionCheck);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("hierarchy") << "Molecule has:" << endl;
-  log("hierarchy") << "> " << protein.getAtoms().size() << " atoms" << endl;
-  log("hierarchy") << "> " << protein.m_initialCollisions.size() << " initial collisions" << endl;
-  log("hierarchy") << "> " << protein.m_spanning_tree->CycleAnchorEdges.size() << " hydrogen bonds" << endl;
-  log("hierarchy") << "> " << protein.m_spanning_tree->getNumDOFs() << " DOFs of which " <<
-  protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("hierarchy") << "> " << protein->getAtoms().size() << " atoms" << endl;
+  log("hierarchy") << "> " << protein->getInitialCollisions().size() << " initial collisions" << endl;
+  log("hierarchy") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " hydrogen bonds" << endl;
+  log("hierarchy") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " <<
+  protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   NullspaceSVD ns = *(dynamic_cast<NullspaceSVD*>(conf->getNullspace()));
   //Copy to local variable
@@ -142,17 +122,17 @@ int main( int argc, char* argv[] ) {
     string rbFile=out_path + "output/" +  name + "_RBs.txt";
     string singVals = out_path + "output/singVals.txt";
     ///Write pyMol script
-    IO::writePyMolScript(&protein, out_file, pyMol);
+    IO::writePyMolScript(protein, out_file, pyMol);
     ///Write statistics
-    IO::writeStats(&protein, statFile);
+    IO::writeStats(protein, statFile);
     ///Write rigid bodies
-    IO::writeRBs(&protein, rbFile);
+    IO::writeRBs(protein, rbFile);
     gsl_vector_outtofile(singValVector, singVals);
   }
 //  cout<<"First conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
 
   gsl_vector* projected_gradient = gsl_vector_calloc(numCols);
-  gsl_vector* allDofs = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
+  gsl_vector* allDofs = gsl_vector_calloc(protein->m_spanningTree->getNumDOFs());
 
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
@@ -208,7 +188,7 @@ int main( int argc, char* argv[] ) {
     double gradNorm = gsl_vector_length(projected_gradient);
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
     // Convert back to full length DOFs vector
-    for( auto const& edge: protein.m_spanning_tree->Edges){
+    for( auto const& edge: protein->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -237,17 +217,17 @@ int main( int argc, char* argv[] ) {
     qNew->updateMolecule();
 
     //Potentially reject new config if large violations?
-    double observedViolation = protein.checkCycleClosure(qNew);
+    double observedViolation = protein->checkCycleClosure(qNew);
 
     /// New test with reclosing the cycles to obtain reduced energy violations etc.
 //    double eps = 1e-12;
 //    int maxIts = 10;
 //    gsl_vector* currentViolation = gsl_vector_alloc(qNew->getCycleJacobian()->size1);
-//    gsl_vector* qSol = gsl_vector_calloc(protein.m_spanning_tree->getNumDOFs());
+//    gsl_vector* qSol = gsl_vector_calloc(protein->m_spanningTree->getNumDOFs());
 //    int count = 0;
 //    while(observedViolation > eps && count <maxIts){
 //      cout<<"Iteration "<<count++<<", violation: "<<observedViolation<<endl;
-//      protein.computeCycleViolation(qNew,currentViolation);//compute residuum vector
+//      protein->computeCycleViolation(qNew,currentViolation);//compute residuum vector
 //      NullspaceSVD* ns_svd = static_cast<NullspaceSVD*> (qNew->getNullspace() ); //updates Jacobian and nullspace
 //      ns_svd->updateFromMatrix();
 //      gsl_matrix* Jinv = ns_svd->getSVD()->PseudoInverse();
@@ -255,7 +235,7 @@ int main( int argc, char* argv[] ) {
 //      //delta vetor, on small dimensions
 //      gsl_vector* deltaQ = gsl_matrix_vector_mul( Jinv, currentViolation );
 //
-//      for( auto const& edge: protein.m_spanning_tree->Edges){
+//      for( auto const& edge: protein->m_spanningTree->Edges){
 //        int dof_id = edge->getDOF()->getIndex();
 //        int cycle_dof_id = edge->getDOF()->getCycleIndex();
 //        if ( cycle_dof_id!=-1 ) {
@@ -278,7 +258,7 @@ int main( int argc, char* argv[] ) {
 //          qNew->m_dofs);
 //
 //      qNew->updateMolecule();
-//      observedViolation = protein.checkCycleClosure(qNew);
+//      observedViolation = protein->checkCycleClosure(qNew);
 //    }
 //    gsl_vector_free(currentViolation);
 //    gsl_vector_free(qSol);

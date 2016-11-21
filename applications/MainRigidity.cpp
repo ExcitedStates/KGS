@@ -42,42 +42,45 @@ int main( int argc, char* argv[] ){
   string out_path = options.workingDirectory;
   //string pdb_file = path + protein_name + ".pdb";
 
-  Molecule * protein = new Molecule();
-  IO::readPdb( protein, options.initialStructureFile, options.extraCovBonds );
+  Selection movingResidues(options.residueNetwork);
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      movingResidues,
+      options.extraCovBonds,
+      options.roots,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
   string name = protein->getName();
 
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( protein, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-    IO::readHbonds_kinari( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-    IO::readHbonds_hbPlus( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="identify")
-    HbondIdentifier::identifyHbonds(protein);
-
-  cout<<"Rigidity: "<<options.hydrogenbondMethod<<endl;
+//  if(options.hydrogenbondMethod=="user")
+//    IO::readHbonds( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="rnaview")
+//    IO::readHbonds_rnaview( protein, options.hydrogenbondFile, options.annotationFile.empty() );
+//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+//    IO::readHbonds_first( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+//    IO::readHbonds_kinari( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
+//    IO::readHbonds_hbPlus( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="vadar")
+//    IO::readHbonds_vadar( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="dssr")
+//    IO::readHbonds_dssr( protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="identify")
+//    HbondIdentifier::identifyHbonds(protein);
 
   string hBondIn = "hBonds_in.txt";
   IO::writeHbondsIn(protein,hBondIn );
 
-  IO::readRigidbody( protein );
-  protein->buildSpanningTree();
-//	if(options.hydrogenbondMethod!="user")
-//		writeHBondPML(m_molecule, argv[1]);
+//  IO::readRigidbody( protein );
+//  protein->buildSpanningTree();
 
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
-  log("rigidity")<<"> "<<protein->m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("rigidity")<<"> "<<protein->m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("rigidity") << "> " << protein->m_spanning_tree->getNumDOFs() << " DOFs of which " << protein->m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = new Configuration(protein);
   protein->setConfiguration(conf);

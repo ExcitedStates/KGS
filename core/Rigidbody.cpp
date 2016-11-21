@@ -34,17 +34,17 @@ using namespace std;
 //---------------------------------------------------------
 // Constructors and Destructors
 Rigidbody::Rigidbody () {m_rbVertex = nullptr;}
-Rigidbody::Rigidbody (unsigned int id) : rbId_(id) {m_rbVertex = nullptr;}
+Rigidbody::Rigidbody (unsigned int id) : m_id(id) {m_rbVertex = nullptr;}
 Rigidbody::~Rigidbody () {}
 //---------------------------------------------------------
 // Accessor id
 unsigned int Rigidbody::id () const {
-	return rbId_;
+	return m_id;
 }
 //---------------------------------------------------------
 // Mutator id
 void Rigidbody::id (unsigned int id) {
-	rbId_ = id;
+	m_id = id;
 }
 
 void Rigidbody::addAtom (Atom* atom) {
@@ -108,47 +108,46 @@ int Rigidbody::size () const {
 	return Atoms.size();
 }
 
-void Rigidbody::print () const {
-	cout << "RigidBody ID " << id() << ": ";
-	//cout << "RigidBody " << RbId << ": ";
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-			cout << (*it)->getId() << " ";
-	}
-	cout << endl;
-}
+//void Rigidbody::print () const {
+//	cout << "RigidBody ID " << id() << ": ";
+//	//cout << "RigidBody " << RbId << ": ";
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//			cout << (*it)->getId() << " ";
+//	}
+//	cout << endl;
+//}
 
-void Rigidbody::printAtoms () const {
-	cout << "\t RigidBody ID " << id() << ": " << endl;
-	cout << "\t\t :" << (isMainchainRb()?"isOnMainchain":"isNOTOnMainchain") << endl;
-	//cout << "\t\t :" << (isMainchainRb_?"isOnMainchain":"isNOTOnMainchain") << endl;
-	cout << "\t\t numAtoms: " << size() << endl;
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
-		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
-}
+//void Rigidbody::printAtoms () const {
+//	cout << "\t RigidBody ID " << id() << ": " << endl;
+//	cout << "\t\t :" << (isMainchainRb()?"isOnMainchain":"isNOTOnMainchain") << endl;
+//	cout << "\t\t numAtoms: " << size() << endl;
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
+//		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
+//}
 
-void Rigidbody::printAtomsBonds () const {
-	cout << "\t RigidBody ID " << id() << ": " << endl;
-	cout << "\t\t :" << (isMainchainRb()?"isOnMainchain":"isNOTOnMainchain") << endl;
-	cout << "\t\t numAtoms: " << size() << endl;
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
-		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
+//void Rigidbody::printAtomsBonds () const {
+//	cout << "\t RigidBody ID " << id() << ": " << endl;
+//	cout << "\t\t :" << (isMainchainRb()?"isOnMainchain":"isNOTOnMainchain") << endl;
+//	cout << "\t\t numAtoms: " << size() << endl;
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
+//		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
+//
+//	cout << "\t\t numBonds = " << Bonds.size() << endl;
+//	for (vector<Bond *>::const_iterator it=Bonds.begin(); it != Bonds.end(); ++it) {
+//        	cout << "\t\t Bond: " << (*it)->Atom1->getResidue()->getId() << " " << (*it)->Atom1->getId() << " " << (*it)->Atom1->getName() <<
+//					    "\t ---------> \t"
+//				   << (*it)->Atom2->getResidue()->getId() << " " << (*it)->Atom2->getId() << " " << (*it)->Atom2->getName();
+//		cout << "\t\t Type: " << ((*it)->BondType=="HB"?"HB":"CV") << endl;
+//	}
+//}
 
-	cout << "\t\t numBonds = " << Bonds.size() << endl;
-	for (vector<Bond *>::const_iterator it=Bonds.begin(); it != Bonds.end(); ++it) {
-        	cout << "\t\t Bond: " << (*it)->Atom1->getResidue()->getId() << " " << (*it)->Atom1->getId() << " " << (*it)->Atom1->getName() <<
-					    "\t ---------> \t" 
-				   << (*it)->Atom2->getResidue()->getId() << " " << (*it)->Atom2->getId() << " " << (*it)->Atom2->getName();
-		cout << "\t\t Type: " << ((*it)->BondType=="HB"?"HB":"CV") << endl;
-	}
-}
-
-bool Rigidbody::containsResidue( Residue* res ) const {
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-		if( (*it)->getResidue()==res )
-			return true;
-	}
-	return false;
-}
+//bool Rigidbody::containsResidue( Residue* res ) const {
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//		if( (*it)->getResidue()==res )
+//			return true;
+//	}
+//	return false;
+//}
 
 bool Rigidbody::containsAtom (Atom* atom) const {
 	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
@@ -170,61 +169,61 @@ bool Rigidbody::containsAtom (Atom* atom) const {
 //	return false;
 //}
 
-bool Rigidbody::containsMainchainAtoms() const {
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-		if( (*it)->getName() == "C" || (*it)->getName() == "CA" || (*it)->getName() == "N" || (*it)->getName() == "O" )
-			return true;
-	}
-	return false;
-}
+//bool Rigidbody::containsMainchainAtoms() const {
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//		if( (*it)->getName() == "C" || (*it)->getName() == "CA" || (*it)->getName() == "N" || (*it)->getName() == "O" )
+//			return true;
+//	}
+//	return false;
+//}
+//
+//bool Rigidbody::containsAlongMainchainAtoms() const {
+//	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//		if( (*it)->getName() == "C" || (*it)->getName() == "CA" || (*it)->getName() == "N" )
+//			return true;
+//	}
+//	return false;
+//}
 
-bool Rigidbody::containsAlongMainchainAtoms() const {
-	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-		if( (*it)->getName() == "C" || (*it)->getName() == "CA" || (*it)->getName() == "N" )
-			return true;
-	}
-	return false;
-}
+//bool Rigidbody::isWithinResidueRange( unsigned int resid1, unsigned int resid2 ) const {
+//	if ( resid2>=resid1 )
+//		for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//			if( (*it)->getResidue()->getId() >= resid1 && (*it)->getResidue()->getId() <= resid2 )
+//				return true;
+//		}
+//	return false;
+//}
 
-bool Rigidbody::isWithinResidueRange( unsigned int resid1, unsigned int resid2 ) const {
-	if ( resid2>=resid1 )
-		for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-			if( (*it)->getResidue()->getId() >= resid1 && (*it)->getResidue()->getId() <= resid2 )
-				return true;
-		}
-	return false;
-}
-
-bool Rigidbody::isWithinTwoResidueRanges( unsigned int resid1, unsigned int resid2,
-					  unsigned int resid3, unsigned int resid4 ) const {
-	if ( resid2>=resid1 && resid4>=resid3 )
-		for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-			if( ( (*it)->getResidue()->getId() >= resid1 && (*it)->getResidue()->getId() <= resid2 )
-			 || ( (*it)->getResidue()->getId() >= resid3 && (*it)->getResidue()->getId() <= resid4 ) )
-				return true;
-		}
-	return false;
-}
+//bool Rigidbody::isWithinTwoResidueRanges( unsigned int resid1, unsigned int resid2,
+//					  unsigned int resid3, unsigned int resid4 ) const {
+//	if ( resid2>=resid1 && resid4>=resid3 )
+//		for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//			if( ( (*it)->getResidue()->getId() >= resid1 && (*it)->getResidue()->getId() <= resid2 )
+//			 || ( (*it)->getResidue()->getId() >= resid3 && (*it)->getResidue()->getId() <= resid4 ) )
+//				return true;
+//		}
+//	return false;
+//}
 
 // Assume at least one of C and N AND one CA must be in the Rigidbody
-void Rigidbody::setMainchainRb () {
-	int count1 = 0;
-	int count2 = 0;
-	for (vector<Atom*>::iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
-		if( (*it)->getName() == "C" || (*it)->getName() == "N" )
-			count1++ ;
-		if( (*it)->getName() == "CA" )
-			count2++ ;
-	}
-	if ( count1 > 0 && count2 > 0 )
-		isMainchainRb_ = true;
-	else
-		isMainchainRb_ = false;
-}
+//void Rigidbody::setMainchainRb () {
+//	int count1 = 0;
+//	int count2 = 0;
+//	for (vector<Atom*>::iterator it=Atoms.begin(); it!=Atoms.end(); ++it) {
+//		if( (*it)->getName() == "C" || (*it)->getName() == "N" )
+//			count1++ ;
+//		if( (*it)->getName() == "CA" )
+//			count2++ ;
+//	}
+//	if ( count1 > 0 && count2 > 0 )
+//		m_isMainchainRb = true;
+//	else
+//		m_isMainchainRb = false;
+//}
 
-bool Rigidbody::isMainchainRb () const {
-	return isMainchainRb_;
-}
+//bool Rigidbody::isMainchainRb () const {
+//	return m_isMainchainRb;
+//}
 
 
 Atom* Rigidbody::getAtom(string name){

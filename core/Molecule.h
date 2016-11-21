@@ -33,6 +33,7 @@
 #include <list>
 #include <set>
 #include <core/graph/KinTree.h>
+#include <Selection.h>
 
 #include "Rigidbody.h"
 #include "core/graph/KinGraph.h"
@@ -42,6 +43,7 @@ class Chain;
 class Grid;
 class Bond;
 class Hbond;
+class Selection;
 
 class Molecule {
  public:
@@ -57,9 +59,9 @@ class Molecule {
                 const int& atomId,
                 const Coordinate& position );
 
-  Chain* getChain (const std::string& chainName);
-  Atom* getAtom (int atom_id);
-  Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name);
+  Chain* getChain (const std::string& chainName) const;
+  Atom* getAtom (int atom_id) const;
+  Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name) const;
   const std::vector<Atom*>& getAtoms() const;
   std::vector<Atom*>& getAtoms();
   const std::list<Bond*>& getCovBonds() const;
@@ -69,16 +71,12 @@ class Molecule {
 
   int getMinResidueNumber();
   int getMaxResidueNumber();
-  void printAllAtoms () const;
   int size() const;
   int totalDofNum () const;
-  void printSummaryInfo() const;
-  void updateAtom (int atom_id, Coordinate new_pos);
   bool inCollision (std::string collisionCheckAtoms = "all" ) const;
   std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
   double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
   void printAllCollisions () const;
-  bool hasCycle() const;
   void alignReferencePositionsTo(Molecule * base);
   void translateReferencePositionsToRoot(Molecule * base);
   Grid* getGrid();
@@ -95,34 +93,27 @@ class Molecule {
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
   void setToHbondIntersection (Molecule * p2);
-  void buildSpanningTree();
+  void buildRigidBodies (Selection& movingResidues);
+  void buildSpanningTree(const std::vector<int>& rootIds);
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
-  void computeAtomJacobian (Atom* atom, gsl_matrix** jacobian);
-//  gsl_vector* getEndEffectors();
-  //void ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
 
 //  gsl_vector* vdwGradient ();
   std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
   double vdwEnergy (std::string collisionCheck);//compute vdw energy
 
+  std::set< std::pair<Atom*,Atom*> >& getInitialCollisions(); ///< Colliding atom-pairs in the initial conformation
 
   Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
   Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);
 
-  std::vector<Chain*> chains;
-  std::map<unsigned int,Rigidbody*> Rigidbody_map_by_id;
-  std::set< std::pair<Atom*,Atom*> > m_initialCollisions; // collisions in the initial conformation stored in pairs of atoms, and use the smaller atom id as key.
+  std::vector<Chain*> chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
+  std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
 
-  // Topology of rigid bodies
-  KinTree *m_spanning_tree;
+  /// Topology of rigid bodies
+  KinTree *m_spanningTree;
 
   Configuration *m_conf;
-
-  // Jacobian matrices containing all DOFs for updating atom positions
-  gsl_matrix* AtomJacobian1;
-  gsl_matrix* AtomJacobian2;
-  gsl_matrix* AtomJacobian3;
 
 
   int* residueAnnotations;
@@ -138,8 +129,8 @@ class Molecule {
   void restoreAtomPos();
 
   void indexAtoms();
+  std::set< std::pair<Atom*,Atom*> > m_initialCollisions; ///< Colliding atom-pairs in the initial conformation
   Grid *m_grid;
-//  Grid *m_backupGrid;
   std::list<Bond *> m_covBonds;
   std::list<Hbond *> m_hBonds;
   std::vector<Atom*> m_atoms;

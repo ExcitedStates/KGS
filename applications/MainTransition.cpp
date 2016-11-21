@@ -47,43 +47,53 @@ int main( int argc, char* argv[] ) {
   // Set seed
   srand(options.seed);
 
-  string pdb_file = options.initialStructureFile;
-  Molecule protein;
-  protein.setCollisionFactor(options.collisionFactor);
-  IO::readPdb( &protein, pdb_file, options.extraCovBonds );
+  Selection movingResidues(options.residueNetwork);
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      movingResidues,
+      options.extraCovBonds,
+      options.roots
+  );
+  protein->setCollisionFactor(options.collisionFactor);
 //
 //  if(!options.annotationFile.empty())
 //    IO::readAnnotations(&protein, options.annotationFile);
 
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-    IO::readHbonds_hbPlus( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="identify")
-    HbondIdentifier::identifyHbonds(&protein);
+//  if(options.hydrogenbondMethod=="user")
+//    IO::readHbonds( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="rnaview")
+//    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
+//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+//    IO::readHbonds_first( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
+//    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
+//    IO::readHbonds_hbPlus( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="vadar")
+//    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="dssr")
+//    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="identify")
+//    HbondIdentifier::identifyHbonds(&protein);
 
   //Read the rigid body of the protein
-  IO::readRigidbody( &protein );
-  protein.buildSpanningTree();
+//  IO::readRigidbody( &protein );
+//  protein->buildSpanningTree();
+//
+//  protein->setConfiguration(new Configuration(&protein));
+//
+//  protein->m_initialCollisions = protein->getAllCollisions();
 
-  protein.setConfiguration(new Configuration(&protein));
-
-  protein.m_initialCollisions = protein.getAllCollisions();
-
-  string target_pdb_file = options.targetStructureFile;
-  Molecule target;
-  target.setCollisionFactor(options.collisionFactor);
-  IO::readPdb( &target, target_pdb_file, options.extraCovBonds, &protein);
+  Molecule* target = IO::readPdb(
+      options.targetStructureFile,
+      movingResidues,
+      options.extraCovBonds,
+      options.roots,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile,
+      protein
+  );
+  protein->setCollisionFactor(options.collisionFactor);
 
 //  if(options.hydrogenbondMethod=="user")
 //    IO::readHbonds( &target, options.hydrogenbondFile );
@@ -99,31 +109,31 @@ int main( int argc, char* argv[] ) {
 //    IO::readHbonds_dssr( &target, options.hydrogenbondFile );
 
   //makes sure we have the same hydrogen bonds in target and protein (protein hbonds is adapted as well)
-  target.setToHbondIntersection(&protein);
+  target->setToHbondIntersection(protein);
 
-  //Read the rigid body of the protein
-  IO::readRigidbody( &target );
-  target.buildSpanningTree();
+//  //Read the rigid body of the protein
+//  IO::readRigidbody( target );
+//  target->buildSpanningTree();
+//
+//  target->setConfiguration(new Configuration(&target));
+//
+//  target->m_initialCollisions = target->getAllCollisions();
 
-  target.setConfiguration(new Configuration(&target));
-
-  target.m_initialCollisions = target.getAllCollisions();
-
-//	m_molecule.m_spanning_tree->print();
+//	m_molecule.m_spanningTree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Build rigid body tree for target
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
   log("samplingStatus")<<"Target has:"<<endl;
-  log("samplingStatus")<<"> "<<target.getAtoms().size()<<" atoms"<<endl;
-  log("samplingStatus")<<"> "<<target.m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<target.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<target.m_spanning_tree->getNumDOFs()<<" DOFs of which "<<target.m_spanning_tree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
+  log("samplingStatus")<<"> "<<target->getAtoms().size()<<" atoms"<<endl;
+  log("samplingStatus")<<"> "<<target->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<target->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<target->m_spanningTree->getNumDOFs()<<" DOFs of which "<<target->m_spanningTree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
@@ -183,50 +193,50 @@ int main( int argc, char* argv[] ) {
 
 
   if(options.saveData > 0){
-    std::string out = options.workingDirectory + "output/" + protein.getName() + "_target_lengths";
-    IO::writeBondLengthsAndAngles(&target, out);
+    std::string out = options.workingDirectory + "output/" + protein->getName() + "_target_lengths";
+    IO::writeBondLengthsAndAngles(target, out);
     if(options.saveData > 1){
-      out = options.workingDirectory + "output/" + protein.getName() + "_q_target.txt";
-      IO::writeQ(&target,target.m_conf, out);
-      out = options.workingDirectory + "output/" + protein.getName() + "_q_iniTarget.txt";
-      IO::writeQ(&target,protein.m_conf, out);
+      out = options.workingDirectory + "output/" + protein->getName() + "_q_target->txt";
+      IO::writeQ(target,target->m_conf, out);
+      out = options.workingDirectory + "output/" + protein->getName() + "_q_iniTarget.txt";
+      IO::writeQ(target,protein->m_conf, out);
     }
 
-    log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
-    log() << "Total DOFs in target: " << target.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << target.m_spanning_tree->getNumCycleDOFs() << endl << endl;fflush(stdout);
+    log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl;fflush(stdout);
+    log() << "Total DOFs in target: " << target->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanningTree->getNumCycleDOFs() << endl << endl;fflush(stdout);
 
     if(options.saveData > 1){
-      string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
-      IO::writeQ(&protein, protein.m_conf, out);
+      string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
+      IO::writeQ(protein, protein->m_conf, out);
     }
 
-    log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
-    log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
+    log()<<"Number of rigid clusters: "<<protein->m_conf->m_numClusters;
+    log()<<", biggest cluster: index "<<protein->m_conf->m_maxIndex<<" with "<<protein->m_conf->m_maxSize<<" atoms!"<<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-    log()<< protein.m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
-    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-
-                        protein.m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<< protein.m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<< protein->m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
+    log()<<" and " << ( protein->m_conf->getNullspace()->getNumDOFs()-
+                        protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
 
-    log()<<"Initial Distance: "<<metric->distance(protein.m_conf,target.m_conf);
+    log()<<"Initial Distance: "<<metric->distance(protein->m_conf,target->m_conf);
 
     log("samplingStatus")<<"Sampling ...\n";
     CTKTimer timer;
     timer.Reset();
     double start_time = timer.LastElapsedTime();
 
-    gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
-    Configuration* target_conf = new Configuration(&target);
+    gsl_vector* gradient = gsl_vector_alloc(protein->m_spanningTree->getNumDOFs());
+    Configuration* target_conf = new Configuration(target);
     std::list<Configuration*> samples;
-    samples.push_back(new Configuration(&protein));
+    samples.push_back(new Configuration(protein));
     for(int i=0;i<options.samplesToGenerate;i++){
       cout<<"Iteration "<<i<<endl;
       Configuration* seed = samples.back();
       direction->gradient(seed, target_conf, gradient);
       //gsl_vector_scale_max_component(gradient, options.maxRotation);
-      scale_gradient(gradient, &protein);
+      scale_gradient(gradient, protein);
       gsl_vector_scale(gradient, options.stepSize);
       Configuration* new_conf = move->move(seed, gradient);
       IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string((long long)i)+".pdb");
@@ -266,8 +276,8 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol)
 {
   double factor = 1.0;
 
-  for(int i=0;i<mol->m_spanning_tree->getNumDOFs();i++){
-    DOF* dof = mol->m_spanning_tree->getDOF(i);
+  for(int i=0;i<mol->m_spanningTree->getNumDOFs();i++){
+    DOF* dof = mol->m_spanningTree->getDOF(i);
     int idx = dof->getIndex();
     double val = gsl_vector_get(gradient, idx);
     double maxval = dof->getMaxPerturbation();

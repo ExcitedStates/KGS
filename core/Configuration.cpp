@@ -81,7 +81,7 @@ Configuration::Configuration(Molecule * mol):
   m_numClusters            = 0;
   m_minCollisionFactor     = 0;
   m_usedClashPrevention    = false;
-  m_clashFreeDofs          = m_molecule->m_spanning_tree->getNumDOFs();
+  m_clashFreeDofs          = m_molecule->m_spanningTree->getNumDOFs();
 
   // Set up DOF-values and set them to 0
   m_dofs = new double[getNumDOFs()];
@@ -116,7 +116,7 @@ Configuration::Configuration(Configuration* parent_):
   m_numClusters            = 0;
   m_minCollisionFactor     = 0;
   m_usedClashPrevention    = false;
-  m_clashFreeDofs          = m_molecule->m_spanning_tree->getNumDOFs();
+  m_clashFreeDofs          = m_molecule->m_spanningTree->getNumDOFs();
 
   parent_->m_children.push_back(this);
 
@@ -192,9 +192,9 @@ void Configuration::identifyBiggerRigidBodies(){
   int j=0; //numbering for fixed dihedrals
 
   //First, we set the constrained flag for the corresponding bonds
-  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanning_tree->CycleAnchorEdges.begin(); it!=
-  //      m_molecule->m_spanning_tree->CycleAnchorEdges.end(); ++it) {
-  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanning_tree->CycleAnchorEdges) {
+  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanningTree->m_cycleAnchorEdges.begin(); it!=
+  //      m_molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++it) {
+  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
 
     KinEdge* edge_ptr = pair_it.first;
     KinVertex* common_ancestor = pair_it.second;
@@ -402,7 +402,7 @@ void Configuration::readBiggerSet(){
 
 //------------------------------------------------------
 void Configuration::writeQToBfactor(){
-  for (vector<KinEdge*>::iterator itr= m_molecule->m_spanning_tree->Edges.begin(); itr!= m_molecule->m_spanning_tree->Edges.end(); ++itr) {
+  for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->Edges.begin(); itr!= m_molecule->m_spanningTree->Edges.end(); ++itr) {
     KinEdge* pEdge = (*itr);
     if(pEdge->EndVertex->m_rigidbody == NULL)
       continue; //global dofs
@@ -421,9 +421,9 @@ void Configuration::updateGlobalTorsions(){
   updateMolecule();
   m_dofs_global = new double[getNumDOFs()];
   for(int i=0; i<getNumDOFs(); ++i){
-    m_dofs_global[i] = m_molecule->m_spanning_tree->getDOF(i)->getGlobalValue();
+    m_dofs_global[i] = m_molecule->m_spanningTree->getDOF(i)->getGlobalValue();
   }
-  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanning_tree->Edges.begin(); itr!= m_molecule->m_spanning_tree->Edges.end(); ++itr) {
+  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->Edges.begin(); itr!= m_molecule->m_spanningTree->Edges.end(); ++itr) {
   //  KinEdge* pEdge = (*itr);
   //  int dof_id = pEdge->DOF_id;
   //  if (dof_id==-1)
@@ -444,7 +444,7 @@ double* Configuration::getGlobalTorsions() {
 }
 
 unsigned int Configuration::getNumDOFs() const {
-  return m_molecule->m_spanning_tree->getNumDOFs();
+  return m_molecule->m_spanningTree->getNumDOFs();
 }
 
 Configuration* Configuration::clone() const {
@@ -490,14 +490,14 @@ void Configuration::computeJacobians() {
   updateMolecule();
 
   // No cycles
-  if(m_molecule->m_spanning_tree->CycleAnchorEdges.size() == 0) {
+  if(m_molecule->m_spanningTree->m_cycleAnchorEdges.size() == 0) {
     CycleJacobian = nullptr; //TODO: Memory leak
     return;
   }
 
-  int hBond_row_num = (m_molecule->m_spanning_tree->CycleAnchorEdges).size();
+  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
   int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
-  int col_num = m_molecule->m_spanning_tree->getNumCycleDOFs(); // number of DOFs in cycles
+  int col_num = m_molecule->m_spanningTree->getNumCycleDOFs(); // number of DOFs in cycles
 
   if(CycleJacobian==nullptr){
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
@@ -524,7 +524,7 @@ void Configuration::computeJacobians() {
 
   // for each cycle, fill in the Jacobian entries
   int i=0;
-  for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanning_tree->CycleAnchorEdges)
+  for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanningTree->m_cycleAnchorEdges)
   {
     // get end-effectors
     KinEdge* edge_ptr = edge_vertex_pair.first;
@@ -689,11 +689,11 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
   if( CycleJacobian != nullptr){
     rowNum = CycleJacobian->size1 + numCollisions;
-    colNum = m_molecule->m_spanning_tree->getNumDOFs();
+    colNum = m_molecule->m_spanningTree->getNumDOFs();
   }
   else{
     rowNum = numCollisions;
-    colNum = m_molecule->m_spanning_tree->getNumDOFs();
+    colNum = m_molecule->m_spanningTree->getNumDOFs();
   }
 
   if(ClashAvoidingJacobian==nullptr){
@@ -711,8 +711,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
   //Convert the cycle Jacobian to a full Jacobian
   //Columns correspond to cycle_dof_ids
   if(projectConstraints){
-//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanning_tree->Edges.begin(); eit!=m_molecule->m_spanning_tree->Edges.end(); ++eit) {
-    for (auto const& edge: m_molecule->m_spanning_tree->Edges){
+//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanningTree->Edges.begin(); eit!=m_molecule->m_spanningTree->Edges.end(); ++eit) {
+    for (auto const& edge: m_molecule->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -747,7 +747,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
     //Vertices
     KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
     KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
-    KinVertex* common_ancestor = m_molecule->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex* common_ancestor = m_molecule->m_spanningTree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {
@@ -810,7 +810,7 @@ void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector
 
   Molecule* M = getMolecule();
 
-  for (auto const& edge: M->m_spanning_tree->Edges){
+  for (auto const& edge: M->m_spanningTree->Edges){
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -849,7 +849,7 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
       gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     // Convert back to full length DOFs vector
-    for( auto const& edge: M->m_spanning_tree->Edges){
+    for( auto const& edge: M->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {

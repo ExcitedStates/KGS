@@ -161,7 +161,7 @@ add_library( libKGS
         core/graph/KinVertex.h
         core/graph/KinTree.cpp
         core/graph/KinTree.h
-		directions/LSNrelativeDirection.cpp directions/LSNrelativeDirection.h)
+		directions/LSNrelativeDirection.cpp directions/LSNrelativeDirection.h core/graph/Constraint.cpp core/graph/Constraint.h core/ConstraintSet.cpp core/ConstraintSet.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -218,8 +218,6 @@ add_executable( rigidity        applications/MainRigidity.cpp )
 add_executable( print_torsions  applications/MainTorsionPrinter.cpp )
 add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( rmsd            applications/MainRmsd.cpp )
-add_executable( testik          applications/MainTestExactIK.cpp )
-#add_executable( mytest          applications/MainTest.cpp )
 add_executable( transition      applications/MainTransition.cpp )
 add_executable( loopexplore     applications/MainLoopExplore.cpp )
 add_executable( hierarchy       applications/MainHierarchy.cpp )
@@ -231,8 +229,6 @@ target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
 target_link_libraries( print_torsions   libKGS ${GSL_LIBRARIES} )
 target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( rmsd             libKGS ${GSL_LIBRARIES} )
-target_link_libraries( testik           libKGS ${GSL_LIBRARIES} )
-#target_link_libraries( mytest           libKGS ${GSL_LIBRARIES} )
 target_link_libraries( transition       libKGS ${GSL_LIBRARIES} )
 target_link_libraries( loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( hierarchy        libKGS ${GSL_LIBRARIES} )

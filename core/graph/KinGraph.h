@@ -50,12 +50,9 @@ class KinGraph {
   ~KinGraph ();
   KinVertex* addVertex(Rigidbody *rb);
   KinVertex* getVertex(int rb_id);
-  void addEdge (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
   KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond); // Add a directed edge from rb_id1 to rb_id2
 
-  bool hasVertex (int rb_id);
   void print ();
-  void findCycleClusters();
 };
 
 #endif

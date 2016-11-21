@@ -47,36 +47,34 @@ int main( int argc, char* argv[] ) {
   // Set seed
   srand(options.seed);
 
-  string pdb_file = options.initialStructureFile;
-  Molecule protein;
-  protein.setCollisionFactor(options.collisionFactor);
-  IO::readPdb( &protein, pdb_file, options.extraCovBonds );
+  Selection movingResidues(options.residueNetwork);
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      movingResidues,
+      options.extraCovBonds,
+      options.roots,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
+  protein->setCollisionFactor(options.collisionFactor);
 
-  if(options.hydrogenbondMethod=="user")
-    IO::readHbonds( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="rnaview")
-    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
-  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-    IO::readHbonds_first( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="vadar")
-    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
-  else if(options.hydrogenbondMethod=="dssr")
-    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
-
-  //Read the rigid body of the protein
-  Selection resNetwork(options.residueNetwork);
-  IO::readRigidbody( &protein, resNetwork );
-  protein.buildSpanningTree();
-  protein.setConfiguration(new Configuration(&protein));
-  protein.m_initialCollisions = protein.getAllCollisions();
+//  if(options.hydrogenbondMethod=="user")
+//    IO::readHbonds( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="rnaview")
+//    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
+//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
+//    IO::readHbonds_first( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="vadar")
+//    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
+//  else if(options.hydrogenbondMethod=="dssr")
+//    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
 
 
-//	m_molecule.m_spanning_tree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein.getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein.m_initialCollisions.size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->CycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<protein.m_spanning_tree->getNumDOFs() << " DOFs of which " << protein.m_spanning_tree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
 
   //Initialize metric
@@ -112,46 +110,46 @@ int main( int argc, char* argv[] ) {
   Direction* direction;
   bool blendedDir = false;
   if(options.gradient == 0)
-    direction = new RandomDirection(resNetwork);
+    direction = new RandomDirection(movingResidues);
   else if(options.gradient == 1)
-    direction = new DihedralDirection(resNetwork);
+    direction = new DihedralDirection(movingResidues);
   else if(options.gradient == 2){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new DihedralDirection(movingResidues),0);
+    m_direction->addDirection(new RandomDirection(movingResidues,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(resNetwork);
+    direction = new MSDDirection(movingResidues);
   else if(options.gradient == 4){
     BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
+    m_direction->addDirection(new MSDDirection(movingResidues),0);
+    m_direction->addDirection(new RandomDirection(movingResidues,SamplingOptions::getOptions()->maxRotation), 1);
     direction = m_direction;
     blendedDir = true;
   }
   else if(options.gradient <= 5)
-    direction = new LSNullspaceDirection(resNetwork);
+    direction = new LSNullspaceDirection(movingResidues);
 
 
   if(options.saveData > 0){
 
-    log() << "Total DOFs: " << protein.m_spanning_tree->getNumDOFs() << ", Cycle DOFs: " << protein.m_spanning_tree->getNumCycleDOFs() << endl;fflush(stdout);
+    log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl;fflush(stdout);
 
     if(options.saveData > 1){
-      string out = options.workingDirectory + "output/" + protein.getName() + "_q_0.txt";
-      IO::writeQ(&protein, protein.m_conf, out);
+      string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
+      IO::writeQ(protein, protein->m_conf, out);
     }
 
-    log()<<"Number of rigid clusters: "<<protein.m_conf->m_numClusters;
-    log()<<", biggest cluster: index "<<protein.m_conf->m_maxIndex<<" with "<<protein.m_conf->m_maxSize<<" atoms!"<<endl;
+    log()<<"Number of rigid clusters: "<<protein->m_conf->m_numClusters;
+    log()<<", biggest cluster: index "<<protein->m_conf->m_maxIndex<<" with "<<protein->m_conf->m_maxSize<<" atoms!"<<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
     //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
-    log()<< protein.m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
-    log()<<" and " << ( protein.m_conf->getNullspace()->getNumDOFs()-
-                        protein.m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<< protein.m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein.getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<< protein->m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
+    log()<<" and " << ( protein->m_conf->getNullspace()->getNumDOFs()-
+                        protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
+    log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
     double bigRad = options.stepSize*4/3;
     double lilRad = bigRad/2;
@@ -163,9 +161,9 @@ int main( int argc, char* argv[] ) {
 
     int clashes = 0;
 
-    gsl_vector* gradient = gsl_vector_alloc(protein.m_spanning_tree->getNumDOFs());
+    gsl_vector* gradient = gsl_vector_alloc(protein->m_spanningTree->getNumDOFs());
     std::list<Configuration*> samples;
-    samples.push_back(new Configuration(&protein));
+    samples.push_back(new Configuration(protein));
     for(int i=0;i<options.samplesToGenerate;i++){
       Configuration* seed = samples.back();
       direction->gradient(seed, nullptr, gradient);
@@ -235,8 +233,8 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol)
 {
   double factor = 1.0;
 
-  for(int i=0;i<mol->m_spanning_tree->getNumDOFs();i++){
-    DOF* dof = mol->m_spanning_tree->getDOF(i);
+  for(int i=0;i<mol->m_spanningTree->getNumDOFs();i++){
+    DOF* dof = mol->m_spanningTree->getDOF(i);
     int idx = dof->getIndex();
     double val = gsl_vector_get(gradient, idx);
     double maxval = dof->getMaxPerturbation();

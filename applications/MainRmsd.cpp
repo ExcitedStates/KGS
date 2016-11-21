@@ -15,15 +15,17 @@
 using namespace std;
 
 Molecule * myReadFile(string pdbFile){
-    char* tmp = realpath(pdbFile.c_str(), nullptr);
-    if(tmp==nullptr){ cerr<<pdbFile<<" is not a valid PDB-file"<<endl; exit(-1); }
-    Molecule * protein = new Molecule();
-    vector<string> extraCovBonds;
-    IO::readPdb( protein, pdbFile, extraCovBonds );
-    IO::readRigidbody( protein );
-    protein->buildSpanningTree();
+  char* tmp = realpath(pdbFile.c_str(), nullptr);
+  if(tmp==nullptr){ cerr<<pdbFile<<" is not a valid PDB-file"<<endl; exit(-1); }
 
-    return protein;
+  Selection movingResidues("all");
+  Molecule* protein = IO::readPdb(
+      pdbFile,
+      movingResidues
+  );
+  protein->setCollisionFactor(1.0);
+
+  return protein;
 }
 
 

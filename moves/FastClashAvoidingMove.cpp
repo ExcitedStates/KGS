@@ -121,20 +121,20 @@ map<int,int> FastClashAvoidingMove::collectConstrainedDofMap(Configuration* conf
   map<int,int> ret;
 
   //First add all cycle-DOFs
-  for(auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
+  for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     int dof_id = edge->getDOF()->getIndex();
     if(cycle_dof_id>=0 && ret.count(dof_id)==0)
       ret[dof_id] = cycle_dof_id;
   }
 
-  int nextidx = conf->getMolecule()->m_spanning_tree->getNumCycleDOFs();
+  int nextidx = conf->getMolecule()->m_spanningTree->getNumCycleDOFs();
 
   //Add all clash-DOFs
   for(auto const& coll: allCollisions) {
     KinVertex *vertex1 = coll.first->getRigidbody()->getVertex();
     KinVertex *vertex2 = coll.second->getRigidbody()->getVertex();
-    KinVertex *common_ancestor = conf->getMolecule()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex *common_ancestor = conf->getMolecule()->m_spanningTree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while (vertex1 != common_ancestor) {
@@ -240,7 +240,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
   gsl_matrix *cycleJac = conf->getCycleJacobian();
   int numCollisions = collisions.size();
   int rowNum = cycleJac->size1 + numCollisions;
-  //int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
+  //int colNum = conf->getMolecule()->m_spanningTree->getNumDOFs();
 
   //No longer uses all dihedrals as it messes with scaling
   int colNum = dofMap.size();
@@ -259,7 +259,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
 //  if(m_projectConstraints){
 //    map<unsigned int, KinVertex*>::iterator vit;
 //
-//    for(auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
+//    for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
 //      int dof_id = edge->getDOF()->getIndex();
 //      int cycle_dof_id = edge->getDOF()->getCycleIndex();
 //      if ( cycle_dof_id!=-1 ) {
@@ -287,7 +287,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
     //Vertices
     KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
     KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
-    KinVertex* common_ancestor = conf->getMolecule()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex* common_ancestor = conf->getMolecule()->m_spanningTree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {

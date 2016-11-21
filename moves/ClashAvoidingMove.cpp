@@ -40,7 +40,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
   // Create new configuration
   Configuration* new_q = new Configuration(current);
-  new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanning_tree->getNumCycleDOFs() +
+  new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanningTree->getNumCycleDOFs() +
       new_q->getNullspace()->getNullspaceSize();
 
   //If resulting structure is in collision try scaling down the gradient
@@ -138,7 +138,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   //Therefore, we use the full set of dihedrals to determine this matrix!
 
   int rowNum = conf->getCycleJacobian()->size1 + numCollisions;
-  int colNum = conf->getMolecule()->m_spanning_tree->getNumDOFs();
+  int colNum = conf->getMolecule()->m_spanningTree->getNumDOFs();
 
   gsl_matrix* ret = gsl_matrix_calloc(rowNum, colNum);
 
@@ -148,7 +148,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
     gsl_matrix* cycleJac = conf->getCycleJacobian();
 
-    for(auto const& edge: conf->getMolecule()->m_spanning_tree->Edges){
+    for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -182,7 +182,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
     //Vertices
     KinVertex* vertex1 = atom1->getRigidbody()->getVertex();
     KinVertex* vertex2 = atom2->getRigidbody()->getVertex();
-    KinVertex* common_ancestor = conf->getMolecule()->m_spanning_tree->findCommonAncestor(vertex1, vertex2);
+    KinVertex* common_ancestor = conf->getMolecule()->m_spanningTree->findCommonAncestor(vertex1, vertex2);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {

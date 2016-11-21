@@ -36,26 +36,6 @@ void KinEdge::print () const {
   }
 }
 
-void KinEdge::printVerbose() const{
-  log() << "\t KinEdge: " << endl;
-  log() << "\t\t StartVertex: " << (StartVertex->m_rigidbody->isMainchainRb()?"isOnMainchain":"isNOTonMainchain") << endl;
-  log() << "\t\t Direction: " << m_bond->Atom1->getResidue()->getId() << " " << m_bond->Atom1->getId() << " " << m_bond->Atom1->getName() <<
-  "\t ---------> \t"
-  << m_bond->Atom2->getResidue()->getId() << " " << m_bond->Atom2->getId() << " " << m_bond->Atom2->getName() << endl;
-  log() << "\t\t Bond type: " << (m_bond->BondType=="HB"?"HB":"CV") << ", " << endl;
-  log() << "---------------------------" << endl;
-}
-
-void KinEdge::printShort() const{
-  log() << "\t KinEdge: " << endl;
-//  log() << "\t\t StartVertex: " << StartVertex->id << "  EndVertex: " << EndVertex->id << endl;
-  log() << "\t\t Direction: " << m_bond->Atom1->getResidue()->getId() << " " << m_bond->Atom1->getId() << " " << m_bond->Atom1->getName() <<
-  "\t ---------> \t"
-  << m_bond->Atom2->getResidue()->getId() << " " << m_bond->Atom2->getId() << " " << m_bond->Atom2->getName() << endl;
-  log() << "---------------------------" << endl;
-}
-
-
 Bond *KinEdge::getBond() const {
   return m_bond;
 }

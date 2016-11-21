@@ -65,9 +65,7 @@ class Grid {
   Grid (Molecule * protein, double collisionFactor=1.0);
   Grid ();
   ~Grid ();
-  Grid* deepClone () const;
   void print() const;
-  Coordinate makeKey (Coordinate& pos) const;
   std::vector<Atom*> getNeighboringAtoms (Atom* atom, bool neighborWithLargerId=true, bool noCovBondNeighbor=true, bool noHbondNeighbor=true, double radius=GRID_CELL_SIZE) const;
   std::vector<Atom*> getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerId=true, bool noCovBondNeighbor=true, bool noSecondCovBondNeighbor=true, bool noHbondNeighbor=true, double radius=GRID_CELL_SIZE) const;
 
@@ -78,9 +76,12 @@ class Grid {
   bool removeAtom (Atom* atom);
   void addAtom (Atom* atom);
 
+	void setCollisionFactor(double collisionFactor);
+
  private:
+	Coordinate makeKey (Coordinate& pos) const;
   static const double Cell_size;
-  const double m_collisionFactor;
+  double m_collisionFactor;
 
   double Max_x;
   double Min_x;

@@ -41,7 +41,7 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
   m_fwdRoot->updateMolecule();
   //m_fwdRoot->computeCycleJacobianAndNullSpace();
   m_fwdRoot->m_id = 0;
-  m_fwdRoot->m_vdwEnergy = (m_protein->vdwEnergy(&(m_protein->m_initialCollisions),SamplingOptions::getOptions()->collisionCheck)).second;
+  m_fwdRoot->m_vdwEnergy = (m_protein->vdwEnergy(&(m_protein->getInitialCollisions()),SamplingOptions::getOptions()->collisionCheck)).second;
   m_fwdSamples.push_back( m_fwdRoot );
   m_fwdFront.push_back( m_fwdRoot );
 
@@ -49,7 +49,7 @@ BidirectionalMovingFront::BidirectionalMovingFront(Molecule * protein, Move& mov
   m_revRoot->updateMolecule();
   //m_revRoot->computeCycleJacobianAndNullSpace();
   m_revRoot->m_id = 1;
-  m_revRoot->m_vdwEnergy = (m_target->vdwEnergy( &(m_target->m_initialCollisions),SamplingOptions::getOptions()->collisionCheck)).second;
+  m_revRoot->m_vdwEnergy = (m_target->vdwEnergy( &(m_target->getInitialCollisions()),SamplingOptions::getOptions()->collisionCheck)).second;
   m_revSamples.push_back( m_revRoot );
   m_revFront.push_back( m_revRoot );
 

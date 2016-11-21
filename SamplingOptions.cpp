@@ -38,7 +38,6 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--hbondFile"){                     hydrogenbondFile = argv[++i];                       continue; }
 		if(arg=="--extraCovBonds"){                 Util::split( string(argv[++i]),',', extraCovBonds );   continue; }
 		if(arg=="--workingDirectory"){              workingDirectory = argv[++i];                       continue; }
-		//if(arg=="--rigidbodiesFromFIRST"){          hydrogenbondFile = argv[++i];                       continue; }
 		if(arg=="--samples" || arg=="-s"){          samplesToGenerate = atoi(argv[++i]);                continue; }
 		if(arg=="--radius" || arg=="-r"){           explorationRadius = atof(argv[++i]);                continue; }
 		if(arg=="--sampleRandom"){                  sampleRandom = Util::stob(argv[++i]);               continue; }
@@ -57,7 +56,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--rebuildFrequency"){              rebuild_frequency = atof(argv[++i]);                continue; }
 		if(arg=="--rebuildInitial"){                rebuildInitialStructures = atoi(argv[++i]);         continue; }
 		if(arg=="--rebuildAggression"){             rebuildAggression = atoi(argv[++i]);                continue; }
-		if(arg=="--flexibleRibose"){                flexibleRibose = atoi(argv[++i]);                   continue; }
+//		if(arg=="--flexibleRibose"){                flexibleRibose = atoi(argv[++i]);                   continue; }
     if(arg=="--exactIKselection"){              exactIKselection = argv[++i];                       continue; }
 		if(arg=="--seed"){                          seed = atoi(argv[++i]);                             continue; }
 		if(arg=="--biasToTarget" || arg=="-bias"){  biasToTarget = atof(argv[++i]);                     continue; }
@@ -87,55 +86,56 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		}
 	}
 
-	//Usage instructions if hbondFile is blank
-	if( hydrogenbondMethod!="user" && hydrogenbondMethod!="dssr" && hydrogenbondMethod!="rnaview" && hydrogenbondMethod!="first" && hydrogenbondMethod!="FIRST" &&
-      hydrogenbondMethod!="vadar" && hydrogenbondMethod!="kinari" && hydrogenbondMethod!="KINARI" && hydrogenbondMethod!="hbplus" && hydrogenbondMethod!="hbPlus" && hydrogenbondMethod!="identify"){
+//	//Usage instructions if hbondFile is blank
+//	if(hydrogenbondMethod.empty()){
+//		cerr<<"No --hbondMethod provided. Using only PDB 'REMARK 555'-encoded bonds"<<endl;
+//		hydrogenbondMethod = "internal";
+//
+//	}else if( hydrogenbondMethod!="user" && hydrogenbondMethod!="dssr" && hydrogenbondMethod!="rnaview" && hydrogenbondMethod!="first" && hydrogenbondMethod!="FIRST" &&
+//      hydrogenbondMethod!="vadar" && hydrogenbondMethod!="kinari" && hydrogenbondMethod!="KINARI" && hydrogenbondMethod!="hbplus" && hydrogenbondMethod!="hbPlus" && hydrogenbondMethod!="identify"){
+//		cerr<<"No known hbond method provided, identifying h-bonds in KGS."<<endl;
+//		cerr<<"If undesired, please provide available h-bond option instead."<<endl;
+//		hydrogenbondMethod = "identify";
+//	}
+//	if( hydrogenbondFile.empty() && (hydrogenbondMethod=="user" || hydrogenbondMethod=="dssr" || hydrogenbondMethod=="rnaview" || hydrogenbondMethod=="first" || hydrogenbondMethod=="FIRST" ||
+//      hydrogenbondMethod=="vadar" || hydrogenbondMethod=="kinari" || hydrogenbondMethod=="KINARI" || hydrogenbondMethod=="hbplus" || hydrogenbondMethod=="hbPlus")){
 //		enableLogger("so");
-//		cerr<<"Error: The hbond method ("<<hydrogenbondMethod<<") is not valid"<<endl;
-//		printUsage(argv[0]);
-//		exit(-1);
-		cerr<<"No known hbond method provided, identifying h-bonds in KGS."<<endl;
-		cerr<<"If undesired, please provide available h-bond option instead."<<endl;
-		hydrogenbondMethod = "identify";
-	}
-	if( hydrogenbondFile.empty() && hydrogenbondMethod != "identify"){
-		enableLogger("so");
-		if(hydrogenbondMethod=="user"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nEach line in the file specified with --hbondFile should contain ";
-			log("so")<<"two numbers indicating the atom-id of the hydrogen and the acceptor atoms in the initial structure file."<<endl;
-		}else if(hydrogenbondMethod=="dssr"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-			log("so")<<"the dssr program. There is a web-server where these files can be downloaded (http://w3dna.rutgers.edu/) ";
-			log("so")<<"and dssr itself can be found at http://x3dna.org. To get the output (hbonds.txt) from a pdb-file (2B7G.pdb) ";
-			log("so")<<"run the command\nx3dna-dssr -i=2B7G.pdb -o=hbonds.txt"<<endl;
-			log("so")<<"Note that dssr only finds base-pair types, so exactly one hbond is added between U-A and G-C paired side-chains."<<endl;
-		}else if(hydrogenbondMethod=="rnaview"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-			log("so")<<"the RNAView program. The program can be downloaded from http://ndbserver.rutgers.edu/ndbmodule/services/download/rnaview.html ";
-			log("so")<<"(possibly http://ndbserver.rutgers.edu/files/ftp/NDB/programs/rna/). To get the output (2B7G.pdb.out) from a pdb-file (2B7G.pdb) ";
-			log("so")<<"run the command\nrnaview 2B7G.pdb"<<endl;
-			log("so")<<"Note that rnaview only finds base-pair types, so exactly one hbond is added between U-A and G-C paired side-chains."<<endl;
-		}else if(hydrogenbondMethod=="first" || hydrogenbondMethod=="FIRST"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-			log("so")<<"the FIRST program generated by typing: FIRST <file>.pdb -non -hbout (the output will be named hbonds.out)"<<endl;
-		}else if(hydrogenbondMethod=="kinari" || hydrogenbondMethod=="KINARI"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-			log("so")<<"the KINARI program generated on the KINARI webserver or kinarilib."<<endl;
-		}else if(hydrogenbondMethod=="hbplus" || hydrogenbondMethod=="hbPlus"){
-      log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-      log("so")<<"the hbPlus program (McDonald et al., 1993)."<<endl;
-    }else if(hydrogenbondMethod=="vadar"){
-			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
-			log("so")<<"the vadar server (vadar.wishartlab.com) that has been edited so every line has this format (multiple spaces not important) ";
-			log("so")<<"'92A     C      73A    N               1.91'"<<endl;
-		}
-		exit(3);
-	}else{
-		if(hydrogenbondMethod.empty()){
-			log("so")<<"H-bond file provided, choosing user-defined method."<<endl;
-			hydrogenbondMethod = "user"; //Default when a file is specified but no method
-		}
-	}
+//		if(hydrogenbondMethod=="user"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nEach line in the file specified with --hbondFile should contain ";
+//			log("so")<<"two numbers indicating the atom-id of the hydrogen and the acceptor atoms in the initial structure file."<<endl;
+//		}else if(hydrogenbondMethod=="dssr"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//			log("so")<<"the dssr program. There is a web-server where these files can be downloaded (http://w3dna.rutgers.edu/) ";
+//			log("so")<<"and dssr itself can be found at http://x3dna.org. To get the output (hbonds.txt) from a pdb-file (2B7G.pdb) ";
+//			log("so")<<"run the command\nx3dna-dssr -i=2B7G.pdb -o=hbonds.txt"<<endl;
+//			log("so")<<"Note that dssr only finds base-pair types, so exactly one hbond is added between U-A and G-C paired side-chains."<<endl;
+//		}else if(hydrogenbondMethod=="rnaview"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//			log("so")<<"the RNAView program. The program can be downloaded from http://ndbserver.rutgers.edu/ndbmodule/services/download/rnaview.html ";
+//			log("so")<<"(possibly http://ndbserver.rutgers.edu/files/ftp/NDB/programs/rna/). To get the output (2B7G.pdb.out) from a pdb-file (2B7G.pdb) ";
+//			log("so")<<"run the command\nrnaview 2B7G.pdb"<<endl;
+//			log("so")<<"Note that rnaview only finds base-pair types, so exactly one hbond is added between U-A and G-C paired side-chains."<<endl;
+//		}else if(hydrogenbondMethod=="first" || hydrogenbondMethod=="FIRST"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//			log("so")<<"the FIRST program generated by typing: FIRST <file>.pdb -non -hbout (the output will be named hbonds.out)"<<endl;
+//		}else if(hydrogenbondMethod=="kinari" || hydrogenbondMethod=="KINARI"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//			log("so")<<"the KINARI program generated on the KINARI webserver or kinarilib."<<endl;
+//		}else if(hydrogenbondMethod=="hbplus" || hydrogenbondMethod=="hbPlus"){
+//      log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//      log("so")<<"the hbPlus program (McDonald et al., 1993)."<<endl;
+//    }else if(hydrogenbondMethod=="vadar"){
+//			log("so")<<"The hbond method '"<<hydrogenbondMethod<<"' was chosen.\nThe file specified with --hbondFile should contain the output from ";
+//			log("so")<<"the vadar server (vadar.wishartlab.com) that has been edited so every line has this format (multiple spaces not important) ";
+//			log("so")<<"'92A     C      73A    N               1.91'"<<endl;
+//		}
+//		exit(3);
+//	}else{
+//		if(hydrogenbondMethod.empty()){
+//			log("so")<<"H-bond file provided, choosing user-defined method."<<endl;
+//			hydrogenbondMethod = "user"; //Default when a file is specified but no method
+//		}
+//	}
 
 	//Check initial structure
 	if(initialStructureFile.empty()) {
@@ -194,21 +194,21 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
     log("so")<<"No target structure file supplied, random sampling."<<endl;
   }
 
-	//Search for hbonds file. Print warning if not found
-	if(!fileExists(hydrogenbondFile)){
-		string alt = workingDirectory+"/"+hydrogenbondFile;
-		if(fileExists(alt))
-			hydrogenbondFile = alt;
-		else
-			cerr<<"Warning: "<<hydrogenbondFile<<" not found. No hydrogen bonds added. Specify valid hydrogen bonds with the -hydrogens arg."<<endl;
-	}
+//	//Search for hbonds file. Print warning if not found
+//	if(!fileExists(hydrogenbondFile)){
+//		string alt = workingDirectory+"/"+hydrogenbondFile;
+//		if(fileExists(alt))
+//			hydrogenbondFile = alt;
+//		else
+//			cerr<<"Warning: "<<hydrogenbondFile<<" not found. No hydrogen bonds added. Specify valid hydrogen bonds with the -hydrogens arg."<<endl;
+//	}
 
-	//Error if rebuild is requested without annotations
-	if( (annotationFile.empty() || !fileExists(annotationFile)) && hydrogenbondMethod!="rnaview" &&
-	        (rebuild_frequency>0.0 || rebuildInitialStructures>0) ) {
-		cerr<<"Error: No or invalid annotation file specified so the requested rebuilding can't be performed"<<endl;
-		exit(-1);
-	}
+//	//Error if rebuild is requested without annotations
+//	if( (annotationFile.empty() || !fileExists(annotationFile)) && hydrogenbondMethod!="rnaview" &&
+//	        (rebuild_frequency>0.0 || rebuildInitialStructures>0) ) {
+//		cerr<<"Error: No or invalid annotation file specified so the requested rebuilding can't be performed"<<endl;
+//		exit(-1);
+//	}
 
 	//TODO: Exit with error if both FIRST and sugar conformations are enabled
 
@@ -240,7 +240,7 @@ void SamplingOptions::initializeVariables(){
   rebuild_frequency         = 0.0;
   rebuildInitialStructures  = 0;
   rebuildAggression         = 0;
-  flexibleRibose            = false;
+//  flexibleRibose            = false;
   exactIKselection          = "none";
   seed                      =  418;
   saveData                  =  0;
@@ -267,8 +267,10 @@ void SamplingOptions::print(){
 	log("so")<<"\t--initial "<<initialStructureFile<<endl;
 	log("so")<<"\t--target "<<targetStructureFile<<endl;
 	log("so")<<"\t--annotation "<<annotationFile<<endl;
-	log("so")<<"\t--hbondMethod "<<hydrogenbondMethod<<endl;
-	log("so")<<"\t--hbondFile "<<hydrogenbondFile<<endl;
+  if(!hydrogenbondFile.empty()) {
+    log("so")<<"\t--hbondMethod "<<hydrogenbondMethod<<endl;
+    log("so")<<"\t--hbondFile "<<hydrogenbondFile<<endl;
+  }
 	log("so")<<"\t--extraCovBonds "; for(unsigned int i=0;i<extraCovBonds.size();i++) log("so")<<extraCovBonds[i]<<","; log("so")<<endl;
 	log("so")<<"\t--workingDirectory "<<workingDirectory<<endl;
 	//log("so")<<"\t--rigidbodiesFromFIRST "<<(rigidbodiesFromFIRST?"true":"false")<<endl;
@@ -290,7 +292,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--rebuildFrequency "<<rebuild_frequency<<endl;
 	log("so")<<"\t--rebuildInitial "<<rebuildInitialStructures<<endl;
 	log("so")<<"\t--rebuildAggression "<<rebuildAggression<<endl;
-	log("so")<<"\t--flexibleRibose "<<flexibleRibose<<endl;
+//	log("so")<<"\t--flexibleRibose "<<flexibleRibose<<endl;
 	log("so")<<"\t--seed "<<seed<<endl;
 	log("so")<<"\t--biasToTarget "<<biasToTarget<<endl;
   log("so")<<"\t--convergeDistance "<<convergeDistance<<endl;
@@ -321,11 +323,11 @@ void SamplingOptions::printUsage(char* pname){
 	log("so")<<"\t--annotation <file-path> \t: Annotations can specify secondary structures or other things ";
 	log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
 
-	log("so")<<"\t--hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
-	log("so")<<"how to generate a hbondFile are printed."<<endl;
+//	log("so")<<"\t--hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
+//	log("so")<<"how to generate a hbondFile are printed."<<endl;
 
-	log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
-	log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
+//	log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
+//	log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
 	log("so")<<"\t--extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
 
 	log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
@@ -374,7 +376,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"1: Sugars and side-chains are resampled, backbone used for reclosing. 2: Everything resampled, backbone used for reclosing."<<endl;
 
-	log("so")<<"\t--flexibleRibose <0|1>\t: Indicate if ribose rings should be flexible (Standard: 1)"<<endl;
+//	log("so")<<"\t--flexibleRibose <0|1>\t: Indicate if ribose rings should be flexible (Standard: 1)"<<endl;
 
   log("so")<<"\t--seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
 
@@ -392,7 +394,7 @@ void SamplingOptions::printUsage(char* pname){
 
 	log("so")<<"\t--alignSelection < A pymol-like pattern that indicates which subset of atoms are used during alignment (if specified). Default is 'heavy'."<<endl;
 
-	log("so")<<"\t--gradientSelection <selection-pattern>\\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
+	log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
 
 	log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
 

@@ -67,7 +67,8 @@ Bond::Bond() {
 Bond::~Bond() {}
 
 void Bond::print () {
-	cout << "Bond(" << Atom1->getId() << "," << Atom2->getId() << "," << BondType << "," << Bars << ")";
+//	cout << "Bond(" << Atom1->getId() << "," << Atom2->getId() << "," << BondType << "," << Bars << ")";
+	cout << "Bond(" << Atom1 << "," << Atom2 << "," << BondType << "," << Bars << ")";
 }
 
 bool Bond::isLocked () {

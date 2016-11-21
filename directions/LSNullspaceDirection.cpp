@@ -67,7 +67,7 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
   gsl_matrix* fullN = gsl_matrix_calloc(dof,N->size2+dof-N->size1);
   gsl_matrix_set_zero(fullN);
   int fulldof=0;
-  for (auto const& edge: protein->m_spanning_tree->Edges) {
+  for (auto const& edge: protein->m_spanningTree->Edges) {
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -203,7 +203,7 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
 //
 //if(m_TargetJacobian->size2!= N->size1){
 //      map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
-//for (vit=protein->m_spanning_tree->Vertex_map.begin(); vit!=protein->m_spanning_tree->Vertex_map.end(); vit++){
+//for (vit=protein->m_spanningTree->Vertex_map.begin(); vit!=protein->m_spanningTree->Vertex_map.end(); vit++){
 //  if( (*vit).second->isRibose ){
 //    SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 //    int dof_id = v->DOF_id;
@@ -215,7 +215,7 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
 //    }
 //  }
 //}
-//for (vector<Edge*>::iterator eit=protein->m_spanning_tree->Edges.begin(); eit!=protein->m_spanning_tree->Edges.end(); ++eit) {
+//for (vector<Edge*>::iterator eit=protein->m_spanningTree->Edges.begin(); eit!=protein->m_spanningTree->Edges.end(); ++eit) {
 //  int dof_id = (*eit)->DOF_id;
 //  int cycle_dof_id = (*eit)->Cycle_DOF_id;
 //  if ( cycle_dof_id!=-1 ) {

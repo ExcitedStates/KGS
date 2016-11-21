@@ -66,16 +66,13 @@ const double VDW_R_MAX = 8; // only compute vdw energy if R_ab <= 8A
 using namespace std;
 
 
-Molecule::Molecule() {
-  name_ = "UNKNOWN";
-  m_grid = nullptr;
-//  m_backupGrid = nullptr;
-  m_spanning_tree = nullptr;
-  m_conf = nullptr;
-  AtomJacobian1 = nullptr;
-  AtomJacobian2 = nullptr;
-  AtomJacobian3 = nullptr;
-  m_collisionFactor = 1.0;
+Molecule::Molecule():
+  name_("UNKNOWN"),
+  m_grid(nullptr),
+  m_spanningTree(nullptr),
+  m_conf(nullptr),
+  m_collisionFactor(1.0)
+{
 }
 
 Molecule::~Molecule() {
@@ -94,11 +91,9 @@ Molecule::~Molecule() {
     delete m_grid;
     m_grid = nullptr;
   }
-//  if (m_backupGrid!=nullptr)
-//    delete m_backupGrid;
 
   // delete all rigid bodies
-  for (map<unsigned int,Rigidbody*>::iterator it=Rigidbody_map_by_id.begin(); it!=Rigidbody_map_by_id.end(); ++it) {
+  for (map<unsigned int,Rigidbody*>::iterator it=m_rigidBodyMap.begin(); it!=m_rigidBodyMap.end(); ++it) {
     if ( it->second != nullptr )
       delete it->second;
   }
@@ -110,17 +105,10 @@ Molecule::~Molecule() {
     delete (*it);
   }
 
-  // delete m_spanning_tree
-  if (m_spanning_tree!=nullptr)
-    delete m_spanning_tree;
+  // delete m_spanningTree
+  if (m_spanningTree!=nullptr)
+    delete m_spanningTree;
 
-  // delete atom jacobians
-  if (AtomJacobian1!=nullptr)
-    gsl_matrix_free(AtomJacobian1);
-  if (AtomJacobian2!=nullptr)
-    gsl_matrix_free(AtomJacobian2);
-  if (AtomJacobian3!=nullptr)
-    gsl_matrix_free(AtomJacobian3);
 }
 
 void Molecule::setName (string& name) {
@@ -149,17 +137,11 @@ Atom* Molecule::addAtom(
   return ret;
 }
 
-Chain*Molecule::getChain (const string& chain_name) {
+Chain*Molecule::getChain (const string& chain_name) const{
   for(auto const& chain: chains)
     if(chain->getName()==chain_name) return chain;
 
   return nullptr;
-}
-
-void Molecule::printSummaryInfo() const {
-  log() << "Molecule " << getName() << endl;
-  for (auto const& chain: chains)
-    chain->printSummaryInfo();
 }
 
 Chain*Molecule::addChain (const string& chainName) {
@@ -196,7 +178,7 @@ int Molecule::getMinResidueNumber(){
 }
 
 /** Gets the atom specified by a residue number and a name. */
-Atom* Molecule::getAtom(const string& chainName, const int& resNum, const string& name){
+Atom* Molecule::getAtom(const string& chainName, const int& resNum, const string& name) const{
   Chain* chain = this->getChain(chainName);
   if(chain!=nullptr){
     Residue* resi = chain->getResidue(resNum);
@@ -207,7 +189,7 @@ Atom* Molecule::getAtom(const string& chainName, const int& resNum, const string
   return nullptr;
 }
 
-Atom* Molecule::getAtom (int atom_id) {
+Atom* Molecule::getAtom (int atom_id) const{
   for (auto const& a: m_atoms) {
     if(a->getId()==atom_id)
       return a;
@@ -239,23 +221,9 @@ std::list<Hbond*>& Molecule::getHBonds(){
   return m_hBonds;
 }
 
-void Molecule::printAllAtoms () const {
-  for (vector<Atom*>::const_iterator it= m_atoms.begin(); it != m_atoms.end(); ++it) {
-    (*it)->printSummaryInfo();
-  }
-}
-
 int Molecule::size() const {
   return m_atoms.size();
 }
-
-void Molecule::updateAtom (int atom_id, Coordinate new_pos) {
-  Atom* affected_atom = getAtom(atom_id);
-  m_grid->removeAtom(affected_atom);
-  affected_atom->m_position = new_pos;
-  m_grid->addAtom(affected_atom);
-}
-
 
 Grid* Molecule::getGrid() {
   if(m_grid==nullptr)
@@ -263,6 +231,10 @@ Grid* Molecule::getGrid() {
   return m_grid;
 }
 
+std::set< std::pair<Atom*,Atom*> >& Molecule::getInitialCollisions()
+{
+  return m_initialCollisions;
+};
 
 void Molecule::indexAtoms () {
   // m_grid is the current indexing
@@ -275,13 +247,19 @@ void Molecule::indexAtoms () {
     restoreAtomPos();
   }
 
-//  m_grid = new Grid(this, SamplingOptions::getOptions()->collisionFactor);
   m_grid = new Grid(this, m_collisionFactor);
 }
 
 void Molecule::setCollisionFactor(double collisionFactor)
 {
   m_collisionFactor = collisionFactor;
+
+  m_grid->setCollisionFactor(collisionFactor);
+
+  //Recompute initial collisions
+  m_initialCollisions.clear();
+  m_initialCollisions = getAllCollisions();
+  cout<<"Molecule::setCollisionFactor("<<collisionFactor<<") - Initial collisions: "<<m_initialCollisions.size()<<endl;
 }
 
 //void Molecule::backupAtomIndex () {
@@ -369,7 +347,7 @@ void Molecule::addHbond (Hbond * hb) {
 unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
 
   unsigned int bestId = 0;
-  unsigned int maxId = Rigidbody_map_by_id.size();
+  unsigned int maxId = m_rigidBodyMap.size();
   if(rootRBId >= 0){//user-specified, or standard choice of rb id == 0
     if(rootRBId > maxId){
       cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard Id."<<endl;
@@ -385,7 +363,7 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
     }
     //Check the rmsd between individual vertices and choose the closest pair as m_root
     double bestSum = 9999;
-    for (map<unsigned int,Rigidbody*>::iterator rbit=Rigidbody_map_by_id.begin(); rbit!=Rigidbody_map_by_id.end(); ++rbit) {
+    for (map<unsigned int,Rigidbody*>::iterator rbit=m_rigidBodyMap.begin(); rbit!=m_rigidBodyMap.end(); ++rbit) {
       vector<Atom*> *atomsRMSD = &(rbit->second->Atoms);
       double sum=0;
       bool allAtoms = true;
@@ -417,52 +395,207 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   }
 }
 
-void Molecule::buildSpanningTree() {
-  //log() << "In buildSpanningTree" << endl;
-  m_spanning_tree=new KinTree();
 
-  // Add the super-root
-  m_spanning_tree->m_root=m_spanning_tree->addVertex(nullptr);
-//  size_t numVertices = Rigidbody_map_by_id.size();
 
-  // add all rigid bodies as vertices into Rigidbody_graph
-  for( auto const &id_rb_pair: Rigidbody_map_by_id ) {
-    Rigidbody *rb=id_rb_pair.second;
-    m_spanning_tree->addVertex(rb);
+void Molecule::buildRigidBodies(Selection& movingResidues) {
+  //Create disjoint set
+  DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+
+  //For each atom not in a residue in movingResidues call Union (rigidifies everything not in movingResidues)
+  for(auto const& chain: chains) {
+    Atom* lastAtom = nullptr;
+    for (auto const& res: chain->getResidues()) {
+//      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
+      if(movingResidues.inSelection(res)) {
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
+        continue; //Skip residue if its in movingResidues
+      }else {
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
+      }
+
+      for (Atom *const &res_atom: res->getAtoms()){
+        if(lastAtom==nullptr) {
+          lastAtom = res_atom;
+          continue;
+        }
+        ds.Union(lastAtom->getId(), res_atom->getId());
+        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
+      }
+    }
   }
 
-  list<KinEdge *> cycleEdges;
+  //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
+  for (int i=0;i<size();i++){
+    Atom* atom = getAtoms()[i];
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+      ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
+      //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
+    }
+  }
 
-  //Initialize chain-roots by adding them to the queue and setting up edges from the super-root
-//  list<KinVertex *> queue;
-  auto my_comp = [](const KinVertex* v1, const KinVertex* v2){
-    int id1 = v1->m_rigidbody == nullptr ? 0: v1->m_rigidbody->id();
-    int id2 = v2->m_rigidbody == nullptr ? 0: v2->m_rigidbody->id();
-    return id1>id2;
-  };
-  std::priority_queue<KinVertex*,vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
+  //For each fixed bond (a1,a2) call Union(a1,a2)
+  for (auto const& bond: getCovBonds()){
 
-//  for( auto const &chain: chains ) {
-//    //Add first vertex in chain to queue --> this becomes the chain root
-//    Residue *firstRes=chain->getResidues()[0];
-//    Atom *firstAtom=firstRes->getAtoms().front();
-//    KinVertex *firstVertex=firstAtom->getRigidbody()->getVertex();
-////    queue.push_back(firstVertex);
-//    queue.push(firstVertex);
+    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
+      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+      continue;
+    }
+  }
+
+
+  int c=0;
+  map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
+
+  //Map the set-ID's to RB-ID's and add bonded atoms to RBs.
+  for (int i=0;i<size();i++){
+    Atom* atom = getAtoms()[i];
+
+    //Map the set-id to the RB-id
+    int set_id = ds.FindSet(atom->getId());
+    int body_id;
+    if(idMap.find(set_id)!=idMap.end()) body_id = idMap.find(set_id)->second;
+    else {
+      body_id = c++;
+      idMap.insert( make_pair(set_id, body_id) );
+    }
+    //If the set containing a1 is not a rigid body: create one
+    if ( m_rigidBodyMap.find(body_id)==m_rigidBodyMap.end() ) {
+      Rigidbody* new_rb = new Rigidbody(body_id);
+      m_rigidBodyMap.insert( make_pair(body_id,new_rb) );
+    }
+    Rigidbody* rb = m_rigidBodyMap.find(body_id)->second;
+    if (!rb->containsAtom(atom)) rb->addAtom(atom);
+
+  }
+
+  //Delete small RBs and sort atoms within each RB
+  map<unsigned int, Rigidbody*>::iterator it = m_rigidBodyMap.begin();
+  while ( it!=m_rigidBodyMap.end() ) {
+    Rigidbody *rb = it->second;
+    if ( rb->Atoms.size() <= 0 ) {
+      cerr << "Error: rigid body " << rb->id() << " has no atoms." << endl;
+      m_rigidBodyMap.erase(it++);
+      delete rb;
+    }
+    else { // sort atom ids
+#ifndef WIN32 // Liangjun Zhang's tmp code
+      vector<Atom*>::iterator sit = rb->Atoms.begin();
+      vector<Atom*>::iterator eit = rb->Atoms.end();
+
+      sort(sit,eit,Atom::compare);
+#endif
+      // Determine if Rigidbody is on Mainchain
+//      rb->setMainchainRb();
+      ++it;
+    }
+  }
+
+  //Store bonds in rigid bodies
+  for (auto const& bond: getCovBonds()){
+    int setId1 = ds.FindSet(bond->Atom1->getId());
+    m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
+    int setId2 = ds.FindSet(bond->Atom2->getId());
+    if(setId1!=setId2)
+      m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
+  }
+  for (auto const& bond: getHBonds()) {
+    int setId1 = ds.FindSet(bond->Atom1->getId());
+    m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
+    int setId2 = ds.FindSet(bond->Atom2->getId());
+    if(setId1!=setId2)
+      m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
+  }
+}
+
+
+void Molecule::buildSpanningTree(const vector<int>& rootIds) {
+  //Collect rigid bodies
+  vector<Rigidbody*> rigidBodies;
+  for(const auto& id_rb: m_rigidBodyMap)
+    rigidBodies.push_back(id_rb.second);
+
+  //Collect root atoms
+  vector<Atom*> roots;
+  for(const int& rootId: rootIds)
+    roots.push_back( getAtom(rootId) );
+
+  m_spanningTree = new KinTree(rigidBodies, roots);
+
+//  m_spanningTree=new KinTree();
+//
+//  // Add the super-root
+//  m_spanningTree->m_root=m_spanningTree->addVertex(nullptr);
+//
+//  // add all rigid bodies as vertices into Rigidbody_graph
+//  for( auto const &id_rb_pair: m_rigidBodyMap ) {
+//    Rigidbody *rb=id_rb_pair.second;
+//    m_spanningTree->addVertex(rb);
+//  }
+//
+//  list<KinEdge *> cycleEdges;
+//
+//  //Initialize chain-roots by adding them to the queue and setting up edges from the super-root
+//  auto my_comp = [](const KinVertex* v1, const KinVertex* v2){
+//    int id1 = v1->m_rigidbody == nullptr ? 0: v1->m_rigidbody->id();
+//    int id2 = v2->m_rigidbody == nullptr ? 0: v2->m_rigidbody->id();
+//    return id1>id2;
+//  };
+//  std::priority_queue<KinVertex*,vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
+//
+//
+//  //Build new vector with chain roots given by the user at the front
+//  //Iterate through this vector instead of vertex_map to use correct chain roots
+//  std::map<unsigned int,KinVertex*> secondPriorityMap;
+//  std::vector<KinVertex*> vertexPriorityList;
+//  std::vector<int> roots = SamplingOptions::getOptions()->roots;
+//
+//  //Push the chain roots into Vertex Map, others to second prio map
+//  bool foundChainRoot = false;
+//  for( auto const &id_vertex_pair: m_spanningTree->Vertex_map ) {
+//    KinVertex *vertex=id_vertex_pair.second;
+//
+//    for(auto const &rootAtomId: roots) {
+//      if (vertex->m_rigidbody->containsAtom(this->getAtom(rootAtomId))) {
+//        vertexPriorityList.push_back(vertex);
+//        foundChainRoot=true;
+//        break;
+//      }
+//    }
+//    if(!foundChainRoot)
+//      secondPriorityMap[id_vertex_pair.first] = vertex;
+//    else
+//      foundChainRoot=false;
+//  }
+//
+//  // add all rigid bodies as vertices into Rigidbody_graph
+//  for( auto const &id_vertex_pair: secondPriorityMap ) {
+//    vertexPriorityList.push_back(id_vertex_pair.second);
+//  }
+//
+//  //Perform breadth-first-search from all queue vertices and construct KinEdges
+//  //A variant of Prims algorithm is used to get the orientation of the tree correct in the first go
+//  std::set<Bond *> visitedBonds;
+//  std::set<KinVertex *> visitedVertices;
+//
+//  for(auto const& chainRoot: vertexPriorityList) {
+//    //If the vertex has been visited before, ignore it, otherwise make it the root of a new tree
+//    if( visitedVertices.count(chainRoot)>0) continue;
 //
 //    //Connect to super-root with six global chain dofs
-//    KinVertex *v2=m_spanning_tree->addVertex(nullptr);
-//    KinVertex *v3=m_spanning_tree->addVertex(nullptr);
-//    KinVertex *v4=m_spanning_tree->addVertex(nullptr);
-//    KinVertex *v5=m_spanning_tree->addVertex(nullptr);
-//    KinVertex *v6=m_spanning_tree->addVertex(nullptr);
+//    KinVertex *v2=m_spanningTree->addVertex(nullptr);
+//    KinVertex *v3=m_spanningTree->addVertex(nullptr);
+//    KinVertex *v4=m_spanningTree->addVertex(nullptr);
+//    KinVertex *v5=m_spanningTree->addVertex(nullptr);
+//    KinVertex *v6=m_spanningTree->addVertex(nullptr);
 //
-//    KinEdge *e1=m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
-//    KinEdge *e2=m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
-//    KinEdge *e3=m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
-//    KinEdge *e4=m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
-//    KinEdge *e5=m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
-//    KinEdge *e6=m_spanning_tree->addEdgeDirected(v6, firstVertex, nullptr);
+//    KinEdge *e1=m_spanningTree->addEdgeDirected(m_spanningTree->m_root, v2, nullptr);
+//    KinEdge *e2=m_spanningTree->addEdgeDirected(v2, v3, nullptr);
+//    KinEdge *e3=m_spanningTree->addEdgeDirected(v3, v4, nullptr);
+//    KinEdge *e4=m_spanningTree->addEdgeDirected(v4, v5, nullptr);
+//    KinEdge *e5=m_spanningTree->addEdgeDirected(v5, v6, nullptr);
+//    KinEdge *e6=m_spanningTree->addEdgeDirected(v6, chainRoot, nullptr);
 //
 //    e1->setDOF(new GlobalTranslateDOF(e1, 0));
 //    e2->setDOF(new GlobalTranslateDOF(e2, 1));
@@ -470,340 +603,87 @@ void Molecule::buildSpanningTree() {
 //    e4->setDOF(new GlobalRotateDOF(e4, 0));
 //    e5->setDOF(new GlobalRotateDOF(e5, 1));
 //    e6->setDOF(new GlobalRotateDOF(e6, 2));
-//    log("debug") << "Molecule::buildSpanningTree() - Connecting " << firstAtom << " to super-root using 6 dofs" << endl;
+//    log("debug") << "Molecule::buildSpanningTree() - Connecting " << chainRoot->m_rigidbody->Atoms[0]
+//                 << " to super-root using 6 dofs" << endl;
+//
+//    queue.push(chainRoot);
+//
+//    while (!queue.empty()) {
+//      KinVertex *current_vertex = queue.top();
+//      queue.pop();
+//      visitedVertices.insert(current_vertex);
+//      log("debug") << "Molecule::buildSpanningTree() - Visiting vertex of size " <<
+//                   current_vertex->m_rigidbody->Atoms.size() << ", rbID: " << current_vertex->m_rigidbody->id() << ", "
+//                   <<
+//                   current_vertex->m_rigidbody->Bonds.size() << " bonds" << endl;
+//
+//      for (Bond *const &bond: current_vertex->m_rigidbody->Bonds) {
+//        // Determine which other rigid body bond is connected to
+//        KinVertex *bonded_vertex = bond->Atom2->getRigidbody()->getVertex();
+//        if (bonded_vertex == current_vertex)
+//          bonded_vertex = bond->Atom1->getRigidbody()->getVertex();
+//
+//        if (current_vertex == bonded_vertex) {
+//          log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
+//            continue;
+//        }
+//        if (visitedBonds.count(bond) > 0) {
+//          log("debug") << "Molecule::buildSpanningTree() - Already visited bond " << bond << endl;
+//          continue;
+//        }
+//
+//        visitedBonds.insert(bond);
+//
+//        if (bond->isHbond()) {
+//          // If it's an H-bond, it closes a cycle. Add it in m_cycleAnchorEdges.
+//          KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
+//          cycleEdges.push_back(edge);
+//          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
+//
+//        } else {
+//          if (visitedVertices.count(bonded_vertex) > 0) {
+//            KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
+//            cycleEdges.push_back(edge);
+//            log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond " << edge << endl;
+//
+//          } else {
+//            // If it's a covalent bond, add it into the tree m_edges
+//            visitedVertices.insert(bonded_vertex);
+//            queue.push(bonded_vertex);
+//            KinEdge *edge = m_spanningTree->addEdgeDirected(current_vertex, bonded_vertex, bond);
+//            edge->setDOF(new TorsionDOF(edge));
+//            log("debug") << "Molecule::buildSpanningTree() - Adding torsion-edge " << edge << endl;
+//          }
+//        }
+//      }
+//    } // end while
+//  }
+//
+//  m_spanningTree->collectDOFs();
+//
+//  // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
+//  // end-points to the LCA into m_spanningTree->m_cycleDOFs.
+//  for( auto const &h_edge: cycleEdges ) {
+//    KinVertex *lca=m_spanningTree->findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);
+//    m_spanningTree->m_cycleAnchorEdges.push_back(make_pair(h_edge, lca));
+//
+//    for( KinVertex *v=h_edge->StartVertex; v != lca; v=v->m_parent ) {
+//      KinEdge *edge=v->m_parent->findEdge(v);
+//      m_spanningTree->addCycleDOF(edge->getDOF());
+//    }
+//
+//    for( KinVertex *v=h_edge->EndVertex; v != lca; v=v->m_parent ) {
+//      KinEdge *edge=v->m_parent->findEdge(v);
+//      m_spanningTree->addCycleDOF(edge->getDOF());
+//    }
 //  }
 
-  //Build new vector with chain roots given by the user at the front
-  //Iterate through this vector instead of vertex_map to use correct chain roots
-  std::map<unsigned int,KinVertex*> secondPriorityMap;
-  std::vector<KinVertex*> vertexPriorityList;
-  std::vector<int> roots = SamplingOptions::getOptions()->roots;
-
-  //Push the chain roots into Vertex Map, others to second prio map
-  bool foundChainRoot = false;
-  for( auto const &id_vertex_pair: m_spanning_tree->Vertex_map ) {
-    KinVertex *vertex=id_vertex_pair.second;
-
-    for(auto const &rootAtomId: roots) {
-      if (vertex->m_rigidbody->containsAtom(this->getAtom(rootAtomId))) {
-        vertexPriorityList.push_back(vertex);
-        foundChainRoot=true;
-        break;
-      }
-    }
-    if(!foundChainRoot)
-      secondPriorityMap[id_vertex_pair.first] = vertex;
-    else
-      foundChainRoot=false;
-  }
-
-  // add all rigid bodies as vertices into Rigidbody_graph
-  for( auto const &id_vertex_pair: secondPriorityMap ) {
-    vertexPriorityList.push_back(id_vertex_pair.second);
-  }
-
-  //Perform breadth-first-search from all queue vertices and construct KinEdges
-  //A variant of Prims algorithm is used to get the orientation of the tree correct in the first go
-  std::set<Bond *> visitedBonds;
-  std::set<KinVertex *> visitedVertices;
-
-//  for(auto const& id_vertex_pair: m_spanning_tree->Vertex_map) {
-  for(auto const& chainRoot: vertexPriorityList) {
-    //If the vertex has been visited before, ignore it, otherwise make it the root of a new tree
-//    KinVertex* chainRoot = id_vertex_pair.second;
-    if( visitedVertices.count(chainRoot)>0) continue;
-
-    //Connect to super-root with six global chain dofs
-    KinVertex *v2=m_spanning_tree->addVertex(nullptr);
-    KinVertex *v3=m_spanning_tree->addVertex(nullptr);
-    KinVertex *v4=m_spanning_tree->addVertex(nullptr);
-    KinVertex *v5=m_spanning_tree->addVertex(nullptr);
-    KinVertex *v6=m_spanning_tree->addVertex(nullptr);
-
-    KinEdge *e1=m_spanning_tree->addEdgeDirected(m_spanning_tree->m_root, v2, nullptr);
-    KinEdge *e2=m_spanning_tree->addEdgeDirected(v2, v3, nullptr);
-    KinEdge *e3=m_spanning_tree->addEdgeDirected(v3, v4, nullptr);
-    KinEdge *e4=m_spanning_tree->addEdgeDirected(v4, v5, nullptr);
-    KinEdge *e5=m_spanning_tree->addEdgeDirected(v5, v6, nullptr);
-    KinEdge *e6=m_spanning_tree->addEdgeDirected(v6, chainRoot, nullptr);
-
-    e1->setDOF(new GlobalTranslateDOF(e1, 0));
-    e2->setDOF(new GlobalTranslateDOF(e2, 1));
-    e3->setDOF(new GlobalTranslateDOF(e3, 2));
-    e4->setDOF(new GlobalRotateDOF(e4, 0));
-    e5->setDOF(new GlobalRotateDOF(e5, 1));
-    e6->setDOF(new GlobalRotateDOF(e6, 2));
-    log("debug") << "Molecule::buildSpanningTree() - Connecting " << chainRoot->m_rigidbody->Atoms[0]
-                 << " to super-root using 6 dofs" << endl;
-
-    queue.push(chainRoot);
-
-    while (!queue.empty()) {
-      KinVertex *current_vertex = queue.top();
-      queue.pop();
-      visitedVertices.insert(current_vertex);
-      log("debug") << "Molecule::buildSpanningTree() - Visiting vertex of size " <<
-                   current_vertex->m_rigidbody->Atoms.size() << ", rbID: " << current_vertex->m_rigidbody->id() << ", "
-                   <<
-                   current_vertex->m_rigidbody->Bonds.size() << " bonds" << endl;
-
-      for (Bond *const &bond: current_vertex->m_rigidbody->Bonds) {
-        // Determine which other rigid body bond is connected to
-        KinVertex *bonded_vertex = bond->Atom2->getRigidbody()->getVertex();
-        if (bonded_vertex == current_vertex)
-          bonded_vertex = bond->Atom1->getRigidbody()->getVertex();
-
-        if (current_vertex == bonded_vertex) {
-          log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
-            continue;
-        }
-        //if(visitedVertices.count(bonded_vertex)>0){
-        if (visitedBonds.count(bond) > 0) {
-          log("debug") << "Molecule::buildSpanningTree() - Already visited bond " << bond << endl;
-          continue;
-        }
-
-        visitedBonds.insert(bond);
-
-        if (bond->isHbond()) {
-          // If it's an H-bond, it closes a cycle. Add it in CycleAnchorEdges.
-          KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
-          cycleEdges.push_back(edge);
-          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
-
-        } else {
-          if (visitedVertices.count(bonded_vertex) > 0) {
-            KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
-            cycleEdges.push_back(edge);
-            log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond " << edge << endl;
-
-          } else {
-            // If it's a covalent bond, add it into the tree m_edges
-            visitedVertices.insert(bonded_vertex);
-//          queue.push_back(bonded_vertex);
-            queue.push(bonded_vertex);
-            KinEdge *edge = m_spanning_tree->addEdgeDirected(current_vertex, bonded_vertex, bond);
-            edge->setDOF(new TorsionDOF(edge));
-            log("debug") << "Molecule::buildSpanningTree() - Adding torsion-edge " << edge << endl;
-          }
-        }
-      }
-    } // end while
-  }
-
-  m_spanning_tree->collectDOFs();
-
-  // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
-  // end-points to the LCA into m_spanning_tree->m_cycleDOFs.
-  for( auto const &h_edge: cycleEdges ) {
-    KinVertex *lca=m_spanning_tree->findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);
-    m_spanning_tree->CycleAnchorEdges.push_back(make_pair(h_edge, lca));
-
-    for( KinVertex *v=h_edge->StartVertex; v != lca; v=v->m_parent ) {
-      KinEdge *edge=v->m_parent->findEdge(v);
-      m_spanning_tree->addCycleDOF(edge->getDOF());
-    }
-
-    for( KinVertex *v=h_edge->EndVertex; v != lca; v=v->m_parent ) {
-      KinEdge *edge=v->m_parent->findEdge(v);
-      m_spanning_tree->addCycleDOF(edge->getDOF());
-    }
-  }
 
 
-  /*
-  int cycle_dof_id = 0;
-  for ( auto const& h_edge: cycleEdges) {
-    KinVertex *startv = h_edge->StartVertex;
-    KinVertex *endv = h_edge->EndVertex;
-    KinVertex *ancestor = m_spanning_tree->findCommonAncestor(startv,endv);
-    m_spanning_tree->CycleAnchorEdges.push_back( make_pair(h_edge,ancestor) );
-    KinVertex *vertex, *parent;
-    for (vertex=startv; vertex!=ancestor; vertex=parent) {
-      parent = vertex->m_parent;
-
-      KinEdge *edge = parent->findEdge(vertex);
-
-      if (edge->Cycle_DOF_id==-1) {
-        edge->Cycle_DOF_id = cycle_dof_id;
-        ++cycle_dof_id;
-      }
-    }
-    for (vertex=endv; vertex!=ancestor; vertex=parent) {
-      parent = vertex->m_parent;
-      KinEdge *edge = parent->findEdge(vertex);
-      if (edge->Cycle_DOF_id==-1) {
-        edge->Cycle_DOF_id = cycle_dof_id;
-        ++cycle_dof_id;
-      }
-    }
-  }
-  m_spanning_tree->m_numCycleDOFs = cycle_dof_id;
-
-  m_Transformation = new RigidTransform [m_spanning_tree->getNumDOFs()];
-  */
-
-  /*
-  //Create a sorted list of vertices for use in the euclideanGradient
-  bool visited[Rigidbody_map_by_id.size()+1];
-  for (unsigned int i=0; i<=Rigidbody_map_by_id.size(); ++i) {
-    visited[i] = false;
-  }
-  KinEdge* currEdge = m_spanning_tree->Edges.back();
-  KinVertex *currVertex = currEdge->EndVertex;
-  int currId = currVertex->m_rigidbody->id();
-  //int currId = currVertex->id;
-
-  m_spanning_tree->m_sortedVertices.push_back(make_pair( currId, currVertex ));
-  visited[currId] = true;
-
-//  while( currVertex != m_spanning_tree->m_root){
-  while( currVertex->m_rigidbody != nullptr){
-    KinVertex *parent = currVertex->m_parent;
-
-    if(parent->m_edges.size() == 1){
-      currVertex = parent;
-      currId = currVertex->m_rigidbody->id();
-//      currId = currVertex->id;
-      m_spanning_tree->m_sortedVertices.push_back(make_pair( currId,currVertex));
-      visited[currId] = true;
-
-    }else{ //multiple branches open
-      currVertex = parent;
-      int numEdgesLeft = currVertex->m_edges.size();
-      while( numEdgesLeft != 0){
-        for( KinEdge*& edge: currVertex->m_edges){
-          if(visited[edge->EndVertex->m_rigidbody->id()] == true){
-            numEdgesLeft--;
-            continue;
-          }else{
-            currVertex = edge->EndVertex;
-            //currVertex = eit->second->EndVertex;
-            numEdgesLeft = currVertex->m_edges.size();
-            break;
-          }
-        }
-      }
-      //currId = currVertex->id;
-      currId = currVertex->m_rigidbody->id();
-      m_spanning_tree->m_sortedVertices.push_back(make_pair(currId, currVertex) );
-      visited[currId] = true;
-    }
-  }
-   */
 
 }
 
-void Molecule::computeAtomJacobian (Atom* atom, gsl_matrix **j_addr) {
-  if (*j_addr==nullptr) {
-    *j_addr = gsl_matrix_calloc(3,totalDofNum());
-  } else {
-    gsl_matrix_set_all(*j_addr,0);
-  }
-  gsl_matrix* jacobian = *j_addr;
-  KinVertex *vertex = atom->getRigidbody()->getVertex();
-  atom->printSummaryInfo();
-  while (vertex!=m_spanning_tree->m_root) {
-    KinVertex *parent;
-    if ( vertex->m_parent!=nullptr )
-      parent = vertex->m_parent;
-    else
-      parent = vertex;
-    KinEdge* edge = parent->findEdge(vertex);
-    int dof_id = edge->getDOF()->getIndex();
-    //Bond * bond_ptr = edge->getBond();
-    //Coordinate bp1 = bond_ptr->Atom1->m_position;
-    //Coordinate bp2 = bond_ptr->Atom2->m_position;
-    //Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_position);
-    Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_position);
-    gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);
-    gsl_matrix_set(jacobian,1,dof_id,jacobian_entry.y);
-    gsl_matrix_set(jacobian,2,dof_id,jacobian_entry.z);
-    vertex = parent;
-  }
-}
 
-
-//gsl_vector*Molecule::getEndEffectors(){
-//  gsl_vector* ret = gsl_vector_alloc(  (m_spanning_tree->CycleAnchorEdges).size()*6  );
-//
-//  int i=0;
-//  for (vector< pair<KinEdge*,KinVertex*> >::iterator it=m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); ++it) {
-//    // get end-effectors
-//    KinEdge* edge_ptr = it->first;
-//    Hbond * bond_ptr = (Hbond *)(edge_ptr->getBond());
-//    Math3D::Vector3 p1 = bond_ptr->Atom1->m_position;
-//    Math3D::Vector3 p2 = bond_ptr->Atom2->m_position;
-//    Math3D::Vector3 p1Diff = (p1-bond_ptr->getIdealHPoint());
-//    Math3D::Vector3 p2Diff = (p2-bond_ptr->getIdealAcceptorPoint());
-//    gsl_vector_set(ret, i+0, p1Diff.x);
-//    gsl_vector_set(ret, i+1, p1Diff.y);
-//    gsl_vector_set(ret, i+2, p1Diff.z);
-//    gsl_vector_set(ret, i+3, p2Diff.x);
-//    gsl_vector_set(ret, i+4, p2Diff.y);
-//    gsl_vector_set(ret, i+5, p2Diff.z);
-//    i+=6;
-//  }
-//  return ret;
-//}
-
-
-//void Molecule::ProjectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
-//
-//  // No cycle
-//  //if(!m_conf->CycleNullSpace)
-//  if(!m_conf->getNullspace())
-//  {
-//    gsl_vector_memcpy(after_project, to_project);
-//    return;
-//  }
-//
-//  //if (to_project->size > m_conf->CycleNullSpace->n) {
-//  if( to_project->size > m_conf->getNullspace()->getNumDOFs() ) {
-//    // The input vectors contain all DOFs, however, the null space only contains DOFs in cycles.
-//    // Convert the DOFs in the input vectors to DOFs in cycles.
-//    //gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
-//    //gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->CycleNullSpace->n);
-//    gsl_vector *to_proj_short = gsl_vector_calloc(m_conf->getNullspace()->getNumDOFs());
-//    for (auto const& edge: m_spanning_tree->Edges){
-//      int dof_id = edge->getDOF()->getIndex();
-//      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-//      if ( cycle_dof_id!=-1 ) {
-//        gsl_vector_set(to_proj_short,cycle_dof_id,gsl_vector_get(to_project,dof_id));
-//      }
-//    }
-//
-//    // Project onto the null space
-//    double normBefore = gsl_vector_length(to_proj_short);
-//    gsl_vector *after_proj_short = gsl_vector_calloc(m_conf->getNullspace()->getNumDOFs());
-//    m_conf->getNullspace()->projectOnNullSpace(to_proj_short, after_proj_short);
-//    double normAfter = gsl_vector_length(after_proj_short);
-//
-//    //Scale projected gradient to same norm as unprojected
-//    if(normAfter>0.0000001)
-//      gsl_vector_scale(after_proj_short, normBefore/normAfter);
-//
-//    // Convert back to full length DOFs vector
-//    for( auto const& edge:m_spanning_tree->Edges){
-//      int dof_id = edge->getDOF()->getIndex();
-//      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-//      if ( cycle_dof_id!=-1 ) {
-//        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
-//      }
-//      else if ( dof_id!=-1 ) {
-//        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
-//      }
-//    }
-//    gsl_vector_free(to_proj_short);
-//    gsl_vector_free(after_proj_short);
-//  }
-//  else {
-//    double normBefore = gsl_vector_length(to_project);
-//    m_conf->getNullspace()->projectOnNullSpace(to_project, after_project);
-//    double normAfter = gsl_vector_length(after_project);
-//    gsl_vector_scale(after_project, normBefore/normAfter);
-//  }
-//}
 
 void Molecule::alignReferencePositionsTo(Molecule * base){
   this->restoreAtomPos();
@@ -817,8 +697,8 @@ void Molecule::alignReferencePositionsTo(Molecule * base){
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
 {
-  Coordinate& thisRoot = m_spanning_tree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
-  Coordinate& thatRoot = base->m_spanning_tree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
+  Coordinate& thisRoot = m_spanningTree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
+  Coordinate& thatRoot = base->m_spanningTree->m_root->m_rigidbody->Atoms[0]->m_referencePosition;
   Math3D::Vector3 diff = thatRoot-thisRoot;
 
   for(auto const& atom: m_atoms){
@@ -841,7 +721,7 @@ void Molecule::restoreAtomPos(){
 }
 
 void Molecule::forceUpdateConfiguration(Configuration *q){
-  assert(m_spanning_tree!=nullptr);
+  assert(m_spanningTree!=nullptr);
 
   restoreAtomPos();
   m_conf = q;
@@ -849,14 +729,10 @@ void Molecule::forceUpdateConfiguration(Configuration *q){
 
   _SetConfiguration(q);
 
-//  if(q->getGlobalTorsions() == nullptr){
-//    log("dominik")<<"Now updating global torsions"<<endl;
-//    q->updateGlobalTorsions();
-//  }
 }
 
 void Molecule::setConfiguration(Configuration *q){
-  assert(m_spanning_tree!=nullptr);
+  assert(m_spanningTree!=nullptr);
 
   if(m_conf==q) return;
 
@@ -878,11 +754,11 @@ void Molecule::setConfiguration(Configuration *q){
 void Molecule::_SetConfiguration(Configuration *q ){
   assert(this==q->getMolecule());
 
-  for(size_t id=0 ; id<m_spanning_tree->getNumDOFs(); ++id){
-    m_spanning_tree->getDOF(id)->setValue(q->m_dofs[id]);
+  for(size_t id=0 ; id<m_spanningTree->getNumDOFs(); ++id){
+    m_spanningTree->getDOF(id)->setValue(q->m_dofs[id]);
   }
 
-  KinVertex *root = m_spanning_tree->m_root;
+  KinVertex *root = m_spanningTree->m_root;
   root->forwardPropagate();
 
   indexAtoms();
@@ -927,56 +803,13 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
 }
 
 int Molecule::totalDofNum () const {
-  if (m_spanning_tree==nullptr) {
+  if (m_spanningTree==nullptr) {
     cerr << "Error: to get the total number of DOFs in the m_protein, you have to call Molecule::buildSpanningTree() first." << endl;
     exit(1);
   }
-  return m_spanning_tree->getNumDOFs();
+  return m_spanningTree->getNumDOFs();
 }
 
-//gsl_vector*Molecule::vdwGradient () { // minimize the L-J potential
-//
-//  ///TODO: Correct this, the formel with VDW_R0 is not correct
-//  log("debug") << "in Molecule::vdwGradient" << endl;
-//  gsl_vector* gradient = gsl_vector_calloc(totalDofNum());
-//  gsl_vector* p12 = gsl_vector_calloc(3);
-//  gsl_vector* p_temp = gsl_vector_calloc(totalDofNum());
-//
-//  // For each atom, look for it's neighbors which are not in the same rigid body and whose ID is bigger (to avoid double count). For each such neighbor, compute dU(R_ab)/d(delta_q).
-//  // 1. For each atom, find it's neighbors which are not in the same rigid body
-//  for (vector<Atom*>::iterator ait= atoms.begin(); ait != atoms.end(); ++ait) {
-//    log("debug") << "in Molecule::vdwGradient - start 1st loop" << endl;
-//    Atom* atom1 = *ait;
-//    computeAtomJacobian(atom1,&AtomJacobian1);
-//    log("debug") << "in Molecule::vdwGradient - after computeAtomJacobian(atom1,&AtomJacobian1);" << endl;
-//    vector<Atom*> neighbors = m_grid->getNeighboringAtoms(atom1,true,true,true,VDW_R_MAX);
-//    // 2. For each such neighbor, compute dU(R_ab)/d(q)
-//    // The formula is -12*VDW_SIGMA*(VDW_R0^6*r_12^(-8)-VDW_R0^12*r_12^(-14))*(J1-J2)'(P1-P2)),
-//    // where ' is transpose.
-//    log("debug") << "in Molecule::vdwGradient - before 2nd loop" << endl;
-//    for (vector<Atom*>::iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
-//      if (atom1->inSameRigidbody(*ait2)) continue;
-//      Atom* atom2 = *ait2;
-//      double r_12 = atom1->distanceTo(atom2);
-//      double front_constant_part = (-12)*VDW_SIGMA*(pow(VDW_R0,6)*pow(r_12,-8)-pow(VDW_R0,12)*pow(r_12,-14));
-//      computeAtomJacobian(atom2,&AtomJacobian2);
-//      if (AtomJacobian3==nullptr)
-//        AtomJacobian3 = gsl_matrix_calloc(3,totalDofNum());
-//      gsl_matrix_memcpy(AtomJacobian3,AtomJacobian1);
-//      gsl_matrix_sub(AtomJacobian3,AtomJacobian2); // AtomJacobian3 holds the result of substraction
-//      Math3D::Vector3 p12_v3 = atom1->m_position - atom2->m_position;
-//      Coordinate::copyToGslVector(p12_v3, p12);
-//      gsl_blas_dgemv(CblasTrans,1,AtomJacobian3,p12,0,p_temp);
-//      gsl_vector_scale(p_temp,front_constant_part);
-//      gsl_vector_add(gradient,p_temp);
-//    }
-//  }
-//  log("debug") << "in Molecule::vdwGradient - after loop" << endl;
-//
-//  gsl_vector_free(p12);
-//  gsl_vector_free(p_temp);
-//  return gradient;
-//}
 
 pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions, string collisionCheck) { // compute the total vdw energy, excluding the covalent bonds and atoms in the same rigid body
 
@@ -1104,10 +937,6 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
   p2->m_hBonds=intersection;
 }
 
-bool Molecule::hasCycle() const {
-  return (m_spanning_tree->CycleAnchorEdges.size() != 0);
-}
-
 int Molecule::countOriginalDofs () const {
   int num = 0;
   for (list<Bond *>::const_iterator it=m_covBonds.begin(); it != m_covBonds.end(); ++it) {
@@ -1154,7 +983,7 @@ double Molecule::checkCycleClosure(Configuration *q){
 
   log("report")<<"Conformation "<<q->m_id<<endl;
 
-  for (pair_it=m_spanning_tree->CycleAnchorEdges.begin(); pair_it!=m_spanning_tree->CycleAnchorEdges.end(); ++pair_it) {
+  for (pair_it=m_spanningTree->m_cycleAnchorEdges.begin(); pair_it!=m_spanningTree->m_cycleAnchorEdges.end(); ++pair_it) {
 
     // get end-effectors
     hBondEdge = pair_it->first;
@@ -1237,7 +1066,7 @@ void Molecule::computeCycleViolation(Configuration *q, gsl_vector* currentViolat
 
   log("report")<<"Conformation "<<q->m_id<<endl;
 
-  for (pair_it=m_spanning_tree->CycleAnchorEdges.begin(); pair_it!=m_spanning_tree->CycleAnchorEdges.end(); ++pair_it) {
+  for (pair_it=m_spanningTree->m_cycleAnchorEdges.begin(); pair_it!=m_spanningTree->m_cycleAnchorEdges.end(); ++pair_it) {
 
     // get end-effectors
     hBondEdge = pair_it->first;
@@ -1285,7 +1114,7 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
   vector<int> resetDOFs;
   vector<double> resetValues;
   vector<int> recloseDOFs;
-  for(vector<KinEdge*>::iterator eit = m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
     KinEdge* e = *eit;
     int res1 = e->getBond()->Atom1->getResidue()->getId();
     int res2 = e->getBond()->Atom2->getResidue()->getId();
@@ -1353,7 +1182,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   CTKTimer timer;
   start_time = timer.getTimeNow();
 
-  //Configuration* ret = new Configuration(m_spanning_tree->getNumDOFs());
+  //Configuration* ret = new Configuration(m_spanningTree->getNumDOFs());
 
   //Configuration* ret = new Configuration(this);
   //ret->Copy(cur);
@@ -1367,7 +1196,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   vector<KinVertex*> subVerts;
   vector<KinEdge*> subEdges;
   KinEdge* entry = nullptr;
-  for(vector<KinEdge*>::iterator eit = m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
     KinEdge* e = *eit;
     if(	find(resetDOFs.begin(), 	resetDOFs.end(), 	e->getDOF()->getIndex())!=resetDOFs.end() ||
          find(recloseDOFs.begin(), 	recloseDOFs.end(), 	e->getDOF()->getIndex())!=recloseDOFs.end() ||
@@ -1388,7 +1217,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
   //Collect m_edges with endpoints in subgraph and choose the covalent edge nearest to the m_root
   vector<KinEdge*> boundary;
-  for(vector<KinEdge*>::iterator eit = m_spanning_tree->Edges.begin(); eit!=m_spanning_tree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
     KinEdge* e = *eit;
     bool firstInSub = find(subVerts.begin(), subVerts.end(), e->StartVertex)!=subVerts.end();
     bool lastInSub = find(subVerts.begin(), subVerts.end(), e->EndVertex)!=subVerts.end();
@@ -1396,7 +1225,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
     if( firstInSub && !lastInSub && e->StartVertex!=entry->StartVertex) boundary.push_back(e);
   }
-  for(vector<pair<KinEdge*,KinVertex*> >::iterator it = m_spanning_tree->CycleAnchorEdges.begin(); it!=m_spanning_tree->CycleAnchorEdges.end(); it++){
+  for(vector<pair<KinEdge*,KinVertex*> >::iterator it = m_spanningTree->m_cycleAnchorEdges.begin(); it!=m_spanningTree->m_cycleAnchorEdges.end(); it++){
     KinEdge* e = it->first;
     bool firstInSub = find(subVerts.begin(), subVerts.end(), e->StartVertex)!=subVerts.end();
     bool lastInSub = find(subVerts.begin(), subVerts.end(), e->EndVertex)!=subVerts.end();
