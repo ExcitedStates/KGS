@@ -39,13 +39,13 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
     Name(name),
     Id(id),
     m_position(pos),
+		m_referencePosition(pos),
     m_parentResidue(residue),
     m_rigidbody(nullptr),
-    m_biggerRigidbody(nullptr)
+    m_biggerRigidbody(nullptr),
+		m_bFactorCol(0)
 {
-	m_referencePosition = pos;
-	On_sidechain = true;
-	m_bFactorCol = 0; //b-factor column used for display purposes
+//	On_sidechain = true;
 
 	// Assign Element
 	string::size_type char_start = Name.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -155,7 +155,7 @@ void Atom::printSummaryInfo() const {
 		default: cout << "UNKNOWN_ATOM";
 	}
 
-	cout << " Radius(" << getRadius() << ") " << (On_sidechain?"Sidechain":"Mainchain");
+	cout << " Radius(" << getRadius() << ") " << (isBackboneAtom()?"Backbone":"Sidechain");
 	cout << " Rigid("<<m_rigidbody->id() << ")";
 	cout << " Pos(" << m_position.tostring() << ")" << endl;
 	cout << "  " << Cov_bond_list.size() << " covalent bonds:";
@@ -222,13 +222,13 @@ bool Atom::isWithinDistanceFrom (Atom* center, double dist) const {
 	return m_position.isWithinSphere(center->m_position,dist);
 }
 
-void Atom::setAsMainchainAtom () {
-	On_sidechain = false;
-}
-
-void Atom::setAsSidechainAtom () {
-	On_sidechain = true;
-}
+//void Atom::setAsMainchainAtom () {
+//	On_sidechain = false;
+//}
+//
+//void Atom::setAsSidechainAtom () {
+//	On_sidechain = true;
+//}
 
 Atom* Atom::getIthCovNeighbor (int i) const {
 	if (Cov_neighbor_list.size()<i+1) {
@@ -239,7 +239,8 @@ Atom* Atom::getIthCovNeighbor (int i) const {
 }
 
 bool Atom::isSidechainAtom () const {
-	return On_sidechain;
+//	return On_sidechain;
+  return !isBackboneAtom();
 }
 
 void Atom::setRigidbody(Rigidbody* rb) {
@@ -252,13 +253,13 @@ Rigidbody* Atom::getRigidbody() const{
   return m_rigidbody;
 }
 
-void Atom::setBiggerRigidbody (Rigidbody* rb) {
-  m_biggerRigidbody = rb;
-}
+//void Atom::setBiggerRigidbody (Rigidbody* rb) {
+//  m_biggerRigidbody = rb;
+//}
 
-Rigidbody* Atom::getBiggerRigidbody() const {
-  return m_biggerRigidbody;
-}
+//Rigidbody* Atom::getBiggerRigidbody() const {
+//  return m_biggerRigidbody;
+//}
 
 string Atom::getType () const {
 	return getName().substr(0,1);
@@ -319,11 +320,11 @@ bool Atom::compareType (string type) const {
 //	return rbs;
 //}
 
-void Atom::setBfactorColumn(float val) {
+void Atom::setBFactor(float val) {
   m_bFactorCol = val;
 }
 
-float Atom::getBfactorColumn() {
+float Atom::getBFactor() {
 	return m_bFactorCol;
 }
 

@@ -53,28 +53,8 @@ int main( int argc, char* argv[] ){
   );
   string name = protein->getName();
 
-//  if(options.hydrogenbondMethod=="user")
-//    IO::readHbonds( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="rnaview")
-//    IO::readHbonds_rnaview( protein, options.hydrogenbondFile, options.annotationFile.empty() );
-//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-//    IO::readHbonds_first( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-//    IO::readHbonds_kinari( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-//    IO::readHbonds_hbPlus( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="vadar")
-//    IO::readHbonds_vadar( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="dssr")
-//    IO::readHbonds_dssr( protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="identify")
-//    HbondIdentifier::identifyHbonds(protein);
-
-  string hBondIn = "hBonds_in.txt";
-  IO::writeHbondsIn(protein,hBondIn );
-
-//  IO::readRigidbody( protein );
-//  protein->buildSpanningTree();
+//  string hBondIn = "hBonds_in.txt";
+//  IO::writeHbondsIn(protein,hBondIn );
 
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
@@ -82,8 +62,9 @@ int main( int argc, char* argv[] ){
   log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
-  Configuration* conf = new Configuration(protein);
-  protein->setConfiguration(conf);
+  Configuration* conf = protein->m_conf;
+//  Configuration* conf = new Configuration(protein);
+//  protein->setConfiguration(conf);
   //conf->computeCycleJacobianAndNullSpace();
 
   log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->getMatrix()->size1 << " rows, ";
@@ -95,65 +76,65 @@ int main( int argc, char* argv[] ){
                     std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".pdb";
-  if(options.saveData > 0){
-    ///Write PDB File for pyMol usage
-    IO::writePdb(protein, out_file);
-  }
-  if(options.saveData > 1){
-    ///save pyMol coloring script
-    string pyMol=out_path + "output/" +  name + "_pyMol_" +
-                 std::to_string((long long)sample_id)
-                 //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
+
+  Molecule* rigidified = protein->collapseRigidBonds(2);
+
+  ///Write PDB File for pyMol usage
+  IO::writeRigidbodyIDToBFactor(rigidified);
+  IO::writePdb(rigidified, out_file);
+
+  if(options.saveData <= 0) return 0;
+
+  ///save pyMol coloring script
+  string pyMol = out_path + "output/" + name + "_pyMol_" +
+                 std::to_string((long long) sample_id)
                  + ".pml";
-    string statFile=out_path + "output/" +  name + "_stats_" +
-                    std::to_string((long long)sample_id)
-                    //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
+  string statFile = out_path + "output/" + name + "_stats_" +
+                    std::to_string((long long) sample_id)
                     + ".txt";
-    ///Write pyMol script
-    IO::writePyMolScript(protein, out_file, pyMol);
-    ///Write statistics
-    IO::writeStats(protein,statFile);
 
-    if(options.saveData > 2){
-      ///save Jacobian and Nullspace to file
-      string outJac=out_path + "output/" +  name + "_jac_" +
-                    std::to_string((long long)sample_id)
-                    //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
-                    + ".txt";
-      string outNull=out_path + "output/" +  name + "_nullSpace_" +
-                     std::to_string((long long)sample_id)
-                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
-                     + ".txt";
-      ///save singular values
-      string outSing=out_path + "output/" +  name + "_singVals_" +
-                     std::to_string((long long)sample_id)
-                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
-                     + ".txt";
-      string rbFile=out_path + "output/" +  name + "_RBs_" +
-                    std::to_string((long long)sample_id)
-                    //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
-                    + ".txt";
-      string covFile=out_path + "output/" +  name + "_covBonds_" +
-                     std::to_string((long long)sample_id)
-                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
-                     + ".txt";
+  ///Write statistics
+  IO::writeStats(protein, statFile);
 
-      ///Write Jacobian
-      //gsl_matrix_outtofile(m_protein->m_conf->CycleJacobian, outJac);
-      /////Write Null Space matrix
-      //gsl_matrix_outtofile(conf->CycleNullSpace->m_nullspaceBasis,outNull);
-      /////Write Singular values
-      //gsl_vector_outtofile(NullSpaceRet::singularValues,outSing);
-      if (NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace())) {
-        derived->writeMatricesToFiles(outJac, outNull, outSing);
-      }
 
-      ///Write rigid bodies
-      IO::writeRBs(protein, rbFile);
-      ///Write covalent bonds
-      IO::writeCovBonds(protein,covFile);
-    }
+  ///Write pyMol script
+  IO::writePyMolScript(rigidified, out_file, pyMol);
+
+  if(options.saveData <= 1) return 0;
+
+  ///save Jacobian and Nullspace to file
+  string outJac=out_path + "output/" +  name + "_jac_" +
+                std::to_string((long long)sample_id)
+                + ".txt";
+  string outNull=out_path + "output/" +  name + "_nullSpace_" +
+                 std::to_string((long long)sample_id)
+                 + ".txt";
+  ///save singular values
+  string outSing=out_path + "output/" +  name + "_singVals_" +
+                 std::to_string((long long)sample_id)
+                 + ".txt";
+  string rbFile=out_path + "output/" +  name + "_RBs_" +
+                std::to_string((long long)sample_id)
+                + ".txt";
+  string covFile=out_path + "output/" +  name + "_covBonds_" +
+                 std::to_string((long long)sample_id)
+                 + ".txt";
+
+  ///Write Jacobian
+  //gsl_matrix_outtofile(m_protein->m_conf->CycleJacobian, outJac);
+  /////Write Null Space matrix
+  //gsl_matrix_outtofile(conf->CycleNullSpace->m_nullspaceBasis,outNull);
+  /////Write Singular values
+  //gsl_vector_outtofile(NullSpaceRet::singularValues,outSing);
+  if (NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace())) {
+    derived->writeMatricesToFiles(outJac, outNull, outSing);
   }
+
+  ///Write covalent bonds
+  IO::writeCovBonds(protein,covFile);
+
+  ///Write rigid bodies
+  IO::writeRBs(rigidified, rbFile);
 
   return 0;
 }

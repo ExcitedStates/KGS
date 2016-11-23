@@ -64,45 +64,45 @@ KinVertex* Rigidbody::getVertex (){
   return m_rbVertex;
 }
 
-void Rigidbody::makeBiggerRigidBody (Rigidbody* rb, Bond * bond) {
-	//combine two rigid bodies that are linked by a constrained bond
-	//bond is the constrained linking bond between the two bodies
-	for( vector<Atom*>::iterator ait = rb->Atoms.begin(); ait != rb->Atoms.end(); ait++){
-		if( ! this->containsAtom((*ait)) ){
-			Atoms.push_back((*ait));
-			(*ait)->setBiggerRigidbody(this);
-		}
-		//else{//already in our body, but also in the other one, so remove it!
-		//	//	This happens for atoms of connecting bonds!
-		//	(*ait)->removeBiggerRigidbody(rb);
-		//}
-	}
-	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHbond() ){
-			Bonds.push_back((*bit));
-		}
-	}
-}
+//void Rigidbody::makeBiggerRigidBody (Rigidbody* rb, Bond * bond) {
+//	//combine two rigid bodies that are linked by a constrained bond
+//	//bond is the constrained linking bond between the two bodies
+//	for( vector<Atom*>::iterator ait = rb->Atoms.begin(); ait != rb->Atoms.end(); ait++){
+//		if( ! this->containsAtom((*ait)) ){
+//			Atoms.push_back((*ait));
+//			(*ait)->setBiggerRigidbody(this);
+//		}
+//		//else{//already in our body, but also in the other one, so remove it!
+//		//	//	This happens for atoms of connecting bonds!
+//		//	(*ait)->removeBiggerRigidbody(rb);
+//		//}
+//	}
+//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
+//		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHbond() ){
+//			Bonds.push_back((*bit));
+//		}
+//	}
+//}
 
 
-void Rigidbody::makeBiggerRigidBody (Rigidbody* rb) {
-	// forms a bigger rigid body, starting with this one as a base
-	// therefore, no checking necessary
-	for( vector<Atom*>::iterator ait = rb->Atoms.begin(); ait != rb->Atoms.end(); ait++){
-		if( ! this->containsAtom((*ait)) ){
-			Atoms.push_back((*ait));
-			(*ait)->setBiggerRigidbody(this);
-		}
-		//else{//already in our body, but also in the other one, so remove it!
-//	//		cout<<"Already in here in body "<<this->id()<<endl;
-		//	(*ait)->removeBiggerRigidbody(rb);
-		//}
-	}
-
-	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-			Bonds.push_back((*bit));
-	}
-}
+//void Rigidbody::makeBiggerRigidBody (Rigidbody* rb) {
+//	// forms a bigger rigid body, starting with this one as a base
+//	// therefore, no checking necessary
+//	for( vector<Atom*>::iterator ait = rb->Atoms.begin(); ait != rb->Atoms.end(); ait++){
+//		if( ! this->containsAtom((*ait)) ){
+//			Atoms.push_back((*ait));
+//			(*ait)->setBiggerRigidbody(this);
+//		}
+//		//else{//already in our body, but also in the other one, so remove it!
+////	//		cout<<"Already in here in body "<<this->id()<<endl;
+//		//	(*ait)->removeBiggerRigidbody(rb);
+//		//}
+//	}
+//
+//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
+//			Bonds.push_back((*bit));
+//	}
+//}
 
 int Rigidbody::size () const {
 	return Atoms.size();

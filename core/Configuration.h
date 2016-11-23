@@ -82,8 +82,9 @@ class Configuration
   Configuration* clone() const;          ///< Copy this configuration
 
   void Print();                          // TODO: Remove or rename to printDOFs
-  void identifyBiggerRigidBodies();      ///< Identify clusters
-  void readBiggerSet();                  ///< read the set of clusters, related to identifying clusters
+//  Molecule* collapseRigidBonds();
+//  void identifyBiggerRigidBodies();      ///< Identify clusters
+//  void readBiggerSet();                  ///< read the set of clusters, related to identifying clusters
   void projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
   void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
@@ -105,8 +106,8 @@ class Configuration
   double m_minCollisionFactor;      //minimum necessary clash-factor for configuration to be clash free, Todo: maybe not necessary to keep
   double m_usedClashPrevention;
 
-  std::map<unsigned int, Rigidbody*> m_biggerRBMap;  // <Cluster-idx, Pointer-to-cluster>
-  std::vector< std::pair<int, unsigned int> > m_sortedRBs; // < cluster-idx, cluster size>
+//  std::map<unsigned int, Rigidbody*> m_biggerRBMap;  // <Cluster-idx, Pointer-to-cluster>
+//  std::vector< std::pair<int, unsigned int> > m_sortedRBs; // < cluster-idx, cluster size>
 
   int m_numClusters;             ///< Number of rigid clusters (super rigid bodies)
   int m_maxIndex;                ///< Index of largest cluster

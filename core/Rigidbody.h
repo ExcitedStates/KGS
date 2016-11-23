@@ -56,8 +56,8 @@ class Rigidbody {
   Atom* getAtom(std::string name);
   void addAtom(Atom* atom);
   void addBond(Bond * bond);
-  void makeBiggerRigidBody( Rigidbody* rb);
-  void makeBiggerRigidBody( Rigidbody* rb, Bond * bond);
+//  void makeBiggerRigidBody( Rigidbody* rb);
+//  void makeBiggerRigidBody( Rigidbody* rb, Bond * bond);
   int size() const;
   void print() const;
 //  void printAtoms() const;

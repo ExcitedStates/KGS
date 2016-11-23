@@ -46,9 +46,9 @@ class Bond {
 	~Bond();
 	void print();
 
-	bool isLocked ();
-	bool isPeptideBond ();
-	bool isHbond ();
+	bool isLocked() const;
+	bool isPeptideBond() const;
+	bool isHbond() const;
 	
   double getTorsion();
 };

@@ -115,15 +115,13 @@ class Atom {
 
 	void setRigidbody (Rigidbody* rb);
   Rigidbody* getRigidbody() const;
-  void setBiggerRigidbody(Rigidbody* rb);
-  Rigidbody* getBiggerRigidbody() const;
-  void setBfactorColumn(float val);
-  float getBfactorColumn();
+//  void setBiggerRigidbody(Rigidbody* rb);
+//  Rigidbody* getBiggerRigidbody() const;
+  void setBFactor(float val);
+  float getBFactor();
   bool inSameRigidbody(Atom* another) const;
 
 	std::string getType() const; //TODO: Return type should be char or AtomType
-  void setAsMainchainAtom();
-  void setAsSidechainAtom();
   bool isSidechainAtom() const;
   bool isBackboneAtom() const;
   bool isHeavyAtom() const;
@@ -137,7 +135,6 @@ class Atom {
 
 	Coordinate m_position;
 	Coordinate m_referencePosition;
-	bool On_sidechain;
 	std::vector<Bond *> Cov_bond_list;
 	std::vector<Hbond *> Hbond_list;
 	std::vector<Atom*> Cov_neighbor_list;
@@ -147,6 +144,7 @@ class Atom {
   AtomType m_element;
 
  private:
+//	bool On_sidechain;
   const int Id;
   const std::string Name;
 	Residue* m_parentResidue;

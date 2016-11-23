@@ -112,6 +112,8 @@ class SamplingOptions
   int switchAfter;
   /** Cut-off for svd computation (magnitude of smallest singular value in the nullspace)*/
   double svdCutoff;
+  /** Option for collapsing rigid edges. */
+  int collapseRigid;
   /** Specified distance to reach between couple of atoms */
   std::string relativeDistances;
 

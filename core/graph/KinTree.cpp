@@ -333,4 +333,3 @@ void KinTree::addCycleDOF(DOF* dof)
   }
 }
 
-

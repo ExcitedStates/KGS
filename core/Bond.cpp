@@ -71,7 +71,7 @@ void Bond::print () {
 	cout << "Bond(" << Atom1 << "," << Atom2 << "," << BondType << "," << Bars << ")";
 }
 
-bool Bond::isLocked () {
+bool Bond::isLocked() const{
 	bool result = false;
 	if ( Atom1->m_element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
@@ -85,13 +85,13 @@ bool Bond::isLocked () {
 	return result;
 }
 
-bool Bond::isPeptideBond () {
+bool Bond::isPeptideBond() const {
 	if ( (Atom1->getName()=="C" && Atom2->getName()=="N") || (Atom1->getName()=="N" && Atom2->getName()=="C") )
 		return true;
 	return false;
 }
 
-bool Bond::isHbond () {
+bool Bond::isHbond() const{
 	return BondType=="HB";
 }
 

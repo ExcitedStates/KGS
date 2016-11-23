@@ -21,8 +21,8 @@ Nullspace::Nullspace(gsl_matrix* M) :
     numRigidDihedrals( 0 ),
     numRigidHBonds( 0 ),
     m_nullspaceBasis(nullptr),
-    rigidAngles(gsl_vector_alloc(n)),
-    rigidHBonds(gsl_vector_alloc(n))
+    m_rigidCovBonds(gsl_vector_alloc(n)),
+    m_rigidHBonds(gsl_vector_alloc(n))
 {
 }
 
@@ -31,8 +31,8 @@ Nullspace::~Nullspace ()
   if(m_nullspaceBasis)
     gsl_matrix_free(m_nullspaceBasis);
 
-  gsl_vector_free(rigidAngles);
-  gsl_vector_free(rigidHBonds);
+  gsl_vector_free(m_rigidCovBonds);
+  gsl_vector_free(m_rigidHBonds);
 }
 
 
@@ -41,8 +41,8 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 {
   // First, check the dihedral angles for rigidity
 
-  gsl_vector_set_zero(rigidAngles);
-  gsl_vector_set_zero(rigidHBonds);
+  gsl_vector_set_zero(m_rigidCovBonds);
+  gsl_vector_set_zero(m_rigidHBonds);
 
   numCoordinatedDihedrals = 0;
   numRigidDihedrals = 0;
@@ -63,7 +63,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
     if( moving ) {
       numCoordinatedDihedrals++;
     } else {
-      gsl_vector_set(rigidAngles,i,1); /// binary list of rigid dihedrals, complement to coordinated version
+      gsl_vector_set(m_rigidCovBonds,i,1); /// binary list of rigid dihedrals, complement to coordinated version
       numRigidDihedrals++;
     }
   }
@@ -72,15 +72,8 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 
   // Now, check the hydrogen Bonds for rigidity
   int numHBonds = HBondJacobian->size1;
-  gsl_matrix* hBondNullspace;// = gsl_matrix_alloc(numHBonds,getNullspaceSize);
-  gsl_vector* currentHBondRow;// = gsl_vector_alloc(getNullspaceSize);
-  if(m_nullspaceSize==0){
-    hBondNullspace = gsl_matrix_calloc(numHBonds,1);
-    currentHBondRow = gsl_vector_calloc(1);
-  }else{
-    hBondNullspace = gsl_matrix_alloc(numHBonds,m_nullspaceSize);
-    currentHBondRow = gsl_vector_alloc(m_nullspaceSize);
-  }
+  gsl_matrix* hBondNullspace = gsl_matrix_alloc(numHBonds, std::max(m_nullspaceSize,1));
+  gsl_vector* currentHBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
 
   ///Calculate the "In-Nullspace" Rotation of the hBonds
   //gsl_matrix_view m_nullspaceBasis = gsl_matrix_submatrix(svd->V,0,svd->V->size2-m_nullspaceSize,n,m_nullspaceSize); //Matrix, top-left element, num rows, num cols
@@ -100,12 +93,11 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
     gsl_vector_minmax(currentHBondRow, &minVal, &maxVal);
 
     if (minVal > -RIGID_TOL && maxVal < RIGID_TOL){
-      gsl_vector_set(rigidHBonds,i,1);
+      gsl_vector_set(m_rigidHBonds,i,1);
       numRigidHBonds++;
     }
   }
 
-//	log("constraints")<<"There are "<<m_numRigidHBonds<<" rigid out of "<<numHBonds<<" hydrogen bonds!"<<endl;
 	log("constraints")<<"There are "<<numRigidHBonds<<" rigid out of "<<numHBonds<<" hydrogen bonds!"<<endl;
 
   gsl_vector_free(currentHBondRow);

@@ -16,13 +16,9 @@
 #include "planners/DihedralRRT.h"
 #include "planners/PoissonPlanner.h"
 #include "planners/BidirectionalMovingFront.h"
-#include <moves/RawMove.h>
 #include <moves/NullspaceMove.h>
 #include <moves/ClashAvoidingMove.h>
-#include "moves/CompositeMove.h"
-#include <metrics/Metric.h>
 #include <metrics/Dihedral.h>
-#include <metrics/RMSD.h>
 #include <directions/RandomDirection.h>
 #include <directions/DihedralDirection.h>
 #include <directions/MSDDirection.h>
@@ -102,7 +98,9 @@ void randomSampling(SamplingOptions& options){
       options.hydrogenbondFile
   );
   protein->setCollisionFactor(options.collisionFactor);
-  log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
+
+  if(options.collapseRigid>0)
+    protein = protein->collapseRigidBonds(options.collapseRigid);
 
 //  if(!options.annotationFile.empty())
 //    IO::readAnnotations(protein, options.annotationFile);
@@ -114,12 +112,14 @@ void randomSampling(SamplingOptions& options){
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" constraints"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs" << endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->Vertex_map.size() << " rigid bodies" << endl;
 
   if(protein->m_spanningTree->m_cycleAnchorEdges.size()==0){
-    log("samplingStatus")<<"Stopping because there are no hydrogen bonds"<<endl;
-    exit(-1);
+    log("samplingStatus")<<"Warning: There are no constraints"<<endl;
+//    log("samplingStatus")<<"Stopping because there are no hydrogen bonds"<<endl;
+//    exit(-1);
   }
 
   //Initialize metric

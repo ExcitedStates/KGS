@@ -141,9 +141,9 @@ Configuration::~Configuration(){
   //if( m_sumProjSteps != nullptr)
   //  delete[] m_sumProjSteps;
 
-  //m_biggerRBMap.clear();
-  for(auto const& rbPair: m_biggerRBMap)
-    delete rbPair.second;
+//  //m_biggerRBMap.clear();
+//  for(auto const& rbPair: m_biggerRBMap)
+//    delete rbPair.second;
 
   //m_sortedRBs.clear();
   if(nullspace)
@@ -171,139 +171,138 @@ void Configuration::computeCycleJacobianAndNullSpace() {
 
   if(CycleJacobian!=nullptr) {
     nullspace->performRigidityAnalysis(HBondJacobian);
-    identifyBiggerRigidBodies();
+//    identifyBiggerRigidBodies();
   }
 
   double new_time_2 = timer.ElapsedTime();
   rigidityTime += new_time_2 - new_time;
 }
 
-void Configuration::identifyBiggerRigidBodies(){
 
-  ///We identify the set of bigger rigid bodies, formed by locked bonds that
-  ///rigidly connect smaller rigid bodies!
-  //gsl_vector *rigidDihedrals = CycleNullSpace->m_rigidAngles;
-  //gsl_vector *rigidHBonds = CycleNullSpace->m_rigidHBonds;
-  gsl_vector *rigidDihedrals = getNullspace()->rigidAngles;
-  gsl_vector *rigidHBonds = getNullspace()->rigidHBonds;
-
-  //HBonds aka cycleAnchorEdges
-  int i=0; //indexing for hBonds
-  int j=0; //numbering for fixed dihedrals
-
-  //First, we set the constrained flag for the corresponding bonds
-  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanningTree->m_cycleAnchorEdges.begin(); it!=
-  //      m_molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++it) {
-  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
-
-    KinEdge* edge_ptr = pair_it.first;
-    KinVertex* common_ancestor = pair_it.second;
-//    KinEdge* edge_ptr = it->first;
-//    KinVertex* common_ancestor = it->second;
-
-    //Get corresponding rigidity information
-    //The m_molecule hBonds are ordered in the same way as the rigid HBonds
-    double val=gsl_vector_get(rigidHBonds,i);
-
-    if( val == 1 ){
-      edge_ptr->getBond()->constrained=true;
-    }
-
-    i++;
-
-    //Now, the dihedral angles
-    KinVertex* vertex1 = edge_ptr->StartVertex;
-    KinVertex* vertex2 = edge_ptr->EndVertex;
-
-    //Trace back along dof m_edges for vertex 1
-    while ( vertex1 != common_ancestor ) {
-
-      KinVertex* parent = vertex1->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex1);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-
-        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
-
-        if( valDih == 1 ) { //&& p_edge->getBond()->constrained == false){ //This cycle dof is constrained
-          p_edge->getBond()->constrained=true;
-          j++;
-        }
-      }
-
-      vertex1 = parent;
-    }
-
-    //Trace back along dof m_edges for vertex 2
-    while ( vertex2 != common_ancestor ) {
-
-      KinVertex* parent = vertex2->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex2);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-
-        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
-
-        if( valDih == 1 ) {// && p_edge->getBond()->constrained == false){
-          p_edge->getBond()->constrained=true;
-          j++;
-        }
-      }
-      vertex2 = parent;
-    }
-  }
-
-
-  /// Now, all dihedrals and hBonds that are fixed have the set flag constrained = true!
-
-  m_biggerRBMap.clear();
-  m_sortedRBs.clear();
-
-  readBiggerSet();
-
-  /// Now, we have the map of bigger rigid bodies with atoms
-  /// We will order the atoms by ID for a nicer display
-  m_numClusters = 0;
-  m_maxSize = 0;
-  m_maxIndex=0;
-
-//	cout<<"Map of bigger rigid bodies:"<<endl;
-  map<unsigned int, Rigidbody*>::iterator it=m_biggerRBMap.begin();
-  while( it != m_biggerRBMap.end() ){
-    m_sortedRBs.push_back( make_pair( (it->second)->size(), it->first ));
-    m_numClusters++;
-    int num = 0;
-
-    ///Sorting
-#ifndef WIN32 // Liangjun Zhang's tmp code
-  vector<Atom*>::iterator sit = it->second->Atoms.begin();
-  vector<Atom*>::iterator eit = it->second->Atoms.end();
-  sort(sit,eit,Atom::compare);
-#endif
-
-//		cout<<"Bigger rb with ID "<<it->first<<" contains atoms with IDs: "<<endl;
-    vector<Atom*>::iterator ait = it->second->Atoms.begin();
-    while( ait != it->second->Atoms.end() ){
-      //cout<<(*ait)->Id<<endl;
-      ait++;
-      num++;
-    }
-
-    if( num > m_maxSize ){
-      m_maxSize = num;
-      m_maxIndex = it->first;
-    }
-    ++it;
-  }
-
-  vector< pair<int, unsigned int> >::iterator vsit = m_sortedRBs.begin();
-  vector< pair<int, unsigned int> >::iterator veit = m_sortedRBs.end();
-
-  sort(vsit, veit,compareSize);
-
-}
+//void Configuration::identifyBiggerRigidBodies(){
+//
+//  ///We identify the set of bigger rigid bodies, formed by locked bonds that
+//  ///rigidly connect smaller rigid bodies!
+//  //gsl_vector *rigidDihedrals = CycleNullSpace->m_rigidAngles;
+//  //gsl_vector *m_rigidHBonds = CycleNullSpace->m_rigidHBonds;
+//  gsl_vector *rigidDihedrals = getNullspace()->m_rigidCovBonds;
+//  gsl_vector *rigidHBonds = getNullspace()->m_rigidHBonds;
+//
+//  //HBonds aka cycleAnchorEdges
+//  int i=0; //indexing for hBonds
+//  int j=0; //numbering for fixed dihedrals
+//
+//  //First, we set the constrained flag for the corresponding bonds
+//  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanningTree->m_cycleAnchorEdges.begin(); it!=
+//  //      m_molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++it) {
+//  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
+//
+//    KinEdge* edge_ptr = pair_it.first;
+//    KinVertex* common_ancestor = pair_it.second;
+////    KinEdge* edge_ptr = it->first;
+////    KinVertex* common_ancestor = it->second;
+//
+//    //Get corresponding rigidity information
+//    //The m_molecule hBonds are ordered in the same way as the rigid HBonds
+//    double val=gsl_vector_get(rigidHBonds,i);
+//
+//    if( val == 1 ){
+//      edge_ptr->getBond()->constrained=true;
+//    }
+//
+//    i++;
+//
+//    //Now, the dihedral angles
+//    KinVertex* vertex1 = edge_ptr->StartVertex;
+//    KinVertex* vertex2 = edge_ptr->EndVertex;
+//
+//    //Trace back along dof m_edges for vertex 1
+//    while ( vertex1 != common_ancestor ) {
+//
+//      KinVertex* parent = vertex1->m_parent;
+//      KinEdge* p_edge = parent->findEdge(vertex1);
+//
+//      int dof_id = p_edge->getDOF()->getCycleIndex();
+//      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+//
+//        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
+//
+//        if( valDih == 1 ) { //&& p_edge->getBond()->constrained == false){ //This cycle dof is constrained
+//          p_edge->getBond()->constrained=true;
+//          j++;
+//        }
+//      }
+//
+//      vertex1 = parent;
+//    }
+//
+//    //Trace back along dof m_edges for vertex 2
+//    while ( vertex2 != common_ancestor ) {
+//
+//      KinVertex* parent = vertex2->m_parent;
+//      KinEdge* p_edge = parent->findEdge(vertex2);
+//
+//      int dof_id = p_edge->getDOF()->getCycleIndex();
+//      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+//
+//        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
+//
+//        if( valDih == 1 ) {// && p_edge->getBond()->constrained == false){
+//          p_edge->getBond()->constrained=true;
+//          j++;
+//        }
+//      }
+//      vertex2 = parent;
+//    }
+//  }
+//
+//
+//  /// Now, all dihedrals and hBonds that are fixed have the set flag constrained = true!
+//
+//  m_biggerRBMap.clear();
+//  m_sortedRBs.clear();
+//
+//  readBiggerSet();
+//
+//  /// Now, we have the map of bigger rigid bodies with atoms
+//  /// We will order the atoms by ID for a nicer display
+//  m_numClusters = 0;
+//  m_maxSize = 0;
+//  m_maxIndex=0;
+//
+////	cout<<"Map of bigger rigid bodies:"<<endl;
+//  auto it = m_biggerRBMap.begin();
+//  while( it != m_biggerRBMap.end() ){
+//    m_sortedRBs.push_back( make_pair( (it->second)->size(), it->first ));
+//    m_numClusters++;
+//    int num = 0;
+//
+//    ///Sorting
+//    vector<Atom*>::iterator sit = it->second->Atoms.begin();
+//    vector<Atom*>::iterator eit = it->second->Atoms.end();
+//    sort(sit,eit,Atom::compare);
+//
+////		cout<<"Bigger rb with ID "<<it->first<<" contains atoms with IDs: "<<endl;
+//    auto ait = it->second->Atoms.begin();
+//    while( ait != it->second->Atoms.end() ){
+//      //cout<<(*ait)->Id<<endl;
+//      ait++;
+//      num++;
+//    }
+//
+//    if( num > m_maxSize ){
+//      m_maxSize = num;
+//      m_maxIndex = it->first;
+//    }
+//    ++it;
+//  }
+//
+//  vector< pair<int, unsigned int> >::iterator vsit = m_sortedRBs.begin();
+//  vector< pair<int, unsigned int> >::iterator veit = m_sortedRBs.end();
+//
+//  sort(vsit, veit,compareSize);
+//
+//}
 
 //---------------------------------------------------------
 bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
@@ -315,100 +314,79 @@ bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, un
   return (firstEntry.second < secondEntry.second);
 }
 
-void Configuration::readBiggerSet(){
-
-  //Create disjoint set
-  DisjointSets ds(m_molecule->getAtoms()[m_molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
-
-  //For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
-  for (int i=0;i< m_molecule->size();i++){
-    Atom* atom = m_molecule->getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
-      ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
-    }
-  }
-
-
-  //For each fixed or constrained bond (a1,a2) call Union(a1,a2)
-  for (auto const& bond: m_molecule->getCovBonds()){
-//    for (list<Bond *>::iterator it= m_molecule->getCovBonds().begin(); it != m_molecule->getCovBonds().end(); ++it){
-//    Bond * bond = *it;
-
-    ///First, simply check if bond is constrained
-    if( bond->constrained || bond->Bars == 6){
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-    }
-  }
-
-  ///Also, do the same thing for the hydrogen bonds
-  ///insert the h-bonds at the correct place
-  for(auto const& bond: m_molecule->getHBonds()){
-//  for (list<Hbond *>::iterator bit= m_molecule->getHBonds().begin(); bit != m_molecule->getHBonds().end(); ++bit){
-//    Hbond * bond = *bit;
-    if( bond->constrained ){
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-    }
-  }
-
-  ///All disjoint sets have been united if they are constrained or bonded fix!
-  ///We now just add the covalent neighbors to have the representation with atoms in multiple rbs!
-
-  int c=0;
-  map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
-
-  //Map the set-ID's (first map entry) to RB-ID's (second map entry) and add bonded atoms to RBs.
-  for (int i=0;i< m_molecule->size();i++){
-    Atom* atom = m_molecule->getAtoms()[i];
-
-    //Map the set-id to the RB-id
-    int set_id = ds.FindSet(atom->getId());
-    int body_id;
-    if(idMap.find(set_id)!=idMap.end()) body_id = idMap.find(set_id)->second;
-    else {
-      body_id = c++;
-      idMap.insert( make_pair(set_id, body_id) );
-    }
-    //If the set containing a1 is not a rigid body: create one
-    if ( m_biggerRBMap.find(body_id) == m_biggerRBMap.end() ) {
-      Rigidbody* new_rb = new Rigidbody(body_id);
-      m_biggerRBMap.insert( make_pair(body_id,new_rb) );
-    }
-    Rigidbody* rb = m_biggerRBMap[body_id];
-    if (!rb->containsAtom(atom)){
-      rb->Atoms.push_back(atom);
-      atom->setBiggerRigidbody(rb);
-      //For graphical display, we assign this rb-id to the rbColumn variable of the atom
-      atom->setBfactorColumn( float( rb->id() ) );
-    }
-
-//		// Add the covalent neighbors of this atom into its bigger rigid body, if it's not there already
-//		for ( vector<Atom*>::iterator it=atom->Cov_neighbor_list.begin(); it!=atom->Cov_neighbor_list.end(); ++it) {
-//			if ( !rb->containsAtom(*it) ) {
-//				rb->Atoms.push_back(*it);
-//				(*it)->addBiggerRigidbody(rb);
-//			}
-//		}
+//void Configuration::readBiggerSet(){
 //
-//		//Add the Hbond neighbors of this atom into this bigger rigid body, if it's not there
-//		for ( vector<Atom*>::iterator it=atom->Hbond_neighbor_list.begin(); it!=atom->Hbond_neighbor_list.end(); ++it) {
-//			if ( !rb->containsAtom(*it) ) {
-//				rb->Atoms.push_back(*it);
-//				(*it)->addBiggerRigidbody(rb);
-//			}
-//		}
-  }
-
-}
+//  //Create disjoint set
+//  DisjointSets ds(m_molecule->getAtoms()[m_molecule->size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+//
+//  //For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
+//  for (int i=0;i< m_molecule->size();i++){
+//    Atom* atom = m_molecule->getAtoms()[i];
+//    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+//      ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
+//    }
+//  }
+//
+//
+//  //For each fixed or constrained bond (a1,a2) call Union(a1,a2)
+//  for (auto const& bond: m_molecule->getCovBonds()){
+//    //First, simply check if bond is constrained
+//    if( bond->constrained || bond->Bars == 6){
+//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//    }
+//  }
+//
+//  //Also, do the same thing for the hydrogen bonds insert the h-bonds at the correct place
+//  for(auto const& bond: m_molecule->getHBonds()){
+//    if( bond->constrained ){
+//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//    }
+//  }
+//
+//  //All disjoint sets have been united if they are constrained or bonded fix!
+//  //We now just add the covalent neighbors to have the representation with atoms in multiple rbs!
+//
+//  int c=0;
+//  map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
+//
+//  //Map the set-ID's (first map entry) to RB-ID's (second map entry) and add bonded atoms to RBs.
+//  for (int i=0;i< m_molecule->size();i++){
+//    Atom* atom = m_molecule->getAtoms()[i];
+//
+//    //Map the set-id to the RB-id
+//    int set_id = ds.FindSet(atom->getId());
+//    int body_id;
+//    if(idMap.find(set_id)!=idMap.end())
+//      body_id = idMap.find(set_id)->second;
+//    else {
+//      body_id = c++;
+//      idMap[set_id] = body_id;
+//    }
+//    //If the set containing a1 is not a rigid body: create one
+//    if ( m_biggerRBMap.find(body_id) == m_biggerRBMap.end() ) {
+//      Rigidbody* new_rb = new Rigidbody(body_id);
+//      m_biggerRBMap[body_id] = new_rb;
+//    }
+//    Rigidbody* rb = m_biggerRBMap[body_id];
+//    if (!rb->containsAtom(atom)){
+//      rb->Atoms.push_back(atom);
+//      atom->setBiggerRigidbody(rb);
+//      //For graphical display, we assign this rb-id to the rbColumn variable of the atom
+//      atom->setBFactor( float( rb->id() ) );
+//    }
+//
+//  }
+//
+//}
 
 //------------------------------------------------------
 void Configuration::writeQToBfactor(){
-  for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->Edges.begin(); itr!= m_molecule->m_spanningTree->Edges.end(); ++itr) {
-    KinEdge* pEdge = (*itr);
-    if(pEdge->EndVertex->m_rigidbody == NULL)
+  for (auto const& edge: m_molecule->m_spanningTree->Edges) {
+    if(edge->EndVertex->m_rigidbody == NULL)
       continue; //global dofs
-    float value = m_dofs[pEdge->getDOF()->getIndex() ];
-    for (auto const& atom : pEdge->EndVertex->m_rigidbody->Atoms ){
-      atom->setBfactorColumn(value);
+    float value = m_dofs[edge->getDOF()->getIndex() ];
+    for (auto const& atom : edge->EndVertex->m_rigidbody->Atoms ){
+      atom->setBFactor(value);
     }
   }
 }

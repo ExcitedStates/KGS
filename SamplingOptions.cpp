@@ -75,8 +75,9 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
 		if(arg=="--frontSize"){                     frontSize = atoi(argv[++i]);                        continue; }
 		if(arg=="--switchAfter"){                   switchAfter = atoi(argv[++i]);                      continue; }
-		if(arg=="--svdCutoff"){ 					svdCutoff = atof(argv[++i]); 						continue; }
-		if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                     continue; }
+		if(arg=="--svdCutoff"){ 					          svdCutoff = atof(argv[++i]); 						            continue; }
+    if(arg=="--collapseRigidEdges"){ 					  collapseRigid = atoi(argv[++i]);			              continue; }
+		if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
 
 		if(arg.at(0)=='-'){
 			cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -194,6 +195,10 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
     log("so")<<"No target structure file supplied, random sampling."<<endl;
   }
 
+  if(collapseRigid<0 || collapseRigid>2){
+    log("so")<<endl<<"--collapseRigidEdges must be an integer between 0 and 2 (is "<<collapseRigid<<")"<<endl;
+  }
+
 //	//Search for hbonds file. Print warning if not found
 //	if(!fileExists(hydrogenbondFile)){
 //		string alt = workingDirectory+"/"+hydrogenbondFile;
@@ -259,6 +264,7 @@ void SamplingOptions::initializeVariables(){
   frontSize                 = 50;
   switchAfter               = 20000;
   svdCutoff                 = 1.0e-12;
+  collapseRigid             = false;
   relativeDistances         = "";
 }
 
@@ -309,6 +315,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--frontSize "<<frontSize<<endl;
 	log("so")<<"\t--switchAfter "<<switchAfter<<endl;
 	log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
+  log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
 }
 
 void SamplingOptions::printUsage(char* pname){
@@ -409,6 +416,8 @@ void SamplingOptions::printUsage(char* pname){
 	log("so")<<"\t--switchAfter <integer>\t: Max number of steps before switching search directions (if bidirectional is active)."<<endl;
 
 	log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
+
+  log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
 
 	log("so")<<"\t --relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
 

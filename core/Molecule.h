@@ -47,18 +47,17 @@ class Selection;
 
 class Molecule {
  public:
+
+  KinTree *m_spanningTree; ///< Topology of rigid bodies
+  Configuration *m_conf;   ///< Currently set configuration
+  int* residueAnnotations;
+  std::vector<Chain*> chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
+
   Molecule();
   ~Molecule();
-  void setName(std::string& name);
+
+  void setName(const std::string& name);
   std::string getName() const;
-
-  Atom* addAtom(const std::string& chain_name,
-                const std::string& res_name,
-                const int& res_id,
-                const std::string& atomName,
-                const int& atomId,
-                const Coordinate& position );
-
   Chain* getChain (const std::string& chainName) const;
   Atom* getAtom (int atom_id) const;
   Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name) const;
@@ -93,12 +92,9 @@ class Molecule {
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
   void setToHbondIntersection (Molecule * p2);
-  void buildRigidBodies (Selection& movingResidues);
-  void buildSpanningTree(const std::vector<int>& rootIds);
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
 
 
-//  gsl_vector* vdwGradient ();
   std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
   double vdwEnergy (std::string collisionCheck);//compute vdw energy
 
@@ -107,35 +103,43 @@ class Molecule {
   Configuration* resampleSugars(int startRes, int endRes, Configuration* cur, int aggression);
   Configuration* localRebuild(std::vector<int>& resetDOFs, std::vector<double>& resetValues, std::vector<int>& recloseDOFs, std::vector<int>& ignoreDOFs, Configuration* cur);
 
-  std::vector<Chain*> chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
-  std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
+  /** Clone atom positions and bonds, but don't create rigid bodies and spanning tree. */
+  Molecule* deepClone() const;
 
-  /// Topology of rigid bodies
-  KinTree *m_spanningTree;
+  Molecule* collapseRigidBonds(int collapseLevel = 1);
 
-  Configuration *m_conf;
-
-
-  int* residueAnnotations;
-
+  const std::vector<Rigidbody*> getRigidbodies() const;
 
  private:
-  std::string name_;
-  void _SetConfiguration(Configuration *q); // set the positions of atoms at configuration q (according to the spanning tree)
-  void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
-
-  Chain* addChain (const std::string& chainName);
-
-  void restoreAtomPos();
-
-  void indexAtoms();
+  std::string m_name;
   std::set< std::pair<Atom*,Atom*> > m_initialCollisions; ///< Colliding atom-pairs in the initial conformation
   Grid *m_grid;
   std::list<Bond *> m_covBonds;
   std::list<Hbond *> m_hBonds;
   std::vector<Atom*> m_atoms;
-
+  std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
   double m_collisionFactor;
+
+  void _SetConfiguration(Configuration *q); // set the positions of atoms at configuration q (according to the spanning tree)
+  void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
+
+  Chain* addChain (const std::string& chainName);
+  Atom* addAtom(const std::string& chain_name,
+                const std::string& res_name,
+                const int& res_id,
+                const std::string& atomName,
+                const int& atomId,
+                const Coordinate& position );
+  Bond* addCovBond(Atom* atom1, Atom* atom2);
+
+  void restoreAtomPos();
+  void indexAtoms();
+
+  void buildRigidBodies (Selection& movingResidues);
+  void buildSpanningTree(const std::vector<int>& rootIds);
+
+  friend class IO; //The IO::readPdb function uses the addAtom function
+
 };
 
 #endif

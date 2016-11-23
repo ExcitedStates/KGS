@@ -9,6 +9,8 @@
 #include "math/SVD.h"
 //#include "math/QR.h"
 
+class Molecule; //Forward declaration
+
 /**
  * Computes, stores, and maintains the nullspace of a gsl_matrix.
  * Supports projections of any gradient represented as a gsl_vector onto the null-space
@@ -61,8 +63,9 @@ class Nullspace {
    * This result is only accurate if UpdateFromMatrix and RigidityAnalysis have both
    * been called.
    */
-  bool isAngleRigid(int angle_id){ return fabs(gsl_vector_get(rigidAngles, angle_id)-1.0)<0.001; }
+  bool isCovBondRigid(int angle_id){ return fabs(gsl_vector_get(m_rigidCovBonds, angle_id)-1.0)<0.001; }
 
+  bool isHBondRigid(int bond_id){ return fabs(gsl_vector_get(m_rigidHBonds, bond_id)-1.0)<0.001; }
 
  protected:
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
@@ -72,8 +75,8 @@ class Nullspace {
   gsl_matrix* m_nullspaceBasis;///< Basis of the nullspace
 
  private:
-  gsl_vector* rigidAngles;     ///< Binary vector indicating which m_dofs are rigid
-  gsl_vector* rigidHBonds;     ///< Binary vector indicating which h-bonds are rigid
+  gsl_vector* m_rigidCovBonds; ///< Binary vector indicating which m_dofs are rigid
+  gsl_vector* m_rigidHBonds;   ///< Binary vector indicating which h-bonds are rigid
 
   int numCoordinatedDihedrals; ///< Coordinated dihedrals
   int numRigidDihedrals;       ///< Rigid dihedrals
@@ -83,7 +86,7 @@ class Nullspace {
 //  static constexpr double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
   static constexpr double RIGID_TOL =   1.0e-9; //0.0000000001; //most molecules work between 1e-4 and 1e-10, exceptions only between 1e-8 and 1e-10
 
-  friend class Configuration;
+//  friend class Configuration;
 };
 
 
