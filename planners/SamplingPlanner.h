@@ -1,7 +1,6 @@
 #ifndef SAMPLINGPLANNER_H_
 #define SAMPLINGPLANNER_H_
 
-#include "SamplingOptions.h"
 #include "core/Configuration.h"
 #include "moves/Move.h"
 #include "metrics/Metric.h"
@@ -14,13 +13,14 @@
  */
 class SamplingPlanner{
  public:
-  SamplingPlanner(Move& move, metrics::Metric& metric);
+  //SamplingPlanner(Move& move, metrics::Metric& metric);
+  SamplingPlanner();
 
   virtual ~SamplingPlanner() = 0;
 
-  /**
-   * Generate samples.
-   */
+  void initialize(Move* move, metrics::Metric* metric, const std::string& workingDir, int saveData);
+
+  /** Generate samples. */
   virtual void GenerateSamples() = 0;
 
   /** Return a reference to the list of all generated samples */
@@ -32,14 +32,17 @@ class SamplingPlanner{
    * initial to this sample is written to a file.
    */
   virtual void createTrajectory();
-  static void writeNewSample(Configuration* conf, Configuration* ref, int sample_num);
+
+//  void writeNewSample(Configuration* conf, Configuration* ref, int sample_num);
 
  protected:
 
-  /** The class that performs conformational perturbations. */
-  Move& move;
+  Move* m_move;                ///< Performs conformational perturbations.
+  metrics::Metric* m_metric;   ///< Metric used to measure distances between samples
+  std::string m_workingDir;    ///< Working directory into which samples should be written
+  int m_saveData;              ///< Amount of data that should be written during sampling
 
-  metrics::Metric& m_metric;   ///< Metric used to measure distances between samples
+
 
 };
 

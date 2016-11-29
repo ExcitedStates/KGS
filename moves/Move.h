@@ -2,7 +2,6 @@
 #define MOVE_H_
 
 #include "core/Configuration.h"
-#include "SamplingOptions.h"
 
 class Move{
  public:

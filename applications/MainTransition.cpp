@@ -2,133 +2,106 @@
 #include <string>
 #include <iostream>
 #include <list>
-#include "core/Configuration.h"
-#include "core/Molecule.h"
-#include "core/Chain.h"
+#include <math/NullspaceSVD.h>
+#include <moves/ClashAvoidingMove.h>
+#include <planners/SamplingPlanner.h>
+#include <planners/PoissonPlanner.h>
+#include <planners/BidirectionalMovingFront.h>
+#include <planners/RRTPlanner.h>
+#include <planners/DihedralRRT.h>
+
 #include "core/Grid.h"
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
 #include "Logger.h"
-
-#include <moves/NullspaceMove.h>
-#include <moves/FastClashAvoidingMove.h>
-#include <metrics/Dihedral.h>
-#include <directions/RandomDirection.h>
-#include <directions/DihedralDirection.h>
-#include <directions/MSDDirection.h>
-#include <directions/LSNullspaceDirection.h>
-#include <directions/BlendedDirection.h>
-#include <moves/DecreaseStepMove.h>
-#include <metrics/RMSDnosuper.h>
-
-using namespace std;
+#include "moves/NullspaceMove.h"
+#include "metrics/Dihedral.h"
+#include "directions/RandomDirection.h"
+#include "directions/DihedralDirection.h"
+#include "directions/MSDDirection.h"
+#include "directions/LSNullspaceDirection.h"
+#include "directions/BlendedDirection.h"
+#include "moves/DecreaseStepMove.h"
+#include "metrics/RMSDnosuper.h"
+#include "applications/options/SamplingOptions.h"
 
 extern double jacobianTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 
-void scale_gradient(gsl_vector* gradient, Molecule* mol);
+using namespace std;
 
-int main( int argc, char* argv[] ) {
-  enableLogger("default");
-  enableLogger("samplingStatus");
+void targetedSampling(SamplingOptions& options){
 
-  //SamplingOptions options(argc,argv);
-  SamplingOptions::createOptions(argc, argv);
-
-  SamplingOptions &options = *(SamplingOptions::getOptions());
-
-  if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//SamplingOptions
-    options.print();
-  }
-
-  // Set seed
-  srand(options.seed);
-
-  Selection movingResidues(options.residueNetwork);
-  Molecule* protein = IO::readPdb(
-      options.initialStructureFile,
-      movingResidues,
-      options.extraCovBonds,
-      options.roots
-  );
+  string pdb_file = options.initialStructureFile;
+  Selection resNetwork(options.residueNetwork);
+  Molecule* protein = IO::readPdb( pdb_file, resNetwork, options.extraCovBonds );
   protein->setCollisionFactor(options.collisionFactor);
-//
-//  if(!options.annotationFile.empty())
-//    IO::readAnnotations(&protein, options.annotationFile);
+  log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
 
-//  if(options.hydrogenbondMethod=="user")
-//    IO::readHbonds( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="rnaview")
-//    IO::readHbonds_rnaview( &protein, options.hydrogenbondFile, options.annotationFile.empty() );
-//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-//    IO::readHbonds_first( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-//    IO::readHbonds_kinari( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="hbplus" || options.hydrogenbondMethod=="hbPlus")
-//    IO::readHbonds_hbPlus( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="vadar")
-//    IO::readHbonds_vadar( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="dssr")
-//    IO::readHbonds_dssr( &protein, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="identify")
-//    HbondIdentifier::identifyHbonds(&protein);
+  if(!options.annotationFile.empty())
+    IO::readAnnotations(protein, options.annotationFile);
 
-  //Read the rigid body of the protein
-//  IO::readRigidbody( &protein );
-//  protein->buildSpanningTree();
-//
-//  protein->setConfiguration(new Configuration(&protein));
-//
-//  protein->m_initialCollisions = protein->getAllCollisions();
+  // Do the same for the target
+  string target_file = options.targetStructureFile;
+  Molecule* target = IO::readPdb( target_file, resNetwork, options.extraCovBonds );
+  target->setCollisionFactor(options.collisionFactor);
 
-  Molecule* target = IO::readPdb(
-      options.targetStructureFile,
-      movingResidues,
-      options.extraCovBonds,
-      options.roots,
-      options.hydrogenbondMethod,
-      options.hydrogenbondFile,
-      protein
-  );
-  protein->setCollisionFactor(options.collisionFactor);
-
-//  if(options.hydrogenbondMethod=="user")
-//    IO::readHbonds( &target, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="rnaview")
-//    IO::readHbonds_rnaview( &target, options.hydrogenbondFile, options.annotationFile.empty() );
-//  else if(options.hydrogenbondMethod=="first" || options.hydrogenbondMethod=="FIRST")
-//    IO::readHbonds_first( &target, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="kinari" || options.hydrogenbondMethod=="KINARI")
-//    IO::readHbonds_kinari( &target, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="vadar")
-//    IO::readHbonds_vadar( &target, options.hydrogenbondFile );
-//  else if(options.hydrogenbondMethod=="dssr")
-//    IO::readHbonds_dssr( &target, options.hydrogenbondFile );
-
-  //makes sure we have the same hydrogen bonds in target and protein (protein hbonds is adapted as well)
+  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
   target->setToHbondIntersection(protein);
 
-//  //Read the rigid body of the protein
-//  IO::readRigidbody( target );
-//  target->buildSpanningTree();
-//
-//  target->setConfiguration(new Configuration(&target));
-//
-//  target->m_initialCollisions = target->getAllCollisions();
+  /// Rigid bodies, spanning trees, and initial collisions
+//  options.setResidueNetwork(protein);
+//  options.setAtomSets(protein,target);
 
-//	m_molecule.m_spanningTree->print();
-  log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+//  IO::readRigidbody( protein, resNetwork );
+//  protein->buildRigidBodies();
 
+//  unsigned int bestProteinRBId = protein->findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
+//  protein->buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
+  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
+//  protein->buildSpanningTree(options.roots);//with the rigid body tree in place, we can generate a configuration
+
+  protein->setConfiguration(new Configuration(protein));
+
+  // Check for collision
+  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
+//  protein->m_initialCollisions = protein->getAllCollisions();
+  for(auto const& coll: protein->getInitialCollisions()){
+    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+  }
+
+  /// Rigid bodies, spanning trees, and initial collisions for the target
+//  IO::readRigidbody( target, resNetwork );
+//  target->buildRigidBodies();
   //Build rigid body tree for target
 //  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
+//  target->buildSpanningTree(options.roots);
+
+  //Alignment and spanning trees with possibly best m_root
+  if(options.alignIni){
+    target->alignReferencePositionsTo(protein);//backup the aligned configuration
+  }
+
+  target->setConfiguration(new Configuration(target));
+
+  // Check for collision
+//  target->m_initialCollisions = target->getAllCollisions();
+//    	for(mit=target->m_initialCollisions.begin(); mit != target->m_initialCollisions.end();mit++){
+//    		Atom* atom1=mit->second.first;
+//        	log("dominik")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
+//    	}
+
+
+//	m_molecule.m_spanningTree->print();
+  log("samplingStatus")<<"Molecule has:"<<endl;
+  log("samplingStatus") << "> " << protein->getAtoms().size() << " atoms" << endl;
+  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+
   log("samplingStatus")<<"Target has:"<<endl;
   log("samplingStatus")<<"> "<<target->getAtoms().size()<<" atoms"<<endl;
   log("samplingStatus")<<"> "<<target->getInitialCollisions().size()<<" initial collisions"<<endl;
@@ -137,8 +110,8 @@ int main( int argc, char* argv[] ) {
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
+  Selection metricSelection(options.metricSelection);
   try {
-    Selection metricSelection(options.metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
     if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
@@ -151,7 +124,10 @@ int main( int argc, char* argv[] ) {
   Move* move;
   if(options.preventClashes){
     log("samplingStatus")<<"Using clash-avoiding move"<<endl;
-    move = new FastClashAvoidingMove();
+    move = new ClashAvoidingMove(options.maxRotation,
+                                 options.decreaseSteps,
+                                 options.collisionCheck,
+                                 options.projectConstraints);
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
     move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
@@ -163,47 +139,100 @@ int main( int argc, char* argv[] ) {
   }
   move->setStepSize(options.stepSize);
 
-  Selection resNetwork(options.residueNetwork);
-
-  //Initialize direction
+  //Initialize m_direction
   Direction* direction;
+  bool blendedDir = false;
+  Selection blendedSelection("all");
+  Selection gradientSelection(options.gradientSelection);
   if(options.gradient == 0)
-    direction = new RandomDirection(resNetwork);
+    direction = new RandomDirection(gradientSelection);
   else if(options.gradient == 1)
-    direction = new DihedralDirection(resNetwork);
+    direction = new DihedralDirection(gradientSelection);
   else if(options.gradient == 2){
-    BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new DihedralDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
-    direction = m_direction;
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(new DihedralDirection(gradientSelection),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    direction = bdir;
+    blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(resNetwork);
+    direction = new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways);
   else if(options.gradient == 4){
-    BlendedDirection* m_direction = new BlendedDirection();
-    m_direction->addDirection(new MSDDirection(resNetwork),0);
-    m_direction->addDirection(new RandomDirection(resNetwork,SamplingOptions::getOptions()->maxRotation), 1);
-    direction = m_direction;
-  }else if(options.gradient == 5)
-    direction = new LSNullspaceDirection(resNetwork);
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    direction = bdir;
+    blendedDir = true;
+  }
+  else if(options.gradient <= 5)
+    direction = new LSNullspaceDirection(gradientSelection);
+
+  //Initialize planner
+  SamplingPlanner* planner;
+  if(options.planner_string=="binnedrrt")
+    planner = new RRTPlanner(
+        protein,
+      direction,
+      options.explorationRadius,
+      options.samplesToGenerate,
+      options.gradient,
+      options.stepSize,
+      options.maxRotation,
+      options.scaleToRadius
+    );
+  else if(options.planner_string=="dihedralrrt")
+    planner = new DihedralRRT(
+        protein,
+        direction,
+        options.samplesToGenerate,
+        options.explorationRadius
+    );
+  else if(options.planner_string=="poisson")
+    planner = new PoissonPlanner(
+        protein,
+        options.samplesToGenerate,
+        options.poissonMaxRejectsBeforeClose,
+        options.stepSize,
+        options.gradientSelection
+    );
+  else if(options.planner_string=="dccrrt")
+    planner = new BidirectionalMovingFront(
+        protein,
+        direction,
+        target,
+        metricSelection,
+        options.collisionCheck,
+        blendedDir,
+        options.samplesToGenerate,
+        options.frontSize,
+        options.stepSize,
+        options.switchAfter,
+        options.convergeDistance,
+        options.alignAlways,
+        options.biasToTarget
+    );
   else{
-    cerr<<__FILE__<<": Unknown gradient: "<<options.gradient<<endl;
+    cerr<<"Unknown planner option specified!"<<endl;
     exit(-1);
   }
-
+  planner->initialize(move, metric, options.workingDirectory, options.saveData);
 
   if(options.saveData > 0){
     std::string out = options.workingDirectory + "output/" + protein->getName() + "_target_lengths";
     IO::writeBondLengthsAndAngles(target, out);
     if(options.saveData > 1){
-      out = options.workingDirectory + "output/" + protein->getName() + "_q_target->txt";
+      out = options.workingDirectory + "output/" + protein->getName() + "_q_target.txt";
       IO::writeQ(target,target->m_conf, out);
       out = options.workingDirectory + "output/" + protein->getName() + "_q_iniTarget.txt";
       IO::writeQ(target,protein->m_conf, out);
     }
 
-    log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl;fflush(stdout);
-    log() << "Total DOFs in target: " << target->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanningTree->getNumCycleDOFs() << endl << endl;fflush(stdout);
+    log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs()
+          << ", Max accessible DOFs: " << protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs() +
+                                          protein->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
+    log() << "Total DOFs in target: " << target->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanningTree->getNumCycleDOFs()
+          << ", Max accessible DOFs: " << target->m_spanningTree->getNumDOFs() - target->m_spanningTree->getNumCycleDOFs() +
+                                          target->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
 
     if(options.saveData > 1){
       string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
@@ -217,37 +246,23 @@ int main( int argc, char* argv[] ) {
     log()<< protein->m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
     log()<<" and " << ( protein->m_conf->getNullspace()->getNumDOFs()-
                         protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
-    log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
+    log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl;
 
 
-    log()<<"Initial Distance: "<<metric->distance(protein->m_conf,target->m_conf);
+    log()<<"Initial Distance: "<<metric->distance(protein->m_conf,target->m_conf)<<endl;
 
-    log("samplingStatus")<<"Sampling ...\n";
+    log("samplingStatus")<<"Sampling ...\n"<<endl;
     CTKTimer timer;
     timer.Reset();
     double start_time = timer.LastElapsedTime();
 
-    gsl_vector* gradient = gsl_vector_alloc(protein->m_spanningTree->getNumDOFs());
-    Configuration* target_conf = new Configuration(target);
-    std::list<Configuration*> samples;
-    samples.push_back(new Configuration(protein));
-    for(int i=0;i<options.samplesToGenerate;i++){
-      cout<<"Iteration "<<i<<endl;
-      Configuration* seed = samples.back();
-      direction->gradient(seed, target_conf, gradient);
-      //gsl_vector_scale_max_component(gradient, options.maxRotation);
-      scale_gradient(gradient, protein);
-      gsl_vector_scale(gradient, options.stepSize);
-      Configuration* new_conf = move->move(seed, gradient);
-      IO::writePdb(new_conf->updatedMolecule(), "output/conf_"+std::to_string((long long)i)+".pdb");
-      samples.push_back(new_conf);
-    }
-
-
+    //Start exploring
+    planner->GenerateSamples();
 
     //Print final status
     double end_time = timer.ElapsedTime();
-    log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(samples.size()-1)<<" valid samples\n";
+    std::list<Configuration*>& m_samples = planner->Samples();
+    log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
     log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
     log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
     log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
@@ -262,28 +277,58 @@ int main( int argc, char* argv[] ) {
     if(options.saveData > 0){
       log("samplingStatus")<<"Creating trajectory"<<endl;
     }
+    planner->createTrajectory();
   }
   log("samplingStatus")<<"Done"<<endl;
   //Clean up
+  delete planner;
+  delete target;
   delete direction;
+}
 
+
+int main( int argc, char* argv[] ) {
+  enableLogger("default");
+  enableLogger("samplingStatus");
+
+  ofstream reportStream;
+  reportStream.open("kgs_report.log");
+  enableLogger("report", reportStream);
+
+  ofstream plannerStream;
+  plannerStream.open("kgs_planner.log");
+  enableLogger("dominik", plannerStream);
+
+  ofstream debugStream;
+  debugStream.open("kgs_debug.log");
+  enableLogger("debug", debugStream);
+
+  SamplingOptions::createOptions(argc, argv);
+
+  SamplingOptions &options = *(SamplingOptions::getOptions());
+
+  if (loggerEnabled("samplingStatus")) {
+    enableLogger("so");//SamplingOptions
+    options.print();
+  }
+
+  // Set seed
+  srand(options.seed);
+
+  // Set SVD cutoff
+  NullspaceSVD::setSingularValueTolerance(options.svdCutoff);
+
+  // Do the same for the target
+  string target_file = options.targetStructureFile;
+  if (target_file.empty()) {
+    cerr << "MainTransition.cpp:" << __LINE__ << " ERROR: Must supply a target structure" << endl;
+    return -1;
+  }
+
+  targetedSampling(options);
+
+  reportStream.close();
+  plannerStream.close();
 
   return 0;
 }
-
-
-void scale_gradient(gsl_vector* gradient, Molecule* mol)
-{
-  double factor = 1.0;
-
-  for(int i=0;i<mol->m_spanningTree->getNumDOFs();i++){
-    DOF* dof = mol->m_spanningTree->getDOF(i);
-    int idx = dof->getIndex();
-    double val = gsl_vector_get(gradient, idx);
-    double maxval = dof->getMaxPerturbation();
-    if(fabs(maxval/val)<factor)
-      factor = fabs(maxval/val);
-  }
-  gsl_vector_scale(gradient, factor);
-}
-

@@ -48,7 +48,7 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 		if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                   continue; }
 		if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
 		if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
-		if(arg=="--rejectsBeforeClose"){            poisson_max_rejects_before_close = atoi(argv[++i]); continue; }
+		if(arg=="--rejectsBeforeClose"){            poissonMaxRejectsBeforeClose = atoi(argv[++i]); continue; }
 		if(arg=="--metric"){                        metric_string = argv[++i];                          continue; }
     if(arg=="--metricSelection"){               metricSelection = argv[++i];                        continue; }
 		if(arg=="--planner"   ){                    planner_string = argv[++i];                         continue; }
@@ -181,8 +181,6 @@ SamplingOptions::SamplingOptions(int argc, char* argv[])
 	//Set workingDirectory and moleculeName using the initialStructureFile.
 	char* tmp = realpath(initialStructureFile.c_str(), nullptr);
 	if(tmp==nullptr){ cerr<<initialStructureFile<<" is not a valid PDB-file"<<endl; exit(-1); }
-
-
 	string pdb_file(tmp);
 	int nameSplit = pdb_file.find_last_of("/\\");
 	if(workingDirectory.empty()) {
@@ -227,6 +225,7 @@ void SamplingOptions::initializeVariables(){
   annotationFile            = "";
   hydrogenbondFile          = "";
   hydrogenbondMethod        = "";
+  workingDirectory          = "";
   samplesToGenerate         = 10;
   explorationRadius         = 5.0;
   scaleToRadius             = false;
@@ -237,7 +236,7 @@ void SamplingOptions::initializeVariables(){
   decreaseFactor            = 0.5;
   stepSize                  = 1.0;
   maxRotation               = 3.1415/18;
-  poisson_max_rejects_before_close = 10;
+  poissonMaxRejectsBeforeClose = 10;
   metric_string             = "rmsd";
   metricSelection           = "heavy";
   planner_string            = "binnedRRT";
@@ -250,7 +249,7 @@ void SamplingOptions::initializeVariables(){
   seed                      =  418;
   saveData                  =  0;
   sampleReverse             = false;
-  biasToTarget              = 0.0;
+  biasToTarget              = 0.1;
   convergeDistance          = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
   alignAlways               = false;
   alignIni                  = false;
@@ -290,7 +289,7 @@ void SamplingOptions::print(){
 	log("so")<<"\t--decreaseFactor "<<decreaseFactor<<endl;
 	log("so")<<"\t--stepSize "<<stepSize<<endl;
 	log("so")<<"\t--maxRotation "<<maxRotation<<endl;
-  log("so")<<"\t--rejectsBeforeClose "<<poisson_max_rejects_before_close<<endl;
+  log("so")<<"\t--rejectsBeforeClose "<<poissonMaxRejectsBeforeClose<<endl;
 	log("so")<<"\t--metric "<<metric_string<<endl;
   log("so")<<"\t--metricSelection "<<metricSelection<<endl;
 	log("so")<<"\t--planner "<<planner_string<<endl;
@@ -465,95 +464,4 @@ SamplingOptions* SamplingOptions::createOptions()
   return instance;
 }
 
-////Todo: remove, but check in directions for usage
-////uses the gradientSelection and stores a "residueNetwork" list of ints
-//void SamplingOptions::setResidueNetwork(const Molecule * protein){
-//	//Determine if only certain residues shall be perturbed
-//	string selGradient = gradientSelection;
-//	if(selGradient != ""){
-//    try {
-//      Selection gradientSelection(selGradient);
-//      vector<Residue *> residuesGradient = gradientSelection.getSelectedResidues(protein);
-//      for (auto const &residue: residuesGradient) {
-//        residueNetwork.push_back(residue->getId());
-//      }
-//      log("dominik") << " Number of residues for gradient = " << residueNetwork.size() << endl;
-//    }catch(std::runtime_error& error) {
-//      cerr<<error.what()<<endl;
-//      exit(-1);
-//    }
-//	}
-//}
 
-//void SamplingOptions::setAtomSets(const Molecule * protein, Molecule * target){
-//	//Here, we define the atom sets used to calculate a gradient, rmsd, or alignment.
-//	//If no input option is specified, then we use all atoms states in "atomsToChoose"
-//	//In case a target is present, only atoms are used from the selection that are present in both m_molecule structures
-//
-//	//Within the user-provided selection of residues, we choose <selectAtoms> atoms (user-provided string, default "heavy")
-//
-//	Selection alignSelection(alignSelection);
-//	vector<Atom*> atomsAlign;
-//	vector<Atom*> atomsMoving;
-//
-//	if(alignSelection != ""){
-////		vector<Residue*> residuesAlign = alignSelection.getSelectedResidues(protein);
-////		alignSelection.selection( selectAtoms ); // will use heavy atoms // TODO: What is this even supposed to do?
-////		atomsAlign = alignSelection.getSelectedAtoms( residuesAlign );
-//		atomsAlign = alignSelection.getSelectedAtoms( protein );
-//	}
-//	else{
-//		Selection alignSelection(selectAtoms);
-//		atomsAlign = alignSelection.getSelectedAtoms(protein);
-//	}
-//	Atom *a1;
-//	std::string name, chainName;
-//	for (vector<Atom*>::iterator it=atomsAlign.begin(); it!=atomsAlign.end(); ++it) {
-//		a1=(*it);
-//		name = a1->getName();
-//		chainName = a1->getResidue()->getChain()->getName();
-//		int resId = a1->getResidue()->getId();
-//		if(target){
-//			Atom* a2=target->getAtom(chainName,resId, name);
-//			if(a2!=nullptr)
-//				m_atomsAlign.push_back(a1);
-//		} else{
-//			m_atomsAlign.push_back(a1);
-//		}
-//	}
-//	log("dominik")<<" Number atoms for alignment = "<<m_atomsAlign.size()<<endl;
-////	for (vector<Atom*>::iterator it=m_atomsAlign.begin(); it!=m_atomsAlign.end(); ++it) {
-////        log("dominik")<<"align res id: "<<(*it)->getResidue()->getId()<<", atom name: "<<(*it)->getName()<<endl;
-////	}
-//
-//	Selection movingSelection;
-//
-//	if(gradientSelection != ""){
-////		Selection movingSelection(gradientSelection);
-////		vector<Residue*> residuesMoving = movingSelection.getSelectedResidues(protein);
-////		movingSelection.selection( selectAtoms ); // will use selected atoms only, default heavy
-////		atomsMoving = movingSelection.getSelectedAtoms( residuesMoving );
-//    atomsMoving = movingSelection.getSelectedAtoms( protein );
-//	}
-//	else{
-//		Selection movingSelection(selectAtoms);
-//		atomsMoving = movingSelection.getSelectedAtoms(protein);
-//	}
-//	for (vector<Atom*>::iterator it=atomsMoving.begin(); it!=atomsMoving.end(); ++it) {
-//		a1=(*it);
-//		name = a1->getName();
-//		chainName = a1->getResidue()->getChain()->getName();
-//		int resId = a1->getResidue()->getId();
-//		if(target){
-//			Atom* a2=target->getAtom(chainName,resId, name);
-//			if(a2!=nullptr)
-//				m_atomsMoving.push_back(a1);
-//		} else{
-//			m_atomsMoving.push_back(a1);
-//		}
-//	}
-//	log("dominik")<<" Number atoms for gradient = "<<m_atomsMoving.size()<<endl;
-////	for (vector<Atom*>::iterator it=m_atomsMoving.begin(); it!=m_atomsMoving.end(); ++it) {
-////        log("dominik")<<"gradient res id: "<<(*it)->getResidue()->getId()<<", atom name: "<<(*it)->getName()<<endl;
-////	}
-//}

@@ -33,6 +33,7 @@
 #include <directions/Direction.h>
 #include <directions/RandomDirection.h>
 #include <loopclosure/ExactIK.h>
+#include <IO.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -42,18 +43,21 @@
 using namespace std;
 
 PoissonPlanner::PoissonPlanner(
-    Molecule * protein,
-    Move& move,
-    metrics::Metric& metric
+    Molecule * molecule,
+    int stopAfter,
+    int maxRejects,
+    double stepSize,
+    const string &gradientSelection
 ):
-  SamplingPlanner(move,metric),
-  stop_after(SamplingOptions::getOptions()->samplesToGenerate),
-  max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
-  m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
+  SamplingPlanner(),
+  m_stopAfter(stopAfter),
+  m_maxRejectsBeforeClose(maxRejects),
+  m_bigRad(stepSize*4.0/3.0),
   m_lilRad(m_bigRad/2),
-  protein(protein)
+  m_molecule(molecule),
+  m_gradientSelection(gradientSelection)
 {
-  m_root = new Configuration( protein );
+  m_root = new Configuration( molecule );
   m_root->m_id = 0;
   open_samples.push_back( m_root );
   all_samples.push_back( m_root );
@@ -75,16 +79,16 @@ void PoissonPlanner::GenerateSamples()
   reportStream.open("kgs_poissonDistances.log");
   enableLogger("poissonDistances", reportStream);
   //cout<<"PoissonPlanner::GenerateSamples()"<<endl;
-  Selection sel(SamplingOptions::getOptions()->gradientSelection);
+  Selection sel(m_gradientSelection);
   Direction* direction = new RandomDirection(sel);
-  gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
-  double origStepSize = move.getStepSize();
+  gsl_vector* gradient = gsl_vector_alloc(m_molecule->totalDofNum());
+  double origStepSize = m_move->getStepSize();
 
   int sample_num = 1;
   int rejected_clash     = 0;
   int rejected_collision = 0;
 
-  while(sample_num<stop_after && !open_samples.empty()) {
+  while(sample_num<m_stopAfter && !open_samples.empty()) {
     //Pick random open conformation
     auto it = open_samples.begin();
     std::advance(it, rand()%open_samples.size());
@@ -97,25 +101,25 @@ void PoissonPlanner::GenerateSamples()
     }
 
 
-    //Make max_rejects_before_close attempts at perturbing it
+    //Make m_maxRejectsBeforeClose attempts at perturbing it
     size_t attempt;
-    for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
+    for( attempt=0; attempt<m_maxRejectsBeforeClose; attempt++ ) {
       //cout<<"PoissonPlanner::GenerateSamples() - attempt "<<attempt<<endl;
-      move.setStepSize(origStepSize);
+      m_move->setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       gsl_vector_scale(gradient,1.0);
-      Configuration *pert = move.move(seed, gradient); //Perform move
+      Configuration *pert = m_move->move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
-      double dist = m_metric.distance(pert, seed);
+      double dist = m_metric->distance(pert, seed);
       int scaleAttempts = 0;
       while( dist<m_lilRad || dist>m_bigRad ){
         if(++scaleAttempts==5) break;
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
-        pert = move.move(seed, gradient);
-        dist = m_metric.distance(pert, seed);
+        pert = m_move->move(seed, gradient);
+        dist = m_metric->distance(pert, seed);
       }
 
       if(scaleAttempts==5){
@@ -154,7 +158,7 @@ void PoissonPlanner::GenerateSamples()
       pert->m_distanceToIni    = memo_distance(pert,m_root);
       pert->m_distanceToParent = memo_distance(pert,seed);
       updateMaxDists(pert);
-      writeNewSample(pert, m_root, sample_num);
+      IO::writeNewSample(pert, m_root, sample_num, m_workingDir, m_saveData);
       log("poissonDistances")<<"Sample "<<sample_num<<" .. "<<m_distances.size()<<" distance computations"<<endl;
 
       log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
@@ -186,7 +190,7 @@ double PoissonPlanner::memo_distance(Configuration* c1, Configuration* c2)
   auto it = m_distances.find({c1,c2});
   if( it!=m_distances.end() ) return it->second;
 
-  double dist = m_metric.distance(c1,c2); //Expensive
+  double dist = m_metric->distance(c1,c2); //Expensive
   m_distances[{c1,c2}] = dist;
   m_distances[{c2,c1}] = dist;
 

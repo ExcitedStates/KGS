@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include <ctime>
 #include <Logger.h>
 #include <math/SVDMKL.h>
@@ -24,7 +25,7 @@
 #include "core/Chain.h"
 #include "IO.h"
 #include "loopclosure/ExactIK.h"
-#include "SamplingOptions.h"
+#include "applications/options/SamplingOptions.h"
 #include "math/gsl_helpers.h"
 #include "core/Configuration.h"
 
@@ -34,15 +35,45 @@ void testGlobalMSD();
 void testGlobalGradient();
 void testQR();
 void testSelection();
+void testIncDOFs();
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
 //  testGlobalMSD();
 //  testGlobalGradient();
-  testQR();
+//  testQR();
 //  testSelection();
+  testIncDOFs();
 }
 
+
+void testIncDOFs(){
+  Selection sel("all");
+  Molecule* mol = IO::readPdb("/Users/rfonseca/helix.pdb", sel );
+  int n = mol->m_spanningTree->getNumDOFs();
+
+  Configuration* finalconf = new Configuration(mol);
+  for(int d=6;d<n;d++){
+    finalconf->m_dofs[d] = 50*3.141592/180.0;
+  }
+  IO::writePdb(finalconf->updatedMolecule(), "/Users/rfonseca/helix_out_final.pdb");
+
+  mol->setConfiguration(new Configuration(mol));
+
+  for(int i=0;i<50;i++){
+    Configuration* conf = new Configuration(mol->m_conf);
+    for(int d=6;d<n;d++){
+      conf->m_dofs[d] = 1*3.141592/180.0;
+    }
+    IO::writePdb(conf->updatedMolecule(), "/Users/rfonseca/helix_out_"+to_string(i)+".pdb");
+
+    for(Atom* a: mol->getAtoms()){
+      a->m_referencePosition = a->m_position;
+    }
+  }
+
+
+}
 
 //From http://stackoverflow.com/questions/17432502/how-can-i-measure-cpu-time-and-wall-clock-time-on-both-linux-windows
 double get_wall_time(){
@@ -59,9 +90,9 @@ using namespace metrics;
 void testSelection(){
   try {
     enableLogger("debug");
-    Molecule* mol = new Molecule();
+    Selection moving("all");
     std::vector<std::string> extraCovBonds;
-    IO::readPdb(mol, "/Users/rfonseca/2kmj_1.pdb", extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/2kmj_1.pdb", moving, extraCovBonds);
     Selection sel("resi 17 and id 4+7");
     for(auto a: sel.getSelectedAtoms(mol)){
       std::cout<<a<<endl;
@@ -74,12 +105,9 @@ void testSelection(){
 void testGlobalGradient(){
   try {
     enableLogger("debug");
-    Molecule* mol = new Molecule();
     std::vector<std::string> extraCovBonds;
-    IO::readPdb(mol, "/Users/rfonseca/Y.pdb", extraCovBonds);
     Selection sel("all");
-    IO::readRigidbody( mol, sel );
-    mol->buildSpanningTree();
+    Molecule* mol = IO::readPdb("/Users/rfonseca/Y.pdb", sel, extraCovBonds);
 
     Configuration* conf = new Configuration(mol);
     cout<<"DOFS: "<<conf->getNumDOFs()<<endl;
@@ -87,7 +115,7 @@ void testGlobalGradient(){
     int dof = 8;
     Coordinate pos = conf->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"Old OH pos: "<<pos<<endl;
-    Math3D::Vector3 der = mol->m_spanning_tree->Edges.at(dof)->getDOF()->getDerivative(pos);
+    Math3D::Vector3 der = mol->m_spanningTree->Edges.at(dof)->getDOF()->getDerivative(pos);
     der = der*0.01;
     cout<<der<<endl;
     Configuration* conf2 = new Configuration(conf);
@@ -95,10 +123,10 @@ void testGlobalGradient(){
     Coordinate pos2 = conf2->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"New OH pos: "<<pos2<<endl;
     cout<<"Expected:   "<<(pos+der)<<endl;
-    if(mol->m_spanning_tree->Edges.at(dof)->getBond()==nullptr) {
+    if(mol->m_spanningTree->Edges.at(dof)->getBond()==nullptr) {
       cout << "Global DOF" << endl;
     }else {
-      cout << "DOF bond:   " << (*mol->m_spanning_tree->Edges.at(dof)->getBond()) << endl;
+      cout << "DOF bond:   " << (*mol->m_spanningTree->Edges.at(dof)->getBond()) << endl;
     }
 
   } catch (const std::string& ex) {
@@ -106,59 +134,14 @@ void testGlobalGradient(){
   }
 }
 
-void testGlobalMSD(){
-  try {
-    enableLogger("debug");
-    Molecule* mol = new Molecule();
-    std::vector<std::string> extraCovBonds;
-    IO::readPdb(mol, "/Users/rfonseca/Y.pdb", extraCovBonds);
-    Selection sel("all");
-    IO::readRigidbody( mol, sel );
-    mol->buildSpanningTree();
-
-    Molecule* tar = new Molecule();
-    IO::readPdb(tar, "/Users/rfonseca/Y_target.pdb", extraCovBonds);
-    IO::readRigidbody( tar, sel );
-    tar->buildSpanningTree();
-
-    Selection dirSelection("heavy");
-//    Selection dirSelection("elem O + elem N");
-    BlendedDirection* dir = new BlendedDirection();
-    dir->addDirection(new MSDDirection(dirSelection), 1.0);
-//    dir->addDirection(new RandomDirection(dirSelection, 3.14), 0.3);
-    Move* move = new RawMove();
-    move->setStepSize(0.01);
-    Metric* dist = new RMSDnosuper(dirSelection);
-
-    Configuration* conf = new Configuration(mol);
-    Configuration* tarConf = new Configuration(tar);
-    gsl_vector* gradient = gsl_vector_calloc(conf->getNumDOFs());
-
-    cout<<"Initial dist: "<<dist->distance(conf, tarConf)<<endl;
-
-    for(size_t i=0;i<400;i++){
-      dir->gradient(conf, tarConf, gradient);
-      conf = move->move(conf, gradient);
-      cout<<"Dist after iteration "<<i<<": "<<dist->distance(conf, tarConf)<<endl;
-      IO::writePdb(conf->updatedMolecule(), "/Users/rfonseca/Y_"+to_string(i)+".pdb");
-    }
-
-  } catch (const std::string& ex) {
-    cerr<<ex<<endl;
-  }
-
-
-}
 
 void testGetTorsion(){
   try {
-    Molecule mol;
+    Selection all("all");
     std::vector<std::string> extraCovBonds;
-    IO::readPdb(&mol, "/Users/rfonseca/1crn.pdb", extraCovBonds);
-    IO::readRigidbody( &mol );
-    mol.buildSpanningTree();
+    Molecule* mol = IO::readPdb("/Users/rfonseca/1crn.pdb", all, extraCovBonds);
     Selection sel("backbone");
-    for (auto const &b: sel.getSelectedBonds(&mol)) {
+    for (auto const &b: sel.getSelectedBonds(mol)) {
       cout << b << " " << b->getTorsion() <<endl;
     }
   } catch (const std::string& ex) {
@@ -220,100 +203,100 @@ void testCuda(){
 
 }
 
-void testQR(){
-//  srand(101);
-//  int m = 4;
-//  int n = 3;
-//  gsl_matrix* A  = gsl_matrix_calloc(m,n);
+//void testQR(){
+////  srand(101);
+////  int m = 4;
+////  int n = 3;
+////  gsl_matrix* A  = gsl_matrix_calloc(m,n);
+////  rand();rand();rand();
+////  for(int i=0;i<m;i++) {
+////    for (int j = 0; j < n; j++) {
+////      gsl_matrix_set(A, i, j, rand() % 4);
+////    }
+////  }
+//  srand(14);
 //  rand();rand();rand();
+////  int m = 7;
+////  int n = 10;
+//  int m = 5000;
+//  int n = 1000;
+//  cout<<m<<" x "<<n<<endl;
+//  gsl_matrix* A  = gsl_matrix_calloc(m,n);
 //  for(int i=0;i<m;i++) {
 //    for (int j = 0; j < n; j++) {
-//      gsl_matrix_set(A, i, j, rand() % 4);
+//      gsl_matrix_set(A, i, j, (rand()%2==0)?(rand()*1.0/RAND_MAX):(0.0));
+////      gsl_matrix_set(A, i, j, rand()%3);
 //    }
 //  }
-  srand(14);
-  rand();rand();rand();
-//  int m = 7;
-//  int n = 10;
-  int m = 5000;
-  int n = 1000;
-  cout<<m<<" x "<<n<<endl;
-  gsl_matrix* A  = gsl_matrix_calloc(m,n);
-  for(int i=0;i<m;i++) {
-    for (int j = 0; j < n; j++) {
-      gsl_matrix_set(A, i, j, (rand()%2==0)?(rand()*1.0/RAND_MAX):(0.0));
-//      gsl_matrix_set(A, i, j, rand()%3);
-    }
-  }
-
-  for(int j=0;j<n;j++){
-    gsl_matrix_set(A,3,j, gsl_matrix_get(A,2,j));
-  }
-
-//  std::cout<<"A:"<<endl;
-//  for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(A,i,j)); std::cout<<std::endl;}
-
-
-  double start, duration;
-
-  start = get_wall_time();
-  SVD* svd = new SVDMKL(A);//SVD::createSVD(A);
-  Nullspace* ns2 = new NullspaceSVD(svd);
-  ns2->updateFromMatrix();
-  duration = ( get_wall_time() - start );
-  cout<<"SVD took "<<duration<<"secs"<<endl;
-//  std::cout<<"N_SVD:"<<endl;
-//  gsl_matrix_cout(ns2.getBasis());
-
-  start = get_wall_time();
-  TransposeQR* qr = new TransposeQR(A);
-  Nullspace* ns = new NullspaceQR(qr);
-  ns->updateFromMatrix();
-  duration = ( get_wall_time() - start );
-  cout<<"QR took "<<duration<<"secs"<<endl;
-//  std::cout<<"N:"<<endl;
-//  gsl_matrix_cout(ns.getBasis());
-
-//  std::cout<<"A·N:"<<endl;
-//  gsl_matrix_cout(gsl_matrix_mul(A, ns.getBasis()));
-//  std::cout<<"A·N_SVD:"<<endl;
-//  gsl_matrix_cout(gsl_matrix_mul(A, ns2.getBasis()));
-
-
-//  gsl_matrix_cout(A);
+//
+//  for(int j=0;j<n;j++){
+//    gsl_matrix_set(A,3,j, gsl_matrix_get(A,2,j));
+//  }
+//
+////  std::cout<<"A:"<<endl;
+////  for(int i=0;i<m;i++){ for(int j=0;j<n;j++) printf(" %5.2f",gsl_matrix_get(A,i,j)); std::cout<<std::endl;}
+//
 //
 //  double start, duration;
-
-//  start = get_wall_time();
-//  QR* mklqr = new QRMKL(A);
-//  mklqr->updateFromMatrix();
-//  mklqr->print();
-//  duration = ( get_wall_time() - start );
-//  cout<<"MKL took  "<<duration<<"secs"<<endl;
-
-
-//  gsl_matrix* S = gsl_matrix_calloc(A->size1, A->size2);
-//  for(int i=0;i<std::min(A->size1,A->size2);i++){
-//    gsl_matrix_set(S, i,i, gsl_vector_get(mklqr->S, i));
-//  }
-//  cout<<"Product: "<<endl;
-//  gsl_matrix_cout( gsl_matrix_mul(mklqr->U, gsl_matrix_mul(S, gsl_matrix_trans(mklqr->V))) );
-
-//  cout<<" ------------------------------------- "<<endl;
-
-//  start = get_wall_time();
-//  QR* gslqr = new QRGSL(A);
-//  gslqr->updateFromMatrix();
-//  gslqr->print();
-//  duration = ( get_wall_time() - start );
-//  cout<<"GSL took  "<<duration<<"secs"<<endl;
-
-//  S = gsl_matrix_calloc(A->size1, A->size2);
-//  for(int i=0;i<std::min(A->size1,A->size2);i++){
-//    gsl_matrix_set(S, i,i, gsl_vector_get(cudasvd->S, i));
-//  }
 //
-//  cout<<"Product: "<<endl;
-//  gsl_matrix_cout( gsl_matrix_mul(cudasvd->U, gsl_matrix_mul(S, gsl_matrix_trans(cudasvd->V))) );
-
-}
+//  start = get_wall_time();
+//  SVD* svd = new SVDMKL(A);//SVD::createSVD(A);
+//  Nullspace* ns2 = new NullspaceSVD(svd);
+//  ns2->updateFromMatrix();
+//  duration = ( get_wall_time() - start );
+//  cout<<"SVD took "<<duration<<"secs"<<endl;
+////  std::cout<<"N_SVD:"<<endl;
+////  gsl_matrix_cout(ns2.getBasis());
+//
+//  start = get_wall_time();
+//  TransposeQR* qr = new TransposeQR(A);
+//  Nullspace* ns = new NullspaceQR(qr);
+//  ns->updateFromMatrix();
+//  duration = ( get_wall_time() - start );
+//  cout<<"QR took "<<duration<<"secs"<<endl;
+////  std::cout<<"N:"<<endl;
+////  gsl_matrix_cout(ns.getBasis());
+//
+////  std::cout<<"A·N:"<<endl;
+////  gsl_matrix_cout(gsl_matrix_mul(A, ns.getBasis()));
+////  std::cout<<"A·N_SVD:"<<endl;
+////  gsl_matrix_cout(gsl_matrix_mul(A, ns2.getBasis()));
+//
+//
+////  gsl_matrix_cout(A);
+////
+////  double start, duration;
+//
+////  start = get_wall_time();
+////  QR* mklqr = new QRMKL(A);
+////  mklqr->updateFromMatrix();
+////  mklqr->print();
+////  duration = ( get_wall_time() - start );
+////  cout<<"MKL took  "<<duration<<"secs"<<endl;
+//
+//
+////  gsl_matrix* S = gsl_matrix_calloc(A->size1, A->size2);
+////  for(int i=0;i<std::min(A->size1,A->size2);i++){
+////    gsl_matrix_set(S, i,i, gsl_vector_get(mklqr->S, i));
+////  }
+////  cout<<"Product: "<<endl;
+////  gsl_matrix_cout( gsl_matrix_mul(mklqr->U, gsl_matrix_mul(S, gsl_matrix_trans(mklqr->V))) );
+//
+////  cout<<" ------------------------------------- "<<endl;
+//
+////  start = get_wall_time();
+////  QR* gslqr = new QRGSL(A);
+////  gslqr->updateFromMatrix();
+////  gslqr->print();
+////  duration = ( get_wall_time() - start );
+////  cout<<"GSL took  "<<duration<<"secs"<<endl;
+//
+////  S = gsl_matrix_calloc(A->size1, A->size2);
+////  for(int i=0;i<std::min(A->size1,A->size2);i++){
+////    gsl_matrix_set(S, i,i, gsl_vector_get(cudasvd->S, i));
+////  }
+////
+////  cout<<"Product: "<<endl;
+////  gsl_matrix_cout( gsl_matrix_mul(cudasvd->U, gsl_matrix_mul(S, gsl_matrix_trans(cudasvd->V))) );
+//
+//}

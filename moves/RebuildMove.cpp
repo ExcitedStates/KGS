@@ -4,9 +4,11 @@
 #include "core/Molecule.h"
 
 
-RebuildMove::RebuildMove():
-  m_fragmentLength(SamplingOptions::getOptions()->rebuild_fragment_length),
-  m_rebuildAggression(SamplingOptions::getOptions()->rebuildAggression)
+RebuildMove::RebuildMove(int fragmentLength, int aggression):
+    m_fragmentLength(fragmentLength),
+    m_rebuildAggression(aggression)
+//		m_fragmentLength(SamplingOptions::getOptions()->rebuild_fragment_length),
+//		m_rebuildAggression(SamplingOptions::getOptions()->rebuildAggression)
 {}
 
 Configuration* RebuildMove::performMove(Configuration* current, gsl_vector*)

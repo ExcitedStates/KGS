@@ -1,5 +1,4 @@
 #include "metrics/RMSDnosuper.h"
-#include "../SamplingOptions.h"
 
 using namespace std;
 
@@ -9,7 +8,6 @@ RMSDnosuper::RMSDnosuper( Selection &selection ) :
     Metric(selection) { }
 
 double RMSDnosuper::distance( Configuration *c1, Configuration *c2 ) {
-//  const std::vector<Atom *> *atomsRMSD=SamplingOptions::getOptions()->getAtomsMoving();
   const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
   const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 

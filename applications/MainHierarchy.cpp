@@ -27,7 +27,7 @@
 #include "IO.h"
 #include "core/HBond.h"
 #include "Logger.h"
-#include "SamplingOptions.h"
+#include "applications/options/SamplingOptions.h"
 #include "moves/CompositeMove.h"
 
 extern double jacobianTime;
@@ -211,7 +211,7 @@ int main( int argc, char* argv[] ) {
 
     bool inCollision = qNew->updatedMolecule()->inCollision();
     if (inCollision) {
-      log("hierarchy") << "Configuration in direction " << v_i+1 << " is in collision. " << endl;
+      log("hierarchy") << "Configuration in m_direction " << v_i+1 << " is in collision. " << endl;
     }
 //    else {//collision-free //todo: do we want to reject colliding configurations?
     qNew->updateMolecule();
@@ -277,7 +277,7 @@ int main( int argc, char* argv[] ) {
     log("hierarchy") << ", pred. violation: "<<predictedViolation;
     log("hierarchy") << ", obs. violation: "<<observedViolation;
     log("hierarchy") << ", delta vdw: "<<deltaVdwEnergy<<endl;
-    SamplingPlanner::writeNewSample(qNew, conf, sampleCount);
+    IO::writeNewSample(qNew, conf, sampleCount, options.workingDirectory, options.saveData);
 
     hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
     IO::writeHbondsChange(qNew,hBondOut);

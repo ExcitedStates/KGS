@@ -32,7 +32,6 @@
 #include <cmath>
 #include <gsl/gsl_matrix.h>
 
-#include "SamplingOptions.h"
 #include "math/SVD.h"
 #include "math/gsl_helpers.h"
 

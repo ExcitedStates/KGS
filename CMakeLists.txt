@@ -42,7 +42,8 @@ add_library( libKGS
         ResidueProfiles.h
         core/Rigidbody.h
         core/graph/KinGraph.h
-        SamplingOptions.h
+        applications/options/SamplingOptions.h
+        applications/options/RelativeTransitionOptions.h
         planners/SamplingPlanner.h
         planners/DihedralRRT.h
         planners/RRTPlanner.h
@@ -56,7 +57,7 @@ add_library( libKGS
         freeMKL.h
         moves/Move.h
         moves/RawMove.h
-        moves/CompositeMove.h
+#        moves/CompositeMove.h
         moves/NullspaceMove.h
         moves/RebuildMove.h
         moves/FastClashAvoidingMove.h
@@ -98,7 +99,8 @@ add_library( libKGS
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
         math/SVD.cpp
-        SamplingOptions.cpp
+        applications/options/SamplingOptions.cpp
+        applications/options/RelativeTransitionOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
@@ -112,7 +114,7 @@ add_library( libKGS
         freeMKL.cpp
         moves/Move.cpp
         moves/RawMove.cpp
-        moves/CompositeMove.cpp
+#        moves/CompositeMove.cpp
         moves/NullspaceMove.cpp
         moves/RebuildMove.cpp
         moves/FastClashAvoidingMove.cpp
@@ -161,7 +163,12 @@ add_library( libKGS
         core/graph/KinVertex.h
         core/graph/KinTree.cpp
         core/graph/KinTree.h
-		directions/LSNrelativeDirection.cpp directions/LSNrelativeDirection.h core/graph/Constraint.cpp core/graph/Constraint.h core/ConstraintSet.cpp core/ConstraintSet.h)
+		directions/LSNrelativeDirection.cpp
+        directions/LSNrelativeDirection.h
+        core/graph/Constraint.cpp
+        core/graph/Constraint.h
+        core/ConstraintSet.cpp
+        core/ConstraintSet.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -213,27 +220,29 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR})		#Absolute header paths
 #include_directories(${CMAKE_SOURCE_DIR}/utils/) #LoopTK headers
 
-add_executable( kgs             applications/MainKGS.cpp)
-add_executable( rigidity        applications/MainRigidity.cpp )
-add_executable( print_torsions  applications/MainTorsionPrinter.cpp )
-add_executable( ensemble_pca    applications/MainEnsemblePCA.cpp )
-add_executable( rmsd            applications/MainRmsd.cpp )
-add_executable( transition      applications/MainTransition.cpp )
-add_executable( loopexplore     applications/MainLoopExplore.cpp )
-add_executable( hierarchy       applications/MainHierarchy.cpp )
-add_executable( mcmc            applications/MainMCMC.cpp )
-add_executable( relative_transition            applications/MainRelativeTransition.cpp )
+add_executable( kgs_explore         applications/MainExplore.cpp)
+add_executable( kgs_rigidity        applications/MainRigidity.cpp )
+#add_executable( kgs_print_torsions  applications/MainTorsionPrinter.cpp )
+add_executable( kgs_ensemble_pca    applications/MainEnsemblePCA.cpp )
+add_executable( kgs_rmsd            applications/MainRmsd.cpp )
+add_executable( kgs_transition      applications/MainTransition.cpp )
+add_executable( kgs_loopexplore     applications/MainLoopExplore.cpp )
+add_executable( kgs_hierarchy       applications/MainHierarchy.cpp )
+#add_executable( kgs_mcmc            applications/MainMCMC.cpp )
+add_executable( kgs_test            applications/MainTest.cpp )
+add_executable( kgs_relative_transition            applications/MainRelativeTransition.cpp )
 
-target_link_libraries( kgs              libKGS ${GSL_LIBRARIES} )
-target_link_libraries( rigidity         libKGS ${GSL_LIBRARIES} )
-target_link_libraries( print_torsions   libKGS ${GSL_LIBRARIES} )
-target_link_libraries( ensemble_pca     libKGS ${GSL_LIBRARIES} )
-target_link_libraries( rmsd             libKGS ${GSL_LIBRARIES} )
-target_link_libraries( transition       libKGS ${GSL_LIBRARIES} )
-target_link_libraries( loopexplore      libKGS ${GSL_LIBRARIES} )
-target_link_libraries( hierarchy        libKGS ${GSL_LIBRARIES} )
-target_link_libraries( mcmc             libKGS ${GSL_LIBRARIES} )
-target_link_libraries( relative_transition             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_explore          libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_rigidity         libKGS ${GSL_LIBRARIES} )
+#target_link_libraries( kgs_print_torsions   libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_ensemble_pca     libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_rmsd             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_transition       libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_loopexplore      libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_hierarchy        libKGS ${GSL_LIBRARIES} )
+#target_link_libraries( kgs_mcmc             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_test        libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_relative_transition             libKGS ${GSL_LIBRARIES} )
 
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR} )
 

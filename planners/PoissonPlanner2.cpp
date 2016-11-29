@@ -33,6 +33,7 @@
 #include <directions/Direction.h>
 #include <directions/RandomDirection.h>
 #include <loopclosure/ExactIK.h>
+#include <IO.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -43,16 +44,22 @@ using namespace std;
 
 PoissonPlanner2::PoissonPlanner2(
     Molecule * protein,
-    Move& move,
-    metrics::Metric& metric,
-    vector<ResTriple>& exactIKtriples
+    vector<ResTriple>& exactIKtriples,
+    int stopAfter,
+    int maxRejects,
+    double stepSize,
+    const string &resNetwork
 ):
-    SamplingPlanner(move,metric),
-    stop_after(SamplingOptions::getOptions()->samplesToGenerate),
-    max_rejects_before_close(SamplingOptions::getOptions()->poisson_max_rejects_before_close),
-    m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
+    SamplingPlanner(),
+//    m_stopAfter(SamplingOptions::getOptions()->samplesToGenerate),
+//    m_maxRejectsBeforeClose(SamplingOptions::getOptions()->poissonMaxRejectsBeforeClose),
+//    m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
+    m_stopAfter(stopAfter),
+    m_maxRejectsBeforeClose(maxRejects),
+    m_bigRad(stepSize*4.0/3.0),
     m_lilRad(m_bigRad/2),
-    protein(protein),
+    m_protein(protein),
+    m_resNetwork(resNetwork),
     m_ikTriples(exactIKtriples)
 {
   m_root = new Configuration( protein );
@@ -75,16 +82,16 @@ PoissonPlanner2::~PoissonPlanner2() {
 void PoissonPlanner2::GenerateSamples()
 {
   //cout<<"PoissonPlanner2::GenerateSamples()"<<endl;
-  Selection sel(SamplingOptions::getOptions()->residueNetwork);
+  Selection sel(m_resNetwork);
   Direction* direction = new RandomDirection(sel);
-  gsl_vector* gradient = gsl_vector_alloc(protein->totalDofNum());
-  double origStepSize = move.getStepSize();
+  gsl_vector* gradient = gsl_vector_alloc(m_protein->totalDofNum());
+  double origStepSize = m_move->getStepSize();
 
   int sample_num = 1;
   int rejected_clash     = 0;
   int rejected_collision = 0;
 
-  while(sample_num<stop_after && !open_samples.empty()) {
+  while(sample_num<m_stopAfter && !open_samples.empty()) {
     //Pick random open conformation
     auto it = open_samples.begin();
     std::advance(it, rand()%open_samples.size());
@@ -97,23 +104,23 @@ void PoissonPlanner2::GenerateSamples()
     }
 
 
-    //Make max_rejects_before_close attempts at perturbing it
+    //Make m_maxRejectsBeforeClose attempts at perturbing it
     size_t attempt;
-    for( attempt=0; attempt<max_rejects_before_close; attempt++ ) {
-      move.setStepSize(origStepSize);
+    for( attempt=0; attempt<m_maxRejectsBeforeClose; attempt++ ) {
+      m_move->setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
-      Configuration *pert = move.move(seed, gradient); //Perform move
+      Configuration *pert = m_move->move(seed, gradient); //Perform move
 
       // Scale gradient so move is in Poisson disc
-      double dist = m_metric.distance(pert, seed);
+      double dist = m_metric->distance(pert, seed);
       int scaleAttempts = 0;
       while( dist<m_lilRad || dist>m_bigRad){
         if(++scaleAttempts==5) break;
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
-        pert = move.move(seed, gradient);
-        dist = m_metric.distance(pert, seed);
+        pert = m_move->move(seed, gradient);
+        dist = m_metric->distance(pert, seed);
       }
 
       if(scaleAttempts==5){
@@ -151,7 +158,7 @@ void PoissonPlanner2::GenerateSamples()
       pert->m_distanceToIni    = memo_distance(pert,m_root);
       pert->m_distanceToParent = memo_distance(pert,seed);
       updateMaxDists(pert);
-      writeNewSample(pert, m_root, sample_num);
+      IO::writeNewSample(pert, m_root, sample_num, m_workingDir, m_saveData);
 
       log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
       log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
@@ -207,7 +214,7 @@ void PoissonPlanner2::GenerateSamples()
         open_samples.push_back(pert);
         all_samples.push_back(pert);
         updateMaxDists(pert);
-        writeNewSample(pert, m_root, sample_num);
+        IO::writeNewSample(pert, m_root, sample_num, m_workingDir, m_saveData);
 
         log("samplingStatus") << "> "<<pert->getMolecule()->getName()<<"_new_"<<sample_num<<".pdb";
         log("samplingStatus") << " .. init dist: "<< setprecision(3)<<pert->m_distanceToIni;
@@ -242,7 +249,7 @@ double PoissonPlanner2::memo_distance(Configuration* c1, Configuration* c2)
   auto it = m_distances.find({c1,c2});
   if( it!=m_distances.end() ) return it->second;
 
-  double dist = m_metric.distance(c1,c2); //Expensive
+  double dist = m_metric->distance(c1,c2); //Expensive
   m_distances[{c1,c2}] = dist;
   m_distances[{c2,c1}] = dist;
 

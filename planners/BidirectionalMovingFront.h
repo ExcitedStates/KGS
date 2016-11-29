@@ -12,7 +12,6 @@
 #include <metrics/RMSD.h>
 
 #include "metrics/Metric.h"
-#include "SamplingOptions.h"
 #include "core/Molecule.h"
 #include "core/Configuration.h"
 #include "planners/SamplingPlanner.h"
@@ -32,7 +31,28 @@
 
 class BidirectionalMovingFront : public SamplingPlanner{
  public:
-  BidirectionalMovingFront(Molecule * protein, Move& move, metrics::Metric& metric, Direction& direction, Molecule * target, bool blendedDirection);
+  BidirectionalMovingFront(
+      Molecule *protein,
+      Direction *direction,
+      Molecule *target,
+      Selection &metricSelection,
+      std::string& collisionCheck,
+      bool blendedDir,
+      int stopAfter,
+      int frontSize,
+      double stepSize,
+      int switchAfter,
+      double convergeDistance,
+      bool alignAlways,
+      double biasToTarget
+  );
+//  BidirectionalMovingFront(Molecule * protein,
+//                           Direction* direction,
+//                           Molecule * target,
+//                           Selection * metricSelection,
+//                           bool blendedDirection,
+//                           int stopAfter,
+//                           int frontSize  );
   ~BidirectionalMovingFront();
 
   void GenerateSamples();
@@ -52,15 +72,11 @@ class BidirectionalMovingFront : public SamplingPlanner{
 
   void setClosestConfigRMSD();
 
-  Direction& direction;
+  Direction* direction;
 
  private:
 
-  const int stopAfter;
-
-  void updateFwdFront(Configuration* qNew);
-  void evaluateDistances(Configuration* qNew);
-  void swapFwdRev();
+  const int m_stopAfter;
 
   Molecule *m_protein;
   Molecule *m_target;
@@ -86,13 +102,24 @@ class BidirectionalMovingFront : public SamplingPlanner{
   int m_frontSize;
   bool m_isBlended;
 
+  std::string m_collisionCheck;
   bool m_samplingForward;
+  double m_stepSize;
+  int m_switchAfter;
+  double m_convergeDistance;
+  bool m_alignAlways;
+  double m_biasToTarget;
 
   int m_nCDCall = 0;
   int m_nMetricsCall = 0;
 
   int movesRejected = 0;
   int movesAccepted = 0;
+
+  void updateFwdFront(Configuration* qNew);
+  void evaluateDistances(Configuration* qNew);
+  void swapFwdRev();
+
 };
 
 

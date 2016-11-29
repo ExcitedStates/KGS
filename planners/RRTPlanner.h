@@ -34,7 +34,6 @@
 #include <directions/Direction.h>
 
 #include "metrics/Metric.h"
-#include "SamplingOptions.h"
 #include "core/Configuration.h"
 #include "planners/SamplingPlanner.h"
 
@@ -46,47 +45,61 @@ class Molecule;
 #define DEFAULT_MAX_RMSD 25
 
 
-class RRTPlanner: public SamplingPlanner
-{
-public: 
-	RRTPlanner(Molecule *, Move& move, metrics::Metric& metric, Direction& direction);
-	~RRTPlanner();
+class RRTPlanner : public SamplingPlanner {
+ public:
+  RRTPlanner(
+      Molecule *mol,
+      Direction *direction,
+      double radius,
+      int numSamples,
+      int gradientSelection,
+      double stepSize,
+      double maxRotation,
+      bool scaleToRadius
+  );
 
-	void GenerateSamples();
+  ~RRTPlanner();
 
-	std::list<Configuration*>& Samples(){ return m_samples; }
+  void GenerateSamples();
 
-	double m_deform_mag;
-	double m_rand_radius;
+  std::list<Configuration *> &Samples() { return m_samples; }
 
-protected:
-	Configuration* GenerateRandConf();
-	Configuration* SelectNodeFromBuckets(Configuration *pTarget);
+  double m_deform_mag;
+  double m_rand_radius;
 
-	unsigned int m_current_max_bucket_id;
-	std::list<Configuration*> distance_buckets[MAX_BUCKET_NUM];
+ protected:
+  Configuration *GenerateRandConf();
 
-  Direction& direction;
+  Configuration *SelectNodeFromBuckets(Configuration *pTarget);
+
+  unsigned int m_current_max_bucket_id;
+  std::list<Configuration *> distance_buckets[MAX_BUCKET_NUM];
+
+  Direction *direction;
 
 
-public:
-	Molecule *m_protein;
-	Molecule *m_target;
+ private:
+  Molecule *m_molecule;
+  Molecule *m_target;
 
-	double m_max_distance;
-	double m_bucket_size;
-	int m_numBuckets; //number of buckets
+  double m_radius;
+  double m_bucketSize;
+  int m_numBuckets; //number of buckets
 
-	int m_numDOFs;
-	std::list<Configuration*> m_samples;
-	std::vector<Configuration*> m_path;
+  int m_numDOFs;
+  std::list<Configuration *> m_samples;
+  std::vector<Configuration *> m_path;
 
-	double m_top_min_rmsd;
-	int m_top_min_rmsd_id;
-	double m_minMovDihDistance;
-	int m_minMovDihDistance_id;
+  double m_top_min_rmsd;
+  int m_top_min_rmsd_id;
+  double m_minMovDihDistance;
+  int m_minMovDihDistance_id;
 
-	int m_numSamples;
+  int m_numSamples;
+  int m_gradientSelection;
+  double m_stepSize;
+  double m_maxRotation;
+  bool m_scaleToRadius;
 };
 
 

@@ -63,7 +63,7 @@ class SamplingOptions
   /** Percentage to bias random sample to target conf*/
   double biasToTarget;
   /** Number perturbations that the Poisson planner tries before a sample is 'closed' */
-  int poisson_max_rejects_before_close;
+  int poissonMaxRejectsBeforeClose;
 
   /** The length of free (i.e. not annotated as fixed) fragments being rebuilt */
   int rebuild_fragment_length;

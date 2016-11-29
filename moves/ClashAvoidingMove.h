@@ -18,7 +18,10 @@
 class ClashAvoidingMove : public Move
 {
  public:
-  ClashAvoidingMove();
+  ClashAvoidingMove( double maxRotation,
+                     int trialSteps,
+                     const std::string& atomTypes,
+                     bool projectConstraints );
 
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);

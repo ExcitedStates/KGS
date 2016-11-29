@@ -1,28 +1,16 @@
 #include <string>
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
 #include <list>
 
 #include <gsl/gsl_matrix.h>
-#include <math/gsl_helpers.h>
-#include <gsl/gsl_matrix_double.h>
 #include <math/NullspaceSVD.h>
 
 #include "core/Molecule.h"
-#include "core/Chain.h"
-#include "planners/SamplingPlanner.h"
-#include "planners/RRTPlanner.h"
-#include "planners/DihedralRRT.h"
 #include "core/Grid.h"
-#include "Util.h"
-#include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
-#include "core/HBond.h"
 #include "Logger.h"
-#include "SamplingOptions.h"
-#include "moves/CompositeMove.h"
+#include "applications/options/SamplingOptions.h"
 
 extern double jacobianTime;
 extern double rigidityTime;
@@ -121,7 +109,7 @@ int main( int argc, char* argv[] ){
                  + ".txt";
 
   ///Write Jacobian
-  //gsl_matrix_outtofile(m_protein->m_conf->CycleJacobian, outJac);
+  //gsl_matrix_outtofile(m_molecule->m_conf->CycleJacobian, outJac);
   /////Write Null Space matrix
   //gsl_matrix_outtofile(conf->CycleNullSpace->m_nullspaceBasis,outNull);
   /////Write Singular values

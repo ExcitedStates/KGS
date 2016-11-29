@@ -11,11 +11,19 @@
 
 using namespace std;
 
-ClashAvoidingMove::ClashAvoidingMove() :
-    m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
-    m_collisionCheckAtomTypes(SamplingOptions::getOptions()->collisionCheck),
-    m_projectConstraints(SamplingOptions::getOptions()->projectConstraints)
+ClashAvoidingMove::ClashAvoidingMove( double maxRotation,
+                                      int trialSteps,
+                                      const std::string& atomTypes,
+                                      bool projectConstraints
+) :
+    m_maxRotation(maxRotation),
+    m_trialSteps(trialSteps),
+    m_collisionCheckAtomTypes(atomTypes),
+    m_projectConstraints(projectConstraints)
+//    m_maxRotation(SamplingOptions::getOptions()->maxRotation),
+//    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
+//    m_collisionCheckAtomTypes(SamplingOptions::getOptions()->collisionCheck),
+//    m_projectConstraints(SamplingOptions::getOptions()->projectConstraints)
 {
   m_movesAccepted = 0;
   m_movesRejected = 0;
@@ -68,7 +76,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       log("dominik") << "Rejected!" << endl;
       m_movesRejected++;
 
-      log("dominik")<<"Now computing a clash free direction!"<<endl;
+      log("dominik")<<"Now computing a clash free m_direction!"<<endl;
       allCollisions = protein->getAllCollisions(m_collisionCheckAtomTypes);//get all collisions at this configuration
 
       for(auto const& prev_coll: previousCollisions){//collisions from previous trial

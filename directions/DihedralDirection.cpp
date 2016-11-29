@@ -26,7 +26,7 @@
 
 #include "DihedralDirection.h"
 
-#include <SamplingOptions.h>
+#include <applications/options/SamplingOptions.h>
 #include <cassert>
 #include <cmath>
 #include "core/Molecule.h"

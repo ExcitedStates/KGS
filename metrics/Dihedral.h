@@ -7,14 +7,15 @@
 #include "Metric.h"
 #include "core/Configuration.h"
 
-namespace metrics{
+namespace metrics {
 
-	class Dihedral: public Metric{
-		public:
-			Dihedral(Selection& selection);
+class Dihedral : public Metric {
+ public:
+  Dihedral(Selection &selection);
 
-			double distance(Configuration*, Configuration*);
+  double distance(Configuration *, Configuration *);
 
-	};
+};
+
 }
 #endif

@@ -1,6 +1,5 @@
 #include <cmath>
 #include "metrics/RMSD.h"
-#include "../SamplingOptions.h"
 #include "core/Chain.h"
 
 using namespace std;
@@ -14,21 +13,12 @@ RMSD::RMSD(Selection& selection):
 
 double RMSD::distance(Configuration* c1, Configuration* c2)
 {
-//  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsAlign();
   const std::vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
-//  const std::vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
-//  if( atomsRMSD1.empty() || atomsRMSD2.empty() ){
   if( atomsRMSD1.empty() ){
     cerr<<"RMSD::distance - Atom-selection given to RMSD metric contained no atoms: "<<m_selection<<endl;
     exit(-1);
   }
-
-//  if( atomsRMSD1.size() != atomsRMSD2.size() ){
-//    cerr<<"RMSD::distance(..)";
-//    cerr<<" - Configurations have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
-//    exit(-1);
-//  }
 
   Molecule * protein = c1->updatedMolecule();
   int atom_num = atomsRMSD1.size();
@@ -99,9 +89,7 @@ double RMSD::distance(Configuration* c1, Configuration* c2)
 
 double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
 
-//  const std::vector<Atom*>* atomsRMSD = SamplingOptions::getOptions()->getAtomsMoving();
   vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
-//  vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(c2->getMolecule());
 
   if (atomsRMSD1.empty()) {
     cout<<"RMSD::distance_noOptimization - Found no atoms to align .. using all"<<endl;
@@ -154,20 +142,12 @@ double RMSD::distance_noOptimization (Configuration *c1, Configuration *c2) {
 
 double RMSD::align(Molecule * other, Molecule * base) {
 
-//  const std::vector<Atom*>* atomsAlign = SamplingOptions::getOptions()->getAtomsAlign();
-
-//  vector<Atom*>& atomsRMSD1 = m_selection.getSelectedAtoms(other);
   vector<Atom*>& atomsRMSD2 = m_selection.getSelectedAtoms(base);
 
   if (atomsRMSD2.empty()) {
     cout<<"RMSD::distance_noOptimization - Found no atoms to align .. using all"<<endl;
     exit(-1);
   }
-//  if( atomsRMSD1.size() != atomsRMSD2.size() ){
-//    cerr<<"RMSD::align(..)";
-//    cerr<<" - Molecules have different number of atoms ("<<atomsRMSD1.size()<<" vs "<<atomsRMSD2.size()<<")"<<endl;
-//    exit(-1);
-//  }
 
   int atom_size = atomsRMSD2.size();
   int coord_num = atom_size * 3;

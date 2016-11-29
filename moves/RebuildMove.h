@@ -9,7 +9,6 @@
 
 #include "moves/Move.h"
 #include "core/Configuration.h"
-#include "SamplingOptions.h"
 
 class Resampler{
  public:
@@ -19,7 +18,7 @@ class Resampler{
 class RebuildMove: public Move
 {
  public:
-  RebuildMove();
+  RebuildMove(int fragmentLength, int aggression);
 
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);

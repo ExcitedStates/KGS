@@ -28,6 +28,7 @@
 #include <moves/DecreaseStepMove.h>
 #include <loopclosure/ExactIK.h>
 #include <metrics/RMSDnosuper.h>
+#include <applications/options/SamplingOptions.h>
 
 using namespace std;
 
@@ -120,7 +121,10 @@ int main( int argc, char* argv[] ) {
   Move* move = nullptr;
   if(options.preventClashes){
     log("samplingStatus")<<"Using clash-avoiding move"<<endl;
-    move = new FastClashAvoidingMove();
+    move = new FastClashAvoidingMove( options.maxRotation,
+                                      options.decreaseSteps,
+                                      options.collisionCheck,
+                                      options.projectConstraints );
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
     move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
@@ -132,7 +136,7 @@ int main( int argc, char* argv[] ) {
   }
   move->setStepSize(options.stepSize);
 
-  //Initialize direction
+  //Initialize m_direction
   Direction* direction = nullptr;
   if(options.gradient == 0)      direction = new RandomDirection(resNetwork);
   else if(options.gradient <= 2) direction = new DihedralDirection(resNetwork);
@@ -168,15 +172,46 @@ int main( int argc, char* argv[] ) {
 
   //Initialize planner
   SamplingPlanner* planner = nullptr;
-  if(options.planner_string=="binnedrrt")         planner = new RRTPlanner(     protein, *move, *metric, *direction );
-  else if(options.planner_string.empty())         planner = new RRTPlanner(     protein, *move, *metric, *direction );
-  else if(options.planner_string=="dihedralrrt")  planner = new DihedralRRT(    protein, *move, *metric, *direction );
-  else if(options.planner_string=="poisson")      planner = new PoissonPlanner( protein, *move, *metric );
-  else if(options.planner_string=="poisson2")     planner = new PoissonPlanner2(protein, *move, *metric, ikTriples );
+  if(options.planner_string.empty() || options.planner_string=="binnedrrt")
+    planner = new RRTPlanner(
+        protein,
+        direction,
+        options.explorationRadius,
+        options.samplesToGenerate,
+        options.gradient,
+        options.stepSize,
+        options.maxRotation,
+        options.scaleToRadius
+    );
+  else if(options.planner_string=="dihedralrrt")
+    planner = new DihedralRRT(
+        protein,
+        direction,
+        options.samplesToGenerate,
+        options.explorationRadius
+    );
+  else if(options.planner_string=="poisson")
+    planner = new PoissonPlanner(
+        protein,
+        options.samplesToGenerate,
+        options.poissonMaxRejectsBeforeClose,
+        options.stepSize,
+        options.gradientSelection
+    );
+  else if(options.planner_string=="poisson2")
+    planner = new PoissonPlanner2(
+        protein,
+        ikTriples,
+        options.samplesToGenerate,
+        options.poissonMaxRejectsBeforeClose,
+        options.stepSize,
+        options.residueNetwork
+    );
   else{
     cerr<<"Unknown --planner option specified!"<<endl;
     exit(-1);
   }
+  planner->initialize(move, metric, options.workingDirectory, options.saveData);
 
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";

@@ -29,7 +29,6 @@
 #include <cmath>
 
 #include "RandomDirection.h"
-#include "SamplingOptions.h"
 
 RandomDirection::RandomDirection(Selection& selectionMoving, double maxRotation):
     m_maxRotation(maxRotation),

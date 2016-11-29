@@ -11,10 +11,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <metrics/Dihedral.h>
 
 #include "directions/Direction.h"
 #include "metrics/Metric.h"
-#include "SamplingOptions.h"
 #include "core/Configuration.h"
 #include "planners/SamplingPlanner.h"
 
@@ -22,45 +22,53 @@
 #define DEFAULT_MAX_RMSD 25
 
 
+class DihedralRRT : public SamplingPlanner {
+ public:
+  DihedralRRT(
+      Molecule *protein,
+      Direction *direction,
+      int numSamples,
+      double maxDistance
+  );
 
-class DihedralRRT : public SamplingPlanner{
-public:
-	DihedralRRT(Molecule *, Move&, metrics::Metric&, Direction&);
-	~DihedralRRT();
+  ~DihedralRRT();
 
-	void GenerateSamples();
+  void GenerateSamples();
 
-	std::list<Configuration*>& Samples(){ return m_samples; }
+  std::list<Configuration *> &Samples() { return m_samples; }
 
-	double m_deform_mag;
-	double m_rand_radius;
+  double m_deform_mag;
+  double m_rand_radius;
 
-protected:
-	Configuration* GenerateRandConf();
-	Configuration* SelectNodeFromBuckets(Configuration *pTarget);
+ protected:
+  Configuration *GenerateRandConf();
 
-  Direction& direction;
+  Configuration *SelectNodeFromBuckets(Configuration *pTarget);
 
-public:
-	Molecule *m_protein;
-	Molecule *m_target;
+  Direction *m_direction;
 
-	double m_max_distance;
+ private:
+  Molecule *m_protein;
+  Molecule *m_target;
 
-	std::list<Configuration*> m_samples;
-	int m_numDOFs;
-	std::vector<Configuration*> m_path;
+  metrics::Dihedral *m_dihedralMetric;
 
-	int m_nCDCall;
-	int m_nRMSDCall;
+  double m_maxDistance;
 
-	double m_top_min_rmsd;
-	int m_top_min_rmsd_id;
-	double m_minMovDihDistance;
-	int m_minMovDihDistance_id;
+  std::list<Configuration *> m_samples;
+  int m_numDOFs;
+  std::vector<Configuration *> m_path;
 
-	int m_numSamples;
-	int m_max_depth;
+  int m_nCDCall;
+  int m_nRMSDCall;
+
+  double m_top_min_rmsd;
+  int m_top_min_rmsd_id;
+  double m_minMovDihDistance;
+  int m_minMovDihDistance_id;
+
+  int m_numSamples;
+  int m_max_depth;
 };
 
 #endif /* DIHEDRALRRT_H_ */

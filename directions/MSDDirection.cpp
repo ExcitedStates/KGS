@@ -26,7 +26,6 @@
 
 #include "MSDDirection.h"
 #include "metrics/RMSD.h"
-#include "SamplingOptions.h"
 #include "core/Molecule.h"
 #include "core/Chain.h"
 

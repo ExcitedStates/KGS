@@ -9,7 +9,8 @@
 //#include "QRGSL.h"
 //#include "QRMKL.h"
 
-double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
+//double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
+double NullspaceSVD::SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
 
 using namespace std;
 
@@ -41,11 +42,13 @@ void NullspaceSVD::updateFromMatrix()
     gsl_matrix_free(m_nullspaceBasis);
 
   if (m_nullspaceSize > 0) {
-    gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(m_svd->V,
-                                                               0,                               //Row
-                                                               m_svd->V->size2 - m_nullspaceSize, //Col
-                                                               m_svd->V->size2,                 //Height
-                                                               m_nullspaceSize);                  //Width
+    gsl_matrix_view nullspaceBasis_view = gsl_matrix_submatrix(
+        m_svd->V,
+        0,                                 //Row
+        m_svd->V->size2 - m_nullspaceSize, //Col
+        m_svd->V->size2,                   //Height
+        m_nullspaceSize                    //Width
+    );
 
     m_nullspaceBasis = gsl_matrix_calloc(m_svd->V->size2, m_nullspaceSize);
     gsl_matrix_memcpy(m_nullspaceBasis, &nullspaceBasis_view.matrix);
@@ -70,3 +73,7 @@ SVD *NullspaceSVD::getSVD() const {
   return m_svd;
 }
 
+void NullspaceSVD::setSingularValueTolerance(double val)
+{
+  NullspaceSVD::SINGVAL_TOL = val;
+}

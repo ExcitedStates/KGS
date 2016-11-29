@@ -37,11 +37,20 @@
 
 using namespace std;
 
-FastClashAvoidingMove::FastClashAvoidingMove() :
-    m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
-    m_collisionCheckAtomTypes(SamplingOptions::getOptions()->collisionCheck),
-    m_projectConstraints(SamplingOptions::getOptions()->projectConstraints)
+FastClashAvoidingMove::FastClashAvoidingMove(
+    double maxRotation,
+    int trialSteps,
+    const string& atomTypes,
+    bool projectConstraints
+) :
+    m_maxRotation(maxRotation),
+    m_trialSteps(trialSteps),
+    m_collisionCheckAtomTypes(atomTypes),
+    m_projectConstraints(projectConstraints)
+//    m_maxRotation(SamplingOptions::getOptions()->maxRotation),
+//    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
+//    m_collisionCheckAtomTypes(SamplingOptions::getOptions()->collisionCheck),
+//    m_projectConstraints(SamplingOptions::getOptions()->projectConstraints)
 {
   m_movesAccepted = 0;
   m_movesRejected = 0;

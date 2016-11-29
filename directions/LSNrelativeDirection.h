@@ -36,17 +36,20 @@
 #include "core/Configuration.h"
 
 class LSNrelativeDirection: public Direction  {
-public:
-    LSNrelativeDirection(Selection& atomsMoving, std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
+ public:
+  LSNrelativeDirection(Selection& atomsMoving,
+                       const std::vector< std::tuple<Atom*, Atom*, double> >& goal_distances);
 
-private:
-    void computeGradient(Configuration* conf, Configuration* conf2, gsl_vector* ret);
+ protected:
+  void computeGradient(Configuration* conf, Configuration* conf2, gsl_vector* ret) override;
 
-    void fillmatrices(Configuration* current_q, gsl_matrix* targetJacobian, gsl_matrix* targetDirection);
-   // void clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein);
-    gsl_matrix* determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition);
-    Selection& m_atomsMovingSelection;
-    std::vector< std::tuple<Atom*, Atom*, double> > goal_distances;
+ private:
+
+  void fillmatrices(Configuration* current_q, gsl_matrix* targetJacobian, gsl_matrix* targetDirection);
+  // void clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein);
+  gsl_matrix* determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition);
+  Selection& m_atomsMovingSelection;
+  std::vector< std::tuple<Atom*, Atom*, double> > goal_distances;
 };
 
 

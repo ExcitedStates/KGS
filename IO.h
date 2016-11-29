@@ -40,44 +40,72 @@
 
 class IO {
  public:
-	static ResidueProfile readResidueProfile ();
-	static Molecule* readPdb (
-			const std::string& pdb_file,
-      Selection& movingResidues,
-			const std::vector<std::string>& extraCovBonds = {},
-      const std::vector<int>& roots = {},
-      const std::string& hbondMethod = "",
-      const std::string& hbondFile = "",
-			const Molecule* reference = nullptr
+  static ResidueProfile readResidueProfile();
+
+  static Molecule *readPdb(
+      const std::string &pdb_file,
+      Selection &movingResidues,
+      const std::vector<std::string> &extraCovBonds = {},
+      const std::vector<int> &roots = {},
+      const std::string &hbondMethod = "",
+      const std::string &hbondFile = "",
+      const Molecule *reference = nullptr
   );
-  static void readHbonds(const std::string& hbondMethod, const std::string& hbondFile, Molecule* mol);
+
+  static void readHbonds(const std::string &hbondMethod, const std::string &hbondFile, Molecule *mol);
+
 //	static void readDssp (Molecule * protein, std::string dssp_file);
 //	static void readRigidbody (Molecule * molecule);
 //  static void readRigidbody (Molecule * molecule, Selection& movingResidues);
-	static void writePdb (Molecule * molecule, std::string output_file_name);
-	static void writePyMolScript(Molecule * molecule, std::string pdb_file, std::string output_file_name);
-  static void writeBondLengthsAndAngles (Molecule *molecule, std::string output_file_name);
-	static void writeCovBonds (Molecule *molecule, std::string output_file_name);
+  static void writePdb(Molecule *molecule, std::string output_file_name);
+
+  static void writePyMolScript(Molecule *molecule, std::string pdb_file, std::string output_file_name);
+
+  static void writeBondLengthsAndAngles(Molecule *molecule, std::string output_file_name);
+
+  static void writeCovBonds(Molecule *molecule, std::string output_file_name);
+
 //	static void readCovBonds  (Molecule *molecule, std::string input_file_name);
-	static void writeHbondsIn (Molecule * molecule, std::string output_file_name);
-	static void writeHbonds (Molecule * molecule, std::string output_file_name);
-	static void writeHbondsChange (Configuration * conf, std::string output_file_name);
-	static void readHbonds (Molecule *molecule, std::string hbond_file_name);
-  static void readAnnotations (Molecule *molecule, std::string annotation_file_name);
-	static void writeRBs(Molecule * molecule, std::string output_file_name);
-	static void writeStats(Molecule * molecule, std::string output_file_name);
-	static void writeQ (Molecule *molecule, Configuration* referenceConf, std::string output_file_name);
-  static void writeTrajectory (Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
-  static std::vector< std::tuple<Atom*, Atom*, double> > readRelativeDistances(const std::string& fname, Molecule* mol);
-  static void writeRigidbodyIDToBFactor(Molecule* mol);
+  static void writeHbondsIn(Molecule *molecule, std::string output_file_name);
+
+  static void writeHbonds(Molecule *molecule, std::string output_file_name);
+
+  static void writeHbondsChange(Configuration *conf, std::string output_file_name);
+
+  static void readHbonds(Molecule *molecule, std::string hbond_file_name);
+
+  static void readAnnotations(Molecule *molecule, std::string annotation_file_name);
+
+  static void writeRBs(Molecule *molecule, std::string output_file_name);
+
+  static void writeStats(Molecule *molecule, std::string output_file_name);
+
+  static void writeQ(Molecule *molecule, Configuration *referenceConf, std::string output_file_name);
+
+  static void
+  writeTrajectory(Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
+
+  static std::vector<std::tuple<Atom *, Atom *, double> >
+  readRelativeDistances(const std::string &fname, Molecule *mol);
+
+  static void writeRigidbodyIDToBFactor(Molecule *mol);
+
+  static void
+  writeNewSample(Configuration *conf, Configuration *ref, int sample_num, const std::string &workingDir, int saveData);
+
  private:
 //	static void makeCovBond (Residue* res1, Residue* res2, std::string atom_name1, std::string atom_name2);
-  static void readHbonds_dssr(Molecule * molecule, std::string dssrFile);
-  static void readHbonds_rnaview(Molecule * molecule, std::string file, bool fillAnnotations);
-  static void readHbonds_first(Molecule * molecule, std::string file);
-  static void readHbonds_kinari(Molecule * molecule, std::string file);
-  static void readHbonds_hbPlus(Molecule * molecule, std::string file);
-  static void readHbonds_vadar(Molecule * molecule, std::string file);
+  static void readHbonds_dssr(Molecule *molecule, std::string dssrFile);
+
+  static void readHbonds_rnaview(Molecule *molecule, std::string file, bool fillAnnotations);
+
+  static void readHbonds_first(Molecule *molecule, std::string file);
+
+  static void readHbonds_kinari(Molecule *molecule, std::string file);
+
+  static void readHbonds_hbPlus(Molecule *molecule, std::string file);
+
+  static void readHbonds_vadar(Molecule *molecule, std::string file);
 };
 
 #endif

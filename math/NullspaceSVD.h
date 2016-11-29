@@ -28,12 +28,14 @@ class NullspaceSVD: public Nullspace {
       const std::string& null_file,
       const std::string& sval_file) const;
 
+  static void setSingularValueTolerance(double val);
+
 private:
   SVD* m_svd;                  ///< SVD underlying this nullspace
 
   /// These values have to be chosen according to the numerical analysis
-//  static constexpr double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
-  static constexpr double RIGID_TOL =   1.0e-10; //0.0000000001; //depends on molecule, but 10^-10 seems a good fit!
+  static double SINGVAL_TOL;
+//  static constexpr double RIGID_TOL =   1.0e-10; //0.0000000001; //depends on molecule, but 10^-10 seems a good fit!
 
   friend class Configuration;
 };
