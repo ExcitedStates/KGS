@@ -51,7 +51,7 @@ This allows debuggers and analysers like gdb, lldb, or valgrind to give
 meaningful source-code info.
 
 
-## Compiling on Sherlock at Stanford
+## Compiling on Stanfords Sherlock cluster
 
 Sherlock has an old (4.4) GCC compiler and no MKL libraries by default. To 
 compile on Sherlock start an `sdev` session and from an empty directory type
