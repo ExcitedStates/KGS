@@ -28,7 +28,7 @@
 #include <moves/DecreaseStepMove.h>
 #include <loopclosure/ExactIK.h>
 #include <metrics/RMSDnosuper.h>
-#include <applications/options/SamplingOptions.h>
+#include <applications/options/ExploreOptions.h>
 
 using namespace std;
 
@@ -52,13 +52,13 @@ int main( int argc, char* argv[] ) {
   plannerStream.open("kgs_planner.log");
   enableLogger("dominik", plannerStream);
 
-  //SamplingOptions options(argc,argv);
-  SamplingOptions::createOptions(argc, argv);
+  //ExploreOptions options(argc,argv);
+  ExploreOptions::createOptions(argc, argv);
 
-  SamplingOptions &options = *(SamplingOptions::getOptions());
+  ExploreOptions &options = *(ExploreOptions::getOptions());
 
   if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//SamplingOptions
+    enableLogger("so");//ExploreOptions
     options.print();
   }
 
@@ -109,9 +109,9 @@ int main( int argc, char* argv[] ) {
   metrics::Metric* metric = nullptr;
   try {
     Selection metricSelection(options.metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="rmsd")        metric = new metrics::RMSD(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="rmsd")        metric = new metrics::RMSD(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
@@ -127,7 +127,7 @@ int main( int argc, char* argv[] ) {
                                       options.projectConstraints );
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(ExploreOptions::getOptions()->maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;

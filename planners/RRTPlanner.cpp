@@ -68,7 +68,7 @@ RRTPlanner::RRTPlanner(
     m_stepSize(stepSize),
     m_maxRotation(maxRotation),
     m_scaleToRadius(scaleToRadius)
-//m_maxDistance(SamplingOptions::getOptions()->explorationRadius)
+//m_maxDistance(ExploreOptions::getOptions()->explorationRadius)
 {
   m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//Edges.size();
   Configuration *pSmp = new Configuration(m_molecule);
@@ -130,7 +130,7 @@ void RRTPlanner::GenerateSamples() {
     CTKTimer timer;
     double start_time = timer.getTimeNow();
 
-//    if (SamplingOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
+//    if (ExploreOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
       log("dominik") << "Generating new target, getting new seed" << endl;
       createNewTarget = false;
       pTarget = GenerateRandConf();//used in selection ONLY if no target molecule is specified

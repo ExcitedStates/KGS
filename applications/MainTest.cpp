@@ -25,7 +25,7 @@
 #include "core/Chain.h"
 #include "IO.h"
 #include "loopclosure/ExactIK.h"
-#include "applications/options/SamplingOptions.h"
+#include "applications/options/ExploreOptions.h"
 #include "math/gsl_helpers.h"
 #include "core/Configuration.h"
 

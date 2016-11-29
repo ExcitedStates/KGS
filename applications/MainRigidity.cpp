@@ -10,7 +10,7 @@
 #include "HbondIdentifier.h"
 #include "IO.h"
 #include "Logger.h"
-#include "applications/options/SamplingOptions.h"
+#include "applications/options/ExploreOptions.h"
 
 extern double jacobianTime;
 extern double rigidityTime;
@@ -23,9 +23,9 @@ int main( int argc, char* argv[] ){
 
   if(argc<2){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
-  //SamplingOptions options(argc,argv);
-  SamplingOptions::createOptions(argc,argv);
-  SamplingOptions& options = *(SamplingOptions::getOptions());
+  //ExploreOptions options(argc,argv);
+  ExploreOptions::createOptions(argc,argv);
+  ExploreOptions& options = *(ExploreOptions::getOptions());
 
   string out_path = options.workingDirectory;
   //string pdb_file = path + protein_name + ".pdb";

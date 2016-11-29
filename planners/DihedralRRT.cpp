@@ -69,7 +69,7 @@ DihedralRRT::~DihedralRRT() {
 
 void DihedralRRT::GenerateSamples() {
   int nBatch = m_numSamples;
-//  int nBatch = SamplingOptions::getOptions()->samplesToGenerate;
+//  int nBatch = ExploreOptions::getOptions()->samplesToGenerate;
   int sample_id = 0, max_depth = 0, failed_trials = 0, total_trials = 0;
   Configuration *pTarget = nullptr, *pClosestSmp, *pNewSmp = nullptr;
   gsl_vector *gradient = gsl_vector_alloc(m_protein->totalDofNum());
@@ -85,7 +85,7 @@ void DihedralRRT::GenerateSamples() {
     CTKTimer timer;
     double start_time = timer.getTimeNow();
 
-//    if (SamplingOptions::getOptions()->sampleRandom || pTarget == nullptr || createNewTarget) {
+//    if (ExploreOptions::getOptions()->sampleRandom || pTarget == nullptr || createNewTarget) {
     log("dominik") << "Generating new target, getting new seed" << endl;
     pTarget = GenerateRandConf(); // used in selection ONLY if no target molecule specified
     createNewTarget = false;
@@ -144,7 +144,7 @@ Configuration *DihedralRRT::GenerateRandConf() {
     length += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
   }
   length = sqrt(length);
-//  if (SamplingOptions::getOptions()->scaleToRadius) {
+//  if (ExploreOptions::getOptions()->scaleToRadius) {
     double factor = pow(Random01(), 1.0 / m_numDOFs) * m_maxDistance / length;
     for (int i = 0; i < m_numDOFs; ++i) {
       pNewSmp->m_dofs[i] = factor * pNewSmp->m_dofs[i];

@@ -51,9 +51,9 @@ PoissonPlanner2::PoissonPlanner2(
     const string &resNetwork
 ):
     SamplingPlanner(),
-//    m_stopAfter(SamplingOptions::getOptions()->samplesToGenerate),
-//    m_maxRejectsBeforeClose(SamplingOptions::getOptions()->poissonMaxRejectsBeforeClose),
-//    m_bigRad(SamplingOptions::getOptions()->stepSize*4.0/3.0),
+//    m_stopAfter(ExploreOptions::getOptions()->samplesToGenerate),
+//    m_maxRejectsBeforeClose(ExploreOptions::getOptions()->poissonMaxRejectsBeforeClose),
+//    m_bigRad(ExploreOptions::getOptions()->stepSize*4.0/3.0),
     m_stopAfter(stopAfter),
     m_maxRejectsBeforeClose(maxRejects),
     m_bigRad(stepSize*4.0/3.0),

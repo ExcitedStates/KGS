@@ -16,7 +16,6 @@
 #include "IO.h"
 #include "Logger.h"
 #include "moves/NullspaceMove.h"
-#include "metrics/Dihedral.h"
 #include "directions/RandomDirection.h"
 #include "directions/DihedralDirection.h"
 #include "directions/MSDDirection.h"
@@ -24,7 +23,7 @@
 #include "directions/BlendedDirection.h"
 #include "moves/DecreaseStepMove.h"
 #include "metrics/RMSDnosuper.h"
-#include "applications/options/SamplingOptions.h"
+#include "applications/options/TransitionOptions.h"
 
 extern double jacobianTime;
 extern double rigidityTime;
@@ -32,7 +31,7 @@ extern double selectNodeTime;
 
 using namespace std;
 
-void targetedSampling(SamplingOptions& options){
+void targetedSampling(TransitionOptions& options){
 
   string pdb_file = options.initialStructureFile;
   Selection resNetwork(options.residueNetwork);
@@ -112,9 +111,9 @@ void targetedSampling(SamplingOptions& options){
   metrics::Metric* metric = nullptr;
   Selection metricSelection(options.metricSelection);
   try {
-    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+    if(TransitionOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(TransitionOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(TransitionOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
@@ -130,7 +129,7 @@ void targetedSampling(SamplingOptions& options){
                                  options.projectConstraints);
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(TransitionOptions::getOptions()->maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
@@ -151,16 +150,16 @@ void targetedSampling(SamplingOptions& options){
   else if(options.gradient == 2){
     BlendedDirection* bdir = new BlendedDirection();
     bdir->addDirection(new DihedralDirection(gradientSelection),0);
-    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    bdir->addDirection(new RandomDirection(blendedSelection,TransitionOptions::getOptions()->maxRotation), 1);
     direction = bdir;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways);
+    direction = new MSDDirection(gradientSelection, TransitionOptions::getOptions()->alignAlways);
   else if(options.gradient == 4){
     BlendedDirection* bdir = new BlendedDirection();
-    bdir->addDirection(new MSDDirection(gradientSelection, SamplingOptions::getOptions()->alignAlways),0);
-    bdir->addDirection(new RandomDirection(blendedSelection,SamplingOptions::getOptions()->maxRotation), 1);
+    bdir->addDirection(new MSDDirection(gradientSelection, TransitionOptions::getOptions()->alignAlways),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,TransitionOptions::getOptions()->maxRotation), 1);
     direction = bdir;
     blendedDir = true;
   }
@@ -303,12 +302,12 @@ int main( int argc, char* argv[] ) {
   debugStream.open("kgs_debug.log");
   enableLogger("debug", debugStream);
 
-  SamplingOptions::createOptions(argc, argv);
+  TransitionOptions::createOptions(argc, argv);
 
-  SamplingOptions &options = *(SamplingOptions::getOptions());
+  TransitionOptions &options = *(TransitionOptions::getOptions());
 
   if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//SamplingOptions
+    enableLogger("so");//TransitionOptions
     options.print();
   }
 

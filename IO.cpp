@@ -2167,7 +2167,7 @@ void IO::writeRigidbodyIDToBFactor(Molecule* mol)
 }
 
 void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num, const string &workingDir, int saveData) {
-//	const string& out_path = SamplingOptions::getOptions()->workingDirectory;
+//	const string& out_path = ExploreOptions::getOptions()->workingDirectory;
   const string &out_path = workingDir;
   const string &name = conf->getMolecule()->getName();
   string out_file = out_path + "output/" + name + "_new_" + std::to_string(static_cast<long long>(sample_num)) + ".pdb";

@@ -26,7 +26,7 @@
 
 #include "DihedralDirection.h"
 
-#include <applications/options/SamplingOptions.h>
+#include <applications/options/ExploreOptions.h>
 #include <cassert>
 #include <cmath>
 #include "core/Molecule.h"
@@ -40,7 +40,7 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
 {
   assert(target!=nullptr);
   Molecule * protein = conf->updatedMolecule();
-//  const std::vector<int>& resNetwork = SamplingOptions::getOptions()->residueNetwork;
+//  const std::vector<int>& resNetwork = ExploreOptions::getOptions()->residueNetwork;
 //  bool allResidues = resNetwork.size() == 0 ? true:false;
 
   for (auto const& edge: protein->m_spanningTree->Edges){

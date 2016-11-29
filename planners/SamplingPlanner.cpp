@@ -36,7 +36,7 @@ void SamplingPlanner::createTrajectory() {
 
   std::list<Configuration *> &m_samples = Samples();
 
-//	if( !( (SamplingOptions::getOptions()->targetStructureFile).empty() ) ){ //we have a target, trajectory to the closest configuration
+//	if( !( (ExploreOptions::getOptions()->targetStructureFile).empty() ) ){ //we have a target, trajectory to the closest configuration
 //		for( cit=m_samples.begin(); cit!=m_samples.end(); cit++ ){
 //			if((*cit)->m_id == m_closestFwdSample->m_id ){
 //				pSmp = (*cit);
@@ -56,7 +56,7 @@ void SamplingPlanner::createTrajectory() {
   //m_molecule->setConfiguration(pSmp);
   Molecule *m_protein = pSmp->updatedMolecule();
 
-//	SamplingOptions& options = *(SamplingOptions::getOptions());
+//	ExploreOptions& options = *(ExploreOptions::getOptions());
 //	const string& out_path = options.workingDirectory;
   const string &out_path = m_workingDir;
   const string &name = m_protein->getName();

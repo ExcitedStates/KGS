@@ -23,7 +23,7 @@
 #include <moves/DecreaseStepMove.h>
 #include <metrics/RMSDnosuper.h>
 #include <planners/PoissonPlanner2.h>
-#include <applications/options/SamplingOptions.h>
+#include <applications/options/ExploreOptions.h>
 #include <math/NullspaceSVD.h>
 
 using namespace std;
@@ -33,7 +33,7 @@ extern double rigidityTime;
 extern double selectNodeTime;
 //extern double SINGVAL_TOL;
 
-void randomSampling(SamplingOptions& options){
+void randomSampling(ExploreOptions& options){
 
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
@@ -73,9 +73,9 @@ void randomSampling(SamplingOptions& options){
   metrics::Metric* metric = nullptr;
   Selection metricSelection(options.metricSelection);
   try {
-    if(SamplingOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
-    if(SamplingOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(ExploreOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
@@ -91,7 +91,7 @@ void randomSampling(SamplingOptions& options){
                                  options.projectConstraints);
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(SamplingOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(ExploreOptions::getOptions()->maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
@@ -100,22 +100,22 @@ void randomSampling(SamplingOptions& options){
   }
   move->setStepSize(options.stepSize);
 
-  //Initialize m_direction
+  //Initialize direction
   Direction* direction;
   Selection selectionMoving(options.gradientSelection);
 
   try {
     if (options.gradient == 0) {
-      log("samplingStatus") << "Using random m_direction" << endl;
+      log("samplingStatus") << "Using random direction" << endl;
       direction = new RandomDirection(selectionMoving);
     } else if (options.gradient <= 2) {
-      log("samplingStatus") << "Using dihedral m_direction" << endl;
+      log("samplingStatus") << "Using dihedral direction" << endl;
       direction = new DihedralDirection(selectionMoving);
     } else if (options.gradient <= 4) {
-      log("samplingStatus") << "Using MSD m_direction" << endl;
-      direction = new MSDDirection(selectionMoving, SamplingOptions::getOptions()->alignAlways);
+      log("samplingStatus") << "Using MSD direction" << endl;
+      direction = new MSDDirection(selectionMoving, options.alignAlways);
     } else if (options.gradient <= 5) {
-      log("samplingStatus") << "Using LS m_direction" << endl;
+      log("samplingStatus") << "Using LS direction" << endl;
       direction = new LSNullspaceDirection(selectionMoving);
     } else {
       cerr << "Unknown gradient specified" << endl;
@@ -221,12 +221,12 @@ int main( int argc, char* argv[] ) {
   debugStream.open("kgs_debug.log");
   enableLogger("debug", debugStream);
 
-  SamplingOptions::createOptions(argc, argv);
+  ExploreOptions::createOptions(argc, argv);
 
-  SamplingOptions &options = *(SamplingOptions::getOptions());
+  ExploreOptions &options = *(ExploreOptions::getOptions());
 
   if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//SamplingOptions
+    enableLogger("so");//ExploreOptions
     options.print();
   }
 

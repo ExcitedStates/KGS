@@ -121,8 +121,8 @@ if(target==protein){
   exit(-1);
 }
 
-SamplingOptions *options;
-options = SamplingOptions::getOptions();
+ExploreOptions *options;
+options = ExploreOptions::getOptions();
 if(options->alignAlways){
   metrics::RMSD::align(target, protein);
 }

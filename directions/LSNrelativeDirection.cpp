@@ -44,7 +44,7 @@ LSNrelativeDirection::LSNrelativeDirection(
     m_atomsMovingSelection(atomsMoving),
     goal_distances(goal_distances)
 {
-//  int numMovingAtoms = SamplingOptions::getOptions()->getAtomsMoving()->size();
+//  int numMovingAtoms = ExploreOptions::getOptions()->getAtomsMoving()->size();
 //  m_TargetJacobian = gsl_matrix_calloc( numMovingAtoms*3, 1 );
 }
 
@@ -74,7 +74,7 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
     }
   }
 
-//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+//  const vector<Atom*>* atomList = ExploreOptions::getOptions()->getAtomsMoving();
   gsl_matrix* TargetJacobian = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
   gsl_matrix* TargetDirection = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
 //  gsl_matrix_set_zero(m_TargetJacobian); //Already done by calloc
@@ -104,7 +104,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
   int i=0;
   Molecule* protein=current_q->getMolecule();
 
-//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+//  const vector<Atom*>* atomList = ExploreOptions::getOptions()->getAtomsMoving();
 //  const vector<Atom*>& atomList1 = m_atomsMovingSelection.getSelectedAtoms(protein);
 //  const vector<Atom*>& atomList2 = m_atomsMovingSelection.getSelectedAtoms(target);
   const vector<Atom*>& atomList = m_atomsMovingSelection.getSelectedAtoms(protein);

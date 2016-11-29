@@ -42,7 +42,8 @@ add_library( libKGS
         ResidueProfiles.h
         core/Rigidbody.h
         core/graph/KinGraph.h
-        applications/options/SamplingOptions.h
+        applications/options/ExploreOptions.h
+        applications/options/TransitionOptions.h
         applications/options/RelativeTransitionOptions.h
         planners/SamplingPlanner.h
         planners/DihedralRRT.h
@@ -99,7 +100,8 @@ add_library( libKGS
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
         math/SVD.cpp
-        applications/options/SamplingOptions.cpp
+        applications/options/ExploreOptions.cpp
+        applications/options/TransitionOptions.cpp
         applications/options/RelativeTransitionOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp

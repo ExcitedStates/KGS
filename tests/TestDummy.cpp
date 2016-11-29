@@ -15,7 +15,7 @@
 #include "../utils/math3d/primitives.h"
 #include "math/MathUtility.h"
 #include "math/MathUtility.h"
-#include "applications/options/SamplingOptions.h"
+#include "applications/options/ExploreOptions.h"
 #include "../RRTPlanner.h"
 #include "../moves/CompositeMove.h"
 

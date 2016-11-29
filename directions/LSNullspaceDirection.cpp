@@ -48,7 +48,7 @@ using namespace std;
 LSNullspaceDirection::LSNullspaceDirection(Selection& atomsMoving):
     m_atomsMovingSelection(atomsMoving)
 {
-//  int numMovingAtoms = SamplingOptions::getOptions()->getAtomsMoving()->size();
+//  int numMovingAtoms = ExploreOptions::getOptions()->getAtomsMoving()->size();
 //  m_TargetJacobian = gsl_matrix_calloc( numMovingAtoms*3, 1 );
 }
 
@@ -80,7 +80,7 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
     }
   }
 
-//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+//  const vector<Atom*>* atomList = ExploreOptions::getOptions()->getAtomsMoving();
   gsl_matrix* TargetJacobian = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
   gsl_matrix* TargetPosition = gsl_matrix_calloc(atomList.size()*3,fullN->size1);
 //  gsl_matrix_set_zero(m_TargetJacobian); //Already done by calloc
@@ -113,7 +113,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q,
   Molecule* target=pTarget->getMolecule();//Todo: Here we have to be careful! This does not work if both configurations refer to the same protein!
   assert(protein!=target);
 
-//  const vector<Atom*>* atomList = SamplingOptions::getOptions()->getAtomsMoving();
+//  const vector<Atom*>* atomList = ExploreOptions::getOptions()->getAtomsMoving();
 //  const vector<Atom*>& atomList1 = m_atomsMovingSelection.getSelectedAtoms(protein);
 //  const vector<Atom*>& atomList2 = m_atomsMovingSelection.getSelectedAtoms(target);
   const vector<Atom*>& atomList = m_atomsMovingSelection.getSelectedAtoms(protein);

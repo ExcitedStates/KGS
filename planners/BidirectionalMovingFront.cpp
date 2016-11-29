@@ -126,7 +126,7 @@ void BidirectionalMovingFront::GenerateSamples() {
     CTKTimer timer;
     double start_time = timer.getTimeNow();
 
-//    if (SamplingOptions::getOptions()->sampleRandom || qNew == nullptr || m_addedToFront == false || swapped == true) {//create new target and compute closest seed
+//    if (ExploreOptions::getOptions()->sampleRandom || qNew == nullptr || m_addedToFront == false || swapped == true) {//create new target and compute closest seed
     if (qNew == nullptr || m_addedToFront == false || swapped == true) {//create new target and compute closest seed
       log("dominik") << "Generating new target" << endl;
       swapped = false;
@@ -318,9 +318,9 @@ Configuration *BidirectionalMovingFront::SelectSeed(Configuration *pTarget) {
   double distance;
   pMinSmp = nullptr;
 
-//  const vector<int>* resNetwork = &(SamplingOptions::getOptions()->residueNetwork);
+//  const vector<int>* resNetwork = &(ExploreOptions::getOptions()->residueNetwork);
 //  bool allResidues = resNetwork->size() == 0 ? true:false;
-//  Selection resSelection(SamplingOptions::getOptions()->residueNetwork);
+//  Selection resSelection(ExploreOptions::getOptions()->residueNetwork);
   bool allResidues = true; //TODO: Update so old code works again
 
   string rmsdSet = "HEAVY", dihSet = "MOV";

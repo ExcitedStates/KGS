@@ -20,10 +20,10 @@ ClashAvoidingMove::ClashAvoidingMove( double maxRotation,
     m_trialSteps(trialSteps),
     m_collisionCheckAtomTypes(atomTypes),
     m_projectConstraints(projectConstraints)
-//    m_maxRotation(SamplingOptions::getOptions()->maxRotation),
-//    m_trialSteps(SamplingOptions::getOptions()->decreaseSteps),
-//    m_collisionCheckAtomTypes(SamplingOptions::getOptions()->collisionCheck),
-//    m_projectConstraints(SamplingOptions::getOptions()->projectConstraints)
+//    m_maxRotation(ExploreOptions::getOptions()->maxRotation),
+//    m_trialSteps(ExploreOptions::getOptions()->decreaseSteps),
+//    m_collisionCheckAtomTypes(ExploreOptions::getOptions()->collisionCheck),
+//    m_projectConstraints(ExploreOptions::getOptions()->projectConstraints)
 {
   m_movesAccepted = 0;
   m_movesRejected = 0;

@@ -27,7 +27,7 @@
 #include "IO.h"
 #include "core/HBond.h"
 #include "Logger.h"
-#include "applications/options/SamplingOptions.h"
+#include "applications/options/ExploreOptions.h"
 #include "moves/CompositeMove.h"
 
 extern double jacobianTime;
@@ -53,12 +53,12 @@ int main( int argc, char* argv[] ) {
     exit(-1);
   }
 
-  //SamplingOptions options(argc,argv);
-  SamplingOptions::createOptions(argc, argv);
-  SamplingOptions &options = *(SamplingOptions::getOptions());
+  //ExploreOptions options(argc,argv);
+  ExploreOptions::createOptions(argc, argv);
+  ExploreOptions &options = *(ExploreOptions::getOptions());
 
   if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//SamplingOptions
+    enableLogger("so");//ExploreOptions
     options.print();
   }
 
@@ -264,7 +264,7 @@ int main( int argc, char* argv[] ) {
 //    gsl_vector_free(qSol);
 //    /// END NEW TEST
 
-    qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(SamplingOptions::getOptions()->collisionCheck);
+    qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(ExploreOptions::getOptions()->collisionCheck);
 //    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
 //    double normDeltaHEnergy = hBondEnergy - initialHbondEnergy;
     double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);
