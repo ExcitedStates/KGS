@@ -33,7 +33,7 @@ make
 ```
 If modifying files in the source simply type `make` in the build-dir to
 recompile.  To use Intels compiler (WARNING: as of 2016 `icpc` doesn't 
-support regular C++11 regex and therefore doesn't work) replace the 
+support C++11 regular expressions and therefore doesn't work) replace the 
 third step with
 ```bash
 CXX=icpc cmake -DCMAKE_BUILD_TYPE=Release <path to>/source
