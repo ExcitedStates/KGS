@@ -1,6 +1,16 @@
 # Kino-geometric sampling (KGS) source
 
-TODO: Write a short intro to the method
+KGS is an engine that generates conformational perturbations in biomolecules 
+(protein, RNA, or ligands alike) by maintaining user-specified non-local 
+constraints. Specifically, collisions are avoided while hydrogen-bonds and 
+disulphide bonds are maintained. A set of applications are built on this 
+engine:
+
+* [kgs_explore](https://github.com/ExcitedStates/KGS/wiki/kgs_explore/): Random exploration around initial structure
+* [kgs_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_transition/): Directed sampling from initial structure to target structure
+* [kgs_rigidity](https://github.com/ExcitedStates/KGS/wiki/kgs_rigidity/): Rigidity analysis of structure file
+* kgs_deer_prepare: In progress
+
 
 ## Dependencies
 
