@@ -185,11 +185,11 @@ void randomSampling(ExploreOptions& options){
   double start_time = timer.LastElapsedTime();
 
   //Start exploring
-  planner->GenerateSamples();
+  planner->generateSamples();
 
   //Print final status
   double end_time = timer.ElapsedTime();
-  std::list<Configuration*>& m_samples = planner->Samples();
+  std::list<Configuration*>& m_samples = planner->getSamples();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
   log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";

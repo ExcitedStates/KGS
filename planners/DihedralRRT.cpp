@@ -67,7 +67,7 @@ DihedralRRT::~DihedralRRT() {
   }
 }
 
-void DihedralRRT::GenerateSamples() {
+void DihedralRRT::generateSamples() {
   int nBatch = m_numSamples;
 //  int nBatch = ExploreOptions::getOptions()->samplesToGenerate;
   int sample_id = 0, max_depth = 0, failed_trials = 0, total_trials = 0;

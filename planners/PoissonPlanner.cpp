@@ -73,12 +73,12 @@ PoissonPlanner::~PoissonPlanner() {
 }
 
 
-void PoissonPlanner::GenerateSamples()
+void PoissonPlanner::generateSamples()
 {
   ofstream reportStream;
   reportStream.open("kgs_poissonDistances.log");
   enableLogger("poissonDistances", reportStream);
-  //cout<<"PoissonPlanner::GenerateSamples()"<<endl;
+  //cout<<"PoissonPlanner::generateSamples()"<<endl;
   Selection sel(m_gradientSelection);
   Direction* direction = new RandomDirection(sel);
   gsl_vector* gradient = gsl_vector_alloc(m_molecule->totalDofNum());
@@ -104,7 +104,7 @@ void PoissonPlanner::GenerateSamples()
     //Make m_maxRejectsBeforeClose attempts at perturbing it
     size_t attempt;
     for( attempt=0; attempt<m_maxRejectsBeforeClose; attempt++ ) {
-      //cout<<"PoissonPlanner::GenerateSamples() - attempt "<<attempt<<endl;
+      //cout<<"PoissonPlanner::generateSamples() - attempt "<<attempt<<endl;
       m_move->setStepSize(origStepSize);
       direction->gradient(seed, nullptr, gradient); // Compute random gradient
       gsl_vector_scale(gradient,1.0);

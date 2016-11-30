@@ -171,13 +171,13 @@ void targetedSampling(TransitionOptions& options){
   if(options.planner_string=="binnedrrt")
     planner = new RRTPlanner(
         protein,
-      direction,
-      options.explorationRadius,
-      options.samplesToGenerate,
-      options.gradient,
-      options.stepSize,
-      options.maxRotation,
-      options.scaleToRadius
+        direction,
+        options.explorationRadius,
+        options.samplesToGenerate,
+        options.gradient,
+        options.stepSize,
+        options.maxRotation,
+        options.scaleToRadius
     );
   else if(options.planner_string=="dihedralrrt")
     planner = new DihedralRRT(
@@ -256,11 +256,11 @@ void targetedSampling(TransitionOptions& options){
     double start_time = timer.LastElapsedTime();
 
     //Start exploring
-    planner->GenerateSamples();
+    planner->generateSamples();
 
     //Print final status
     double end_time = timer.ElapsedTime();
-    std::list<Configuration*>& m_samples = planner->Samples();
+    std::list<Configuration*>& m_samples = planner->getSamples();
     log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
     log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
     log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";

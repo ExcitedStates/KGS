@@ -18,13 +18,13 @@ class SamplingPlanner{
 
   virtual ~SamplingPlanner() = 0;
 
-  void initialize(Move* move, metrics::Metric* metric, const std::string& workingDir, int saveData);
+  virtual void initialize(Move* move, metrics::Metric* metric, const std::string& workingDir, int saveData);
 
   /** Generate samples. */
-  virtual void GenerateSamples() = 0;
+  virtual void generateSamples() = 0;
 
   /** Return a reference to the list of all generated samples */
-  virtual std::list<Configuration*>& Samples() = 0;
+  virtual std::list<Configuration*>& getSamples() = 0;
   
   /**
    * Depending on the options, either the sample at the end of the longest path

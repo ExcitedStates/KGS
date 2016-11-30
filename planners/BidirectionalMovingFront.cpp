@@ -71,7 +71,6 @@ BidirectionalMovingFront::BidirectionalMovingFront(
   m_revFront.push_back(m_revRoot);
 
   //closest configs and distance measures
-  m_minDistance = m_metric->distance(m_fwdRoot, m_revRoot);
   m_closestFwdSample = m_fwdRoot;
   m_closestRevSample = m_revRoot;
   m_currentGlobalTarget = m_revRoot;//target configuration for this iteration
@@ -98,7 +97,7 @@ BidirectionalMovingFront::~BidirectionalMovingFront() {
   }
 }
 
-std::list<Configuration *> &BidirectionalMovingFront::Samples() {
+std::list<Configuration *> &BidirectionalMovingFront::getSamples() {
 
   std::list<Configuration *> *allSamples;
   if (m_samplingForward) {
@@ -111,7 +110,7 @@ std::list<Configuration *> &BidirectionalMovingFront::Samples() {
   return *allSamples;
 }
 
-void BidirectionalMovingFront::GenerateSamples() {
+void BidirectionalMovingFront::generateSamples() {
 
   static int numSamples = 0, failedTrials = 0, totalTrials = 0;
 
@@ -119,6 +118,9 @@ void BidirectionalMovingFront::GenerateSamples() {
   bool swapped = false;
 
   Configuration *qTarget = nullptr, *qSeed, *qNew = nullptr; //this qTarget is either global or random and can change for each sample
+
+  //Must be initialized here as m_metric is only set in `initialize` (not constructor)
+  m_minDistance = m_metric->distance(m_fwdRoot, m_revRoot);
 
   while (numSamples < m_stopAfter) {//sample at most until the number of samples has been reached
     ++totalTrials;

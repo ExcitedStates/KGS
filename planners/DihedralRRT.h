@@ -33,9 +33,9 @@ class DihedralRRT : public SamplingPlanner {
 
   ~DihedralRRT();
 
-  void GenerateSamples();
+  void generateSamples();
 
-  std::list<Configuration *> &Samples() { return m_samples; }
+  std::list<Configuration *> &getSamples() { return m_samples; }
 
   double m_deform_mag;
   double m_rand_radius;

@@ -55,9 +55,9 @@ class BidirectionalMovingFront : public SamplingPlanner{
 //                           int frontSize  );
   ~BidirectionalMovingFront();
 
-  void GenerateSamples();
+  void generateSamples();
 
-  std::list<Configuration*>& Samples();
+  std::list<Configuration*>& getSamples();
 
   std::list<Configuration*>& getFwdSamples(){ return m_fwdSamples; }
   std::list<Configuration*>& getRevSamples(){ return m_revSamples; }

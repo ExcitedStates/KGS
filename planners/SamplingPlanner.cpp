@@ -34,7 +34,7 @@ void SamplingPlanner::createTrajectory() {
   std::list<Configuration *>::iterator cit;
   Configuration *pSmp;
 
-  std::list<Configuration *> &m_samples = Samples();
+  std::list<Configuration *> &m_samples = getSamples();
 
 //	if( !( (ExploreOptions::getOptions()->targetStructureFile).empty() ) ){ //we have a target, trajectory to the closest configuration
 //		for( cit=m_samples.begin(); cit!=m_samples.end(); cit++ ){

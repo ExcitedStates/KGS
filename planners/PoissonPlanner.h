@@ -62,9 +62,9 @@ class PoissonPlanner : public SamplingPlanner {
 
   ~PoissonPlanner();
 
-  void GenerateSamples();
+  void generateSamples();
 
-  std::list<Configuration *> &Samples() { return all_samples; }
+  std::list<Configuration *> &getSamples() { return all_samples; }
 
   bool m_checkAll = false;
  private:

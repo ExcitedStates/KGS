@@ -110,7 +110,7 @@ RRTPlanner::~RRTPlanner() {
 }
 
 
-void RRTPlanner::GenerateSamples() {
+void RRTPlanner::generateSamples() {
   string out_path = m_workingDir;
   string name = m_molecule->getName();
   int nBatch = m_numSamples;
@@ -149,7 +149,7 @@ void RRTPlanner::GenerateSamples() {
     else
       direction->gradient(pClosestSmp, nullptr, gradient);
 
-    //cout<<"RRTPlanner::GenerateSamples - gradient:"<<endl;
+    //cout<<"RRTPlanner::generateSamples - gradient:"<<endl;
     //for(int i=0;i<10;i++)
     //  cout<<gsl_vector_get(gradient, i)<<" ";
     //cout<<endl;
