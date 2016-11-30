@@ -1,5 +1,5 @@
-#ifndef SAMPLINGOPTIONS_H
-#define SAMPLINGOPTIONS_H
+#ifndef EXPLOREOPTIONS_H
+#define EXPLOREOPTIONS_H
 
 #include <string>
 #include <vector>

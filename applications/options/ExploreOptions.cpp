@@ -226,7 +226,7 @@ void ExploreOptions::initializeVariables(){
 //  flexibleRibose            = false;
 //  exactIKselection          = "none";
   seed                      =  418;
-  saveData                  =  0;
+  saveData                  =  1;
 //  sampleReverse             = false;
 //  biasToTarget              = 0.1;
 //  convergeDistance          = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
@@ -368,7 +368,7 @@ void ExploreOptions::printUsage(char* pname){
 //
 //  log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
 //
-  log("so")<<"\t--saveData <0|1|2>\t: Indicate whether files shall be saved! 0= none, 1=pdb and q, 2=all"<<endl;
+  log("so")<<"\t--saveData <0|1|2>\t: Indicate whether files shall be saved! 0=none, 1=pdb and q, 2=all. Default: 1"<<endl;
 
 //  log("so")<<"\t--sampleReverse <true/false>\t: If true, iterative sampling from ini to goal and reverse"<<endl;
 //

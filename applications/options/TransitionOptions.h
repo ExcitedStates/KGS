@@ -1,5 +1,5 @@
-#ifndef SAMPLINGOPTIONS_H
-#define SAMPLINGOPTIONS_H
+#ifndef TRANSITIONOPTIONS_H
+#define TRANSITIONOPTIONS_H
 
 #include <string>
 #include <vector>
