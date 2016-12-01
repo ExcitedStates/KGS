@@ -9,7 +9,7 @@ engine:
 * [kgs_explore](https://github.com/ExcitedStates/KGS/wiki/kgs_explore/): Random exploration around initial structure
 * [kgs_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_transition/): Directed sampling from initial structure to target structure
 * [kgs_rigidity](https://github.com/ExcitedStates/KGS/wiki/kgs_rigidity/): Rigidity analysis of structure file
-* kgs_deer_prepare: In progress
+* kgs_deerprep: In progress
 
 
 ## Dependencies
@@ -75,7 +75,7 @@ make -j 16
 
 ## Usage 
 
-Before running, its recommended to put the `kgs` executable and 
+Before running, its recommended to put the executables and 
 `kgs_prepare.py` script somewhere pointed to by the `PATH` environment 
 variable. A number of options that affect e.g. motion-planning and 
 collision detection can be passed, but a minimum working example is as 
@@ -83,10 +83,9 @@ follows
 ```bash
 wget https://files.rcsb.org/download/2ERL.pdb
 kgs_prepare.py 2ERL.pdb
-kgs --initial 2ERL.kgs.pdb
+kgs_explore --initial 2ERL.kgs.pdb
 ```
 This should create an `output` directory and put 10 generated conformations 
 in it (the default number of samples to generate). The prepared `.kgs.pdb`
 file has the same coordinates as the original, but atom-ids have been 
-renumbered, and REMARK records indicating hydrogen-bonds have been added.
-
+renumbered, and REMARK records indicating hydrogen-bonds have been added. 
