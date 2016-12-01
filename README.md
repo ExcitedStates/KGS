@@ -62,6 +62,16 @@ CXX=`which g++` cmake <path to>/source
 make -j 16
 ```
 
+## Compiling on SSRLs unix systems at SLAC (including sdc's)
+
+This system has an old (4.4) GCC compiler by default so the newer version 5 
+should be enabled before running `cmake`. This is not necessary when subsequently
+calling `make`. 
+```bash
+scl enable devtoolset-4 bash
+cmake <path to>/source
+make -j 16
+```
 
 ## Usage 
 
