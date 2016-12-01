@@ -51,7 +51,7 @@ This allows debuggers and analysers like gdb, lldb, or valgrind to give
 meaningful source-code info.
 
 
-## Compiling on Stanfords Sherlock cluster
+### Compiling on Stanfords Sherlock cluster
 
 Sherlock has an old (4.4) GCC compiler and no MKL libraries by default. To 
 compile on Sherlock start an `sdev` session and from an empty directory type
@@ -62,7 +62,7 @@ CXX=`which g++` cmake <path to>/source
 make -j 16
 ```
 
-## Compiling on SSRLs unix systems at SLAC (including sdc's)
+### Compiling on SSRLs unix systems at SLAC (including sdc's)
 
 This system has an old (4.4) GCC compiler by default so the newer version 5 
 should be enabled before running `cmake`. This is not necessary when subsequently
