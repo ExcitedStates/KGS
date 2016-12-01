@@ -159,7 +159,15 @@ Molecule* IO::readPdb (
       double z = atof(line.substr(46, 8).c_str()); // line[47:54]
 
       Coordinate pos(x, y, z);
-      molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
+      Atom* atom = molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
+
+      float occupancy = 0.0;
+      if(line.length()>=59) occupancy = atof(line.substr(56,4).c_str());
+      atom->setOccupancy(occupancy);
+
+      float bfactor = 0.0;
+      if(line.length()>=65) bfactor = atof(line.substr(60,6).c_str());
+      atom->setBFactor(bfactor);
 
       continue;
     }
@@ -382,8 +390,8 @@ Molecule* IO::readPdb (
     tmp+="_";
     string atomName1(FIXED_BOND_PROFILES[rp][1]);
     string atomName2(FIXED_BOND_PROFILES[rp][2]);
-    if(atomName1<atomName2)	tmp+=atomName1+"_"+atomName2;
-    else					tmp+=atomName2+"_"+atomName1;
+    if(atomName1<atomName2) tmp+=atomName1+"_"+atomName2;
+    else                    tmp+=atomName2+"_"+atomName1;
     //log("debugRas")<<"Inserting "<<tmp<<endl;;
     fixedBonds.insert(tmp);
   }
@@ -1393,14 +1401,14 @@ void IO::readHbonds_kinari (Molecule *molecule, string hbond_file_name) {
 }
 
 void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
-	ifstream input(hbond_file_name.c_str());
-	std::string line;
-	string donorString,donorType, acceptorString, acceptorType, distanceHAString, hybridState, rest;
-	int hatomID, acceptorID;
-	Atom *hatom, *acceptor, *donor, *AA;
+  ifstream input(hbond_file_name.c_str());
+  std::string line;
+  string donorString,donorType, acceptorString, acceptorType, distanceHAString, hybridState, rest;
+  int hatomID, acceptorID;
+  Atom *hatom, *acceptor, *donor, *AA;
   int lineCount = 1;
 
-	while(std::getline(input,line)) {
+  while(std::getline(input,line)) {
     if (lineCount < 9) {
       ++lineCount;
       continue;
@@ -1452,15 +1460,15 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
       }
     }
 
-		if(hatom==nullptr){ cerr<<"IO::readHbonds - Could not find suitable hydrogen for given donor and acceptor: "<<donorString<<" "<<donorType<<" ; "<<acceptorString<<" "<<acceptorType<<" Skipping."<<endl; continue; }
+    if(hatom==nullptr){ cerr<<"IO::readHbonds - Could not find suitable hydrogen for given donor and acceptor: "<<donorString<<" "<<donorType<<" ; "<<acceptorString<<" "<<acceptorType<<" Skipping."<<endl; continue; }
 
-		AA = acceptor->getFirstCovNeighbor();
-		Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
-		protein->addHbond(new_hb);
+    AA = acceptor->getFirstCovNeighbor();
+    Hbond * new_hb = new Hbond(hatom, acceptor, donor, AA);
+    protein->addHbond(new_hb);
 
     lineCount++;
-	}
-	input.close();
+  }
+  input.close();
 }
 
 

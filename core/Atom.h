@@ -47,11 +47,11 @@
 #define VDW_RADIUS_UNKNOWN 2.000
 // Epsilon parameters for each atom are taken from CHARMM FF by averaging all atom types per element
 #define VDW_EPSILON_C -0.0661154
-#define VDW_EPSILON_H -0.0361867 
-#define VDW_EPSILON_N -0.2  
-#define VDW_EPSILON_O -0.137663  
-#define VDW_EPSILON_S -0.433333  
-#define VDW_EPSILON_SE -0.433333 
+#define VDW_EPSILON_H -0.0361867
+#define VDW_EPSILON_N -0.2
+#define VDW_EPSILON_O -0.137663
+#define VDW_EPSILON_S -0.433333
+#define VDW_EPSILON_SE -0.433333
 #define VDW_EPSILON_UNKNOWN -0.2
 
 
@@ -65,95 +65,119 @@
 #define MASS_UNKNOWN 267.00
 
 typedef enum {
-	atomC   = 0,
-	atomH   = 1,
-	atomN   = 2,
-	atomO   = 3,
-	atomS   = 4,
-	atomSE  = 5,
-	atomOther = 6,
-	atomTypeAll = 7
+  atomC = 0,
+  atomH = 1,
+  atomN = 2,
+  atomO = 3,
+  atomS = 4,
+  atomSE = 5,
+  atomOther = 6,
+  atomTypeAll = 7
 } AtomType;
 
 class Bond;
+
 class Hbond;
+
 class Rigidbody;
 
 
 class Atom {
  public:
 
-	Atom(const std::string& name, const int& id, const Coordinate& pos, Residue* residue);
+  Atom(const std::string &name, const int &id, const Coordinate &pos, Residue *residue);
 
-	const std::string& getName() const;
-	int getId() const;
-	double getMass() const;    ///< Return the atomic mass (depends on element)
+  const std::string &getName() const;
+
+  int getId() const;
+
+  double getMass() const;    ///< Return the atomic mass (depends on element)
   double getRadius() const;  ///< Return the van der Waals radius (depends on element)
   double getEpsilon() const; ///< Return the van der Waals radius (depends on element)
   const std::string getElement() const;
-  Residue* getResidue() const;
 
-	void printSummaryInfo() const;
+  Residue *getResidue() const;
+
+  void printSummaryInfo() const;
 
 
-	void addCovBond (Bond * cbond);
-  Atom* getIthCovNeighbor(int i) const;
-  bool isCovNeighbor(Atom* other) const;
-  bool isSecondCovNeighbor(Atom* other) const;
-  Atom* getFirstCovNeighbor() const;
+  void addCovBond(Bond *cbond);
 
-	void addHbond(Hbond * hbond);
-	void removeHbond(Hbond * hbond);
-  bool isHbondNeighbor(Atom* other) const;
+  Atom *getIthCovNeighbor(int i) const;
 
-	Atom* getBondNeighbor(Bond * bond) const;
+  bool isCovNeighbor(Atom *other) const;
+
+  bool isSecondCovNeighbor(Atom *other) const;
+
+  Atom *getFirstCovNeighbor() const;
+
+  void addHbond(Hbond *hbond);
+
+  void removeHbond(Hbond *hbond);
+
+  bool isHbondNeighbor(Atom *other) const;
+
+  Atom *getBondNeighbor(Bond *bond) const;
 
   //TODO: Let the Coordinate class take care of this.
-	double distanceTo(Atom* other) const; // Euclidean distance between atom self and other
+  double distanceTo(Atom *other) const; // Euclidean distance between atom self and other
   //TODO: Let the Coordinate class take care of this. This impl. is also slow (uses pow)
-	bool isWithinDistanceFrom(Atom* center, double dist) const; // is within a sphere centered at center with radius dist
+  bool isWithinDistanceFrom(Atom *center, double dist) const; // is within a sphere centered at center with radius dist
 
-	void setRigidbody (Rigidbody* rb);
-  Rigidbody* getRigidbody() const;
+  void setRigidbody(Rigidbody *rb);
+
+  Rigidbody *getRigidbody() const;
+
 //  void setBiggerRigidbody(Rigidbody* rb);
 //  Rigidbody* getBiggerRigidbody() const;
   void setBFactor(float val);
   float getBFactor();
-  bool inSameRigidbody(Atom* another) const;
+  void setOccupancy(float val);
+  float getOccupancy();
 
-	std::string getType() const; //TODO: Return type should be char or AtomType
+  bool inSameRigidbody(Atom *another) const;
+
+  std::string getType() const; //TODO: Return type should be char or AtomType
   bool isSidechainAtom() const;
+
   bool isBackboneAtom() const;
+
   bool isHeavyAtom() const;
-  bool isCollisionCheckAtom (std::string collisionCheckAtoms="all") const;
-	int getHAV() const; //Heavy-Atom Valence
-	std::vector<Atom*> heavyAtomNeighbors() const;
 
-	bool compareName(std::string atomName) const;
-	bool compareType(std::string atomType) const;
-  static bool compare(Atom* atom1, Atom* atom2);
+  bool isCollisionCheckAtom(std::string collisionCheckAtoms = "all") const;
 
-	Coordinate m_position;
-	Coordinate m_referencePosition;
-	std::vector<Bond *> Cov_bond_list;
-	std::vector<Hbond *> Hbond_list;
-	std::vector<Atom*> Cov_neighbor_list;
-	std::vector<Atom*> Hbond_neighbor_list;
-	std::vector<Atom*> Second_cov_neighbor_list; // 2nd immediate covalent bond neighbors
+  int getHAV() const; //Heavy-Atom Valence
+  std::vector<Atom *> heavyAtomNeighbors() const;
+
+  bool compareName(std::string atomName) const;
+
+  bool compareType(std::string atomType) const;
+
+  static bool compare(Atom *atom1, Atom *atom2);
+
+  Coordinate m_position;
+  Coordinate m_referencePosition;
+  std::vector<Bond *> Cov_bond_list;
+  std::vector<Hbond *> Hbond_list;
+  std::vector<Atom *> Cov_neighbor_list;
+  std::vector<Atom *> Hbond_neighbor_list;
+  std::vector<Atom *> Second_cov_neighbor_list; // 2nd immediate covalent bond neighbors
 
   AtomType m_element;
 
  private:
-//	bool On_sidechain;
+//  bool On_sidechain;
   const int Id;
   const std::string Name;
-	Residue* m_parentResidue;
-  Rigidbody* m_rigidbody;
-  Rigidbody* m_biggerRigidbody;
-	float m_bFactorCol; ///use this to write in b-factor column for pdb output, formatted as integer
+  Residue *m_parentResidue;
+  Rigidbody *m_rigidbody;
+  Rigidbody *m_biggerRigidbody;
+  float m_bFactor; ///< Used to write b-factor column for pdb output, formatted as integer
+  float m_occupancy;
 };
 
-std::ostream& operator<<(std::ostream& os, const Atom& a);
-std::ostream& operator<<(std::ostream& os, const Atom* a);
+std::ostream &operator<<(std::ostream &os, const Atom &a);
+
+std::ostream &operator<<(std::ostream &os, const Atom *a);
 
 #endif
