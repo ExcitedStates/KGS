@@ -18,7 +18,7 @@ KGS depends as a minimum on the GNU Scientific Library (GSL) only. GSL is
 available through most standard package managers. For Mac, download
 [homebrew](http://brew.sh/) and run `brew install gsl`. 
 
-If the Intel MKL libraries can be found on the system then faster and
+If the [Intel MKL libraries](http://software.intel.com/mkl) can be found on the system then faster and
 automatically parallelized SVD computations will be enabled as well. 
 
 
