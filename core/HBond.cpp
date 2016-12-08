@@ -51,20 +51,9 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 
   identifyHybridization();
 
-  m_iniEnergy = energy;
-  if(energy == DEFAULT_HBOND_ENERGY)
-    m_iniEnergy = computeEnergy();
-
-//  Vector3 x,y,z;
-//  coordinateSystem(hatom, x,y,z);
-//  Vector3 d = acceptor->m_position -hatom->m_position;
-//  idealA[0] = x.dot(d);
-//  idealA[1] = y.dot(d);
-//  idealA[2] = z.dot(d);
-//  coordinateSystem(acceptor, x,y,z);
-//  idealH[0] = -x.dot(d);
-//  idealH[1] = -y.dot(d);
-//  idealH[2] = -z.dot(d);
+//  m_iniEnergy = energy;
+//  if(energy == DEFAULT_HBOND_ENERGY)
+  m_iniEnergy = computeEnergy();
 }
 
 Hbond::Hbond(Hbond & hbond) {
@@ -229,36 +218,36 @@ double Hbond::computeEnergy() {
   double angularEnergy = cos(theta) * cos(theta); //This is a factor present in all cases
   double energy, psi, phi;
   /// Case 1: donor sp3 and acceptor sp3
-//  if (m_donorHybridization == 3 && m_acceptorHybridization == 3 ) {
+  if (m_donorHybridization == 3 && m_acceptorHybridization == 3 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp3 A_sp3"<<endl;
     psi = getAngle_H_A_AA();
     energy = energyDist * angularEnergy * cos(psi - psi0) * cos(psi - psi0);
     log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
-//  }
+  }
     /// Case 2: donor sp3 and acceptor sp2
-//  else if (m_donorHybridization == 3 && m_acceptorHybridization == 2 ) {
+  else if (m_donorHybridization == 3 && m_acceptorHybridization == 2 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp3 A_sp2"<<endl;
     psi = getAngle_H_A_AA();
     energy = energyDist * angularEnergy * cos(psi) * cos(psi);
     log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
-//  }
+  }
     /// Case 3: donor sp2 and acceptor sp3
-//  else if (m_donorHybridization == 2 && m_acceptorHybridization == 3 ) {
+  else if (m_donorHybridization == 2 && m_acceptorHybridization == 3 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp2 A_sp3"<<endl;
     energy = energyDist * angularEnergy * angularEnergy;
     log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
-//  }
+  }
     /// Case 4: donor sp2 and acceptor sp2
-//  else if (m_donorHybridization == 2 && m_acceptorHybridization == 2 ) {
+  else if (m_donorHybridization == 2 && m_acceptorHybridization == 2 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp2 A_sp2"<<endl;
     phi = getOutOfPlaneAngle();
     psi = getAngle_H_A_AA();
     psi = max(psi, phi);
     energy = energyDist * angularEnergy * cos(psi) * cos(psi);
     log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
-//  }
+  }
 
-//  log("report")<<"Donor SP: "<<m_donorHybridization<<", Acceptor SP: "<<m_acceptorHybridization<<endl;
+  log("report")<<"Donor SP: "<<m_donorHybridization<<", Acceptor SP: "<<m_acceptorHybridization<<endl;
   return energy;
 }
 

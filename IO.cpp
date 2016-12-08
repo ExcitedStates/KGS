@@ -485,7 +485,7 @@ Molecule* IO::readPdb (
     //Assign donors and base atoms
     Atom* donor = hatom->getFirstCovNeighbor();
     Atom* AA = oatom->getFirstCovNeighbor();
-    Hbond *new_hb = new Hbond(hatom, oatom, donor, AA, 0.0);
+    Hbond *new_hb = new Hbond(hatom, oatom, donor, AA, DEFAULT_HBOND_ENERGY);
     molecule->addHbond(new_hb);
   }
 
