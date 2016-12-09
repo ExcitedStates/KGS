@@ -26,17 +26,18 @@ automatically parallelized SVD computations will be enabled as well.
 
 To compile KGS from source go to a terminal and type
 ```bash
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release <path to>/source
-make
+git clone https://github.com/ExcitedStates/KGS.git
+mkdir KGS/build
+cd KGS/build
+cmake -DCMAKE_BUILD_TYPE=Release ../src
+make -j
 ```
-If modifying files in the source simply type `make` in the build-dir to
+After modifying files in `src` simply type `make` in the build-dir to
 recompile.  To use Intels compiler (WARNING: as of 2016 `icpc` doesn't 
 support C++11 regular expressions and therefore doesn't work) replace the 
 third step with
 ```bash
-CXX=icpc cmake -DCMAKE_BUILD_TYPE=Release <path to>/source
+CXX=icpc cmake -DCMAKE_BUILD_TYPE=Release <repo path>/source
 ```
 
 To compile with debugging symbols and optimizations disabled, open a terminal
@@ -44,7 +45,7 @@ and type
 ```bash
 mkdir debug
 cd debug
-cmake -DCMAKE_BUILD_TYPE=Debug <path to>/source
+cmake -DCMAKE_BUILD_TYPE=Debug <repo path>/source
 make
 ```
 This allows debuggers and analysers like gdb, lldb, or valgrind to give
@@ -58,7 +59,7 @@ compile on Sherlock start an `sdev` session and from an empty directory type
 ```bash
 module load gcc 
 module load intel
-CXX=`which g++` cmake <path to>/source
+CXX=`which g++` cmake <repo path>/src
 make -j 16
 ```
 
@@ -69,7 +70,7 @@ should be enabled before running `cmake`. This is not necessary when subsequentl
 calling `make`. 
 ```bash
 scl enable devtoolset-4 bash
-cmake <path to>/source
+cmake <repo path>/src
 make -j 16
 ```
 
