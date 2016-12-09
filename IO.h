@@ -44,7 +44,7 @@ class IO {
 
   static Molecule *readPdb(
       const std::string &pdb_file,
-      Selection &movingResidues,
+      Selection movingResidues = Selection("all"),
       const std::vector<std::string> &extraCovBonds = {},
       const std::vector<int> &roots = {},
       const std::string &hbondMethod = "",

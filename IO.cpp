@@ -81,7 +81,7 @@ ResidueProfile IO::readResidueProfile () {
 
 Molecule* IO::readPdb (
     const string& pdb_file,
-    Selection& movingResidues,
+    Selection movingResidues,
     const vector<string>& extraCovBonds,
     const vector<int>& roots,
     const string& hbondMethod,
