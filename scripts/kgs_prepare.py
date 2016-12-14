@@ -529,6 +529,7 @@ class PDBFile:
         f.close()
     
     def writePML(self,fname):
+        """ Write hydrogen bonds to pml file that can be loaded in pymol """
         f = open(fname,'w')
         for aa,a,h,d,energy in self.getHydrogenBonds(0):
             if energy > -1.0:
