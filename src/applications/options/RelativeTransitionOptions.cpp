@@ -74,6 +74,14 @@ RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[])
     exit(-1);
   }
 
+  //Check relativeDistances
+  if(relativeDistances.empty()) {
+    enableLogger("so");
+    cerr<<endl<<"No relative distance file supplied"<<endl<<endl;
+    exit(-1);
+  }
+
+
   //Set workingDirectory and moleculeName using the initialStructureFile.
   char* tmp = realpath(initialStructureFile.c_str(), nullptr);
   if(tmp==nullptr){ cerr<<initialStructureFile<<" is not a valid PDB-file"<<endl; exit(-1); }
@@ -193,7 +201,7 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
   log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
-  log("so")<<"\t--relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
+  log("so")<<"\t--relativeDistances <path to dist-file> \t: A file with distance-restraints. Each line is a comma-separated triple of 1) an atom-selection, 2) another atom selection, 3) a desired distance."<<endl;
 
 }
 

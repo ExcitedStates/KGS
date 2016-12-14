@@ -2120,9 +2120,9 @@ std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const 
       exit(-1);
     }
 
-    Selection s1(tokens[0]);
-    Selection s2(tokens[1]);
-    double dist = std::stod(tokens[2]);
+    Selection s1(Util::trim(tokens[0]));
+    Selection s2(Util::trim(tokens[1]));
+    double dist = std::stod(Util::trim(tokens[2]));
 
     Atom* a1 = nullptr;
     if(s1.getSelectedResidues(mol).size()==1) {
