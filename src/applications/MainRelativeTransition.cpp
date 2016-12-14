@@ -60,6 +60,9 @@ int main( int argc, char* argv[] ) {
 
   protein->setCollisionFactor(options.collisionFactor);
 
+  if(options.collapseRigid>0)
+    protein = protein->collapseRigidBonds(options.collapseRigid);
+
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
