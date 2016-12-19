@@ -20,7 +20,7 @@
 
 using namespace std;
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 
@@ -167,7 +167,7 @@ int main( int argc, char* argv[] ) {
   //Print final status
   double end_time = timer.ElapsedTime();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(samples.size()-1)<<" valid samples\n";
-  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
+  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianAndNullspaceTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
   log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
   log("samplingStatus")<< "Done"<<endl;

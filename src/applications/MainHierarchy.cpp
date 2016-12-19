@@ -30,7 +30,7 @@
 #include "applications/options/ExploreOptions.h"
 #include "moves/CompositeMove.h"
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 
 using namespace std;

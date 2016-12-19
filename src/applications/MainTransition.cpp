@@ -25,7 +25,7 @@
 #include "metrics/RMSDnosuper.h"
 #include "applications/options/TransitionOptions.h"
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 
@@ -262,7 +262,7 @@ void targetedSampling(TransitionOptions& options){
     double end_time = timer.ElapsedTime();
     std::list<Configuration*>& m_samples = planner->getSamples();
     log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
-    log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
+    log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianAndNullspaceTime<<" seconds\n";
     log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
     log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
 //    log("samplingStatus")<< planner->initialRebuildsAccepted<<" initial rebuild perturbations accepted (RI_ACC)"<<endl;

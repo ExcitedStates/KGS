@@ -45,7 +45,7 @@ Bond::Bond(Atom* atom1, Atom* atom2, std::string bond_type) {
 	}
 	BondType = bond_type;
 	Bars = 5; // default. Cannot compute the exact number of bars when the bond is just created because it doesn't know the number of covalent neighbors yet.
-	constrained = false; ///only true if the bond is locked due to constraints (like hbonds)
+	rigidified = false; ///only true if the bond is locked due to constraints (like hbonds)
 }
 
 Bond::Bond(Bond & bond) {
@@ -53,7 +53,7 @@ Bond::Bond(Bond & bond) {
 	Atom2 = bond.Atom2;
 	BondType = bond.BondType;
 	Bars = bond.Bars;
-	constrained = bond.constrained;
+	rigidified = bond.rigidified;
 }
 
 Bond::Bond() {
@@ -61,7 +61,7 @@ Bond::Bond() {
 	Atom2 = 0;
 	BondType = "UNDEFINED";
 	Bars = 0;
-	constrained=false;
+	rigidified=false;
 }
 
 Bond::~Bond() {}
@@ -79,7 +79,7 @@ bool Bond::isLocked() const{
 		result = true;
 	else if ( Atom1->m_element==atomN && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
-	if(constrained)
+	if(rigidified)
 		result = true;
 
 	return result;

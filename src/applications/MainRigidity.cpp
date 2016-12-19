@@ -10,9 +10,9 @@
 #include "HbondIdentifier.h"
 #include "IO.h"
 #include "Logger.h"
-#include "applications/options/ExploreOptions.h"
+#include "applications/options/RigidityOptions.h"
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 
 using namespace std;
@@ -23,9 +23,11 @@ int main( int argc, char* argv[] ){
 
   if(argc<2){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
-  //ExploreOptions options(argc,argv);
-  ExploreOptions::createOptions(argc,argv);
-  ExploreOptions& options = *(ExploreOptions::getOptions());
+  //RigidityOptions options(argc,argv);
+  RigidityOptions::createOptions(argc,argv);
+  RigidityOptions& options = *(RigidityOptions::getOptions());
+
+  options.print();
 
   string out_path = options.workingDirectory;
   //string pdb_file = path + protein_name + ".pdb";
@@ -41,9 +43,6 @@ int main( int argc, char* argv[] ){
   );
   string name = protein->getName();
 
-//  string hBondIn = "hBonds_in.txt";
-//  IO::writeHbondsIn(protein,hBondIn );
-
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
@@ -51,24 +50,21 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
-//  Configuration* conf = new Configuration(protein);
-//  protein->setConfiguration(conf);
-  //conf->computeCycleJacobianAndNullSpace();
 
   log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->getMatrix()->size1 << " rows, ";
   log("rigidity")<< conf->getNullspace()->getMatrix()->size2<<" columns"<<endl;
   log("rigidity")<<"Dimension of kernel "<< conf->getNullspace()->getNullspaceSize()<<endl;
 
+  Molecule* rigidified = protein->collapseRigidBonds(2);
+
+  ///Write PDB File for pyMol usage
   int sample_id = 1;
   string out_file = out_path + "output/" + name + "_new_" +
                     std::to_string((long long)sample_id)
                     //static_cast<ostringstream*>( &(ostringstream() << sample_id) )->str()
                     + ".pdb";
 
-  Molecule* rigidified = protein->collapseRigidBonds(2);
-
-  ///Write PDB File for pyMol usage
-  IO::writeRigidbodyIDToBFactor(rigidified);
+  rigidified->writeRigidbodyIDToBFactor();
   IO::writePdb(rigidified, out_file);
 
   if(options.saveData <= 0) return 0;
@@ -82,11 +78,10 @@ int main( int argc, char* argv[] ){
                     + ".txt";
 
   ///Write statistics
-  IO::writeStats(protein, statFile);
-
+  IO::writeStats(protein, statFile, rigidified); //original protein with all bonds etc, rigidified one for cluster info
 
   ///Write pyMol script
-  IO::writePyMolScript(rigidified, out_file, pyMol);
+  IO::writePyMolScript(rigidified, out_file, pyMol, protein);
 
   if(options.saveData <= 1) return 0;
 

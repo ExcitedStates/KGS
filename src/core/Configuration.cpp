@@ -48,7 +48,7 @@
 
 using namespace std;
 
-double jacobianTime = 0;
+double jacobianAndNullspaceTime = 0;
 double rigidityTime = 0;
 
 gsl_matrix* Configuration::CycleJacobian = nullptr;
@@ -167,98 +167,92 @@ void Configuration::computeCycleJacobianAndNullSpace() {
   }
 
   double new_time = timer.ElapsedTime();
-  jacobianTime += new_time - old_time;
+  jacobianAndNullspaceTime += new_time - old_time;
 
-  if(CycleJacobian!=nullptr) {
-    nullspace->performRigidityAnalysis(HBondJacobian);
-//    identifyBiggerRigidBodies();
-  }
+//  if(CycleJacobian!=nullptr) {
+//    nullspace->performRigidityAnalysis(HBondJacobian);
+////    identifyBiggerRigidBodies();
+//  }
 
   double new_time_2 = timer.ElapsedTime();
   rigidityTime += new_time_2 - new_time;
 }
 
+void Configuration::rigidityAnalysis() {
+
+  //Checks if Jacobians need update
+  computeJacobians();
+
+  if(nullspace==nullptr){ //update nullspace if necessary
+    computeCycleJacobianAndNullSpace();
+  }
+  CTKTimer timer;
+  timer.Reset();
+  double old_time = timer.LastElapsedTime();
+
+  if(CycleJacobian!=nullptr) {///identifies rigid/rotatable hbonds and bonds based on set cut-off
+    nullspace->performRigidityAnalysis(HBondJacobian);
+  }
+
+  int i=0; //indexing for hBonds
+
+  //First, constrain cycle edge bonds
+  for (auto const &edge_nca_pair : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
+
+    KinEdge *edge = edge_nca_pair.first;
+    KinVertex *common_ancestor = edge_nca_pair.second;
+
+    //Get corresponding rigidity information
+    if (nullspace->isHBondRigid(i++)) {
+      Bond* bond = edge->getBond();
+      //If its a rigid hbond convert it to a rigid covalent bond
+      if (bond->isHbond()) {
+        bond->rigidified = true;
+      }
+    }//end if
+
+    //Now, the dihedral angles
+    KinVertex* vertex1 = edge->StartVertex;
+    KinVertex* vertex2 = edge->EndVertex;
+
+    //Trace back along dof m_edges for vertex 1
+    while ( vertex1 != common_ancestor ) {
+      KinVertex* parent = vertex1->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex1);
+
+      int dof_id = p_edge->getDOF()->getCycleIndex();
+      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+        if( nullspace->isCovBondRigid(dof_id) ) {
+          Bond* bond = p_edge->getBond();
+          bond->rigidified = true;
+        }
+      }
+      vertex1 = parent;
+    }
+
+    //Trace back along edges from vertex 2
+    while ( vertex2 != common_ancestor ) {
+      KinVertex* parent = vertex2->m_parent;
+      KinEdge* p_edge = parent->findEdge(vertex2);
+
+      int dof_id = p_edge->getDOF()->getCycleIndex();
+      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+        if( nullspace->isCovBondRigid(dof_id) ) {
+          Bond* bond = p_edge->getBond();
+          bond->rigidified = true;
+        }
+      }
+      vertex2 = parent;
+    }
+  }
+
+  double new_time = timer.ElapsedTime();
+  rigidityTime += new_time - old_time;
+}
 
 //void Configuration::identifyBiggerRigidBodies(){
 //
-//  ///We identify the set of bigger rigid bodies, formed by locked bonds that
-//  ///rigidly connect smaller rigid bodies!
-//  //gsl_vector *rigidDihedrals = CycleNullSpace->m_rigidAngles;
-//  //gsl_vector *m_rigidHBonds = CycleNullSpace->m_rigidHBonds;
-//  gsl_vector *rigidDihedrals = getNullspace()->m_rigidCovBonds;
-//  gsl_vector *rigidHBonds = getNullspace()->m_rigidHBonds;
-//
-//  //HBonds aka cycleAnchorEdges
-//  int i=0; //indexing for hBonds
-//  int j=0; //numbering for fixed dihedrals
-//
-//  //First, we set the constrained flag for the corresponding bonds
-//  //for (vector< pair<KinEdge*,KinVertex*> >::iterator it= m_molecule->m_spanningTree->m_cycleAnchorEdges.begin(); it!=
-//  //      m_molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++it) {
-//  for (std::pair<KinEdge*,KinVertex*> const& pair_it : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
-//
-//    KinEdge* edge_ptr = pair_it.first;
-//    KinVertex* common_ancestor = pair_it.second;
-////    KinEdge* edge_ptr = it->first;
-////    KinVertex* common_ancestor = it->second;
-//
-//    //Get corresponding rigidity information
-//    //The m_molecule hBonds are ordered in the same way as the rigid HBonds
-//    double val=gsl_vector_get(rigidHBonds,i);
-//
-//    if( val == 1 ){
-//      edge_ptr->getBond()->constrained=true;
-//    }
-//
-//    i++;
-//
-//    //Now, the dihedral angles
-//    KinVertex* vertex1 = edge_ptr->StartVertex;
-//    KinVertex* vertex2 = edge_ptr->EndVertex;
-//
-//    //Trace back along dof m_edges for vertex 1
-//    while ( vertex1 != common_ancestor ) {
-//
-//      KinVertex* parent = vertex1->m_parent;
-//      KinEdge* p_edge = parent->findEdge(vertex1);
-//
-//      int dof_id = p_edge->getDOF()->getCycleIndex();
-//      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-//
-//        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
-//
-//        if( valDih == 1 ) { //&& p_edge->getBond()->constrained == false){ //This cycle dof is constrained
-//          p_edge->getBond()->constrained=true;
-//          j++;
-//        }
-//      }
-//
-//      vertex1 = parent;
-//    }
-//
-//    //Trace back along dof m_edges for vertex 2
-//    while ( vertex2 != common_ancestor ) {
-//
-//      KinVertex* parent = vertex2->m_parent;
-//      KinEdge* p_edge = parent->findEdge(vertex2);
-//
-//      int dof_id = p_edge->getDOF()->getCycleIndex();
-//      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-//
-//        double valDih = gsl_vector_get(rigidDihedrals,dof_id);
-//
-//        if( valDih == 1 ) {// && p_edge->getBond()->constrained == false){
-//          p_edge->getBond()->constrained=true;
-//          j++;
-//        }
-//      }
-//      vertex2 = parent;
-//    }
-//  }
-//
-//
 //  /// Now, all dihedrals and hBonds that are fixed have the set flag constrained = true!
-//
 //  m_biggerRBMap.clear();
 //  m_sortedRBs.clear();
 //
@@ -304,15 +298,15 @@ void Configuration::computeCycleJacobianAndNullSpace() {
 //
 //}
 
-//---------------------------------------------------------
-bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
-  if( firstEntry.first > secondEntry.first )
-    return true;
-  if( firstEntry.first < secondEntry.first )
-    return false;
-
-  return (firstEntry.second < secondEntry.second);
-}
+////---------------------------------------------------------
+//bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
+//  if( firstEntry.first > secondEntry.first )
+//    return true;
+//  if( firstEntry.first < secondEntry.first )
+//    return false;
+//
+//  return (firstEntry.second < secondEntry.second);
+//}
 
 //void Configuration::readBiggerSet(){
 //
@@ -328,22 +322,22 @@ bool Configuration::compareSize(pair<int, unsigned int> firstEntry, pair<int, un
 //  }
 //
 //
-//  //For each fixed or constrained bond (a1,a2) call Union(a1,a2)
+//  //For each fixed or rigidified bond (a1,a2) call Union(a1,a2)
 //  for (auto const& bond: m_molecule->getCovBonds()){
-//    //First, simply check if bond is constrained
-//    if( bond->constrained || bond->Bars == 6){
+//    //First, simply check if bond is rigidified
+//    if( bond->rigidified || bond->Bars == 6){
 //      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
 //    }
 //  }
 //
 //  //Also, do the same thing for the hydrogen bonds insert the h-bonds at the correct place
 //  for(auto const& bond: m_molecule->getHBonds()){
-//    if( bond->constrained ){
+//    if( bond->rigidified ){
 //      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
 //    }
 //  }
 //
-//  //All disjoint sets have been united if they are constrained or bonded fix!
+//  //All disjoint sets have been united if they are rigidified or bonded fix!
 //  //We now just add the covalent neighbors to have the representation with atoms in multiple rbs!
 //
 //  int c=0;
