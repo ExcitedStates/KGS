@@ -117,16 +117,16 @@ void RelativeTransitionOptions::initializeVariables(){
   samplesToGenerate         = 10;
   hydrogenbondFile          = "";
   hydrogenbondMethod        = "";
-  gradient                  = 0;
+  gradient                  = 5;
   collisionFactor           = 0.75;
   decreaseSteps             = 0;
   decreaseFactor            = 0.5;
-  stepSize                  = 1.0;
+  stepSize                  = 1;
   maxRotation               = 3.1415/18;
   metric_string             = "rmsd";
   metricSelection           = "heavy";
   seed                      =  418;
-  biasToTarget              = 0.1;
+  biasToTarget              = 0.5;
   convergeDistance          = -1.0; ///<Changes depending on m_metric. Initialize <0, it is set depending on metric
   preventClashes            = false;
   alignSelection            = "heavy";
@@ -177,14 +177,14 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
   log("so")<<"\t--extraCovBonds <int>-<int>[,...] \t: Extra covalent bonds specified with atom-IDs. Can override an h-bond."<<endl;
   log("so")<<"\t--samples, -s <whole number> \t: Indicates the number of samples to generate. Default is 10."<<endl;
-  log("so")<<"\t--gradient, -s <0|1|2|3|4> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending. Default is 0."<<endl;
+  log("so")<<"\t--gradient, -s <0|1|2|3|4\5> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending; 5 = least square gradient. Default is 0."<<endl;
   log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when checking for collisions. The default is 0.75."<<endl;
   log("so")<<"\t--stepSize <real number> \t: Initial step size to next sample as the norm of dihedral perturbation. Default 1."<<endl;
   log("so")<<"\t--maxRotation <real number> \t: The largest allowable change in torsion angle. The default is 10°."<<endl;
   log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
   log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
   log("so")<<"\t--seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
-  log("so")<<"\t--biasToTarget, -bias <real number> \t: Percentage of using target as 'random seed configuration'. Default 0.1."<<endl;
+  log("so")<<"\t--biasToTarget, -bias <real number> \t: Percentage mixing the directed move with a random move. Default 0.5."<<endl;
   log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
   log("so")<<"\t--preventClashes\t: Use clashing atoms to define additional constraints and prevent clash. Default: true."<<endl;
   log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
@@ -193,7 +193,7 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
   log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
-  log("so")<<"\t--relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
+  log("so")<<"\t--relativeDistances <file name> \t: File with the desired distance between atoms of residueNetwork option. Each line is one couple 'id atom_id2,id atom_id2,distance'. Each line should contain only two spaces, one after each word 'id'"<<endl;
 
 }
 
