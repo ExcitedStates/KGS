@@ -59,7 +59,7 @@ class IO {
 //  static void readRigidbody (Molecule * molecule, Selection& movingResidues);
   static void writePdb(Molecule *molecule, std::string output_file_name);
 
-  static void writePyMolScript(Molecule *molecule, std::string pdb_file, std::string output_file_name);
+  static void writePyMolScript(Molecule *rigidified, std::string pdb_file, std::string output_file_name, Molecule* iniMolecule = nullptr);
 
   static void writeBondLengthsAndAngles(Molecule *molecule, std::string output_file_name);
 
@@ -78,7 +78,7 @@ class IO {
 
   static void writeRBs(Molecule *molecule, std::string output_file_name);
 
-  static void writeStats(Molecule *molecule, std::string output_file_name);
+  static void writeStats(Molecule *molecule, std::string output_file_name, Molecule *rigidified = nullptr); ///version when collapsed rbs
 
   static void writeQ(Molecule *molecule, Configuration *referenceConf, std::string output_file_name);
 
@@ -88,7 +88,7 @@ class IO {
   static std::vector<std::tuple<Atom *, Atom *, double> >
   readRelativeDistances(const std::string &fname, Molecule *mol);
 
-  static void writeRigidbodyIDToBFactor(Molecule *mol);
+//  static void writeRigidbodyIDToBFactor(Molecule *mol);
 
   static void
   writeNewSample(Configuration *conf, Configuration *ref, int sample_num, const std::string &workingDir, int saveData);

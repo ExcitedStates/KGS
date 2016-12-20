@@ -1113,7 +1113,7 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << bond->getIniEnergy()<<" ";
-    int numBars = bond->constrained? 6:5;
+    int numBars = bond->Bars;
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
@@ -1147,7 +1147,7 @@ void IO::writeHbondsChange (Configuration *conf, string output_file_name) {
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << energy<<" ";
-    int numBars = bond->constrained? 6:5;
+    int numBars = bond->Bars;
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
@@ -1515,7 +1515,7 @@ void IO::readHbonds_vadar(Molecule * molecule, string file){
 
 }
 
-void IO::writePyMolScript(Molecule * molecule, string pdb_file, string output_file_name) {
+void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_file_name, Molecule* iniMolecule) {
 
   ofstream pymol_script( output_file_name.c_str() );
 
@@ -1555,7 +1555,7 @@ void IO::writePyMolScript(Molecule * molecule, string pdb_file, string output_fi
 
 //  while(sit != molecule->m_conf->m_sortedRBs.end() ){
 //    if( sit->first >= MIN_CLUSTER_SIZE ){
-  for(auto const& rb : molecule->getRigidbodies()){
+  for(auto const& rb : rigidified->getRigidbodies()){
     if(rb->Atoms.size()>MIN_CLUSTER_SIZE){
 
       string color = Color::next_rcd_color_as_name();
@@ -1577,15 +1577,28 @@ void IO::writePyMolScript(Molecule * molecule, string pdb_file, string output_fi
   int site_1, site_2;
   vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
-  for (eit=molecule->m_spanningTree->m_cycleAnchorEdges.begin(); eit != molecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+  if(iniMolecule) {
+    for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
+         eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+
+      site_1 = eit->first->getBond()->Atom1->getId();
+      site_2 = eit->first->getBond()->Atom2->getId();
+      pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
+
+    }
+    pymol_script << "color red, allHbonds" << endl;
+    pymol_script << "hide labels, allHbonds" << endl;
+  }
+
+  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
 
     site_1 = eit->first->getBond()->Atom1->getId();
     site_2 = eit->first->getBond()->Atom2->getId();
-    pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
+    pymol_script << "distance rotatableHbonds = id " << site_1 << " , id " << site_2 << endl;
 
   }
-  pymol_script << "color red, hbonds" << endl;
-  pymol_script << "hide labels, hbonds" << endl;
+  pymol_script << "color yellow, rotatableHbonds" << endl;
+  pymol_script << "hide labels, rotatableHbonds" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1624,14 +1637,16 @@ void IO::writePyMolScript(Molecule * molecule, string pdb_file, string output_fi
 //    }
 //  }
 
+  //Create biggest cluster as separate object
+  pymol_script << "create biggestCluster, b < 0.99" << endl;
+
+
   // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
   pymol_script << "bg_color white" << endl;
 //  pymol_script << "clip slab, 200" << endl;
   pymol_script << "orient" << endl;
 
-  pymol_script << "hide everything" << endl;
-  pymol_script << "show lines" << endl;
   pymol_script << "show cartoon" << endl;
   pymol_script << "show dashes, hbonds" << endl;
   pymol_script << "set cartoon_fancy_helices, on" << endl;
@@ -1679,37 +1694,43 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
 }
 
 
-void IO::writeStats(Molecule * protein, string output_file_name){
+void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigidified){
 
   ofstream output( output_file_name.c_str() );
   if(!output.is_open()) {
     cerr<<"Cannot write to "<<output_file_name<<". You might need to create output directory first"<<endl;
     exit(-1);
   }
-  if(protein->m_conf!=nullptr){
-    int diff= protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs();
+  if(protein->m_conf!=nullptr) {
+    int diff = protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs();
     int sum = protein->m_conf->getNullspace()->getNullspaceSize() + diff;
     //int sum = m_molecule->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
-    output <<"************* Statistics on the molecular structure *************"<<endl;
+    output << "************* Statistics on the molecular structure *************" << endl;
     output << "Number of chains: " << protein->chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
-    output <<"Number of covalent bonds: " << protein->getCovBonds().size()<< endl;
-    output <<"Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size()<< endl;
+    output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
+    output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
-    output <<"Number of free DOFs: " << diff << endl;
-    output <<"Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl<<endl;
-    output <<"************* Statistics on rigidity analysis *************"<<endl;
-    output <<"Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize() << endl;
-    //output <<"Number of internal m_dofs (nullspace dimension): " << m_molecule->m_conf->CycleNullSpace->getNullspace()Size <<endl;
+    output << "Number of free DOFs: " << diff << endl;
+    output << "Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl << endl;
+    output << "************* Statistics on rigidity analysis *************" << endl;
+    output << "Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize()
+           << endl;
     output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
-    output <<"Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals() << endl;
-    //output <<"Number of rigidified covalent bonds: " << m_molecule->m_conf->CycleNullSpace->m_numRigid<<endl;
-    output <<"Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
-    //output <<"Number of rigidified hydrogen bonds: " << m_molecule->m_conf->CycleNullSpace->m_numRigidHBonds<<endl;
-    output << "Number of rigid clusters: " << protein->m_conf->m_numClusters << endl;
-    output << "Size of biggest cluster: " << protein->m_conf->m_maxSize << endl;
-    output << "Index of biggest cluster: " << protein->m_conf->m_maxIndex<< endl;
+    output << "Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
+           << endl;
+    output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
+
+    if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
+      output << "Number of rigid clusters: " << rigidified->m_conf->m_numClusters << endl;
+      output << "Size of biggest cluster: " << rigidified->m_conf->m_maxSize << endl;
+      output << "Index of biggest cluster: " << rigidified->m_conf->m_maxIndex << endl;
+    } else { ///otherwise use normal protein
+      output << "Number of rigid clusters: " << protein->m_conf->m_numClusters << endl;
+      output << "Size of biggest cluster: " << protein->m_conf->m_maxSize << endl;
+      output << "Index of biggest cluster: " << protein->m_conf->m_maxIndex << endl;
+    }
   }
   output.close();
 
@@ -1761,8 +1782,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
     Configuration* iniConf = c;
     output << "REMARK\tInitial Distance to target was "<<setprecision(6)<<c->m_distanceToTarget<<endl;
 
-    writeRigidbodyIDToBFactor(molecule);
-
+    molecule->writeRigidbodyIDToBFactor();
 
     for(int i=0; i <= treeDepth; i++){
 
@@ -1876,12 +1896,13 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
     currId = c->m_id;
     Configuration* iniConf = c;
 
-//    vector<KinEdge*>::iterator eit;
-    //Random permutation of all rigidbody ids for use in coloring
-    vector<int> rbidPerm;
-    for(size_t i=0;i<molecule->m_spanningTree->Vertex_map.size();i++)
-      rbidPerm.push_back(i);
-    std::random_shuffle ( rbidPerm.begin(), rbidPerm.end() );
+//    //Random permutation of all rigidbody ids for use in coloring
+//    vector<int> rbidPerm;
+//    for(size_t i=0;i<molecule->m_spanningTree->Vertex_map.size();i++)
+//      rbidPerm.push_back(i);
+//    std::random_shuffle ( rbidPerm.begin(), rbidPerm.end() );
+
+    target->writeRigidbodyIDToBFactor();
 
     for(int i=0; i <= treeDepth; i++){
 
@@ -1934,11 +1955,11 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
         Residue* res = atom->getResidue();
         char buffer[100];
         //sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %2s  ",
-        sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6d          %2s  ",
+        sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             //atom->Position.x,atom->Position.y,atom->Position.z,atom->getType().c_str());
-          atom->m_position.x,atom->m_position.y,atom->m_position.z,rbidPerm[atom->getRigidbody()->id()],atom->getType().c_str() );
+          atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBFactor(),atom->getType().c_str() );
 //        atom->m_position.x,atom->m_position.y,atom->m_position.z,atom->getBiggerRigidbody()->id(),atom->getType().c_str() );
         //					atom->Position.x,atom->Position.y,atom->Position.z,resiColorMap.find(res->getId())->second,atom->getType().c_str() );
         string line(buffer);
@@ -2155,23 +2176,6 @@ std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const 
   }
 
   return ret;
-}
-
-void IO::writeRigidbodyIDToBFactor(Molecule* mol)
-{
-  vector<Rigidbody*> rigidbodies = mol->getRigidbodies();
-
-  //Random permutation of all rigidbody ids for use in coloring
-  vector<int> rbidPerm;
-  for(size_t i=0;i<rigidbodies.size();i++)
-    rbidPerm.push_back(i);
-  std::random_shuffle ( rbidPerm.begin(), rbidPerm.end() );
-
-  for(auto const& rb: rigidbodies){
-    for(auto const& atom: rb->Atoms){
-      atom->setBFactor(rbidPerm[rb->id()]);
-    }
-  }
 }
 
 void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num, const string &workingDir, int saveData) {

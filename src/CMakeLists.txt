@@ -45,6 +45,7 @@ add_library( libKGS
         applications/options/ExploreOptions.h
         applications/options/TransitionOptions.h
         applications/options/RelativeTransitionOptions.h
+ 	applications/options/RigidityOptions.h
         planners/SamplingPlanner.h
         planners/DihedralRRT.h
         planners/RRTPlanner.h
@@ -103,6 +104,7 @@ add_library( libKGS
         applications/options/ExploreOptions.cpp
         applications/options/TransitionOptions.cpp
         applications/options/RelativeTransitionOptions.cpp
+	applications/options/RigidityOptions.cpp 
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
@@ -170,7 +172,7 @@ add_library( libKGS
         core/graph/Constraint.cpp
         core/graph/Constraint.h
         core/ConstraintSet.cpp
-        core/ConstraintSet.h)
+        core/ConstraintSet.h )
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

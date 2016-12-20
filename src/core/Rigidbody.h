@@ -71,6 +71,8 @@ class Rigidbody {
   void setVertex (KinVertex* vertex);
   KinVertex* getVertex();
 
+  static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//Compare by size, used to sort
+
  private:
   unsigned int m_id;
 //  bool m_isMainchainRb;

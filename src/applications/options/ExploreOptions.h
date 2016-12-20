@@ -143,4 +143,4 @@ class ExploreOptions {
 
 };
 
-#endif // SAMPLINGOPTIONS_H
+#endif // EXPLOREOPTIONS_H

@@ -431,10 +431,10 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
     for (auto const& res: chain->getResidues()) {
 //      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
       if(movingResidues.inSelection(res)) {
-        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
+        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
         continue; //Skip residue if its in movingResidues
       }else {
-        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
+        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
       }
 
       for (Atom *const &res_atom: res->getAtoms()){
@@ -443,7 +443,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
           continue;
         }
         ds.Union(lastAtom->getId(), res_atom->getId());
-        log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
+        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
       }
     }
   }
@@ -453,21 +453,34 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
     Atom* atom = getAtoms()[i];
     if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
-      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
     }
   }
 
+
+  int count=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
   for (auto const& bond: getCovBonds()){
-
-    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
+    if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
+      count++;
+      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+      continue;
+    }
+  }
+  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" covalent bonds."<<endl;
+  count=0;
+  //For each fixed bond (a1,a2) call Union(a1,a2)
+  for (auto const& bond: getHBonds()){
+    if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
+      count++;
       ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
       log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
       continue;
     }
   }
-
+  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
 
   int c=0;
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
@@ -1341,6 +1354,7 @@ Molecule* Molecule::deepClone() const{
     Bond* newBond = ret->addCovBond( a1_new, a2_new );
     if(newBond){
       newBond->Bars = covBond->Bars;
+      newBond->rigidified = covBond->rigidified;
     }
   }
 
@@ -1351,6 +1365,8 @@ Molecule* Molecule::deepClone() const{
     Atom *acc = ret->getAtom(hbond->Acceptor->getId());
     Atom *AA = ret->getAtom(hbond->AA->getId());
     Hbond *new_hb = new Hbond(hatom, acc, donor, AA, hbond->getIniEnergy());
+    new_hb->Bars = hbond->Bars;
+    new_hb->rigidified = hbond->rigidified;
     ret->addHbond(new_hb);
   }
 
@@ -1381,14 +1397,12 @@ Molecule* Molecule::deepClone() const{
 Molecule* Molecule::collapseRigidBonds(int collapseLevel){
   assert(collapseLevel==1 || collapseLevel==2);
 
+  m_conf->rigidityAnalysis();//identifies rigidified bonds necessary for collapsing
+
   Molecule* ret = deepClone();
 
-  Configuration* ref = new Configuration(this);
-  Nullspace* ns = ref->getNullspace();
-
   int i=0; //indexing for hBonds
-
-  //First, constrain cycle edge bonds
+  //To collapse molecule, we turn rigid h-bonds into covalent bonds
 //  if(collapseLevel==2) {
     for (auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges) {
 
@@ -1396,81 +1410,19 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel){
       KinVertex *common_ancestor = edge_nca_pair.second;
 
       //Get corresponding rigidity information
-      if (ns->isHBondRigid(i++)) {
+      if (m_conf->getNullspace()->isHBondRigid(i++)) {
         //If its a rigid hbond convert it to a rigid covalent bond
         if (edge->getBond()->isHbond()) {
           Atom *a1_new = ret->getAtom(edge->getBond()->Atom1->getId());
           Atom *a2_new = ret->getAtom(edge->getBond()->Atom2->getId());
           Bond *newBond = ret->addCovBond(a1_new, a2_new);
           if (newBond) {
-            newBond->Bars = 6;
+            newBond->rigidified = true;
 //          log("debug")<<"Molecule.cpp:"<<__LINE__<<" covalently connecting "<<a1_new<<"-"<<a2_new<<" with rigid bond"<<endl;
           }
         }
       }//end if
-//    }//end for
-//  }//end if(collapseLevel==2)
-//
-//  for(auto const& edge: m_spanningTree->Edges){
-//    int cycleDOFid = edge->getDOF()->getCycleIndex();
-//    if(cycleDOFid>=0 && edge->getBond()!=nullptr && ns->isCovBondRigid(cycleDOFid)){
-//      Bond* oldBond = edge->getBond();
-//      for(auto const& bond: ret->getCovBonds()){
-//        if( bond->Atom1->getId()==oldBond->Atom1->getId() && bond->Atom2->getId()==oldBond->Atom2->getId() ) {
-//          bond->Bars = 6;
-////              log("debug")<<"Molecule.cpp:"<<__LINE__<<" rigidifying existing bond "<<bond->Atom1<<"-"<<bond->Atom2<<endl;
-//          break;
-//        }
-//      }
-//
-//    }
-
-    //Now, the dihedral angles
-    KinVertex* vertex1 = edge->StartVertex;
-    KinVertex* vertex2 = edge->EndVertex;
-
-    //Trace back along dof m_edges for vertex 1
-    while ( vertex1 != common_ancestor ) {
-      KinVertex* parent = vertex1->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex1);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-        if( ns->isCovBondRigid(dof_id) ) {
-          Bond* oldBond = p_edge->getBond();
-          for(auto const& bond: ret->getCovBonds()){
-            if( bond->Atom1->getId()==oldBond->Atom1->getId() && bond->Atom2->getId()==oldBond->Atom2->getId() ) {
-              bond->Bars = 6;
-//              log("debug")<<"Molecule.cpp:"<<__LINE__<<" rigidifying existing bond "<<bond->Atom1<<"-"<<bond->Atom2<<endl;
-              break;
-            }
-          }
-        }
-      }
-      vertex1 = parent;
     }
-
-    //Trace back along edges from vertex 2
-    while ( vertex2 != common_ancestor ) {
-      KinVertex* parent = vertex2->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex2);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-        if( ns->isCovBondRigid(dof_id) ) {
-          Bond* oldBond = p_edge->getBond();
-          for(auto const& bond: ret->getCovBonds()){
-            if( bond->Atom1->getId()==oldBond->Atom1->getId() && bond->Atom2->getId()==oldBond->Atom2->getId() ) {
-              bond->Bars = 6;
-//              log("debug")<<"Molecule.cpp:"<<__LINE__<<" rigidifying existing bond "<<bond->Atom1<<"-"<<bond->Atom2<<endl;
-              break;
-            }
-          }
-        }
-      }
-      vertex2 = parent;
-    }
-  }
 
   //Recreate roots vector. For edge leaving the root, descend until a rigid body is found and then pick the first atom
   vector<int> roots;
@@ -1489,75 +1441,46 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel){
   ret->setCollisionFactor(m_collisionFactor); //Sets the initial collisions
 
   return ret;
-
-//  //All dihedrals and hbonds that are fixed are in constrainedBonds. Collect rigid bodies
-//  std::map<unsigned int, Rigidbody*> biggerRBMap;
-//  int maxId = 0, minId = 0;
-//  for(auto const& atom: getAtoms()) {
-//    maxId = std::max(atom->getId(), maxId);
-//    minId = std::min(atom->getId(), minId);
-//  }
-//  assert(minId==0);
-//  DisjointSets ds(maxId); //Assumes the last atom has the highest id.
-//
-//  //For each atom, a1, with exactly one cov neighbor, a2, call Union(a1,a2)
-//  for (Atom* const& atom: getAtoms()){
-//    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
-//      ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
-//    }
-//  }
-//
-//
-//  //For each fixed or constrained bond (a1,a2) call Union(a1,a2)
-//  for (auto const& bond: getCovBonds()){
-//    //First, simply check if bond is constrained
-//    if( bond->Bars == 6 ){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-//    }
-//  }
-//
-//  //Also, do the same thing for the hydrogen bonds insert the h-bonds at the correct place
-//  for(auto const& bond: getHBonds()){
-//    if( constrainedBonds.count(bond)>0 ){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-//    }
-//  }
-//
-//  //All disjoint sets have been united if they are constrained or bonds are fixed!
-//
-//  int c=0;
-//  map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
-//
-//  //Map the set-ID's (first map entry) to RB-ID's (second map entry) and add bonded atoms to RBs.
-//  //for (int i=0;i< m_molecule->size();i++){
-//  //  Atom* atom = m_molecule->getAtoms()[i];
-//  for (auto const& atom: m_molecule->getAtoms()){
-//
-//    //Map the set-id to the RB-id
-//    int set_id = ds.FindSet(atom->getId());
-//    int body_id;
-//    if(idMap.find(set_id)!=idMap.end())
-//      body_id = idMap.find(set_id)->second;
-//    else {
-//      body_id = c++;
-//      idMap[set_id] = body_id;
-//    }
-//    //If the set containing a1 is not a rigid body: create one
-//    if ( biggerRBMap.find(body_id) == biggerRBMap.end() ) {
-//      Rigidbody* new_rb = new Rigidbody(body_id);
-//      biggerRBMap[body_id] = new_rb;
-//    }
-//    Rigidbody* rb = biggerRBMap[body_id];
-//    if (!rb->containsAtom(atom)){
-//      rb->Atoms.push_back(atom);
-//      atom->setBiggerRigidbody(rb);
-//    }
-//
-//  }
-//
-//  return nullptr;
 }
 
+void Molecule::writeRigidbodyIDToBFactor()
+{
+  //We sort them so the biggest clusters always have the smallest IDs and the same colors
+  std::vector< std::pair<int, unsigned int> > sortedRBs; //pair of int size, unsigned int ID
+
+  unsigned int maxSize = 0;
+  unsigned int maxIndex=0;
+
+  for(auto const& it : m_rigidBodyMap ){
+    int rbSize = it.second->size();
+    sortedRBs.push_back(make_pair( rbSize , it.first ));
+    if(rbSize > maxSize){
+      maxSize = rbSize;
+      maxIndex = it.first;
+    }
+  }
+
+  vector< pair<int, unsigned int> >::iterator vsit = sortedRBs.begin();
+  vector< pair<int, unsigned int> >::iterator veit = sortedRBs.end();
+
+  sort(vsit, veit,Rigidbody::compareSize); //sorts them by size
+
+  int outputID = 0;
+  for(auto const& idPair : sortedRBs){
+    ///get rb id sorted by size, access rb in protein, color all atoms to id
+    Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
+//    cout<<"Rigidbody ID: "<<currentRB->id()<<", size: "<<currentRB->size()<<", output ID: "<<outputID<<endl;
+    for(auto const& atom: currentRB->Atoms){
+      atom->setBFactor(outputID);
+    }
+    outputID++;
+  }
+
+  ///Store information in the molecule
+  m_conf->m_numClusters = m_rigidBodyMap.size();
+  m_conf->m_maxSize = maxSize;
+  m_conf->m_maxIndex = maxIndex;
+}
 
 const std::vector<Rigidbody*> Molecule::getRigidbodies() const
 {
