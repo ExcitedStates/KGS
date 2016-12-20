@@ -79,7 +79,7 @@ int main( int argc, char* argv[] ) {
                                   options.projectConstraints );
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(RelativeTransitionOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(options.maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
@@ -93,7 +93,7 @@ int main( int argc, char* argv[] ) {
       IO::readRelativeDistances(options.relativeDistances, protein);
 
   Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
-  Direction* d2 = new RandomDirection(resNetwork,RelativeTransitionOptions::getOptions()->maxRotation);
+  Direction* d2 = new RandomDirection(resNetwork,options.maxRotation);
 
 
   log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl;fflush(stdout);
