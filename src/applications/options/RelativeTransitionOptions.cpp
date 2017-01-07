@@ -74,6 +74,14 @@ RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[])
     exit(-1);
   }
 
+  //Check relativeDistances
+  if(relativeDistances.empty()) {
+    enableLogger("so");
+    cerr<<endl<<"No relative distance file supplied"<<endl<<endl;
+    exit(-1);
+  }
+
+
   //Set workingDirectory and moleculeName using the initialStructureFile.
   char* tmp = realpath(initialStructureFile.c_str(), nullptr);
   if(tmp==nullptr){ cerr<<initialStructureFile<<" is not a valid PDB-file"<<endl; exit(-1); }

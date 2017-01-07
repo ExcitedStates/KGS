@@ -20,7 +20,7 @@
 
 using namespace std;
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 
@@ -60,6 +60,9 @@ int main( int argc, char* argv[] ) {
 
   protein->setCollisionFactor(options.collisionFactor);
 
+  if(options.collapseRigid>0)
+    protein = protein->collapseRigidBonds(options.collapseRigid);
+
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
@@ -76,7 +79,7 @@ int main( int argc, char* argv[] ) {
                                   options.projectConstraints );
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(RelativeTransitionOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(options.maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
@@ -90,7 +93,7 @@ int main( int argc, char* argv[] ) {
       IO::readRelativeDistances(options.relativeDistances, protein);
 
   Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
-  Direction* d2 = new RandomDirection(resNetwork,RelativeTransitionOptions::getOptions()->maxRotation);
+  Direction* d2 = new RandomDirection(resNetwork,options.maxRotation);
 
 
   log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl;fflush(stdout);
@@ -164,7 +167,7 @@ int main( int argc, char* argv[] ) {
   //Print final status
   double end_time = timer.ElapsedTime();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(samples.size()-1)<<" valid samples\n";
-  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
+  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianAndNullspaceTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
   log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
   log("samplingStatus")<< "Done"<<endl;

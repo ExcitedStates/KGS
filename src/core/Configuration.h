@@ -89,7 +89,7 @@ class Configuration
 
   void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
 
-  static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
+//  static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
   void writeQToBfactor();
 
@@ -122,6 +122,8 @@ class Configuration
   gsl_matrix* getCycleJacobian();
 
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
+
+  void rigidityAnalysis();
 
   Configuration* getParent();   ///< Access configuration that spawned this one
   std::list<Configuration*>& getChildren(); ///< Access child configurations

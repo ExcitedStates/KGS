@@ -28,15 +28,15 @@
 
 using namespace std;
 
-extern double jacobianTime;
+extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
 extern double selectNodeTime;
 //extern double SINGVAL_TOL;
 
-void randomSampling(ExploreOptions& options){
+void randomSampling(ExploreOptions& options) {
 
   Selection movingResidues(options.residueNetwork);
-  Molecule* protein = IO::readPdb(
+  Molecule *protein = IO::readPdb(
       options.initialStructureFile,
       movingResidues,
       options.extraCovBonds,
@@ -46,9 +46,9 @@ void randomSampling(ExploreOptions& options){
   );
   protein->setCollisionFactor(options.collisionFactor);
 
-  if(options.collapseRigid>0)
+  if (options.collapseRigid > 0) {
     protein = protein->collapseRigidBonds(options.collapseRigid);
-
+  }
 //  if(!options.annotationFile.empty())
 //    IO::readAnnotations(protein, options.annotationFile);
 
@@ -191,7 +191,7 @@ void randomSampling(ExploreOptions& options){
   double end_time = timer.ElapsedTime();
   std::list<Configuration*>& m_samples = planner->getSamples();
   log("samplingStatus")<< "Took "<<(end_time-start_time)<<" seconds to generate "<<(m_samples.size()-1)<<" valid samples\n";
-  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianTime<<" seconds\n";
+  log("samplingStatus")<< "Jacobian and null space computation took "<<jacobianAndNullspaceTime<<" seconds\n";
   log("samplingStatus")<< "Rigidity analysis took "<<rigidityTime<<" seconds\n";
   log("samplingStatus")<< "Node selection took "<<selectNodeTime<<" seconds\n";
 

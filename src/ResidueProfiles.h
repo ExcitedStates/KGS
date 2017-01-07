@@ -677,6 +677,8 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLU","CG","CD"},
     {"GLU","CD","OE1"},
     {"GLU","CD","OE2"},
+    {"GLU","OE1","HE1"},
+    {"GLU","OE2","HE2"},
     {"GLU","C","O"},
     {"GLU","C","OT"},
     {"GLU","C","OT1"},

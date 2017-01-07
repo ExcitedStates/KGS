@@ -65,8 +65,8 @@ KinVertex* Rigidbody::getVertex (){
 }
 
 //void Rigidbody::makeBiggerRigidBody (Rigidbody* rb, Bond * bond) {
-//	//combine two rigid bodies that are linked by a constrained bond
-//	//bond is the constrained linking bond between the two bodies
+//	//combine two rigid bodies that are linked by a rigidified bond
+//	//bond is the rigidified linking bond between the two bodies
 //	for( vector<Atom*>::iterator ait = rb->Atoms.begin(); ait != rb->Atoms.end(); ait++){
 //		if( ! this->containsAtom((*ait)) ){
 //			Atoms.push_back((*ait));
@@ -234,6 +234,14 @@ Atom* Rigidbody::getAtom(string name){
 	return nullptr;
 }
 
+///Compare sizes of rigid bodies given a Rigidbody-ID-Map
+bool Rigidbody::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
+	if( firstEntry.first > secondEntry.first )
+		return true;
+	if( firstEntry.first < secondEntry.first )
+		return false;
+	return (firstEntry.second < secondEntry.second);
+}
 
 ostream& operator<<(ostream& os, const Rigidbody& rb){
 	os<<"Rigidbody[";

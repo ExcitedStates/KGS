@@ -1,0 +1,12 @@
+KGS = ../../../build/kgs_rigidity
+#KGS = kgs
+
+all: output.txt 
+
+# Assumes that KGSARGS has been set
+output.txt:
+	mkdir -p output
+	$(KGS) $(KGSARGS) | tee $@
+
+clean:
+	rm -rf output output.txt

@@ -108,7 +108,10 @@ class Molecule {
 
   Molecule* collapseRigidBonds(int collapseLevel = 1);
 
+  void writeRigidbodyIDToBFactor();
+
   const std::vector<Rigidbody*> getRigidbodies() const;
+  void buildRigidBodies (Selection& movingResidues);
 
  private:
   std::string m_name;
@@ -135,7 +138,6 @@ class Molecule {
   void restoreAtomPos();
   void indexAtoms();
 
-  void buildRigidBodies (Selection& movingResidues);
   void buildSpanningTree(const std::vector<int>& rootIds);
 
   friend class IO; //The IO::readPdb function uses the addAtom function

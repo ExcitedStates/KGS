@@ -38,7 +38,7 @@ class Bond {
 	Atom* Atom2;
 	std::string BondType;
 	int Bars;
-	bool constrained;
+	bool rigidified;
 
 	Bond(Atom* atom1, Atom* atom2, std::string bond_type);
 	Bond(Bond & bond);

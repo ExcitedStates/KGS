@@ -1,0 +1,56 @@
+KGS = ../../../build/kgs_transition
+
+PLOTBASICS  = python ../../../scripts/plotBasics.py
+PLOTLENGTHS  = python ../../../scripts/plotBondLengths.py
+PLOTCONSTRAINTS  = python ../../../scripts/plotConstraints.py
+PLOTPATHSTEPS = python ../../../scripts/combineKGSPath_steps.py
+PATHPLOTS = python ../../../scripts/pathPlots.py
+#ENERGYFIT = python ../../../scripts/fit_energy_deltas.py
+TORSIONTUBE1 = python ../../../scripts/computeAbsoluteSteps.py
+TORSIONTUBE2 = python ../../../scripts/colorByTorsionRMSF.py
+PAIRWISETREE = python ../../../scripts/pairwiseTreeDistances.py
+CLASHNETWORKS = python ../../../scripts/clashNetworks.py 
+CLASHGRAPHS = python ../../../scripts/clashGraphs.py
+CLASHDENSITIES = python ../../../scripts/clashDensities.py
+
+all: output.txt distancePlots/pairedRMSD_twoTrees.png constraintPlots/forwardPath_meanMaxViolation.png constraintPlots/covBondLengths.png comboAnalysis/*path*.pdb comboAnalysis/combined_qFile.txt comboAnalysis/init_torsionRMSF_all.pdb comboAnalysis/pairedRMSD_twoTrees.png comboAnalysis/init_clashNetworks_10.pdb comboAnalysis/*clashDensities.pdb energyPlots/energy_deltas_complete.csv 
+
+# Assumes that KGSARGS has been set
+output.txt:
+	mkdir -p output
+	$(KGS) $(KGSARGS) | tee $@
+
+distancePlots/pairedRMSD_twoTrees.png: output.txt
+	$(PLOTBASICS) output
+
+constraintPlots/covBondLengths.png: output.txt
+	$(PLOTLENGTHS) output/*allCovBonds.txt output/*allAnchors.txt kgs_report.log
+
+constraintPlots/forwardPath_meanMaxViolation.png: output.txt
+	$(PLOTCONSTRAINTS) output/*path.pdb 
+
+comboAnalysis/*path*.pdb: output.txt
+	$(PLOTPATHSTEPS) 10 output/*path.pdb
+
+energyPlots/energy_deltas_complete.csv: output.txt
+	$(PATHPLOTS) output/*path.pdb
+
+comboAnalysis/combined_qFile.txt: output.txt
+	$(TORSIONTUBE1) output/*path.pdb
+
+comboAnalysis/init_torsionRMSF_all.pdb: output.txt
+	$(TORSIONTUBE2) ../init.pdb comboAnalysis/combined_qFile.txt 0 output/*path.pdb
+
+comboAnalysis/pairedRMSD_twoTrees.png: output.txt
+	$(PAIRWISETREE) .
+
+comboAnalysis/init_clashNetworks_10.pdb: output.txt
+	$(CLASHNETWORKS) 10 output/*path.pdb ../init.pdb
+	$(CLASHGRAPHS) 10 output/*path.pdb ../init.pdb
+
+comboAnalysis/*clashDensities.pdb: output.txt
+	$(CLASHDENSITIES) output/*path.pdb ../init.pdb
+
+clean:
+	rm -rf output output.txt kgs_planner.log kgs_report.log *.pdb
+	rm -rf constraintPlots distancePlots energyPlots comboAnalysis
