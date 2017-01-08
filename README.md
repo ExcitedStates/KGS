@@ -6,11 +6,11 @@ constraints. Specifically, collisions are avoided while hydrogen-bonds and
 disulphide bonds are maintained. A set of applications are built on this 
 engine:
 
-* [kgs_explore](https://github.com/ExcitedStates/KGS/wiki/kgs_explore/): Random exploration around initial structure
+* [kgs_explore](https://github.com/ExcitedStates/KGS/wiki/kgs_explore/): Generating conformational ensemble from a seed structure
 * [kgs_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_transition/): Directed sampling from initial structure to target structure
 * [kgs_rigidity](https://github.com/ExcitedStates/KGS/wiki/kgs_rigidity/): Rigidity analysis of structure file
 * kgs_deerprep: In progress
-* [kgs_relative_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_relative_transition/): Sampling from initial structure based on distances between couples of atoms.
+* [kgs_relative_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_relative_transition/): Driving conformations.
 
 
 ## Dependencies
