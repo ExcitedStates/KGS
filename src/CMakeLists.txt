@@ -172,7 +172,7 @@ add_library( libKGS
         core/graph/Constraint.cpp
         core/graph/Constraint.h
         core/ConstraintSet.cpp
-        core/ConstraintSet.h )
+        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

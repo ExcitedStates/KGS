@@ -266,7 +266,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
           log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
-
+//          cout<< "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge->getBond()->Atom1->getId() <<", "<<edge->getBond()->Atom2->getId() << endl;
         } else {
           if (visitedVertices.count(bonded_vertex) > 0) {
             KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
@@ -287,6 +287,8 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
   }
 
   collectDOFs();
+  //Sort cycle anchor edges to maintain constant row order for different roots
+  cycleEdges.sort(KinEdge::compareIDs);
 
   // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
   // end-points to the LCA into m_spanningTree->m_cycleDOFs.

@@ -502,12 +502,14 @@ void Configuration::computeJacobians() {
     KinEdge* edge_ptr = edge_vertex_pair.first;
     KinVertex* common_ancestor = edge_vertex_pair.second;
     Bond * bond_ptr = edge_ptr->getBond();
+//    int bondIndex = bond_ptr
 
     //End-effectors and their positions, corresponds to a and b
     Atom* atom1 = bond_ptr->Atom1;
     Atom* atom2 = bond_ptr->Atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
+    log("debug")<<"Jacobian row "<<i<<", atom 1: "<<atom1->getId()<<", atom 2: "<<atom2->getId()<<endl;
 
     KinVertex* vertex1 = edge_ptr->StartVertex;
     KinVertex* vertex2 = edge_ptr->EndVertex;

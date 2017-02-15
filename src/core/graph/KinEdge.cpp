@@ -50,6 +50,33 @@ void KinEdge::forwardPropagate()
   EndVertex->forwardPropagate();
 }
 
+///Compare IDs of two bonds, used to sort them, lowest ID goes first
+bool KinEdge::compareIDs(KinEdge* edge1, KinEdge* edge2) {
+  //Determine min/max IDs in case bonds were not from min to max ID (happens for hbonds)
+  int minID1, maxID1, minID2, maxID2;
+  minID1 = edge1->m_bond->Atom1->getId();
+  if (edge1->m_bond->Atom2->getId() < minID1 ){
+    maxID1 = minID1;
+    minID1 = edge1->m_bond->Atom2->getId();
+  }
+  else
+    maxID1 = edge1->m_bond->Atom2->getId();
+
+  minID2 = edge2->m_bond->Atom1->getId();
+  if (edge2->m_bond->Atom2->getId() < minID2 ){
+    maxID2 = minID2;
+    minID2 = edge2->m_bond->Atom2->getId();
+  }
+  else
+    maxID2 = edge2->m_bond->Atom2->getId();
+  //Sort
+  if(minID1 < minID2 )
+    return true;
+  if(minID1 > minID2)
+    return false;
+  return maxID1 < maxID2;
+}
+
 
 ostream& operator<<(ostream& os, const KinEdge& e){
   //os<<"KinEdge["<<e.getBond()->Atom1->getName()<<", "<<e.getBond()->Atom2->getName()<<"]";
