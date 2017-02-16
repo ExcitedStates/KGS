@@ -1475,7 +1475,7 @@ void Molecule::writeRigidbodyIDToBFactor()
     Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
 //    cout<<"Rigidbody ID: "<<currentRB->id()<<", size: "<<currentRB->size()<<", output ID: "<<outputID<<endl;
     for(auto const& atom: currentRB->Atoms){
-      atom->setBFactor(outputID);
+      atom->setBFactor(float(outputID)/100);
     }
     outputID++;
   }

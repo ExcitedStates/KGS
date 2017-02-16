@@ -172,7 +172,7 @@ class Atom {
   Residue *m_parentResidue;
   Rigidbody *m_rigidbody;
   Rigidbody *m_biggerRigidbody;
-  float m_bFactor; ///< Used to write b-factor column for pdb output, formatted as integer
+  float m_bFactor; ///< Used to write b-factor column for pdb output
   float m_occupancy;
 };
 
