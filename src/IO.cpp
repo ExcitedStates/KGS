@@ -108,6 +108,8 @@ Molecule* IO::readPdb (
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
 
+  int atomCount=0;
+
   //Read lines of PDB-file.
   while( !pdb.eof()) {
     getline(pdb, line);
@@ -139,14 +141,18 @@ Molecule* IO::readPdb (
 
     //Parse ATOM/HETATM records and add them to molecule
     if( line.substr(0, 4) == "ATOM" || line.substr(0, 6) == "HETATM" ) {
+      ++atomCount;
+      int offset = 0;
+      if (atomCount >99999) //quick and dirty adaption for molecules with > 100000 atoms
+        offset = 1;
       // chain info
-      string chain_name = line.substr(21, 1); // line[22]
+      string chain_name = line.substr(21+offset, 1); // line[22]
       // residue info
-      int res_id = atoi(line.substr(22, 4).c_str()); // line[23:26]
-      string res_name = Util::trim(line.substr(17, 3)); // line[18:20]
+      int res_id = atoi(line.substr(22+offset, 4).c_str()); // line[23:26]
+      string res_name = Util::trim(line.substr(17+offset, 3)); // line[18:20]
       // atom info
-      int atom_id = atoi(line.substr(6, 5).c_str()); // line[7:11]s
-      string atom_name = Util::trim(line.substr(12, 5)); // line[13:17]
+      int atom_id = atoi(line.substr(6+offset, 5).c_str()); // line[7:11]s
+      string atom_name = Util::trim(line.substr(12+offset, 5)); // line[13:17]
       if (atom_name == "OP3") continue;
       if (atom_name.at(0) >= 49 && atom_name.at(0) <= 57) { // if the first char is 1-9
         string temp_name(atom_name.substr(1, 3));
@@ -154,19 +160,19 @@ Molecule* IO::readPdb (
         atom_name = temp_name;
       }
 
-      double x = atof(line.substr(30, 8).c_str()); // line[31:38]
-      double y = atof(line.substr(38, 8).c_str()); // line[39:46]
-      double z = atof(line.substr(46, 8).c_str()); // line[47:54]
+      double x = atof(line.substr(30+offset, 8).c_str()); // line[31:38]
+      double y = atof(line.substr(38+offset, 8).c_str()); // line[39:46]
+      double z = atof(line.substr(46+offset, 8).c_str()); // line[47:54]
 
       Coordinate pos(x, y, z);
       Atom* atom = molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
 
       float occupancy = 0.0;
-      if(line.length()>=59) occupancy = atof(line.substr(56,4).c_str());
+      if(line.length()>=59) occupancy = atof(line.substr(56+offset,4).c_str());
       atom->setOccupancy(occupancy);
 
       float bfactor = 0.0;
-      if(line.length()>=65) bfactor = atof(line.substr(60,6).c_str());
+      if(line.length()>=65) bfactor = atof(line.substr(60+offset,6).c_str());
       atom->setBFactor(bfactor);
 
       continue;

@@ -583,6 +583,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"TRP","C","OT"},
     {"TRP","C","OT1"},
     {"TRP","C","OT2"},
+    {"TRP","C","OXT"},
     {"TRP","C","O1"},
     {"TRP","C","O2"},
     {"TRP","-C","N"},
