@@ -1588,8 +1588,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
       //pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
       //             << " and b < " << float(sit->second+0.01) << ")" << endl;
 //      mapClusterIDtoColor[rb->id()] = color;
-      pymol_script << "color " << color << ", ( b > " << float(rb->id()-0.001)
-                   << " and b < " << float(rb->id()+0.001) << ")" << endl;
+      pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
+                   << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
     }
 //    sit++;
   }
