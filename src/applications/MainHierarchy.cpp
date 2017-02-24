@@ -27,7 +27,7 @@
 #include "IO.h"
 #include "core/HBond.h"
 #include "Logger.h"
-#include "applications/options/ExploreOptions.h"
+#include "applications/options/HierarchyOptions.h"
 #include "moves/CompositeMove.h"
 
 extern double jacobianAndNullspaceTime;
@@ -48,17 +48,21 @@ int main( int argc, char* argv[] ) {
   dataStream.open("hierarchy_data.txt");
   enableLogger("data", dataStream);
 
+  ofstream debugStream;
+  debugStream.open("kgs_debug.log");
+  enableLogger("debug", debugStream);
+
   if (argc < 2) {
     cerr << "Too few arguments. Please specify PDB-file in arguments" << endl;
     exit(-1);
   }
 
-  //ExploreOptions options(argc,argv);
-  ExploreOptions::createOptions(argc, argv);
-  ExploreOptions &options = *(ExploreOptions::getOptions());
+  //HierarchyOptions options(argc,argv);
+  HierarchyOptions::createOptions(argc, argv);
+  HierarchyOptions &options = *(HierarchyOptions::getOptions());
 
   if (loggerEnabled("samplingStatus")) {
-    enableLogger("so");//ExploreOptions
+    enableLogger("so");//HierarchyOptions
     options.print();
   }
 
@@ -111,16 +115,22 @@ int main( int argc, char* argv[] ) {
   log("hierarchy") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
   log("hierarchy") << numCols << " columns" << endl;
   log("hierarchy") << "Dimension of kernel " << nullspaceCols << endl;
+  log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl;
+  log("hierarchy") << "Step size: " << options.stepSize << endl << endl;
 
-  log("hierarchy") << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
+  string out_file = out_path + "output/" + name + ".pdb";
+
+  protein->writeRigidbodyIDToBFactor();
+  IO::writePdb(protein,out_file);
+  //Necessary for postprocessing, potentially do rigid cluster decomp as well or plot violations
 
   if(options.saveData > 1) {
-    string out_file = out_path + "output/" + name + ".pdb";
     ///save pyMol coloring script
     string pyMol = out_path + "output/" + name + "_pyMol.pml";
     string statFile = out_path + "output/" + name + "_stats.txt";
     string rbFile=out_path + "output/" +  name + "_RBs.txt";
     string singVals = out_path + "output/singVals.txt";
+    IO::writePdb(protein,out_file);
     ///Write pyMol script
     IO::writePyMolScript(protein, out_file, pyMol);
     ///Write statistics
@@ -128,6 +138,9 @@ int main( int argc, char* argv[] ) {
     ///Write rigid bodies
     IO::writeRBs(protein, rbFile);
     gsl_vector_outtofile(singValVector, singVals);
+
+    string outJac = out_path + "output/" + name + "_jac.txt";
+    gsl_matrix_outtofile(baseJacobian, outJac);
   }
 //  cout<<"First conf "<<conf<<", S: "<<conf->getNullspace()->getSVD()->S<<endl;
 
@@ -147,7 +160,9 @@ int main( int argc, char* argv[] ) {
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm violation hbondDelta"<<endl;
 
-  for( int v_i = 0; v_i < numCols; ++v_i) {
+  int maxSamples = min(options.samples,numCols);
+
+  for( int v_i = 0; v_i < maxSamples; ++v_i) {
     conf->updateMolecule();
     bool inNullspace = v_i< nullspaceCols;
     if( v_i == nullspaceCols){
@@ -159,24 +174,6 @@ int main( int argc, char* argv[] ) {
 
     //Scale to desired step size
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
-
-    //    // Control the max amount of rotation
-//    double max_rotation = 0;
-//    for (int j=0; j<projected_gradient->size; ++j) {
-//      double abs_value = Math::Abs(gsl_vector_get(projected_gradient,j));
-//      if ( abs_value > max_rotation ) {
-//        max_rotation = abs_value;
-//      }
-//    }
-//    if ( max_rotation > options.maxRotation ){//MAX_ROTATION ) {
-//      gsl_vector_scale(projected_gradient, options.maxRotation/max_rotation); // MAX_ROTATION/max_rotation);
-//      log("hierarchy")<<"Scaled projected gradient down to: "<<gsl_vector_length(projected_gradient)<<endl;
-//    }
-
-    //Identify correct range
-//    for (int j=0; j<projected_gradient->size; ++j) {
-//      gsl_vector_set(projected_gradient,j,formatRangeRadian(gsl_vector_get(projected_gradient,j)));
-//    }
 
     //Identify predictedViolation
 //    double predictedViolation = gsl_vector_get(singValVector,numCols - v_i - 1)*options.stepSize;
@@ -264,7 +261,7 @@ int main( int argc, char* argv[] ) {
 //    gsl_vector_free(qSol);
 //    /// END NEW TEST
 
-    qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(ExploreOptions::getOptions()->collisionCheck);
+    qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(HierarchyOptions::getOptions()->collisionCheck);
 //    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
 //    double normDeltaHEnergy = hBondEnergy - initialHbondEnergy;
     double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);

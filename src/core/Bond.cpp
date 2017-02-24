@@ -126,6 +126,33 @@ double Bond::getTorsion() {
     
 }
 
+///Compare IDs of two bonds, used to sort them, lowest ID goes first
+bool Bond::compareIDs(Bond *bond1, Bond *bond2) {
+	//Determine min/max IDs in case bonds were not from min to max ID (happens for hbonds)
+	int minID1, maxID1, minID2, maxID2;
+	minID1 = bond1->Atom1->getId();
+	if (bond1->Atom2->getId() < minID1 ){
+		maxID1 = minID1;
+		minID1 = bond1->Atom2->getId();
+	}
+	else
+		maxID1 = bond1->Atom2->getId();
+
+	minID2 = bond2->Atom1->getId();
+	if (bond2->Atom2->getId() < minID2 ){
+		maxID2 = minID2;
+		minID2 = bond2->Atom2->getId();
+	}
+	else
+		maxID2 = bond2->Atom2->getId();
+	//Sort
+	if(minID1 < minID2 )
+		return true;
+	if(minID1 > minID2)
+		return false;
+	return maxID1 < maxID2;
+}
+
 ostream& operator<<(ostream& os, const Bond & b) {
 	return os<<"Bond["<<b.Atom1<<"-"<<b.Atom2<<"]";
 }

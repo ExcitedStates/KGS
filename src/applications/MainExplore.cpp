@@ -68,6 +68,9 @@ void randomSampling(ExploreOptions& options) {
 //    log("samplingStatus")<<"Stopping because there are no hydrogen bonds"<<endl;
 //    exit(-1);
   }
+  //Compute energy
+  protein->m_conf->m_vdwEnergy = protein->vdwEnergy(options.collisionCheck);
+  log("samplingStatus")<<"> "<<protein->m_conf->m_vdwEnergy<<" kcal/mole energy"<<endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;

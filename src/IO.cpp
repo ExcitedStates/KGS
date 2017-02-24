@@ -108,6 +108,8 @@ Molecule* IO::readPdb (
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
 
+  int atomCount=0;
+
   //Read lines of PDB-file.
   while( !pdb.eof()) {
     getline(pdb, line);
@@ -139,14 +141,18 @@ Molecule* IO::readPdb (
 
     //Parse ATOM/HETATM records and add them to molecule
     if( line.substr(0, 4) == "ATOM" || line.substr(0, 6) == "HETATM" ) {
+      ++atomCount;
+      int offset = 0;
+      if (atomCount >99999) //quick and dirty adaption for molecules with > 100000 atoms
+        offset = 1;
       // chain info
-      string chain_name = line.substr(21, 1); // line[22]
+      string chain_name = line.substr(21+offset, 1); // line[22]
       // residue info
-      int res_id = atoi(line.substr(22, 4).c_str()); // line[23:26]
-      string res_name = Util::trim(line.substr(17, 3)); // line[18:20]
+      int res_id = atoi(line.substr(22+offset, 4).c_str()); // line[23:26]
+      string res_name = Util::trim(line.substr(17+offset, 3)); // line[18:20]
       // atom info
-      int atom_id = atoi(line.substr(6, 5).c_str()); // line[7:11]s
-      string atom_name = Util::trim(line.substr(12, 5)); // line[13:17]
+      int atom_id = atoi(line.substr(6+offset, 5).c_str()); // line[7:11]s
+      string atom_name = Util::trim(line.substr(12+offset, 5)); // line[13:17]
       if (atom_name == "OP3") continue;
       if (atom_name.at(0) >= 49 && atom_name.at(0) <= 57) { // if the first char is 1-9
         string temp_name(atom_name.substr(1, 3));
@@ -154,19 +160,19 @@ Molecule* IO::readPdb (
         atom_name = temp_name;
       }
 
-      double x = atof(line.substr(30, 8).c_str()); // line[31:38]
-      double y = atof(line.substr(38, 8).c_str()); // line[39:46]
-      double z = atof(line.substr(46, 8).c_str()); // line[47:54]
+      double x = atof(line.substr(30+offset, 8).c_str()); // line[31:38]
+      double y = atof(line.substr(38+offset, 8).c_str()); // line[39:46]
+      double z = atof(line.substr(46+offset, 8).c_str()); // line[47:54]
 
       Coordinate pos(x, y, z);
       Atom* atom = molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
 
       float occupancy = 0.0;
-      if(line.length()>=59) occupancy = atof(line.substr(56,4).c_str());
+      if(line.length()>=59) occupancy = atof(line.substr(56+offset,4).c_str());
       atom->setOccupancy(occupancy);
 
       float bfactor = 0.0;
-      if(line.length()>=65) bfactor = atof(line.substr(60,6).c_str());
+      if(line.length()>=65) bfactor = atof(line.substr(60+offset,6).c_str());
       atom->setBFactor(bfactor);
 
       continue;
@@ -494,11 +500,11 @@ Molecule* IO::readPdb (
     readHbonds(hbondMethod, hbondFile, molecule);
   }
 
+  molecule->sortHbonds();
   molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
   molecule->buildSpanningTree(roots); //Necessary before conformations are defined
   molecule->setConfiguration(new Configuration(molecule));
   molecule->setCollisionFactor(1.0); //Sets the initial collisions
-
   return molecule;
 }
 
@@ -1100,25 +1106,40 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   int count=0;
 
   //Header line
+  output << "H-bond_ID ";
+  output << "H-chain ";
+  output << "H-resi ";
+  output << "H-resn ";
+  output << "H-atomn ";
   output << "H-ID ";
+  output << "Acc-chain ";
+  output << "Acc-resi ";
+  output << "Acc-resn ";
+  output << "Acc-atomn ";
   output << "Acc-ID ";
   output << "energy ";
   output << "#bars ";
   output << "length ";
   output << "angle_D_H_A ";
-  output << "angle_H_A_AA ";
-  output << "H-bond_ID" <<endl;
+  output << "angle_H_A_AA"<<endl;
 
   for (auto const& bond: molecule->getHBonds()){
+    output << ++count<<" ";
+    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+    output << bond->Hatom->getResidue()->getId()<<" ";
+    output << bond->Hatom->getResidue()->getName()<<" ";
+    output << bond->Hatom->getName()<<" ";
     output << bond->Hatom->getId()<<" ";
+    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+    output << bond->Acceptor->getResidue()->getId()<<" ";
+    output << bond->Acceptor->getResidue()->getName()<<" ";
+    output << bond->Acceptor->getName()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << bond->getIniEnergy()<<" ";
-    int numBars = bond->Bars;
-    output << numBars<<" ";
+    output << bond->Bars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
-    output << bond->getAngle_H_A_AA() <<" ";
-    output << ++count<<endl;
+    output << bond->getAngle_H_A_AA()<<endl;
   }
   output.close();
 }
@@ -1414,35 +1435,39 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
       continue;
     }
     std::istringstream input(line);
-    input >> donorString;
-    input >> donorType;
-    input >> acceptorString;
-    input >> acceptorType;
-    input >> rest;
-    input >> hybridState;
-    for (int i = 0; i < 3; i++) {
-      input >> rest;
-    }
-    input >> distanceHAString;
-    double distanceHA = atof(distanceHAString.c_str());
+//    input >> donorString;
+//    input >> donorType;
+//    input >> acceptorString;
+//    input >> acceptorType;
+//    input >> rest;
+//    input >> hybridState;
+//    for (int i = 0; i < 3; i++) {
+//      input >> rest;
+//    }
+//    input >> distanceHAString;
 
+//    double distanceHA = atof(distanceHAString.c_str());
+    double distanceHA = atof(line.substr(52,4).c_str());
+    cout<<distanceHA<<endl;
     //Identify donor
-    string donorChain = donorString.substr(0, 1);
+    string donorChain = line.substr(0, 1);
     if (donorChain == "-") //Default from hb2, if chain is empty
 //      donorChain = protein->chains[0]->getName();
       donorChain = " ";
 
-    int donorResId = atoi( (donorString.substr(1,4)).c_str() );
+    int donorResId = atoi( (line.substr(1,4)).c_str() );
+    donorType = line.substr(9,4);
     donor = protein->getAtom(donorChain, donorResId,donorType );
     if(donor==NULL){ cerr<<"IO::readHbonds - Invalid donor specified: "<<donorString<<" "<<donorType<<endl; exit(-1); }
 
     //Identify acceptor
-    string acceptorChain = acceptorString.substr(0,1);
+    string acceptorChain = line.substr(14,1);
+    acceptorType = line.substr(23,4);
     if (acceptorChain == "-") //Default from hb2, if chain is empty
 //      acceptorChain = protein->chains[0]->getName();
       acceptorChain = " ";
 
-    int acceptorResId = atoi( (acceptorString.substr(1,4)).c_str() );
+    int acceptorResId = atoi( (line.substr(15,4)).c_str() );
     acceptor = protein->getAtom(acceptorChain, acceptorResId,acceptorType );
     if(acceptor==NULL){ cerr<<"IO::readHbonds - Invalid acceptor specified: "<<acceptorString<<" "<<acceptorType<<endl; exit(-1); }
 
@@ -1563,8 +1588,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
       //pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
       //             << " and b < " << float(sit->second+0.01) << ")" << endl;
 //      mapClusterIDtoColor[rb->id()] = color;
-      pymol_script << "color " << color << ", ( b > " << float(rb->id()-0.01)
-                   << " and b < " << float(rb->id()+0.01) << ")" << endl;
+      pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
+                   << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
     }
 //    sit++;
   }
@@ -1594,11 +1619,11 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 
     site_1 = eit->first->getBond()->Atom1->getId();
     site_2 = eit->first->getBond()->Atom2->getId();
-    pymol_script << "distance rotatableHbonds = id " << site_1 << " , id " << site_2 << endl;
+    pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
 
   }
-  pymol_script << "color yellow, rotatableHbonds" << endl;
-  pymol_script << "hide labels, rotatableHbonds" << endl;
+  pymol_script << "color yellow, hbondConstraints" << endl;
+  pymol_script << "hide labels, hbondConstraints" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1638,7 +1663,7 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 //  }
 
   //Create biggest cluster as separate object
-  pymol_script << "create biggestCluster, b < 0.99" << endl;
+  pymol_script << "create biggestCluster, b < 0.009" << endl;
 
 
   // Some final global attributes to set.

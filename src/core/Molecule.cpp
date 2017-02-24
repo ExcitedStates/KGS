@@ -717,7 +717,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
         continue;
 
       d_12 = atom1->distanceTo(atom2);
-      vdw_d12 = vdw_r1 + atom2->getRadius(); // from CHARMM: Todo: do we need the arithmetic mean or the sum?
+      vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
       double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
@@ -766,7 +766,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
         continue;
 
       d_12 = atom1->distanceTo(atom2);
-      vdw_d12 = vdw_r1 + atom2->getRadius(); // from CHARMM: Todo: do we need the arithmetic mean or the sum?
+      vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
       double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
@@ -811,6 +811,10 @@ void Molecule::setToHbondIntersection (Molecule * p2) {
     }
   }
   p2->m_hBonds=intersection;
+}
+
+void Molecule::sortHbonds() {
+  m_hBonds.sort(Bond::compareIDs);
 }
 
 int Molecule::countOriginalDofs () const {
@@ -1471,7 +1475,7 @@ void Molecule::writeRigidbodyIDToBFactor()
     Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
 //    cout<<"Rigidbody ID: "<<currentRB->id()<<", size: "<<currentRB->size()<<", output ID: "<<outputID<<endl;
     for(auto const& atom: currentRB->Atoms){
-      atom->setBFactor(outputID);
+      atom->setBFactor(float(outputID)/100);
     }
     outputID++;
   }

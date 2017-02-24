@@ -59,6 +59,8 @@ class KinEdge {
 
   void setDOF(DOF* dof);
 
+  static bool compareIDs(KinEdge* edge1, KinEdge* edge2);//Compare by IDs, used to sort
+
  private:
   //DOF* createDOF(Bond* bond, int dof_id) const;
   Bond * const m_bond;

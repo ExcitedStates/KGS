@@ -234,7 +234,7 @@ Atom* Rigidbody::getAtom(string name){
 	return nullptr;
 }
 
-///Compare sizes of rigid bodies given a Rigidbody-ID-Map
+///Compare sizes of rigid bodies given a Rigidbody-ID-Map, used to sort rigid bodies by size
 bool Rigidbody::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
 	if( firstEntry.first > secondEntry.first )
 		return true;

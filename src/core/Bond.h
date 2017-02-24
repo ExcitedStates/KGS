@@ -51,6 +51,9 @@ class Bond {
 	bool isHbond() const;
 	
   double getTorsion();
+
+	static bool compareIDs(Bond* bond1, Bond* bond2);//Compare by IDs, used to sort
+
 };
 
 std::ostream& operator<<(std::ostream& os, const Bond & b);

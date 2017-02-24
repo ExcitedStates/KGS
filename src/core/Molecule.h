@@ -135,12 +135,14 @@ class Molecule {
                 const Coordinate& position );
   Bond* addCovBond(Atom* atom1, Atom* atom2);
 
+  void sortHbonds();
+
   void restoreAtomPos();
   void indexAtoms();
 
   void buildSpanningTree(const std::vector<int>& rootIds);
 
-  friend class IO; //The IO::readPdb function uses the addAtom function
+  friend class IO; //The IO::readPdb function uses the addAtom function and sort hBonds function
 
 };
 
