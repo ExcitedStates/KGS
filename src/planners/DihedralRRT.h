@@ -28,7 +28,8 @@ class DihedralRRT : public SamplingPlanner {
       Molecule *protein,
       Direction *direction,
       int numSamples,
-      double maxDistance
+      double maxDistance,
+      bool sampleRandom
   );
 
   ~DihedralRRT();
@@ -43,7 +44,7 @@ class DihedralRRT : public SamplingPlanner {
  protected:
   Configuration *GenerateRandConf();
 
-  Configuration *SelectNodeFromBuckets(Configuration *pTarget);
+  Configuration *SelectClosestNode(Configuration *pTarget);
 
   Direction *m_direction;
 
@@ -54,6 +55,7 @@ class DihedralRRT : public SamplingPlanner {
   metrics::Dihedral *m_dihedralMetric;
 
   double m_maxDistance;
+  bool m_sampleRandom;
 
   std::list<Configuration *> m_samples;
   int m_numDOFs;

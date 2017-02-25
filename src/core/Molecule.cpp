@@ -1473,9 +1473,10 @@ void Molecule::writeRigidbodyIDToBFactor()
   for(auto const& idPair : sortedRBs){
     ///get rb id sorted by size, access rb in protein, color all atoms to id
     Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
-//    cout<<"Rigidbody ID: "<<currentRB->id()<<", size: "<<currentRB->size()<<", output ID: "<<outputID<<endl;
+//    log("debug")<<"WriteRBID: sorted number "<<outputID<<" rigid body ID "<<currentRB->id()<<" size "<<currentRB->size()<<endl;
     for(auto const& atom: currentRB->Atoms){
-      atom->setBFactor(float(outputID)/100);
+//      atom->setBFactor(float(outputID)/100);
+      atom->setBFactor(float(currentRB->id())/100);
     }
     outputID++;
   }

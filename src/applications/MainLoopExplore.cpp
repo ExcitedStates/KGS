@@ -188,7 +188,8 @@ int main( int argc, char* argv[] ) {
         protein,
         direction,
         options.samplesToGenerate,
-        options.explorationRadius
+        options.explorationRadius,
+        options.sampleRandom
     );
   else if(options.planner_string=="poisson")
     planner = new PoissonPlanner(

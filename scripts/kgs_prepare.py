@@ -166,6 +166,7 @@ class PDBFile:
         if dehydro_hoh:
             print("%s: removed %d waters with no hydrogens"%(self.name, len(dehydro_hoh)))
 
+
     def getNearby(self, v, radius):
         irad = int(math.ceil(radius))
         ivx,ivy,ivz = int(v[0]+0.5), int(v[1]+0.5), int(v[2]+0.5)
@@ -316,26 +317,34 @@ class PDBFile:
         
         self.checkHydrogens() #check if hydrogens are present
         self.checkAltConformations() #check and remove alt locs
-        self.cleanDehydroHOH()  # check and potentially remove waters
-        
-        #Now we have all atoms in the model that we want --> no removal afterwards
-        self.checkAtomIDs() #renumber atoms
-        self.checkResidueSequence() #check residue sequence, identify odd numbering / gaps
 
         #Neighbor computations based on grid
         self.grid = defaultdict(list)
         for atom in self.atoms:
             self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
 
-        self.buildCovBonds()
+        self.buildCovBonds() #Neighbors necessary to know which waters are present
+        self.cleanDehydroHOH()  # check and potentially remove waters
+ 
+        # #Redo grid after waters have been removed
+        # self.grid = defaultdict(list)
+        # for atom in self.atoms:
+        #     self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
+            
+        #Now we have all atoms in the model that we want --> no removal afterwards
+        self.checkAtomIDs() #renumber atoms
+        self.checkResidueSequence() #check residue sequence, identify odd numbering / gaps
+        
+        # self.rebuildCovBonds()
         self.buildRingCounts()
         self.buildIDATM()
 
 
     def hydrogenBondEnergy(self,aa, acceptor, hydrogen, donor):
         """Computes hydrogen bond energy following the terms described in
-        [TODO: Paper authors and title]. If a hydrogen bond is not feasible,
-        the value 1000 is returned.
+        "Dahiyat, Gordon and Mayo. Automated design of the surface positions of protein helices.
+        Protein Science, 1997."
+        If a hydrogen bond is not feasible, the value 1000 is returned.
 
         Args:
             aa (Atom): acceptor base
@@ -354,7 +363,7 @@ class PDBFile:
         theta = angle(donor.pos, hydrogen.pos, acceptor.pos)
         psi   = angle(hydrogen.pos, acceptor.pos, aa.pos)
 
-        if R<2.6 or R>3.9: #R>3.2: #
+        if R<2.6 or R>3.9: #R>3.2: #R>3.9
             return 1000
         if theta<(3.141592/2): 
             return 1000
@@ -410,7 +419,7 @@ class PDBFile:
         for acceptor in self.atoms:
             if not acceptor.isAcceptor(): continue
             #for donor in self.atoms: # All-pairs
-            for donor in self.getNearby(acceptor.pos, 3.9):
+            for donor in self.getNearby(acceptor.pos, 3.9): #3.2
                 if not donor.isDonor(): continue
                 if acceptor==donor: continue
                 if len(acceptor.neighbors)==0: continue
@@ -481,7 +490,6 @@ class PDBFile:
                 resList.append(atom.name)
                 continue
             if atom.resi != currentResId or (atom.name in resList): #New residue or wrong numbering
-
                 if atom.resi == currentResId + 1: #desired ID in contiguous sequence, go on
                     currentResId = atom.resi #move current residue one up
                     resList=[]
@@ -573,7 +581,7 @@ class PDBFile:
     
     def writePML(self,fname):
         f = open(fname,'w')
-        for aa,a,h,d,energy in self.getHydrogenBonds(-1):
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             if energy > -1.0:
                 f.write( "distance hbonds_weak = id %s, id %s\n"%(a.id, h.id) )
             if energy <= -1.0 and energy > -3.0:
@@ -584,6 +592,9 @@ class PDBFile:
         f.write( "color yellow, hbonds_medium\n")
         f.write( "color red, hbonds_strong\n")
         f.write("hide labels\n")
+        f.write("show cartoon\n")
+        f.write("bg_color white\n")
+        f.write("zoom\n")
         f.close()
 
     def getAtom(self, resi, name):

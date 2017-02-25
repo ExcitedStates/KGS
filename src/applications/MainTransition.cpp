@@ -184,7 +184,8 @@ void targetedSampling(TransitionOptions& options){
         protein,
         direction,
         options.samplesToGenerate,
-        options.explorationRadius
+        options.explorationRadius,
+        options.sampleRandom
     );
   else if(options.planner_string=="poisson")
     planner = new PoissonPlanner(
