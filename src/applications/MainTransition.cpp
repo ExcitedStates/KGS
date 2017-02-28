@@ -185,6 +185,7 @@ void targetedSampling(TransitionOptions& options){
         direction,
         options.samplesToGenerate,
         options.explorationRadius,
+        options.maxRotation,
         options.sampleRandom
     );
   else if(options.planner_string=="poisson")

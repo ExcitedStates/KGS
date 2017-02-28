@@ -29,6 +29,7 @@ class DihedralRRT : public SamplingPlanner {
       Direction *direction,
       int numSamples,
       double maxDistance,
+      double maxRotation,
       bool sampleRandom
   );
 
@@ -70,6 +71,7 @@ class DihedralRRT : public SamplingPlanner {
   int m_minMovDihDistance_id;
 
   int m_numSamples;
+  double m_maxRotation;
   int m_max_depth;
 };
 

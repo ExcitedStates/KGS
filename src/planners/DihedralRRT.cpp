@@ -10,6 +10,7 @@
 
 #include <iomanip>
 #include <stack>
+#include <math/gsl_helpers.h>
 #include <IO.h>
 
 #include "core/Molecule.h"
@@ -34,6 +35,7 @@ DihedralRRT::DihedralRRT(
     Direction *direction,
     int numSamples,
     double maxDistance,
+    double maxRotation,
     bool sampleRandom
 ) :
     SamplingPlanner(),
@@ -41,6 +43,7 @@ DihedralRRT::DihedralRRT(
     m_direction(direction),
     m_numSamples(numSamples),
     m_maxDistance(maxDistance),
+    m_maxRotation(maxRotation),
     m_sampleRandom(sampleRandom){
   m_protein = protein;
   m_numDOFs = m_protein->m_spanningTree->getNumDOFs();
@@ -100,6 +103,8 @@ void DihedralRRT::generateSamples() {
     log("debug") << "Direction" << endl;
     log("debug") << "Target " << pTarget<< endl;
     m_direction->gradient(pClosestSmp, pTarget, gradient); ///desired direction depending on specified gradient
+    //Scale individual perturbations to <= m_maxRotation
+    gsl_vector_scale_max_component(gradient, m_maxRotation);
     log("debug") << "Move" << endl;
     pNewSmp = m_move->move(pClosestSmp, gradient); ///obtaining new conformation, depending on move and direction
 
