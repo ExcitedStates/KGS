@@ -692,10 +692,10 @@ def printUsage(argv):
     print("")
     print("usage: %s [options] <input>.pdb"%(argv[0]))
     print("where [options] can be either of the following")
-    print("  -v          : verbose stdout")
+    print("  -v            : verbose stdout")
     print("  -pre <string> : output-file prefix. Default is '<input>' ")
-    print("  -pymol      : output a .pml file that displays constraints")
-    print("  -noWaters    : remove all waters ")
+    print("  -pymol        : output a .pml file that displays constraints")
+    print("  -noWaters     : remove all waters ")
     print("  -noLigands    : remove all ligands")
     sys.exit(-1)
 
