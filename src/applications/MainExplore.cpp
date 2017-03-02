@@ -149,7 +149,9 @@ void randomSampling(ExploreOptions& options) {
         protein,
         direction,
         options.samplesToGenerate,
-        options.explorationRadius
+        options.explorationRadius,
+        options.maxRotation,
+        options.sampleRandom
     );
   }else if(options.planner_string=="poisson"){
     log("samplingStatus")<<"Using Poisson-disk planner"<<endl;

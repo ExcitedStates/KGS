@@ -158,7 +158,7 @@ int main( int argc, char* argv[] ) {
   gsl_matrix_outtofile(baseNullspaceV, outMat);
 
   //Store output data in this file, space-separated in this order
-  log("data")<<"sample inCollision inNullspace gradientNorm violation hbondDelta"<<endl;
+  log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
 
   int maxSamples = min(options.samples,numCols);
 

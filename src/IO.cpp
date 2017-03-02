@@ -1573,25 +1573,15 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   // For each rigid cluster, calculate a unique color, and have pymol
   // assign that color to those atoms.
   // Also, we save each cluster's color in a map for use again later
-//  map< unsigned int, string > mapClusterIDtoColor;
-  //map<unsigned int,Rigidbody*>::iterator rbit = molecule->m_conf->m_biggerRBMap.begin();
-  //vector< pair< int, unsigned int> >::iterator sit = molecule->m_conf->m_sortedRBs.begin();
   Color::next_rcd_color_as_name(true);
 
-//  while(sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( sit->first >= MIN_CLUSTER_SIZE ){
   for(auto const& rb : rigidified->getRigidbodies()){
     if(rb->Atoms.size()>MIN_CLUSTER_SIZE){
 
       string color = Color::next_rcd_color_as_name();
-      //mapClusterIDtoColor[sit->second] = color;
-      //pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
-      //             << " and b < " << float(sit->second+0.01) << ")" << endl;
-//      mapClusterIDtoColor[rb->id()] = color;
       pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
                    << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
     }
-//    sit++;
   }
 
   // Python commands to draw hbonds
@@ -1662,9 +1652,11 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 //    }
 //  }
 
-  //Create biggest cluster as separate object
-  pymol_script << "create biggestCluster, b < 0.009" << endl;
-
+  //Create biggest cluster as separate object, color blue for simple identification
+  pymol_script << "create biggestCluster, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
+  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
 
   // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////

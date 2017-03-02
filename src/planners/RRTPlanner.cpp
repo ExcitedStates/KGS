@@ -136,7 +136,7 @@ void RRTPlanner::generateSamples() {
       pTarget = GenerateRandConf();//used in selection ONLY if no target molecule is specified
       pClosestSmp = SelectNodeFromBuckets(pTarget);
       log("dominik") << " .. picked sample " << pClosestSmp->m_id << endl;
-      //pClosestSmp = SelectNodeFromBuckets(pTarget,nBatch);
+      //pClosestSmp = SelectClosestNode(pTarget,nBatch);
       double end_time = timer.getTimeNow();
       selectNodeTime += end_time - start_time;
 //    } else {
@@ -144,6 +144,7 @@ void RRTPlanner::generateSamples() {
 //      pClosestSmp = m_samples.back();
 //    }
 
+    ///Todo: what is this
     if (m_gradientSelection == 1)
       direction->gradient(pClosestSmp, pTarget, gradient);
     else
