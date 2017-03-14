@@ -90,10 +90,11 @@ class Atom:
         self.tempFactor = float(atom_string[60:66])
         if (self.name[0] == "D"):#case of Deuterium
             self.name = "H"+self.name[1:]
-        # if len(atom_string)>=78:
-        #     self.elem = atom_string[76:78].strip()
-        # else:
-        self.elem = self.name[0]
+        if len(atom_string)>=78:
+            self.elem = atom_string[76:78].strip()
+            self.elem = self.elem[0]
+        else:
+            self.elem = self.name[0]
         self.neighbors = []
         self.rings = 0
         self.atomType = ""
@@ -117,6 +118,8 @@ class Atom:
             return covRadii[self.elem.upper()]
         except AttributeError:
             pass
+        except KeyError:
+            RuntimeError("Unknown element for atom: "+str(self));
         raise RuntimeError("Unknown element for atom: "+str(self));
 
     def getSP(self):
@@ -363,7 +366,7 @@ class PDBFile:
         theta = angle(donor.pos, hydrogen.pos, acceptor.pos)
         psi   = angle(hydrogen.pos, acceptor.pos, aa.pos)
 
-        if R<2.6 or R>3.9: #R>3.2: #R>3.9
+        if R<2.5 or R>3.9: #R>3.2: #R>3.9
             return 1000
         if theta<(3.141592/2): 
             return 1000
@@ -449,7 +452,8 @@ class PDBFile:
     def checkHydrogens(self):
         hydrogens = [a for a in self.atoms if a.elem=="H"]
         if not hydrogens:
-            raise RuntimeError("No hydrogens present in "+self.name+". Consider running `reduce` first.")
+            print ("Warning: No hydrogens present in "+self.name+". Consider running `reduce` first.")
+            # raise RuntimeError("No hydrogens present in "+self.name+". Consider running `reduce` first.")
 
     def checkAltConformations(self):
         alt_confs =  [a for a in self.atoms if not (a.alt in [" ", altloc])]
@@ -708,6 +712,9 @@ def printUsage(argv):
     print("  -pymol      : output a .pml file that displays constraints")
     print("  -noWaters    : remove all waters ")
     print("  -noLigands    : remove all ligands")
+    print("  -alt    : keeping specified alt loc (and empty alt loc) ")
+    print("  -chain    : keeping only specified chain")
+    print("  -energy    : energy cutoff for hydrogen bonds")
     sys.exit(-1)
 
 if __name__ == "__main__":
