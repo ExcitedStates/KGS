@@ -219,8 +219,12 @@ void targetedSampling(TransitionOptions& options){
   planner->initialize(move, metric, options.workingDirectory, options.saveData);
 
   if(options.saveData > 0){
-    std::string out = options.workingDirectory + "output/" + protein->getName() + "_target_lengths";
+
+    std::string out = options.workingDirectory + "output/" + target->getName() + "_lengths";
     IO::writeBondLengthsAndAngles(target, out);
+    out = options.workingDirectory + "output/" + protein->getName() + "_lengths";
+    IO::writeBondLengthsAndAngles(protein, out);
+
     if(options.saveData > 1){
       out = options.workingDirectory + "output/" + protein->getName() + "_q_target.txt";
       IO::writeQ(target,target->m_conf, out);

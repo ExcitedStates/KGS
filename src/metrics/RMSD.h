@@ -46,6 +46,7 @@ int almostequal(MATRIX *a, MATRIX *b);
 void mulpt(MATRIX *mtx, double *pt);
 void mtx_mul(MATRIX *ans, MATRIX *x, MATRIX *y);
 void mtx_identity(MATRIX *mtx);
+bool isRightHanded(MATRIX *mtx);
 void mtx_trans(MATRIX *mtx, double x, double y, double z);
 int mtx_invert(double *mtx, int N);
 double absmaxv(double *v, int N);

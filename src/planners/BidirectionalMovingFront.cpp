@@ -195,6 +195,7 @@ void BidirectionalMovingFront::generateSamples() {
 
       log("samplingStatus") << "> New structure: " << qNew->getMolecule()->getName() << "_new_" << numSamples << ".pdb";
       log("samplingStatus") << " .. Dist initial: " << setprecision(6) << qNew->m_distanceToIni;
+      log("samplingStatus") << " .. Dist target: " << setprecision(6) << qNew->m_distanceToTarget;
       log("samplingStatus") << " .. Dist moving-front target: " << setprecision(3) << qNew->m_paretoFrontDistance;
       log("samplingStatus") << " .. access dofs: " << qNew->m_clashFreeDofs;
       log("samplingStatus") << " .. norm constr. viol.: " << violationNorm << endl;

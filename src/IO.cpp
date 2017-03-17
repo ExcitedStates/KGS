@@ -993,6 +993,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     int dof_id = edge->getDOF()->getIndex();
     int resId = edge->getBond()->Atom1->getResidue()->getId();
     int cycleDOF_id = edge->getDOF()->getCycleIndex();
+    double val = edge->getDOF()->getValue();
     bool onBackbone=false;
     if( edge->getBond()->Atom1->isBackboneAtom() && edge->getBond()->Atom2->isBackboneAtom())
       onBackbone = true;
@@ -1003,9 +1004,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
       second = 2;
     double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsion(dof_id) -
                                               referenceConf->getGlobalTorsion(dof_id));
-    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" ";
-    //myfile <<protein->m_conf->m_sumProjSteps[dof_id];
-    myfile<<" "<<onBackbone<<endl;
+    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI<<" " <<val<<" "<<onBackbone<<endl;
   }
   myfile.close();
 }

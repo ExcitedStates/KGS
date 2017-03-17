@@ -34,13 +34,15 @@ int main( int argc, char* argv[] ){
   if(argc<3){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
   
   Selection sel("all");
-  metrics::Metric* metric = new metrics::RMSD(sel);
+  metrics::RMSD* metric = new metrics::RMSD(sel);
   Configuration* reference = new Configuration(myReadFile(argv[1]));
   for(int i=2;i<argc;i++){
     Molecule * p = myReadFile(argv[i]);
     Configuration* c = new Configuration(p);
-    double rmsd = metric->distance(c, reference);
+    double rmsd = metric->align(p, reference->getMolecule());
     log("rmsd")<<argv[i]<<" : "<<rmsd<<endl;
+    string outfile = p->getName()+"_aligned.pdb";
+    IO::writePdb(p,outfile);
     delete c;
     delete p;
   }
