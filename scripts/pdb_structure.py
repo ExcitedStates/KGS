@@ -182,10 +182,9 @@ class PDBFile:
 
     def rmsd(self, pdbFile, model1=0, model2=0, names=None):
         """
-        Return the smallest root-mean-square-deviation between coordinates in self and pdbFile
+        Return the smallest root-mean-square-deviation between coordinates in self and pdbFile.
+        If names is None, then all atoms are used.
         """
-
-        if not names: names = ["C4'","CA"]
 
         crds1 = self.coordMatrix(model1, names=names)
         crds2 = pdbFile.coordMatrix(model2, names=names)
