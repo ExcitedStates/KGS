@@ -199,7 +199,7 @@ Molecule* IO::readPdb (
 
   //Create covalent bonds from residue profiles
   ResidueProfile residue_profile=readResidueProfile();
-  for( auto const &cur_chain: molecule->chains ) {
+  for( auto const &cur_chain: molecule->m_chains ) {
     for( auto const &cur_res: cur_chain->getResidues()) {
       string res_name=cur_res->getName();
       map<string, vector<CovBond> >::iterator profile_it=residue_profile.find(res_name);
@@ -1231,7 +1231,7 @@ void IO::readAnnotations (Molecule *molecule, string annotation_file_name){
   ifstream input(annotation_file_name.c_str());
   if(!input.is_open()) return;
 
-  Chain* chain = (molecule->chains[0]);
+  Chain* chain = (molecule->m_chains[0]);
   int residues = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
   molecule->residueAnnotations = new int[residues];
   for(int i=0;i<residues;i++)
@@ -1265,7 +1265,7 @@ void IO::readHbonds_dssr(Molecule * molecule, string dssrFile){
 void IO::readHbonds_rnaview(Molecule * molecule, string file, bool fillAnnotations){
   int residues=0;
   if(fillAnnotations){
-    for(auto const& chain: molecule->chains){
+    for(auto const& chain: molecule->m_chains){
       int lastRes = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
       if(lastRes>residues) residues = lastRes;
     }
@@ -1724,7 +1724,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     //int sum = m_molecule->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
     output << "************* Statistics on the molecular structure *************" << endl;
-    output << "Number of chains: " << protein->chains.size() << endl;
+    output << "Number of chains: " << protein->m_chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
     output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;

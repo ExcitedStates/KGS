@@ -181,7 +181,7 @@ vector< tuple<Residue*> > ExactIK::findAllValidTriples(Configuration* conf) cons
   vector< tuple<Residue*> > ret;
 
   Molecule* mol = conf->getMolecule();
-  for(auto const& chain: mol->chains){
+  for(auto const& chain: mol->m_chains){
 
   }
 

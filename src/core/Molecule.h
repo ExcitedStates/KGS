@@ -51,7 +51,7 @@ class Molecule {
   KinTree *m_spanningTree; ///< Topology of rigid bodies
   Configuration *m_conf;   ///< Currently set configuration
   int* residueAnnotations;
-  std::vector<Chain*> chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
+  std::vector<Chain*> m_chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
 
   Molecule();
   ~Molecule();

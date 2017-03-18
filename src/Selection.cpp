@@ -63,7 +63,7 @@ vector<Residue*>& Selection::getSelectedResidues( const Molecule *mol )
 
     m_cachedResidues[mol] = std::move(std::vector<Residue*>());
     vector<Residue *>& ret = m_cachedResidues[mol];
-    for (auto chain: mol->chains) {
+    for (auto chain: mol->m_chains) {
       for (auto res: chain->getResidues()) {
 
         //Test whether all atoms in res are selected
