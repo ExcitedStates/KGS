@@ -152,7 +152,7 @@ void BidirectionalMovingFront::generateSamples() {
     gsl_vector *gradient = gsl_vector_calloc(m_protein->totalDofNum());
     log("dominik") << "Base dofs " << qSeed->m_dofs <<endl;
     if (m_isBlended) {
-      BlendedDirection &blendedDir = reinterpret_cast<BlendedDirection &>(direction);
+      BlendedDirection &blendedDir = reinterpret_cast<BlendedDirection &>(*direction);
       blendedDir.changeWeight(0, double(numSamples) / double(m_stopAfter));
       blendedDir.changeWeight(1, 1.0 - double(numSamples) / double(m_stopAfter));
     }
