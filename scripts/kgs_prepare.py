@@ -93,6 +93,8 @@ class Atom:
         if len(atom_string)>=78:
             self.elem = atom_string[76:78].strip()
             self.elem = self.elem[0]
+            if self.elem == "D":
+                self.elem = "H"
         else:
             self.elem = self.name[0]
         self.neighbors = []

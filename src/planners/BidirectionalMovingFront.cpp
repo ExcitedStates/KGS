@@ -54,17 +54,17 @@ BidirectionalMovingFront::BidirectionalMovingFront(
     cerr << "No valid target specified. Please provide target or choose a different planner." << endl;
     exit(-1);
   }
-  m_fwdRoot = new Configuration(m_protein);
-  m_fwdRoot->updateMolecule();
-  //m_fwdRoot->computeCycleJacobianAndNullSpace();
+//  m_fwdRoot = new Configuration(m_protein);
+//  m_fwdRoot->updateMolecule();
+  m_fwdRoot = m_protein->m_conf;
   m_fwdRoot->m_id = 0;
   m_fwdRoot->m_vdwEnergy = (m_protein->vdwEnergy(&(m_protein->getInitialCollisions()), collisionCheck)).second;
   m_fwdSamples.push_back(m_fwdRoot);
   m_fwdFront.push_back(m_fwdRoot);
 
-  m_revRoot = new Configuration(m_target);
-  m_revRoot->updateMolecule();
-  //m_revRoot->computeCycleJacobianAndNullSpace();
+//  m_revRoot = new Configuration(m_target);
+//  m_revRoot->updateMolecule();
+  m_revRoot = m_target->m_conf;
   m_revRoot->m_id = 1;
   m_revRoot->m_vdwEnergy = (m_target->vdwEnergy(&(m_target->getInitialCollisions()), collisionCheck)).second;
   m_revSamples.push_back(m_revRoot);
@@ -117,7 +117,7 @@ void BidirectionalMovingFront::generateSamples() {
   int samplesTillSwap = m_switchAfter;
   bool swapped = false;
 
-  Configuration *qTarget = nullptr, *qSeed, *qNew = nullptr; //this qTarget is either global or random and can change for each sample
+  Configuration *qTarget = nullptr, *qSeed = nullptr, *qNew = nullptr; //this qTarget is either global or random and can change for each sample
 
   //Must be initialized here as m_metric is only set in `initialize` (not constructor)
   m_minDistance = m_metric->distance(m_fwdRoot, m_revRoot);
@@ -146,10 +146,11 @@ void BidirectionalMovingFront::generateSamples() {
     }
 
     log("dominik") << "Using sample " << qSeed->m_id << " as base" << endl;
+    log("dominik") << "Base dofs " << qSeed->m_dofs <<endl;
     log("dominik") << "Using sample " << qTarget->m_id << " as target" << endl;
 
     gsl_vector *gradient = gsl_vector_calloc(m_protein->totalDofNum());
-
+    log("dominik") << "Base dofs " << qSeed->m_dofs <<endl;
     if (m_isBlended) {
       BlendedDirection &blendedDir = reinterpret_cast<BlendedDirection &>(direction);
       blendedDir.changeWeight(0, double(numSamples) / double(m_stopAfter));
@@ -319,7 +320,7 @@ Configuration *BidirectionalMovingFront::SelectSeed(Configuration *pTarget) {
   Configuration *pSmp, *pMinSmp;
   double minDistance = 1000000.0;
   double distance;
-  pMinSmp = nullptr;
+  pMinSmp = m_fwdFront.back(); //prevent hole in case distance greater than minDistance
 
 //  const vector<int>* resNetwork = &(ExploreOptions::getOptions()->residueNetwork);
 //  bool allResidues = resNetwork->size() == 0 ? true:false;
@@ -342,7 +343,6 @@ Configuration *BidirectionalMovingFront::SelectSeed(Configuration *pTarget) {
       pMinSmp = pSmp;
     }
   }
-
   return pMinSmp;
 }
 
