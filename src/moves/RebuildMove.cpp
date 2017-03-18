@@ -17,7 +17,7 @@ Configuration* RebuildMove::performMove(Configuration* current, gsl_vector*)
 
 	//Find random free segment
 	int freeCount = 0, i, j;
-	Chain* chain = m_protein->chains[0];
+	Chain* chain = m_protein->m_chains[0];
 	int residues = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;
 	for(i=0;i<residues;i++)
 		if(m_protein->residueAnnotations[i]==0) freeCount++;

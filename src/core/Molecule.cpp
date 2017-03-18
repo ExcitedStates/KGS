@@ -81,7 +81,7 @@ Molecule::~Molecule() {
   }
 
   // delete all chains
-  for (auto const &chain: chains) {
+  for (auto const &chain: m_chains) {
     delete chain;
   }
 
@@ -162,7 +162,7 @@ Bond* Molecule::addCovBond (Atom* atom1, Atom* atom2) {
 }
 
 Chain*Molecule::getChain (const string& chain_name) const{
-  for(auto const& chain: chains)
+  for(auto const& chain: m_chains)
     if(chain->getName()==chain_name) return chain;
 
   return nullptr;
@@ -176,7 +176,7 @@ Chain*Molecule::addChain (const string& chainName) {
   }
 
   Chain* chain = new Chain(chainName, this);
-  chains.push_back(chain);
+  m_chains.push_back(chain);
   return chain;
 }
 
@@ -425,28 +425,39 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
   //Create disjoint set
   DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
-  //For each atom not in a residue in movingResidues call Union (rigidifies everything not in movingResidues)
-  for(auto const& chain: chains) {
-    Atom* lastAtom = nullptr;
-    for (auto const& res: chain->getResidues()) {
-//      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
-      if(movingResidues.inSelection(res)) {
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
-        continue; //Skip residue if its in movingResidues
-      }else {
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
-      }
+  //For all pairs of atoms in residues not in movingResidues call Union (rigidifies everything not in movingResidues)
+  for(auto const& atom: m_atoms) {
+    if(movingResidues.inSelection(atom)) continue;
 
-      for (Atom *const &res_atom: res->getAtoms()){
-        if(lastAtom==nullptr) {
-          lastAtom = res_atom;
-          continue;
-        }
-        ds.Union(lastAtom->getId(), res_atom->getId());
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
-      }
+    for(auto const& neighbor: atom->Cov_neighbor_list){
+      if(movingResidues.inSelection(neighbor)) continue;
+
+      //Both atom and neighbor are outside movingResidues .. rigidify them
+      ds.Union(atom->getId(), neighbor->getId());
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying bond " << atom->getId() << " - ";
+      log("debug") << neighbor->getId() << " as they're not in residueNetwork" << endl;
     }
+
   }
+  //for(auto const& chain: chains) {
+  //  Atom* lastAtom = nullptr;
+  //  for (auto const& res: chain->getResidues()) {
+  //    if(movingResidues.inSelection(res)) {
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
+  //      continue; //Skip residue if its in movingResidues
+  //    }else {
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
+  //    }
+
+  //    for (Atom *const &res_atom: res->getAtoms()){
+  //      if(lastAtom==nullptr) {
+  //        lastAtom = res_atom;
+  //        continue;
+  //      }
+  //      ds.Union(lastAtom->getId(), res_atom->getId());
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
+  //    }
+  //  }
 
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<size();i++){
@@ -469,7 +480,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
       continue;
     }
   }
-  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" covalent bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" covalent bonds."<<endl;
   count=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
   for (auto const& bond: getHBonds()){
@@ -480,7 +491,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
       continue;
     }
   }
-  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
 
   int c=0;
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.

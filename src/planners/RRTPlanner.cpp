@@ -156,7 +156,6 @@ void RRTPlanner::generateSamples() {
     //cout<<endl;
     gsl_vector_scale(gradient, m_stepSize);
     gsl_vector_scale_max_component(gradient, m_maxRotation);
-
     pNewSmp = m_move->move(pClosestSmp, gradient);
 
     if (pNewSmp != nullptr) {

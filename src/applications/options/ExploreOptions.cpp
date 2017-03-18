@@ -378,9 +378,9 @@ void ExploreOptions::printUsage(char* pname){
 
   log("so")<<"\t--alignSelection \t: A pymol-like pattern that indicates which subset of atoms are used during alignment (if specified). Default is 'heavy'."<<endl;
 
-  log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is 'heavy'."<<endl;
+  log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that specifies the residues of the molecule that are used to determine the gradient. Default is 'heavy'."<<endl;
 
-  log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
+  log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies deformable residues during sampling. Default is 'all'."<<endl;
 
   log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
 
