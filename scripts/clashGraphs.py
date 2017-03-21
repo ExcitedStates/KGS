@@ -93,16 +93,24 @@ def main():
     Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
     """
     
-    if len(sys.argv)<4:
-        print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb file, one individual pdb file for atom/residue connection and output> "
+    if len(sys.argv)<3:
+        print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb file>,[< one individual pdb file for atom/residue connection and output> (optional)] "
         print "This should be run from the saving Directory!"
         sys.exit(1)
     
     samples=[]
     clashConstraints=[]
     rev_clashConstraints=[]
+    
+    pdbPath = sys.argv[2]
+    if( len(sys.argv) > 3):
+        pdbFile=sys.argv[-1]
+    else:
+        pdbPath=sys.argv[2]
+        modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+        pdbFile = "../"+modelName+".pdb"
+
     pdbFile=sys.argv[-1]
-    # pdbPath = sys.argv[2]
     
     minClashNumber=int(sys.argv[1])
     allClashes=[]
@@ -110,19 +118,23 @@ def main():
     currDir = os.getcwd()
     
     sumRuns = 0
-    for pFile in range(len(sys.argv)-3):
-        pdbPath=sys.argv[pFile+2]
     
-        pathFileSepIdx = pdbPath.find("/output")
-        expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
-        pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
+    #Removed support for multiple path-pdb files
+    # for pFile in range(len(sys.argv)-2):
+    #     pdbPath=sys.argv[pFile+2]
     
-        os.chdir(expDir)
-        #Id's on the configurations on the path, separate for forward and reverse
-        pathList, reversePathList = extractPath(pathFileToOpen)
-        allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
-        sumRuns +=1
-        os.chdir(currDir)
+    pathFileSepIdx = pdbPath.find("/output")
+    expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
+    pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
+
+    os.chdir(expDir)
+    #Id's on the configurations on the path, separate for forward and reverse
+    pathList, reversePathList = extractPath(pathFileToOpen)
+    allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+    sumRuns +=1
+    os.chdir(currDir)
+    
+    #END of multi-path loop
     
     atomResidueList = getAtomResidueList(pdbFile)
     

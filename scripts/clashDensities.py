@@ -71,21 +71,28 @@ def main():
 	Adapts color in pdb to clash densities observed along the tree-path of a kgs pdb-file
 	"""
 
-	if len(sys.argv)<3:
-		print "Usage: "+sys.argv[0]+" <path.pdb files in a row>, <one individual pdb file for atom/residue connection> "
+	if len(sys.argv)<2:
+		print "Usage: "+sys.argv[0]+" <path.pdb files in a row>"
 		sys.exit(1)
+		
+	currentDir = os.getcwd()
+	print currentDir
 
 	samples=[]
 	clashConstraints=[]
 	rev_clashConstraints=[]
-	pdbFile=sys.argv[-1]
+	# pdbFile=sys.argv[-1]
+	pdbPath=sys.argv[1]
+	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+	pdbFile = "../"+modelName+".pdb"
+	print pdbFile
 	allClashes=[]
 	saveDir = os.getcwd()
 	
-	for i in range(len(sys.argv)-2):
+	for i in range(len(sys.argv)-1):
 		pdbPath=sys.argv[i+1]
 
-		pathFileSepIdx = pdbPath.find("/output")
+		pathFileSepIdx = pdbPath.rfind("/output")
 		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
 		pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
 
@@ -105,13 +112,9 @@ def main():
 	if not os.path.exists(d):
 		os.makedirs(d)
 	os.chdir("comboAnalysis")
-	# d="shortPathAnalysis"
-	# if not os.path.exists(d):
-	# 	os.makedirs(d)
-	# os.chdir("shortPathAnalysis")
-	
-	fileName = pdbFile[pdbFile.find("/")+1:]
-	out_file = "%s_clashDensities.pdb" % fileName[:-4]
+
+	out_file = "%s_clashDensities.pdb" % modelName
+	print out_file
 	g = open(out_file,'w')
 	g.writelines(out)
 	g.close()
@@ -152,7 +155,8 @@ def main():
 	print "Done"
 
 	#Provide pml file for adapted coloring
-	outPML = "%s_clashDensities_"+str(percentageList[0])+str(percentageList[1])+str(percentageList[2])+str(percentageList[3])+".pml" % fileName[:-4]
+	print percentageList
+	outPML = modelName+"_clashDensities_"+str(percentageList[0])+str(percentageList[1])+str(percentageList[2])+str(percentageList[3])+".pml"
 			
 	orig_stdout = sys.stdout
 	fout = file(outPML, 'w')

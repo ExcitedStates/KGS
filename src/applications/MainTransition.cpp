@@ -48,7 +48,7 @@ void targetedSampling(TransitionOptions& options){
   target->setCollisionFactor(options.collisionFactor);
 
   //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
-  target->setToHbondIntersection(protein);
+//  target->setToHbondIntersection(protein); // if desired, this has to be moved to before the tree construction
 
   /// Rigid bodies, spanning trees, and initial collisions
 //  options.setResidueNetwork(protein);
@@ -285,10 +285,13 @@ void targetedSampling(TransitionOptions& options){
     planner->createTrajectory();
   }
   log("samplingStatus")<<"Done"<<endl;
+
   //Clean up
   delete planner;
-  delete target;
+  delete move;
   delete direction;
+  delete target;
+  delete protein;
 }
 
 

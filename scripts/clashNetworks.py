@@ -51,39 +51,50 @@ def main():
 	Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
 	"""
 
-	if len(sys.argv)<4:
-		print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb file, one individual pdb file for atom/residue connection and output> "
+	if len(sys.argv)<3:
+		print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb file>, [one individual pdb file for atom/residue connection and output> (optional)] "
 		print "Start this from the base directory of all experiments"
 		sys.exit(1)
 
 	samples=[]
 	clashConstraints=[]
 	rev_clashConstraints=[]
-	pdbFile=sys.argv[-1]
+	
+	pdbFile = ""
+	pdbPath=sys.argv[2]
+	if( len(sys.argv) > 3):
+		pdbFile=sys.argv[-1]
+	else:
+		modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+		pdbFile = "../"+modelName+".pdb"
+		
 	# pdbPath = sys.argv[2]
 	allClashes = []
 	minClashNumber=int(sys.argv[1])
 
 	currDir = os.getcwd()
 	sumRuns=0
-	for pFile in range(len(sys.argv)-3):
-		pdbPath=sys.argv[pFile+2]
+	
+	# Removed multi-path pdb file support
+	# for pFile in range(len(sys.argv)-3):
+	# pdbPath=sys.argv[pFile+2]
 
-		pathFileSepIdx = pdbPath.find("/output")
-		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
-		pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
+	pathFileSepIdx = pdbPath.find("/output")
+	expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
+	pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
 
-		print "Changing to "+str(expDir)
-		os.chdir(expDir)
-		#Id's on the configurations on the path, separate for forward and reverse
-		# pathList, reversePathList = extractPath(pdbPath)
-		# allClashes = getClashes(pdbPath,pathList, reversePathList)
+	print "Changing to "+str(expDir)
+	os.chdir(expDir)
+	#Id's on the configurations on the path, separate for forward and reverse
+	# pathList, reversePathList = extractPath(pdbPath)
+	# allClashes = getClashes(pdbPath,pathList, reversePathList)
 
-		print "Now in "+str(os.getcwd())
-		pathList, reversePathList = extractPath(pathFileToOpen)
-		allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
-		sumRuns += 1
-		os.chdir(currDir)
+	print "Now in "+str(os.getcwd())
+	pathList, reversePathList = extractPath(pathFileToOpen)
+	allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+	sumRuns += 1
+	os.chdir(currDir)
+	# End of multi-path loop
 
 	atomResidueList = getAtomResidueList(pdbFile)
 
@@ -103,8 +114,7 @@ def main():
 		os.makedirs(d)
 	os.chdir("comboAnalysis")
 
-	fileName = pdbFile[pdbFile.rfind("/")+1:pdbFile.find(".pdb")]
-	out_file = "%s_clashNetworks_%s.pdb" %(fileName,str(minClashNumber))
+	out_file = "%s_clashNetworks_%s.pdb" %(modelName,str(minClashNumber))
 	g = open(out_file,'w')
 	g.writelines(out)
 	g.close()
@@ -114,7 +124,7 @@ def main():
 	scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 
 	#Provide pml file for adapted coloring
-	outPML = "%s_clashNetworks_%s.pml" %(fileName,str(minClashNumber))
+	outPML = "%s_clashNetworks_%s.pml" %(modelName,str(minClashNumber))
 		
 	orig_stdout = sys.stdout
 	fout = file(outPML, 'w')
