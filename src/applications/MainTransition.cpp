@@ -62,7 +62,8 @@ void targetedSampling(TransitionOptions& options){
   //TODO: With multi-chain the choice of chain roots must be redesigned or removed
 //  protein->buildSpanningTree(options.roots);//with the rigid body tree in place, we can generate a configuration
 
-  protein->setConfiguration(new Configuration(protein));
+  /// Done in IO right now; ToDo: write wrapper, move out of IO
+//  protein->setConfiguration(new Configuration(protein));
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
@@ -79,12 +80,8 @@ void targetedSampling(TransitionOptions& options){
 //  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
 //  target->buildSpanningTree(options.roots);
 
-  //Alignment and spanning trees with possibly best m_root
-  if(options.alignIni){
-    target->alignReferencePositionsTo(protein);//backup the aligned configuration
-  }
 
-  target->setConfiguration(new Configuration(target));
+//  target->setConfiguration(new Configuration(target));
 
   // Check for collision
 //  target->m_initialCollisions = target->getAllCollisions();
@@ -117,6 +114,11 @@ void targetedSampling(TransitionOptions& options){
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
+  }
+
+  //Alignment
+  if(options.alignIni){
+    double initialRMSD = target->alignReferencePositionsTo(protein,metricSelection);//backup the aligned configuration
   }
 
   //Initialize move

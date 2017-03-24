@@ -572,14 +572,15 @@ void Molecule::buildSpanningTree(const vector<int>& rootIds) {
   m_spanningTree = new KinTree(rigidBodies, roots);
 }
 
-void Molecule::alignReferencePositionsTo(Molecule * base){
+double Molecule::alignReferencePositionsTo(Molecule * base, Selection &sel){
   this->restoreAtomPos();
-  Selection allSel;
-  metrics::RMSD rmsd(allSel);
-  rmsd.align(this,base);
+  metrics::RMSD rmsd(sel);
+  double rmsdVal = rmsd.align(this,base);
 
   for (auto const& atom: m_atoms)
     atom->m_referencePosition = atom->m_position;
+
+  return rmsdVal;
 }
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)

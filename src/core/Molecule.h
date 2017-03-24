@@ -76,7 +76,7 @@ class Molecule {
   std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
   double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
   void printAllCollisions () const;
-  void alignReferencePositionsTo(Molecule * base);
+  double alignReferencePositionsTo(Molecule * base,Selection &sel);
   void translateReferencePositionsToRoot(Molecule * base);
   Grid* getGrid();
   void setCollisionFactor(double collisionFactor);

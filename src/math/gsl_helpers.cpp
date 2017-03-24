@@ -17,12 +17,13 @@ using namespace std;
 
 void gsl_matrix_cout (const gsl_matrix *m) {
   for (int i=0; i<m->size1; ++i) {
-    for (int j=0; j<m->size2; ++j){
-      log() << gsl_matrix_get(m,i,j);
-      if(j == (m->size2-1))
-        log() << endl;
-      else
-        log() << ",\t";
+    for (int j=0; j<m->size2; ++j) {
+      cout << gsl_matrix_get(m, i, j);
+      if (j == (m->size2 - 1)) {
+        cout << endl;
+      } else {
+      cout << "\t";
+      }
     }
   }
 }
