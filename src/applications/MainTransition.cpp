@@ -106,7 +106,7 @@ void targetedSampling(TransitionOptions& options){
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
-  Selection metricSelection(options.metricSelection);
+  Selection metricSelection(options.alignSelection);
   try {
     if(TransitionOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
     if(TransitionOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
@@ -118,7 +118,10 @@ void targetedSampling(TransitionOptions& options){
 
   //Alignment
   if(options.alignIni){
+    //Alignment invalidates the current configuration, so reset new configuration
+    Configuration* iniConf = target->m_conf;
     double initialRMSD = target->alignReferencePositionsTo(protein,metricSelection);//backup the aligned configuration
+    target->setConfiguration(iniConf);
   }
 
   //Initialize move

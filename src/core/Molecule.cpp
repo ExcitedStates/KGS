@@ -893,7 +893,7 @@ double Molecule::checkCycleClosure(Configuration *q){
   setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
-  KinEdge *hBondEdge;
+  KinEdge *cycleEdge;
   int id=1;
   double maxViolation = 0.0;
   double normOfViolation = 0.0;
@@ -903,9 +903,12 @@ double Molecule::checkCycleClosure(Configuration *q){
   for (pair_it=m_spanningTree->m_cycleAnchorEdges.begin(); pair_it!=m_spanningTree->m_cycleAnchorEdges.end(); ++pair_it) {
 
     // get end-effectors
-    hBondEdge = pair_it->first;
+    cycleEdge = pair_it->first;
+    if( !cycleEdge->getBond()->isHbond()) continue; // for now have to check for hbonds
+    //Todo: Make this more general using a torsional constraint class which is the cycle edges
+
     KinVertex* common_ancestor = pair_it->second;
-    Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
+    Hbond * hBond = reinterpret_cast<Hbond *>(cycleEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
     Atom* atom1 = hBond->Atom1;
@@ -918,11 +921,11 @@ double Molecule::checkCycleClosure(Configuration *q){
       exit(-1);
     }
 
-    KinVertex* vertex1 = hBondEdge->StartVertex;
-    KinVertex* vertex2 = hBondEdge->EndVertex;
+    KinVertex* vertex1 = cycleEdge->StartVertex;
+    KinVertex* vertex2 = cycleEdge->EndVertex;
     if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
-      vertex1=hBondEdge->EndVertex;
-      vertex2=hBondEdge->StartVertex;
+      vertex1=cycleEdge->EndVertex;
+      vertex2=cycleEdge->StartVertex;
     }
 
 
