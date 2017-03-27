@@ -8,7 +8,7 @@ import matplotlib.cm as cmx
 import matplotlib as mpl
 mpl.use('Agg')
 from combineKGSPath_steps import extractPath
-from clashFunctions import getAllClashes
+from clashFunctions import getClashes
 from clashFunctions import getAtomResidueList
 from clashFunctions import collectAtomClashes
 from clashFunctions import collectResidueClashes
@@ -93,31 +93,29 @@ def main():
     Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
     """
     
-    if len(sys.argv)<3:
-        print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb files in a row>,< one individual pdb file for atom/residue connection and output>"
+    if len(sys.argv)<5:
+        print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb files in a row>,< reverse pdb file>, <forward pdb file>"
         print "This should be run from the saving Directory!"
         sys.exit(1)
     
-    samples=[]
-    clashConstraints=[]
-    rev_clashConstraints=[]
-    
+    pdbFile = ""
+    pdbFileRev = ""
     if( len(sys.argv) > 3):
         pdbFile=sys.argv[-1]
         modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
+        pdbFileRev = sys.argv[-2]
     else:
         modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
         pdbFile = "../"+modelName+".pdb"
     
     minClashNumber=int(sys.argv[1])
-    allClashes=[]
-    clashes=[]
+    fwdClashes = []
+    revClashes = []
     currDir = os.getcwd()
     
     sumRuns = 0
     
-    #Removed support for multiple path-pdb files
-    for pFile in range(len(sys.argv)-3):
+    for pFile in range(len(sys.argv)-4):
         pdbPath=sys.argv[pFile+2]
     
         pathFileSepIdx = pdbPath.find("/output")
@@ -127,13 +125,17 @@ def main():
         os.chdir(expDir)
         #Id's on the configurations on the path, separate for forward and reverse
         pathList, reversePathList = extractPath(pathFileToOpen)
-        allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+        # allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+        forwardClashes, reverseClashes = getClashes(pathFileToOpen,pathList, reversePathList)
+        fwdClashes.extend(forwardClashes)
+        revClashes.extend(reverseClashes)
         sumRuns +=1
         os.chdir(currDir)
     
     #END of multi-path loop
     
-    atomResidueList = getAtomResidueList(pdbFile)
+    fwdAtomResidueList = getAtomResidueList(pdbFile)
+    revAtomResidueList = getAtomResidueList(pdbFileRev)
     
     # This is on an atom-clash based level
     # clashCollection = collectAtomClashes(allClashes)
@@ -141,12 +143,13 @@ def main():
     
     # This is on an residue-clash based level
     clashCollection = {}
-    clashCollection = collectResidueClashes(clashCollection,allClashes,atomResidueList)
+    clashCollection = collectResidueClashes(clashCollection,fwdClashes,fwdAtomResidueList)
+    clashCollection = collectResidueClashes(clashCollection,revClashes,revAtomResidueList)
     sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
     sorted_collection.reverse()
     
     residueLinks = convertResidueClashesToLinks(clashCollection,minClashNumber,sumRuns)
-
+    
     G, maxVal = build_graph(residueLinks)
 
     #make pictures and output networks

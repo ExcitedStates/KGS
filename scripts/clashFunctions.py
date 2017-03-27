@@ -365,6 +365,45 @@ def collectAtomClashes(allClashes):
 	sorted_collection.reverse()
 	return sorted_collection
 
+def collectAllResidues(residueCollection,atomClashes,atomResidueList):
+	
+	for entries in atomClashes:
+		val = operator.itemgetter(1)(entries)
+		key = operator.itemgetter(0)(entries)
+		atom1=key[0]
+		atom2=key[1]
+
+		#Atom to residue informaiton
+		resId1 = atomResidueList[atom1]
+		resId2 = atomResidueList[atom2]
+
+		#Add the first residue
+		if resId1 in residueCollection:
+			oldVal=residueCollection[resId1]
+			residueCollection[resId1]=oldVal+val
+		else:
+			residueCollection[resId1]=val
+
+		#Add second residue, if not the same as resid1 to prevent double counting of internal clashes
+		if resId1 != resId2:
+			# if resId2 == 55:
+			# 	print "Res 55, atom "+str(atom2)+", clash with res "+str(resId1)+", atom : "+str(atom1)+", "+str(val)+" times."
+			if resId2 in residueCollection:
+				oldVal=residueCollection[resId2]
+				residueCollection[resId2]=oldVal+val
+			else:
+				residueCollection[resId2]=val
+			
+	# Add remaining residues without clashes
+	for atom in atomResidueList:
+		res = atomResidueList[atom]
+		if res in residueCollection:
+			continue
+		else:
+			residueCollection[res]=0
+			
+	return residueCollection
+
 def collectResidueClashes(clashCollection,atomClashes, atomResidueList):
 	# This function returns pairwise residue clashes (not sorted)
 
