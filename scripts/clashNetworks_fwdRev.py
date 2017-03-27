@@ -52,34 +52,46 @@ def main():
 	Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
 	"""
 
-	if len(sys.argv)<5:
-		print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb files in a row>, <reverse pdb file>, <forward pdb file> "
+	if len(sys.argv)<4:
+		print "Usage: "+sys.argv[0]+"<minClashNumber>, <output.txt> <path.pdb files in a row> "#, <reverse pdb file>, <forward pdb file> "
 		print "Start this from the base directory of all experiments"
 		sys.exit(1)
 	
+	minClashNumber=int(sys.argv[1])
+		
 	pdbFile = ""
 	pdbFileRev = ""
-	pdbPath=sys.argv[2]
-	if( len(sys.argv) > 4):
-		pdbFile=sys.argv[-1]
-		modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
-		pdbFileRev = sys.argv[-2]
-	else:
-		modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
-		pdbFile = "../"+modelName+".pdb"
-		
-	# pdbPath = sys.argv[2]
-	# allClashes = []
+	with open(sys.argv[2]) as outputFile:
+		for line in outputFile:
+			if "--initial " in line:
+				pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
+				modelName = line[line.rfind("/")+1:line.rfind(".pdb")]
+			if "--target " in line:
+				pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
+				break;
+	
+	# pdbPath=sys.argv[3]
+	# if( len(sys.argv) > 4):
+	# 	pdbFile=sys.argv[-1]
+	# 	modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
+	# 	pdbFileRev = sys.argv[-2]
+	# else:
+	# 	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+	# 	pdbFile = "../"+modelName+".pdb"
+	# 	
+	# print modelName
+
+
 	fwdClashes = []
 	revClashes = []
-	minClashNumber=int(sys.argv[1])
 
 	currDir = os.getcwd()
 	sumRuns=0
 	
 	# Removed multi-path pdb file support
-	for pFile in range(len(sys.argv)-4):
-		pdbPath=sys.argv[pFile+2]
+	# for pFile in range(len(sys.argv)-4):
+	# pdbPath=sys.argv[pFile+2]
+	for pdbPath in sys.argv[3:]:
 	
 		pathFileSepIdx = pdbPath.find("/output")
 		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
