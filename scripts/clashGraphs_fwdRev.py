@@ -102,7 +102,8 @@ def main():
         
     pdbFile = ""
     pdbFileRev = ""
-    with open(sys.argv[2]) as outputFile:
+    outputTxtFile = sys.argv[2]
+    with open(outputTxtFile) as outputFile:
         for line in outputFile:
             if "--initial " in line:
                 pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
@@ -110,6 +111,9 @@ def main():
             if "--target " in line:
                 pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
                 break;
+            
+
+    outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
 
 	# pdbPath=sys.argv[3]
 	# if( len(sys.argv) > 4):
@@ -148,9 +152,10 @@ def main():
         os.chdir(currDir)
     
     #END of multi-path loop
-    
+    os.chdir(outputPDBDir)
     fwdAtomResidueList = getAtomResidueList(pdbFile)
     revAtomResidueList = getAtomResidueList(pdbFileRev)
+
     
     # This is on an atom-clash based level
     # clashCollection = collectAtomClashes(allClashes)
@@ -184,6 +189,7 @@ def main():
     
     # print maxVal, nodeSize
     
+    os.chdir(currDir)
     d="comboAnalysis"
     if not os.path.exists(d):
         os.makedirs(d)

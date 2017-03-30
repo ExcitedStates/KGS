@@ -78,7 +78,8 @@ def main():
 		
 	pdbFile = ""
 	pdbFileRev = ""
-	with open(sys.argv[1]) as outputFile:
+	outputTxtFile = sys.argv[1]
+	with open(outputTxtFile) as outputFile:
 		for line in outputFile:
 			if "--initial " in line:
 				pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
@@ -87,6 +88,8 @@ def main():
 				pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
 				break;
 	
+	outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
+
 	# pdbPath=sys.argv[3]
 	# if( len(sys.argv) > 4):
 	# 	pdbFile=sys.argv[-1]
@@ -118,9 +121,10 @@ def main():
 		revClashes.extend(reverseClashes)
 		os.chdir(saveDir)
 
+	os.chdir(outputPDBDir)
 	fwdAtomResidueList = getAtomResidueList(pdbFile)
 	revAtomResidueList = getAtomResidueList(pdbFileRev)
-	
+		
 	# clashCollection = collectAtomClashes(allClashes)
 	# clashResidues,numSets = convertClashesToAllResidues(clashCollection,atomResidueList)
 	
@@ -135,7 +139,8 @@ def main():
 	clashResidues.reverse()
 	
 	out = pdbAlterBFactor(pdbFile,clashResidues)
-		
+
+	os.chdir(saveDir)		
 	d="comboAnalysis"
 	if not os.path.exists(d):
 		os.makedirs(d)

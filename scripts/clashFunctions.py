@@ -335,7 +335,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 
 def getAtomResidueList(pdbFileIn):
 	#This function returns a map between atoms and residues for the given pdb file
-
+	print os.getcwd()
 	atomResidueList={}
 	with open(pdbFileIn,"r") as pdbFile:
 		for line in pdbFile:
