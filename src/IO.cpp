@@ -504,7 +504,7 @@ Molecule* IO::readPdb (
   molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
   molecule->buildSpanningTree(roots); //Necessary before conformations are defined
   molecule->setConfiguration(new Configuration(molecule));
-  molecule->setCollisionFactor(1.0); //Sets the initial collisions
+  molecule->setCollisionFactor(1.0); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
   return molecule;
 }
 

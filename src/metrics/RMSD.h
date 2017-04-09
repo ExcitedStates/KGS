@@ -26,6 +26,15 @@ class RMSD: public Metric{
 
   double align(Molecule * other, Molecule * base);
 
+ private:
+	double kabsch(
+			gsl_matrix *X,     /* the points to be moved */
+			gsl_matrix *Y,     /* the points to move to */
+			gsl_matrix *U,     /* the rotation matrix */
+			gsl_vector *t      /* the translation vector */
+	) ; // /* returns the rmsd between the optimized vector sets */
+
+  double alignedrmsd(gsl_matrix *mat1, gsl_matrix *mat2, int N);
 };
 
 typedef struct

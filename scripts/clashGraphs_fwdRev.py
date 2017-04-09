@@ -8,7 +8,7 @@ import matplotlib.cm as cmx
 import matplotlib as mpl
 mpl.use('Agg')
 from combineKGSPath_steps import extractPath
-from clashFunctions import getAllClashes
+from clashFunctions import getClashes
 from clashFunctions import getAtomResidueList
 from clashFunctions import collectAtomClashes
 from clashFunctions import collectResidueClashes
@@ -93,33 +93,50 @@ def main():
     Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
     """
     
-    if len(sys.argv)<3:
-        print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb files in a row>,< one individual pdb file for atom/residue connection and output>"
-        print "This should be run from the saving Directory!"
+    if len(sys.argv)<4:
+        print "Usage: "+sys.argv[0]+"<minClashNumber>, <output.txt> <path.pdb files in a row> "#, <reverse pdb file>, <forward pdb file> "
+        print "Start this from the base directory of all experiments"
         sys.exit(1)
     
-    samples=[]
-    clashConstraints=[]
-    rev_clashConstraints=[]
-    
-    if( len(sys.argv) > 3):
-        pdbFile=sys.argv[-1]
-        modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
-    else:
-        modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
-        pdbFile = "../"+modelName+".pdb"
-    
     minClashNumber=int(sys.argv[1])
-    allClashes=[]
-    clashes=[]
+        
+    pdbFile = ""
+    pdbFileRev = ""
+    outputTxtFile = sys.argv[2]
+    with open(outputTxtFile) as outputFile:
+        for line in outputFile:
+            if "--initial " in line:
+                pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
+                modelName = line[line.rfind("/")+1:line.rfind(".pdb")]
+            if "--target " in line:
+                pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
+                break;
+            
+
+    outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
+
+	# pdbPath=sys.argv[3]
+	# if( len(sys.argv) > 4):
+	# 	pdbFile=sys.argv[-1]
+	# 	modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
+	# 	pdbFileRev = sys.argv[-2]
+	# else:
+	# 	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+	# 	pdbFile = "../"+modelName+".pdb"
+	# 	
+	# print modelName
+
+
+    fwdClashes = []
+    revClashes = []
+    
     currDir = os.getcwd()
+    sumRuns=0
     
-    sumRuns = 0
-    
-    #Removed support for multiple path-pdb files
-    for pFile in range(len(sys.argv)-3):
-        pdbPath=sys.argv[pFile+2]
-    
+    # Removed multi-path pdb file support
+    # for pFile in range(len(sys.argv)-4):
+    # pdbPath=sys.argv[pFile+2]
+    for pdbPath in sys.argv[3:]:
         pathFileSepIdx = pdbPath.find("/output")
         expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
         pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
@@ -127,13 +144,18 @@ def main():
         os.chdir(expDir)
         #Id's on the configurations on the path, separate for forward and reverse
         pathList, reversePathList = extractPath(pathFileToOpen)
-        allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+        # allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+        forwardClashes, reverseClashes = getClashes(pathFileToOpen,pathList, reversePathList)
+        fwdClashes.extend(forwardClashes)
+        revClashes.extend(reverseClashes)
         sumRuns +=1
         os.chdir(currDir)
     
     #END of multi-path loop
-    
-    atomResidueList = getAtomResidueList(pdbFile)
+    os.chdir(outputPDBDir)
+    fwdAtomResidueList = getAtomResidueList(pdbFile)
+    revAtomResidueList = getAtomResidueList(pdbFileRev)
+
     
     # This is on an atom-clash based level
     # clashCollection = collectAtomClashes(allClashes)
@@ -141,12 +163,13 @@ def main():
     
     # This is on an residue-clash based level
     clashCollection = {}
-    clashCollection = collectResidueClashes(clashCollection,allClashes,atomResidueList)
+    clashCollection = collectResidueClashes(clashCollection,fwdClashes,fwdAtomResidueList)
+    clashCollection = collectResidueClashes(clashCollection,revClashes,revAtomResidueList)
     sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
     sorted_collection.reverse()
     
     residueLinks = convertResidueClashesToLinks(clashCollection,minClashNumber,sumRuns)
-
+    
     G, maxVal = build_graph(residueLinks)
 
     #make pictures and output networks
@@ -166,6 +189,7 @@ def main():
     
     # print maxVal, nodeSize
     
+    os.chdir(currDir)
     d="comboAnalysis"
     if not os.path.exists(d):
         os.makedirs(d)

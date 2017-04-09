@@ -370,17 +370,6 @@ assumes input has been aligned to centroids
     mtx_mul(&temp, &At, &A);
     mtx_root(&temp);
     mtx_mul(mtx, &temp, &Ainv);
-
-    ////////NEW FOR CORRECTION
-    /// check right-handedness of rotation matrix
-    if (!isRightHanded(mtx)){
-      mtx->m[0][0] = - mtx->m[0][0];
-      mtx->m[1][0] = - mtx->m[1][0];
-      mtx->m[2][0] = - mtx->m[2][0];
-      //cerr<<"Detected unallowed reflection of the molecule"<<endl;
-//      exit(-1);
-    }
-    ////////DONE WITH CORRECTION
     return 0;
   }
 
@@ -522,25 +511,6 @@ Params: mtx - return pointer.
           mtx->m[i][ii] = 0;
       }
   }
-
-////////NEW FOR CORRECTION
-  /*
-   check the determinant of the (rotation) matrix
-  if it is right-handed, or left-handed
-*/
-  bool isRightHanded(MATRIX *mtx)
-  {
-    //compute determinant
-    float det1 = mtx->m[1][1]*(mtx->m[2][2]*mtx->m[3][3] - mtx->m[2][3]*mtx->m[3][2]);
-    float det2 = - mtx->m[1][2]*(mtx->m[2][1]*mtx->m[3][3] - mtx->m[2][3]*mtx->m[3][1]);
-    float det3 = mtx->m[1][3]*(mtx->m[2][1]*mtx->m[3][2] - mtx->m[2][2]*mtx->m[3][1]);
-
-    if( (det1 + det2 +det3) > 0)
-      return 1;
-    else
-      return 0;
-  }
-////////Done With CORRECTION
 
   /*
      create a translation matrix.

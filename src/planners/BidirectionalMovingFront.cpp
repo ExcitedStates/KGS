@@ -95,6 +95,7 @@ BidirectionalMovingFront::~BidirectionalMovingFront() {
     pSmp = *iter;
     delete pSmp;
   }
+  delete m_rmsd;
 }
 
 std::list<Configuration *> &BidirectionalMovingFront::getSamples() {

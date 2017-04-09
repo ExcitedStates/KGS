@@ -46,30 +46,32 @@ def getData(pdbPath,pathList,reversePathList):
 				tokens = line.split(' ')
 				totalDof= tokens[2]
 				cycleDof = tokens[5]
-				nullspaceDofs=int(tokens[8])
+				nullspaceDofs=int(tokens[9])
 				maxDofs = int(totalDof[:-1]) - int(cycleDof[:-1])+nullspaceDofs
-			if ("Total remaining DOFs:" in line):
-				tokens = line.split(' ')
-				dofString = tokens[3]
-				maxDofs = int(dofString[:-1])
+			# if ("Total remaining DOFs:" in line):
+			# 	tokens = line.split(' ')
+			# 	dofString = tokens[3]
+			# 	maxDofs = int(dofString[:-1])
 			if ("Total DOFs in target:" in line):
 				tokens = line.split(' ')
 				totalDof= tokens[4]
 				cycleDof = tokens[7]
 				if len(tokens) >= 10:
-					revNullspaceDofs = int(tokens[10])
+					revNullspaceDofs = int(tokens[11])
 				else:
 					revNullspaceDofs = nullspaceDofs
 				maxDofsRev = int(totalDof[:-1]) - int(cycleDof[:-1])+revNullspaceDofs
 				if maxDofsRev != maxDofs:
 					print "Forward and reverse proteins have different dofs"
-			if ("Total remaining DOFs in target:" in line):
-				tokens = line.split(' ')
-				dofString = tokens[5]
-				maxDofsRev = int(dofString[:-1])
-				if maxDofsRev != maxDofs:
-					print "Forward and reverse proteins have different dofs"
-	print "Max dofs: "+str(maxDofs)
+			# if ("Total remaining DOFs in target:" in line):
+			# 	tokens = line.split(' ')
+			# 	dofString = tokens[5]
+			# 	maxDofsRev = int(dofString[:-1])
+				# if maxDofsRev != maxDofs:
+				# 	print "Forward and reverse proteins have different dofs"
+	
+	print "Max forward dofs: "+str(maxDofs)
+	print "Max reverse dofs: "+str(maxDofsRev)
 	
 	pathFileSepIdx = pdbPath.rfind("/")
 	outputDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
@@ -112,9 +114,9 @@ def getData(pdbPath,pathList,reversePathList):
 					rmsdToIni = float(line[25:])
 				if "REMARK\tRMSD to target" in line:
 					rmsdToTarget = float(line[24:])
-				if "REMARK\tClash constraints" in line:
-					tokens=line.split(' ')
-					clashCons = int(tokens[3])
+				# if "REMARK\tClash constraints" in line:
+				# 	tokens=line.split(' ')
+				# 	clashCons = int(tokens[3])
 				if "REMARK\tClash free dofs" in line:
 					tokens=line.split(' ')
 					clashFreeDof = int(tokens[4])
@@ -126,6 +128,7 @@ def getData(pdbPath,pathList,reversePathList):
 					delta = float(line[17:])
 					break
 
+		clashCons = maxDofs-clashFreeDof
 		sample_ids.append(sample_id)
 		rmsdIni.append(rmsdToIni)
 		rmsdTarget.append(rmsdToTarget)
@@ -136,12 +139,20 @@ def getData(pdbPath,pathList,reversePathList):
 		if clashCons > maxCons:
 			maxCons=clashCons
 			confId = sample_id
-		if clashCons > 30:
-			print "Conf "+str(sample_id)+" has more than 30 constraints"
+		# if clashCons > 30:
+		# 	print "Conf "+str(sample_id)+" has more than 30 constraints"
 			
 	print "Conf with highest # clashes: "+str(confId)
 		
 	rev=False
+	sample_id = -1
+	rmsdToIni = 0.0
+	rmsdToTarget = 1000.0
+	clashFreeDof = 0
+	clashCons = 0
+	en = 0
+	delta=0
+		
 	for sample in reversePathList:
 		rev=True
 		sample_id = -1
@@ -159,9 +170,9 @@ def getData(pdbPath,pathList,reversePathList):
 					rmsdToIni = float(line[25:])
 				if "REMARK\tRMSD to target" in line:
 					rmsdToTarget = float(line[24:])
-				if "REMARK\tClash constraints" in line:
-					tokens=line.split(' ')
-					clashCons = int(tokens[3])
+				# if "REMARK\tClash constraints" in line:
+				# 	tokens=line.split(' ')
+				# 	clashCons = int(tokens[3])
 				if "REMARK\tClash free dofs" in line:
 					tokens=line.split(' ')
 					clashFreeDof = int(tokens[4])
@@ -172,7 +183,8 @@ def getData(pdbPath,pathList,reversePathList):
 				if "REMARK\tDelta H" in line:
 					delta = float(line[17:])
 					break
-				
+			
+		clashCons = maxDofsRev - clashFreeDof	
 		reverse_sample_ids.append(sample_id)
 		reverse_rmsdIni.append(rmsdToIni)
 		reverse_rmsdTarget.append(rmsdToTarget)
@@ -184,8 +196,8 @@ def getData(pdbPath,pathList,reversePathList):
 		if clashCons > maxRevCons:
 			maxRevCons=clashCons
 			revConfId = sample_id
-		if clashCons > 30:
-			print "Conf "+str(sample_id)+" has more than 30 constraints"
+		# if clashCons > 30:
+		# 	print "Conf "+str(sample_id)+" has more than 30 constraints"
 		
 		if delta < -10000:
 			print "Huge delta at reverse conf "+str(sample_id)

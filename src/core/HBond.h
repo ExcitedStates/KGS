@@ -45,6 +45,7 @@ class Hbond : public Bond {
 
   Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy=DEFAULT_HBOND_ENERGY);
   Hbond(Hbond & hbond);
+
   bool isSame (Hbond * b2);
   Atom* atom1(){ return Bond::Atom1; }
   Atom* atom2(){ return Bond::Atom2; }

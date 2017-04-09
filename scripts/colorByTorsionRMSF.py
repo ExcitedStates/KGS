@@ -152,8 +152,8 @@ def main():
 	Outputs pdb and pml file to color according to dihedral rmsf along the path.
 	"""
 
-	if len(sys.argv)<5:
-		print "Usage: "+sys.argv[0]+" <output pdb file>, <combinedQ_file>, <backboneOnly? 0:1>, <path.pdb files in a row> "
+	if len(sys.argv)<4:
+		print "Usage: "+sys.argv[0]+" <combinedQ_file>, <backboneOnly? 0:1>, <path.pdb files in a row> "
 		sys.exit(1)
 
 	fwdSamples = 0
@@ -166,14 +166,14 @@ def main():
 	backbone = []
 	
 	# Read in residue and backbone information for all dofs
-	with open(sys.argv[2]) as outputFile:
+	with open(sys.argv[1]) as outputFile:
 		for line in outputFile:
 			tokens = line.split(' ')
 			dofIDs.append(int(tokens[0]))
 			resids.append(int(tokens[1]))
 			backbone.append(float(tokens[5]))
 			
-	backboneOnly=int(sys.argv[3])
+	backboneOnly=int(sys.argv[2])
 	resList=[]
 	minId=min(resids)
 	maxId=max(resids)
@@ -181,8 +181,8 @@ def main():
 	reverseTorsionRMSF=[0]*len(resids)
 	overallRMSF = []
 	
-	for i in range(len(sys.argv)-4): #Go through multiple path files and add them (normally this is only 1 path file)
-		pdbPath=sys.argv[i+4]
+	for i in range(len(sys.argv)-3): #Go through multiple path files and add them (normally this is only 1 path file)
+		pdbPath=sys.argv[i+3]
 		pathList, reversePathList = extractPath(pdbPath) #List of path id's
 		fwdSamples += len(pathList)
 		revSamples += len(reversePathList)
@@ -208,8 +208,9 @@ def main():
 		resVal.append(0)
 		resList.append(resVal)
 
-	pdb_file=sys.argv[1]
-	#s1 = PDBFile(pdb_file)
+	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+	
+	pdb_file="../"+modelName+".pdb"
 	# Read in the pdb file
 	f = open(pdb_file,'r')
 	pdb = f.readlines()
