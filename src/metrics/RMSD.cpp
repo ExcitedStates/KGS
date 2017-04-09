@@ -377,7 +377,7 @@ assumes input has been aligned to centroids
       mtx->m[0][0] = - mtx->m[0][0];
       mtx->m[1][0] = - mtx->m[1][0];
       mtx->m[2][0] = - mtx->m[2][0];
-      cerr<<"Detected unallowed reflection of the molecule"<<endl;
+      //cerr<<"Detected unallowed reflection of the molecule"<<endl;
 //      exit(-1);
     }
     ////////DONE WITH CORRECTION

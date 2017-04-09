@@ -1752,7 +1752,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
 
 }
 
-void IO::writeTrajectory (Molecule*molecule, string output_file_name, string output_mdl, Molecule* target) {
+void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target) {
 
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {

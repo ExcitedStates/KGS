@@ -150,59 +150,58 @@ void RelativeTransitionOptions::initializeVariables(){
 
 void RelativeTransitionOptions::print(){
   log("so")<<"Sampling options:"<<std::endl;
-  log("so")<<"\t--initial "<<initialStructureFile<<endl;
-  log("so")<<"\t--workingDirectory "<<workingDirectory<<endl;
+  log("so")<<"  --initial "<<initialStructureFile<<endl;
+  log("so")<<"  --workingDirectory "<<workingDirectory<<endl;
   if(!hydrogenbondFile.empty()) {
-    log("so")<<"\t--hbondMethod "<<hydrogenbondMethod<<endl;
-    log("so")<<"\t--hbondFile "<<hydrogenbondFile<<endl;
+    log("so")<<"  --hbondMethod "<<hydrogenbondMethod<<endl;
+    log("so")<<"  --hbondFile "<<hydrogenbondFile<<endl;
   }
-  log("so")<<"\t--samples "<<samplesToGenerate<<endl;
-  log("so")<<"\t--extraCovBonds "; for(unsigned int i=0;i<extraCovBonds.size();i++) log("so")<<extraCovBonds[i]<<","; log("so")<<endl;
-  log("so")<<"\t--gradient "<<gradient<<endl;
-  log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
-  log("so")<<"\t--decreaseSteps "<< decreaseSteps <<endl;
-  log("so")<<"\t--decreaseFactor "<<decreaseFactor<<endl;
-  log("so")<<"\t--stepSize "<<stepSize<<endl;
-  log("so")<<"\t--maxRotation "<<maxRotation<<endl;
-  log("so")<<"\t--metric "<<metric_string<<endl;
-  log("so")<<"\t--metricSelection "<<metricSelection<<endl;
-  log("so")<<"\t--seed "<<seed<<endl;
-  log("so")<<"\t--biasToTarget "<<biasToTarget<<endl;
-  log("so")<<"\t--convergeDistance "<<convergeDistance<<endl;
-  log("so")<<"\t--preventClashes "<<preventClashes<<endl;
-  log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
-  log("so")<<"\t--roots "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
-  log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
-  log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
-  log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --samples "<<samplesToGenerate<<endl;
+  log("so")<<"  --extraCovBonds "; for(unsigned int i=0;i<extraCovBonds.size();i++) log("so")<<extraCovBonds[i]<<","; log("so")<<endl;
+  log("so")<<"  --gradient "<<gradient<<endl;
+  log("so")<<"  --collisionFactor "<<collisionFactor<<endl;
+  log("so")<<"  --decreaseSteps "<< decreaseSteps <<endl;
+  log("so")<<"  --decreaseFactor "<<decreaseFactor<<endl;
+  log("so")<<"  --stepSize "<<stepSize<<endl;
+  log("so")<<"  --maxRotation "<<maxRotation<<endl;
+  log("so")<<"  --metric "<<metric_string<<endl;
+  log("so")<<"  --metricSelection "<<metricSelection<<endl;
+  log("so")<<"  --seed "<<seed<<endl;
+  log("so")<<"  --biasToTarget "<<biasToTarget<<endl;
+  log("so")<<"  --convergeDistance "<<convergeDistance<<endl;
+  log("so")<<"  --preventClashes "<<preventClashes<<endl;
+  log("so")<<"  --gradientSelection "<<gradientSelection<<endl;
+  log("so")<<"  --roots "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
+  log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
+  log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
+  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
 }
 
 void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"Usage: "<<pname<<" explore [option list]"<<endl;
   log("so")<<"The KGS program will start sampling using the specified options."<<endl;
   log("so")<<"Options are:"<<endl;
-  log("so")<<"\t--initial <path to structure> \t: Specifies the initial structure."<<endl;
-  log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
-  log("so")<<"\t--extraCovBonds <int>-<int>[,...] \t: Extra covalent bonds specified with atom-IDs. Can override an h-bond."<<endl;
-  log("so")<<"\t--samples, -s <whole number> \t: Indicates the number of samples to generate. Default is 10."<<endl;
-  log("so")<<"\t--gradient, -s <0|1|2|3|4\5> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending; 5 = least square gradient. Default is 0."<<endl;
-  log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when checking for collisions. The default is 0.75."<<endl;
-  log("so")<<"\t--stepSize <real number> \t: Initial step size to next sample as the norm of dihedral perturbation. Default 1."<<endl;
-  log("so")<<"\t--maxRotation <real number> \t: The largest allowable change in torsion angle. The default is 10°."<<endl;
-  log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
-  log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
-  log("so")<<"\t--seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
-  log("so")<<"\t--biasToTarget, -bias <real number> \t: Percentage mixing the directed move with a random move. Default 0.5."<<endl;
-  log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
-  log("so")<<"\t--preventClashes\t: Use clashing atoms to define additional constraints and prevent clash. Default: true."<<endl;
-  log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
-  log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
-  log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
-  log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
-  log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
-  log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
-  log("so")<<"\t--relativeDistances <file name> \t: File with the desired distance between atoms of residueNetwork option. Each line is one couple 'id atom_id2,id atom_id2,distance'. Each line should contain only two spaces, one after each word 'id'"<<endl;
-
+  log("so")<<"  --initial <path to structure> \t: Specifies the initial structure."<<endl;
+  log("so")<<"  --workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
+  log("so")<<"  --extraCovBonds <int>-<int>[,...] \t: Extra covalent bonds specified with atom-IDs. Can override an h-bond."<<endl;
+  log("so")<<"  --samples, -s <whole number> \t: Indicates the number of samples to generate. Default is 10."<<endl;
+  log("so")<<"  --gradient <0|1|2|3|4\5> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending; 5 = least square gradient. Default is 0."<<endl;
+  log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when checking for collisions. The default is 0.75."<<endl;
+  log("so")<<"  --stepSize <real number> \t: Initial step size to next sample as the norm of dihedral perturbation. Default 1."<<endl;
+  log("so")<<"  --maxRotation <real number> \t: The largest allowable change in torsion angle. The default is 10°."<<endl;
+  log("so")<<"  --metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
+  log("so")<<"  --metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
+  log("so")<<"  --seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
+  log("so")<<"  --biasToTarget, -bias <real number> \t: Percentage mixing the directed move with a random move. Default 0.5."<<endl;
+  log("so")<<"  --convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
+  log("so")<<"  --preventClashes\t: Use clashing atoms to define additional constraints and prevent clash. Default: true."<<endl;
+  log("so")<<"  --gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
+  log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
+  log("so")<<"  --roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
+  log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
+  log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
+  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
+  log("so")<<"  --relativeDistances <file name> \t: File with the desired distance between atoms of residueNetwork option. Each line is one couple 'id atom_id2,id atom_id2,distance'. Each line should contain only two spaces, one after each word 'id'"<<endl;
 }
 
 
