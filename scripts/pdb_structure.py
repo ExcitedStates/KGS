@@ -11,6 +11,9 @@ class Atom:
         self.x = float(atom_string[30:38])
         self.y = float(atom_string[38:46])
         self.z = float(atom_string[46:54])
+        self.pos = np.array([self.x,self.y,self.z])
+        if len(atom_string)>=78:
+            self.elem = atom_string[76:78].strip()
 
     def __str__(self):
         return self.name+"_"+str(self.resi)
