@@ -18,6 +18,43 @@ atomic_weight = {
 }
 
 
+#Molecular weight in kDa of a list of atoms
+def domainWeight(atoms):
+  
+  mol_weight=0
+  for a in atoms:
+    if a.elem in atomic_weight:
+      mol_weight+=atomic_weight[a.elem]
+    else:
+      print("Warning: Unknown element ignored: '%s'"%(a.elem)) 
+  
+  avogadro = 6.022e23  
+  print("Molecular weight: %.3f kDa = %.3E g"%(mol_weight/1000, mol_weight/avogadro))
+  return mol_weight/1000
+
+#Returns domain center of mass / geometry if massWeighted=False
+def domainCOM(atoms, massWeighted=True):
+  x, y, z = 0.0, 0.0, 0.0
+  totmass=0.0
+  for a in atoms:
+    if (massWeighted == True):
+      if a.elem in atomic_weight:
+        m = atomic_weight[a.elem]
+        x += a.x * m
+        y += a.y * m
+        z += a.z * m
+        totmass += m
+    else:
+      x += a.x
+      y += a.y
+      z += a.z
+
+  # print totmass
+  if (massWeighted == True):
+      return x / totmass, y / totmass, z / totmass
+  else:
+      return x / len(atoms), y / len(atoms), z / len(atoms)
+
 if __name__ == "__main__":
     if len(sys.argv)!=2:
         print "Usage: "+sys.argv[0]+" <pdb-file>"
