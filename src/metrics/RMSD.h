@@ -47,18 +47,18 @@ typedef struct
 		((a)[2]-(b)[2]) * ((a)[2]-(b)[2]) )
 
 double alignedrmsd(double *v1, double *v2, int N);
-void centroid(double *ret, double *v, int N);
-int getalignmtx(double *v1, double *v2, int N, MATRIX *mtx);
-void crossproduct(double *ans, double *pt1, double *pt2);
-void mtx_root(MATRIX *mtx);
-int almostequal(MATRIX *a, MATRIX *b);
-void mulpt(MATRIX *mtx, double *pt);
-void mtx_mul(MATRIX *ans, MATRIX *x, MATRIX *y);
-void mtx_identity(MATRIX *mtx);
-bool isRightHanded(MATRIX *mtx);
-void mtx_trans(MATRIX *mtx, double x, double y, double z);
-int mtx_invert(double *mtx, int N);
-double absmaxv(double *v, int N);
+//void centroid(double *ret, double *v, int N);
+//int getalignmtx(double *v1, double *v2, int N, MATRIX *mtx);
+//void crossproduct(double *ans, double *pt1, double *pt2);
+//void mtx_root(MATRIX *mtx);
+//int almostequal(MATRIX *a, MATRIX *b);
+//void mulpt(MATRIX *mtx, double *pt);
+//void mtx_mul(MATRIX *ans, MATRIX *x, MATRIX *y);
+//void mtx_identity(MATRIX *mtx);
+//bool isRightHanded(MATRIX *mtx);
+//void mtx_trans(MATRIX *mtx, double x, double y, double z);
+//int mtx_invert(double *mtx, int N);
+//double absmaxv(double *v, int N);
 
 /*
    calculate rmsd between two structures
@@ -70,7 +70,7 @@ Returns: rmsd score
 Notes: mtx can be null. Transform will be rigid. Inputs must
 be previously aligned for sequence alignment
 */
-double rmsd(double *v1, double *v2, int N, double *mtx);
+//double rmsd(double *v1, double *v2, int N, double *mtx);
 
 
 }
