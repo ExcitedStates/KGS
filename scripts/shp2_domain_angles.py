@@ -13,19 +13,17 @@ The script is easily useable for other molecules when adapting the domains accor
 
 import sys
 import os
-import pdb_structure
+from pdb_structure import PDBFile
 import math
 from pdb_molecularmass import domainCOM
 import matplotlib as mpl
-mpl.use('Agg')
+# mpl.use('Agg')
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D
 
 from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Arial']}) #Helvetica, Avant Gard, Computer Modern Sans serif
-## for Palatino and other serif fonts use:
-#rc('font',**{'family':'serif','serif':['Palatino']})
-# rc('text', usetex=True)
-
 # from pylab import rcParams
 # rcParams['figure.figsize'] = 6.5, 6.5*3/4
 
@@ -55,12 +53,17 @@ def angle(v1, v2, v3):
 def cross(v1,v2):
     return [ v1[1]*v2[2]-v1[2]*v2[1], v1[2]*v2[0]-v1[0]*v2[2], v1[0]*v2[1]-v1[1]*v2[0] ]
 
-def shp2DomainAngles(pdbStructure):
+def shp2DomainAngles(pdbStructure,availableResis):
     
     #3 Domains in SHP2 --> Adapt the residue list for useage with other proteins
     ptpRange = range(220,530)
     csh2Range = range(112,219)
     nsh2Range = range(1,111)
+    
+    #Truncate lists to residues available in all structures
+    ptpRange = [x for x in ptpRange if x in availableResis]
+    csh2Range = [x for x in csh2Range if x in availableResis]
+    nsh2Range = [x for x in nsh2Range if x in availableResis]
     
     #Compute the Center of Mass for each domain
     ptpAtoms = []
@@ -103,6 +106,78 @@ def shp2Distances(pdbStructure):
     # To be done
     # distancePairs=[[111,253],[114,249],[111,216],[111,217]]
 
+def consistentResidueList(pdbFileNames):
+	residueList=[]
+	first=True
+	for fn in pdbFileNames:
+		pdbFile = PDBFile(fn)
+		thisList = pdbFile.getResidueIDsandNames() #List of pairs of residue IDs and residue names
+		if first:
+			first=False
+			residueList = thisList
+		residueList = [i for i in thisList if i in residueList]
+	residueList = [entry[0] for entry in residueList]
+	return residueList
+
+def shp2PrincipalAxesAngles(pdbStructure,availableResis):
+    
+    #3 Domains in SHP2 --> Adapt the residue list for useage with other proteins
+    ptpRange = range(220,530)
+    csh2Range = range(112,219)
+    nsh2Range = range(1,111)
+    
+    #Truncate lists to residues available in all structures
+    ptpRange = [x for x in ptpRange if x in availableResis]
+    csh2Range = [x for x in csh2Range if x in availableResis]
+    nsh2Range = [x for x in nsh2Range if x in availableResis]
+    
+    #Compute the Center of Mass for each domain
+    ptpAtoms = []
+    for resi in ptpRange:
+        ptpAtoms.extend(pdbStructure.getAtomsInResi(resi))
+    ptpCoordMat = [[a.x, a.y, a.z] for a in ptpAtoms]
+
+    pca = PCA(n_components=1) #Select number of pcs, mle does automatic selection based on Thomas P. Minka: Automatic Choice of Dimensionality for PCA. NIPS 2000: 598-604
+    pca.fit(ptpCoordMat)
+    pca_score = pca.explained_variance_ratio_
+    ptpV = pca.components_
+    print ptpV
+    x,y,z = domainCOM(ptpAtoms)
+    ptpCOM = [x,y,z]
+    print "PTP COM: "+str(x)+", "+str(y)+", "+str(z)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(ptpCoordMat[:][0],ptpCoordMat[:][1],ptpCoordMat[:][2])
+    
+    csh2Atoms = []
+    for resi in csh2Range:
+        csh2Atoms.extend(pdbStructure.getAtomsInResi(resi))
+    csh2CoordMat = [[a.x, a.y, a.z] for a in csh2Atoms]
+    print csh2CoordMat[0][:]
+    pca = PCA(n_components=1) #Select number of pcs, mle does automatic selection based on Thomas P. Minka: Automatic Choice of Dimensionality for PCA. NIPS 2000: 598-604
+    pca.fit(csh2CoordMat)
+    pca_score = pca.explained_variance_ratio_
+    V = pca.components_
+    print V
+    x,y,z = domainCOM(csh2Atoms)
+    csh2COM = [x,y,z]
+    print "CSH2 COM: "+str(x)+", "+str(y)+", "+str(z)
+
+    nsh2Atoms = []
+    for resi in nsh2Range:
+        nsh2Atoms.extend(pdbStructure.getAtomsInResi(resi))
+    nsh2CoordMat = [[a.x, a.y, a.z] for a in nsh2Atoms]
+    print nsh2CoordMat[0][:]
+    pca = PCA(n_components=1) #Select number of pcs, mle does automatic selection based on Thomas P. Minka: Automatic Choice of Dimensionality for PCA. NIPS 2000: 598-604
+    pca.fit(nsh2CoordMat)
+    pca_score = pca.explained_variance_ratio_
+    V = pca.components_
+    print V
+    x,y,z = domainCOM(nsh2Atoms)
+    nsh2COM = [x,y,z]
+    print "NSH2 COM: "+str(x)+", "+str(y)+", "+str(z)
+    
+    return x,y
 
 if __name__ == "__main__":
     if len(sys.argv)<2:
@@ -114,21 +189,26 @@ if __name__ == "__main__":
     ptp_CSH2=[]
     names=[]
     indexes = range(0,len(sys.argv)-1)
+    pdbFileNames = sys.argv[1:]
+    availableResidues = consistentResidueList(pdbFileNames)
     
-    for ind in  range(1,len(sys.argv)):
-        pdb_file = sys.argv[ind]
-        struc = pdb_structure.PDBFile(pdb_file) 
+    for pdb_file in pdbFileNames:
+        struc = PDBFile(pdb_file) 
     
         name = os.path.basename(pdb_file).replace(".pdb","")
         name = name.replace(".kgs","")
         
-        alpha, beta, delta = shp2DomainAngles(struc)
+        alpha, beta, delta = shp2DomainAngles(struc,availableResidues)
         # print alpha*180/math.pi, beta*180/math.pi, delta*180/math.pi
         
         names.append(name)
         ptp_NSH2.append(alpha*180/math.pi)
         ptp_CSH2.append(beta*180/math.pi)
         deltaSH2.append(delta*180/math.pi)
+        
+        #Determine principal axes and angles between them
+        # phi, psi = shp2PrincipalAxesAngles(struc,availableResidues)
+        # sys.exit(1)
      
     #Sort them by some thing: in this case delta angles   
     sortedIndices = [i[0] for i in sorted(enumerate(deltaSH2), key=lambda x:x[1])]
