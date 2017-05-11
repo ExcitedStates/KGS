@@ -90,13 +90,14 @@ class Atom:
         self.tempFactor = float(atom_string[60:66])
         if (self.name[0] == "D"):#case of Deuterium
             self.name = "H"+self.name[1:]
-        if len(atom_string)>=78:
+        if len(atom_string.strip())>=78:
             self.elem = atom_string[76:78].strip()
             self.elem = self.elem[0]
             if self.elem == "D":
                 self.elem = "H"
         else:
-            self.elem = self.name[0]
+            name_nodigits = filter(lambda x: x.isalpha(), self.name)
+            self.elem = name_nodigits[0]
         self.neighbors = []
         self.rings = 0
         self.atomType = ""
@@ -507,7 +508,7 @@ class PDBFile:
                     resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                 continue
             if atom.resi != currentResId or ((atom.name, atom.alt) in resList) : #New residue or wrong numbering
-                print atom.resi, atom.alt
+                #print atom.resi, atom.alt
                 if atom.resi == currentResId + 1: #desired ID in contiguous sequence, go on
                     currentResId = atom.resi #move current residue one up
                     resList=[]
