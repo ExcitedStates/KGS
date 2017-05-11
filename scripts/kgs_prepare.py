@@ -508,7 +508,7 @@ class PDBFile:
                     resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                 continue
             if atom.resi != currentResId or ((atom.name, atom.alt) in resList) : #New residue or wrong numbering
-                #print atom.resi, atom.alt
+                # print atom.resi, atom.alt
                 if atom.resi == currentResId + 1: #desired ID in contiguous sequence, go on
                     currentResId = atom.resi #move current residue one up
                     resList=[]
