@@ -26,8 +26,10 @@ def pdbAlterBFactor(pdb,resList,minId):
 			# tokens = line.split(' ')
 			# print tokens
 			resId=int(line[22:26])
-			# resID=int(tokens[5])
-			val=resList[resId-minId][1]
+			try:
+				val=resList[resId-minId][1]
+			except IndexError:
+				val=0.0
 			out.append("%s%6s%s" % (line[0:60],val,line[67:]))
 			#print resId, val
 		else:
