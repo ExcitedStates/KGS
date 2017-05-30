@@ -104,7 +104,8 @@ int main( int argc, char* argv[] ) {
                       protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
   log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
-
+    
+  log("samplingStatus")<<"Initial distance to objective: "<<dist_to_objective(goal_distances)<<endl;
   log("samplingStatus")<<"Sampling ...\n";
   CTKTimer timer;
   timer.Reset();
@@ -160,6 +161,7 @@ int main( int argc, char* argv[] ) {
     samples.push_back(new_conf);
 
     log("samplingStatus")<<"> New structure: conf_"+std::to_string((long long)i)+".pdb"<<endl;
+    log("samplingStatus")<<"Distance to objective: "<<dist_to_objective(goal_distances)<<endl;
     string fname = "output/conf_"+std::to_string((long long)i)+".pdb";
     IO::writePdb(new_conf->updatedMolecule(), fname);
   }

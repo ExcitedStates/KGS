@@ -131,7 +131,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
     gsl_vector_set(u,1,atom1->m_position.y - atom2->m_position.y);
     gsl_vector_set(u,2,atom1->m_position.z - atom2->m_position.z);
     double d = gsl_vector_length(u);
-    cout<<"Distance: "<<d<<" "<<dist_goal<<endl;
+    //cout<<"Distance: "<<d<<" "<<dist_goal<<endl;
     gsl_matrix_set(targetPosition,2*i*3+0,0, (gsl_vector_get(u,0)/d)*(dist_goal-d)/2);
     //cout<<"Direction : "<<(gsl_vector_get(u,0)/d)*(goal_distances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+1,0, (gsl_vector_get(u,1)/d)*(dist_goal-d)/2);
