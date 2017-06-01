@@ -30,3 +30,6 @@
 *.app
 
 *.idea/
+debug
+release
+build
