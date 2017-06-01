@@ -120,31 +120,21 @@ void HierarchyOptions::printUsage(char* pname){
   log("so")<<endl;
   log("so")<<"Options:"<<endl;
 
-  log("so")<<"\t--initial <pdb-file> \t: Specifies the initial structure."<<endl;
-
-  log("so")<<"\t--annotation <file-path> \t: Annotations can specify secondary structures or other things ";
-
+  log("so")<<"  --initial <pdb-file> \t: Specifies the initial structure."<<endl;
+  log("so")<<"  --annotation <file-path> \t: Annotations can specify secondary structures or other things ";
 //  log("so")<<"\t--hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
 //  log("so")<<"how to generate a hbondFile are printed."<<endl;
-
 //  log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
 //  log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
-  log("so")<<"\t--extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
-
-  log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
-
-  log("so")<<"\t--samples <int> \t: Samples to generate: 0 (default, no samples) up to # of dofs "<<endl;
-
-  log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
+  log("so")<<"  --extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
+  log("so")<<"  --workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
+  log("so")<<"  --samples <int> \t: Samples to generate: 0 (default, no samples) up to # of dofs "<<endl;
+  log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
   log("so")<<"checking for collisions. The default is 0.75."<<endl;
-
-  log("so")<<"\t--saveData <0|1|2|3>\t: Indicate whether files shall be saved! 0=none, 1=pdb, 2=pdb and q, 3=all. Default: 1"<<endl;
-
-  log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
-
-  log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
-//
-  log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
+  log("so")<<"  --saveData <0|1|2|3>\t: Indicate whether files shall be saved! 0=none, 1=pdb, 2=pdb and q, 3=all. Default: 1"<<endl;
+  log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
+  log("so")<<"  --collisionCheck <string>\t: Atoms used for collision detection: all (default), heavy, backbone"<<endl;
+  log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace. Default: 1.0e-12. Higher value can artificially increase nullspace."<<endl;
 }
 
 

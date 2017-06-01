@@ -572,14 +572,15 @@ void Molecule::buildSpanningTree(const vector<int>& rootIds) {
   m_spanningTree = new KinTree(rigidBodies, roots);
 }
 
-void Molecule::alignReferencePositionsTo(Molecule * base){
+double Molecule::alignReferencePositionsTo(Molecule * base, Selection &sel){
   this->restoreAtomPos();
-  Selection allSel;
-  metrics::RMSD rmsd(allSel);
-  rmsd.align(this,base);
+  metrics::RMSD rmsd(sel);
+  double rmsdVal = rmsd.align(this,base);
 
   for (auto const& atom: m_atoms)
     atom->m_referencePosition = atom->m_position;
+
+  return rmsdVal;
 }
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
@@ -789,39 +790,64 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   return energy;
 }
 
-///Create a set of common hbonds from the hbond list of another protein
+/////Create a set of common hbonds from the hbond list of another protein
 void Molecule::setToHbondIntersection (Molecule * p2) {
-  Hbond * hBond;
-  Atom *hatom, *acceptor, *donor, *AAatom;
-  list<Hbond *> intersection;
-  int count1=0, count2=0;
-  for (list<Hbond *>::iterator itr2=p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
-    hBond= (*itr2);
 
-    hatom = this->getAtom(hBond->Hatom->getResidue()->getChain()->getName(),hBond->Hatom->getResidue()->getId(), hBond->Hatom->getName());
-    acceptor = this->getAtom(hBond->Acceptor->getResidue()->getChain()->getName(),hBond->Acceptor->getResidue()->getId(), hBond->Acceptor->getName());
-    donor = this->getAtom(hBond->Donor->getResidue()->getChain()->getName(),hBond->Donor->getResidue()->getId(), hBond->Donor->getName());
-    AAatom = this->getAtom(hBond->AA->getResidue()->getChain()->getName(),hBond->AA->getResidue()->getId(), hBond->AA->getName());
+  Hbond *ownHbond, *otherHbond;
+  Atom *ownH, *ownA, *otherH, *otherA;
+  list<Hbond *> ownIntersection, otherIntersection;
+  list<Hbond *> deleteOwn, deleteOther;
+  bool found = false;
 
-    if( hatom && acceptor){
-      Hbond * new_hb = new Hbond(hatom, acceptor, donor, AAatom);
-      this->addHbond(new_hb);
-      intersection.push_back(hBond);
-      count1++;
+  for (list<Hbond *>::iterator itr1=this->m_hBonds.begin(); itr1 != this->m_hBonds.end(); ++itr1) {
+    found=false;
+    ownHbond = (*itr1);
+    ownH = ownHbond->Hatom;
+    ownA = ownHbond->Acceptor;
+
+    for (list<Hbond *>::iterator itr2 = p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
+
+      otherHbond = (*itr2);
+      otherH = otherHbond->Hatom;
+      otherA = otherHbond->Acceptor;
+
+      if (ownH->getName() == otherH->getName() &&
+          ownA->getName() == otherA->getName() &&
+          ownH->getResidue()->getId() == otherH->getResidue()->getId() &&
+          ownA->getResidue()->getId() == otherA->getResidue()->getId() &&
+          ownH->getResidue()->getChain()->getName() == otherH->getResidue()->getChain()->getName() &&
+          ownA->getResidue()->getChain()->getName() == otherA->getResidue()->getChain()->getName()) {
+        found = true;
+        break;
+      }
     }
-    else{
-      cout<<"Could not find specified hbond atoms in other protein: ";
-      cout<<hBond->Hatom->getResidue()->getId()<<" "<<hBond->Hatom->getName()<<", "<<hBond->Acceptor->getResidue()->getId()<<" "<<hBond->Acceptor->getName();
-      cout<<" Deleting to make hbond sets match!"<<endl;
-      Atom* hAtom = hBond->Hatom;
-      Atom* acceptor = hBond->Acceptor;
-      hAtom->removeHbond(hBond);
-      acceptor->removeHbond(hBond);
-//			p2->m_hBonds.erase(itr2);
-      count2++;
+    if (found) {
+      ownIntersection.push_back(ownHbond);
+      otherIntersection.push_back(otherHbond);
     }
   }
-  p2->m_hBonds=intersection;
+  ///Delete hbonds non-existing in both molecules
+  for (list<Hbond *>::iterator itr1=this->m_hBonds.begin(); itr1 != this->m_hBonds.end(); ++itr1) {
+    ownHbond = (*itr1);
+    if(find(ownIntersection.begin(),ownIntersection.end(),ownHbond) == ownIntersection.end()) {
+      ownHbond->Hatom->removeHbond(ownHbond); //moved to destructor
+      ownHbond->Acceptor->removeHbond(ownHbond); //moved to destructor
+      delete ownHbond;
+      ownHbond = nullptr;
+    }
+  }
+  for (list<Hbond *>::iterator itr2=p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
+    otherHbond = (*itr2);
+    if (find(otherIntersection.begin(), otherIntersection.end(), otherHbond) == otherIntersection.end()) {
+      otherHbond->Hatom->removeHbond(otherHbond); //moved to destructor
+      otherHbond->Acceptor->removeHbond(otherHbond); //moved to destructor
+      delete otherHbond;
+      otherHbond = nullptr;
+    }
+  }
+  //Reset the intersection pointers
+  this->m_hBonds = ownIntersection;
+  p2->m_hBonds = otherIntersection;
 }
 
 void Molecule::sortHbonds() {
@@ -867,7 +893,7 @@ double Molecule::checkCycleClosure(Configuration *q){
   setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
-  KinEdge *hBondEdge;
+  KinEdge *cycleEdge;
   int id=1;
   double maxViolation = 0.0;
   double normOfViolation = 0.0;
@@ -877,9 +903,12 @@ double Molecule::checkCycleClosure(Configuration *q){
   for (pair_it=m_spanningTree->m_cycleAnchorEdges.begin(); pair_it!=m_spanningTree->m_cycleAnchorEdges.end(); ++pair_it) {
 
     // get end-effectors
-    hBondEdge = pair_it->first;
+    cycleEdge = pair_it->first;
+    if( !cycleEdge->getBond()->isHbond()) continue; // for now have to check for hbonds
+    //Todo: Make this more general using a torsional constraint class which is the cycle edges
+
     KinVertex* common_ancestor = pair_it->second;
-    Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
+    Hbond * hBond = reinterpret_cast<Hbond *>(cycleEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
     Atom* atom1 = hBond->Atom1;
@@ -887,11 +916,16 @@ double Molecule::checkCycleClosure(Configuration *q){
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
 
-    KinVertex* vertex1 = hBondEdge->StartVertex;
-    KinVertex* vertex2 = hBondEdge->EndVertex;
+    if(hBond->AA== nullptr || hBond->Donor == nullptr){
+      cerr<<"Not enough neighbors for h-bond between "<<atom1->getId()<<" and "<<atom2->getId()<<endl;
+      exit(-1);
+    }
+
+    KinVertex* vertex1 = cycleEdge->StartVertex;
+    KinVertex* vertex2 = cycleEdge->EndVertex;
     if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
-      vertex1=hBondEdge->EndVertex;
-      vertex2=hBondEdge->StartVertex;
+      vertex1=cycleEdge->EndVertex;
+      vertex2=cycleEdge->StartVertex;
     }
 
 

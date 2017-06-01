@@ -11,6 +11,9 @@ class Atom:
         self.x = float(atom_string[30:38])
         self.y = float(atom_string[38:46])
         self.z = float(atom_string[46:54])
+        self.pos = np.array([self.x,self.y,self.z])
+        if len(atom_string)>=78:
+            self.elem = atom_string[76:78].strip()
 
     def __str__(self):
         return self.name+"_"+str(self.resi)
@@ -137,6 +140,15 @@ class PDBFile:
             ret.add(atom.resi)
         return sorted(list(ret))
 
+    def getResidueIDsandNames(self, model_number = 0):
+        '''
+        Return a sorted list of all residue numbers and names in this structure
+        '''
+        ret = set()
+        for atom in self.models[model_number]:
+            ret.add((atom.resi,atom.resn))
+        return sorted(list(ret))
+    
     def getSequence(self, model_number = 0):
         '''
         Get the sequence of this structure. Currently only works for RNA (single-char resn)
@@ -164,14 +176,17 @@ class PDBFile:
 
 
 
-    def coordMatrix(self, model_number = 0, names=["C4'","CA"]):
+    def coordMatrix(self, model_number = 0, names=["C4'","CA"],resis=None):
         """
         Get a coordinate-matrix of shape (a, 3) where a is the number of atoms with one of the specified names.
+        New: an optional list of residues can limit the coordinate Matrix to specified residues only, useful for
+        comparison across non-identical sequences or with missing loops.
         """
         ret = np.zeros(  shape=( len(self.models[model_number]) , 3 )  )
         a = 0
         for atom in self.models[model_number]:
             if names and atom.name not in names: continue
+            if resis and atom.resi not in resis: continue
             ret[a][0] = atom.x
             ret[a][1] = atom.y
             ret[a][2] = atom.z

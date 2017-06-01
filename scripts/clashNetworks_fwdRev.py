@@ -52,33 +52,46 @@ def main():
 	Adapts b-factor to color according to steric clash networks identified along the tree-path of a kgs pdb-file
 	"""
 
-	if len(sys.argv)<3:
-		print "Usage: "+sys.argv[0]+"<minClashNumber>, <path.pdb files in a row>, <pdb file for atom/residue connection> "
+	if len(sys.argv)<4:
+		print "Usage: "+sys.argv[0]+"<minClashNumber>, <output.txt> <path.pdb files in a row> "#, <reverse pdb file>, <forward pdb file> "
 		print "Start this from the base directory of all experiments"
 		sys.exit(1)
-
-	samples=[]
-	clashConstraints=[]
-	rev_clashConstraints=[]
 	
-	pdbFile = ""
-	pdbPath=sys.argv[2]
-	if( len(sys.argv) > 3):
-		pdbFile=sys.argv[-1]
-		modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
-	else:
-		modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
-		pdbFile = "../"+modelName+".pdb"
-		
-	# pdbPath = sys.argv[2]
-	allClashes = []
 	minClashNumber=int(sys.argv[1])
+		
+	pdbFile = ""
+	pdbFileRev = ""
+	with open(sys.argv[2]) as outputFile:
+		for line in outputFile:
+			if "--initial " in line:
+				pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
+				modelName = line[line.rfind("/")+1:line.rfind(".pdb")]
+			if "--target " in line:
+				pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
+				break;
+	
+	# pdbPath=sys.argv[3]
+	# if( len(sys.argv) > 4):
+	# 	pdbFile=sys.argv[-1]
+	# 	modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
+	# 	pdbFileRev = sys.argv[-2]
+	# else:
+	# 	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
+	# 	pdbFile = "../"+modelName+".pdb"
+	# 	
+	# print modelName
+
+
+	fwdClashes = []
+	revClashes = []
 
 	currDir = os.getcwd()
 	sumRuns=0
 	
-	for pFile in range(len(sys.argv)-3):
-		pdbPath=sys.argv[pFile+2]
+	# Removed multi-path pdb file support
+	# for pFile in range(len(sys.argv)-4):
+	# pdbPath=sys.argv[pFile+2]
+	for pdbPath in sys.argv[3:]:
 	
 		pathFileSepIdx = pdbPath.find("/output")
 		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
@@ -86,18 +99,27 @@ def main():
 	
 		print "Changing to "+str(expDir)
 		os.chdir(expDir)
-
+		#Id's on the configurations on the path, separate for forward and reverse
+		# pathList, reversePathList = extractPath(pdbPath)
+		# allClashes = getClashes(pdbPath,pathList, reversePathList)
+	
+		print "Now in "+str(os.getcwd())
 		pathList, reversePathList = extractPath(pathFileToOpen)
-		allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+		# allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
+		forwardClashes, reverseClashes = getClashes(pathFileToOpen,pathList, reversePathList)
+		fwdClashes.extend(forwardClashes)
+		revClashes.extend(reverseClashes)
 		sumRuns += 1
 		os.chdir(currDir)
 	# End of multi-path loop
 
-	atomResidueList = getAtomResidueList(pdbFile)
+	fwdAtomResidueList = getAtomResidueList(pdbFile)
+	revAtomResidueList = getAtomResidueList(pdbFileRev)
 
 	# This is on a residue-clash based level
 	clashCollection = {}
-	clashCollection = collectResidueClashes(clashCollection,fwdClashes,atomResidueList)
+	clashCollection = collectResidueClashes(clashCollection,fwdClashes,fwdAtomResidueList)
+	clashCollection = collectResidueClashes(clashCollection,revClashes,revAtomResidueList)
 	sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
 	sorted_collection.reverse()
 

@@ -242,13 +242,14 @@ void HbondIdentifier::selectHbonds(Molecule *protein, string path, string protei
     control_prob = Random01();
     if ( prob < control_prob  ) { // need to delete this hbond
       cout << "InfoHB)\t Deleting Hbond " << (*hit)->Hatom->getId() << " " << (*hit)->Acceptor->getId() << " from hbond.in..." << endl;
-      // erase from Atom's Hbond_list and Hbond_neighbor_list
+      // erase from Atom's Hbond_list and Hbond_neighbor_list ///Moved to destructor @DB
       (*hit)->Hatom->removeHbond(*hit);
       (*hit)->Acceptor->removeHbond(*hit);
       // erase from Molecule's Hbnd_list
       hit2 = hit;
       ++hit;
       protein->getHBonds().erase(hit2);
+      delete (*hit2);
     }
     else {
       ++hit;

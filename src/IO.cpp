@@ -504,7 +504,7 @@ Molecule* IO::readPdb (
   molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
   molecule->buildSpanningTree(roots); //Necessary before conformations are defined
   molecule->setConfiguration(new Configuration(molecule));
-  molecule->setCollisionFactor(1.0); //Sets the initial collisions
+  molecule->setCollisionFactor(1.0); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
   return molecule;
 }
 
@@ -1752,7 +1752,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
 
 }
 
-void IO::writeTrajectory (Molecule*molecule, string output_file_name, string output_mdl, Molecule* target) {
+void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target) {
 
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {

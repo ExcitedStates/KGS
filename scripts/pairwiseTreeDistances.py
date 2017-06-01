@@ -33,7 +33,7 @@ mpl.rc('ytick', labelsize=ftSize)
 
 addLim = 0.3
 forwardFinal=[]
-revFinal=[]
+reverseFinal=[]
 
 if len(sys.argv)==1:
     print "Usage: pairwiseTreeDistances.py ", sys.argv[0]," <experiment directories in a row>"
@@ -87,6 +87,8 @@ reverse_rmsdTarget=[]
 
 reverseIndex=0
 forwardIndex=0
+forwardFinal=0
+reverseFinal=0
 
 forwardName="init"
 reverseName="target"
@@ -165,10 +167,10 @@ with open("output.txt") as outputFile:
             forwardFinal = num
             forwardIndex = sample_ids.index(forwardFinal)
             if num ==bestConf1:
-                revFinal = bestConf2
+                reverseFinal = bestConf2
             else:
-                revFinal = bestConf1
-            reverseIndex = reverse_sample_ids.index(revFinal)
+                reverseFinal = bestConf1
+            reverseIndex = reverse_sample_ids.index(reverseFinal)
                 
 allClashFreeDofsForward.append(list(clashFreeDofsForward))
 allClashFreeDofsReverse.append(list(clashFreeDofsReverse))
@@ -238,7 +240,7 @@ dot, = ax.plot(rmsdIni[forwardIndex],rmsdTarget[forwardIndex],'v',color=colorval
 colorval=scalarMap.to_rgba(maxDofs-clashFreeDofsReverse[reverseIndex])
 dot, = ax.plot(reverse_rmsdTarget[reverseIndex],reverse_rmsdIni[reverseIndex],'^',color=colorval,zorder=3)
 
-print "Final forward: "+str(forwardFinal)+", best reverse: "+str(revFinal)
+print "Final forward: "+str(forwardFinal)+", best reverse: "+str(reverseFinal)
     
 scalarMap.set_array(dots)
 

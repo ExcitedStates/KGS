@@ -11,8 +11,12 @@
 #include "IO.h"
 #include "Logger.h"
 #include "metrics/RMSD.h"
+#include "CTKTimer.h"
 
 using namespace std;
+
+extern double prevRMSDTime;
+extern double currentRMSDTime;
 
 Molecule * myReadFile(string pdbFile){
   char* tmp = realpath(pdbFile.c_str(), nullptr);
@@ -34,15 +38,26 @@ int main( int argc, char* argv[] ){
   if(argc<3){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
   
   Selection sel("all");
-  metrics::RMSD* metric = new metrics::RMSD(sel);
   Configuration* reference = new Configuration(myReadFile(argv[1]));
   for(int i=2;i<argc;i++){
     Molecule * p = myReadFile(argv[i]);
     Configuration* c = new Configuration(p);
-    double rmsd = metric->align(p, reference->getMolecule());
+
+    CTKTimer timer;
+    timer.Reset();
+    double start_time = timer.LastElapsedTime();
+
+    double rmsd = p->alignReferencePositionsTo(reference->getMolecule(), sel);
+//        metric->align(p, reference->getMolecule());
     log("rmsd")<<argv[i]<<" : "<<rmsd<<endl;
+
+    double end_time = timer.ElapsedTime();
+
     string outfile = p->getName()+"_aligned.pdb";
     IO::writePdb(p,outfile);
+
+    cout<<"Alignment took "<<end_time-start_time<<endl;
+//    cout<<"RMSD only took "<<end_time_2-end_time<<endl;
     delete c;
     delete p;
   }

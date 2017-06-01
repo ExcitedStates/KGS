@@ -21,31 +21,31 @@ def getClashes(pdbPath,pathList,reversePathList):
 	
 	# print "Path ini:"+str(pathList[0])+", "+str(pathList[1])
 
-	regPlanner=1
-	it_ids=[]
-	currentIt=0
-	currentPathEntry=0
+	# regPlanner=1
+	# it_ids=[]
+	# currentIt=0
+	# currentPathEntry=0
 	pathLength=len(pathList)
 
-	with open("output.txt") as outputFile:
-		for line in outputFile:
-			if currentPathEntry == pathLength:
-				break
-			if "Using regular planner" in line:
-				regPlanner = 1
-			if "Switching to reversePlanner" in line:
-				regPlanner = 0
-			if "New structure" in line:
-				currentIt = currentIt + 1
-				
-				if regPlanner == 1:
-					tokens = line.split(' ')
-					num =tokens[3]
-					pathId =int(num[num.find('_')+1:num.find('.')])
-					if pathId == pathList[currentPathEntry]:
-						it_ids.append(currentIt)
-						currentPathEntry = currentPathEntry+1
-	
+	# with open("output.txt") as outputFile:
+	# 	for line in outputFile:
+	# 		if currentPathEntry == pathLength:
+	# 			break
+	# 		if "Using regular planner" in line:
+	# 			regPlanner = 1
+	# 		if "Switching to reversePlanner" in line:
+	# 			regPlanner = 0
+	# 		if "New structure" in line:
+	# 			currentIt = currentIt + 1
+	# 			
+	# 			if regPlanner == 1:
+	# 				tokens = line.split(' ')
+	# 				num =tokens[3]
+	# 				pathId =int(num[num.find('_')+1:num.find('.')])
+	# 				if pathId == pathList[currentPathEntry]:
+	# 					it_ids.append(currentIt)
+	# 					currentPathEntry = currentPathEntry+1
+	# 
 	currentClashes = []
 	fwdClashes=[]
 	atClash=0
@@ -63,7 +63,7 @@ def getClashes(pdbPath,pathList,reversePathList):
 			if line == '\n':
 				currentIt += 1
 				continue;
-			if(currentIt != it_ids[currentPathEntry]):
+			if(currentIt != pathList[currentPathEntry]):
 				continue;
 			if "Using clash constraint for atoms:" in line:
 				if atClash==0:
@@ -82,7 +82,7 @@ def getClashes(pdbPath,pathList,reversePathList):
 			if "Size of pareto front" in line:
 				atClash=0
 				currentClashes=[]
-			if " .. Overall dofs:" in line:
+			if "New structure: " in line:
 				if atClash==1:
 					# print "Adding clashes at it "+str(currentIt)+": "
 					# print currentClashes
@@ -98,31 +98,31 @@ def getClashes(pdbPath,pathList,reversePathList):
 	
 
 	#------------REVERSE-------------Same analysis for the reverse path
-	regPlanner=1
-	it_ids=[]
+	# regPlanner=1
+	# it_ids=[]
 	currentIt=0
 	currentPathEntry=0
 	pathLength=len(reversePathList)
 
-	with open("output.txt") as outputFile:
-		for line in outputFile:
-			if currentPathEntry == pathLength:
-				break
-			if "Using regular planner" in line:
-				regPlanner = 1
-			if "Switching to reversePlanner" in line:
-				regPlanner = 0
-			if "New structure" in line:
-				currentIt = currentIt + 1
-				
-				if regPlanner == 0:
-					tokens = line.split(' ')
-					num =tokens[3]
-					pathId =int(num[num.find('_')+1:num.find('.')])
-					if pathId == reversePathList[currentPathEntry]:
-						it_ids.append(currentIt)
-						currentPathEntry = currentPathEntry+1
-						
+	# with open("output.txt") as outputFile:
+	# 	for line in outputFile:
+	# 		if currentPathEntry == pathLength:
+	# 			break
+	# 		if "Using regular planner" in line:
+	# 			regPlanner = 1
+	# 		if "Switching to reversePlanner" in line:
+	# 			regPlanner = 0
+	# 		if "New structure" in line:
+	# 			currentIt = currentIt + 1
+	# 			
+	# 			if regPlanner == 0:
+	# 				tokens = line.split(' ')
+	# 				num =tokens[3]
+	# 				pathId =int(num[num.find('_')+1:num.find('.')])
+	# 				if pathId == reversePathList[currentPathEntry]:
+	# 					it_ids.append(currentIt)
+	# 					currentPathEntry = currentPathEntry+1
+	# 					
 	currentClashes = []
 	revClashes=[]
 	atClash=0
@@ -140,7 +140,7 @@ def getClashes(pdbPath,pathList,reversePathList):
 			if line == '\n':
 				currentIt += 1
 				continue;
-			if(currentIt != it_ids[currentPathEntry]):
+			if(currentIt != reversePathList[currentPathEntry]):
 				continue;
 			if "Using clash constraint for atoms:" in line:
 				if atClash==0:
@@ -159,7 +159,7 @@ def getClashes(pdbPath,pathList,reversePathList):
 			if "Size of pareto front" in line:
 				atClash=0
 				currentClashes=[]
-			if " .. Overall dofs:" in line:
+			if "New structure: " in line:
 				if atClash==1:
 					# print "Adding clashes at it "+str(currentIt)+": "
 					# print currentClashes
@@ -173,8 +173,7 @@ def getClashes(pdbPath,pathList,reversePathList):
 				# print "Current It "+str(currentIt)+" current path entry "+str(it_ids[currentPathEntry])
 				currentClashes=[]
 
-	revClashes.reverse
-
+	revClashes.reverse()
 	return fwdClashes, revClashes;
 
 def getAllClashes(pdbPath,pathList,reversePathList):
@@ -182,30 +181,30 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 
 	# print "Path ini:"+str(pathList[0])+", "+str(pathList[1])
 
-	regPlanner=1
-	it_ids=[]
-	currentIt=0
-	currentPathEntry=0
+	# regPlanner=1
+	# it_ids=[]
+	# currentIt=0
+	# currentPathEntry=0
 	pathLength=len(pathList)
 
-	with open("output.txt") as outputFile:
-		for line in outputFile:
-			if currentPathEntry == pathLength:
-				break
-			if "Using regular planner" in line:
-				regPlanner = 1
-			if "Switching to reversePlanner" in line:
-				regPlanner = 0
-			if "New structure" in line:
-				currentIt = currentIt + 1
-				
-				if regPlanner == 1:
-					tokens = line.split(' ')
-					num =tokens[3]
-					pathId =int(num[num.find('_')+1:num.find('.')])
-					if pathId == pathList[currentPathEntry]:
-						it_ids.append(currentIt)
-						currentPathEntry = currentPathEntry+1
+	# with open("output.txt") as outputFile:
+	# 	for line in outputFile:
+	# 		if currentPathEntry == pathLength:
+	# 			break
+	# 		if "Using regular planner" in line:
+	# 			regPlanner = 1
+	# 		if "Switching to reversePlanner" in line:
+	# 			regPlanner = 0
+	# 		if "New structure" in line:
+	# 			currentIt = currentIt + 1
+	# 			
+	# 			if regPlanner == 1:
+	# 				tokens = line.split(' ')
+	# 				num =tokens[3]
+	# 				pathId =int(num[num.find('_')+1:num.find('.')])
+	# 				if pathId == pathList[currentPathEntry]:
+	# 					it_ids.append(currentIt)
+	# 					currentPathEntry = currentPathEntry+1
 	
 	currentClashes = []
 	fwdClashes=[]
@@ -224,7 +223,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 			if line == '\n':
 				currentIt += 1
 				continue;
-			if(currentIt != it_ids[currentPathEntry]):
+			if(currentIt != pathList[currentPathEntry]):
 				continue;
 			if "Using clash constraint for atoms:" in line:
 				if atClash==0:
@@ -240,7 +239,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 			if "Rejected!" in line:
 				atClash=0
 				currentClashes=[]
-			if " .. Overall dofs:" in line:
+			if "New structure: " in line:
 				if atClash==1:
 					# print "Adding clashes at it "+str(currentIt)+": "
 					# print currentClashes
@@ -255,30 +254,30 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 				currentClashes=[]
 	
 	#------------REVERSE-------------Same analysis for the reverse path
-	regPlanner=1
-	it_ids=[]
-	currentIt=0
-	currentPathEntry=0
+	# regPlanner=1
+	# it_ids=[]
+	# currentIt=0
+	# currentPathEntry=0
 	pathLength=len(reversePathList)
 
-	with open("output.txt") as outputFile:
-		for line in outputFile:
-			if currentPathEntry == pathLength:
-				break
-			if "Using regular planner" in line:
-				regPlanner = 1
-			if "Switching to reversePlanner" in line:
-				regPlanner = 0
-			if "New structure" in line:
-				currentIt = currentIt + 1
-				
-				if regPlanner == 0:
-					tokens = line.split(' ')
-					num =tokens[3]
-					pathId =int(num[num.find('_')+1:num.find('.')])
-					if pathId == reversePathList[currentPathEntry]:
-						it_ids.append(currentIt)
-						currentPathEntry = currentPathEntry+1
+	# with open("output.txt") as outputFile:
+	# 	for line in outputFile:
+	# 		if currentPathEntry == pathLength:
+	# 			break
+	# 		if "Using regular planner" in line:
+	# 			regPlanner = 1
+	# 		if "Switching to reversePlanner" in line:
+	# 			regPlanner = 0
+	# 		if "New structure" in line:
+	# 			currentIt = currentIt + 1
+	# 			
+	# 			if regPlanner == 0:
+	# 				tokens = line.split(' ')
+	# 				num =tokens[3]
+	# 				pathId =int(num[num.find('_')+1:num.find('.')])
+	# 				if pathId == reversePathList[currentPathEntry]:
+	# 					it_ids.append(currentIt)
+	# 					currentPathEntry = currentPathEntry+1
 						
 	currentClashes = []
 	revClashes=[]
@@ -297,7 +296,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 			if line == '\n':
 				currentIt += 1
 				continue;
-			if(currentIt != it_ids[currentPathEntry]):
+			if(currentIt != reversePathList[currentPathEntry]):
 				continue;
 			if "Using clash constraint for atoms:" in line:
 				if atClash==0:
@@ -313,7 +312,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 			if "Rejected!" in line:
 				atClash=0
 				currentClashes=[]
-			if " .. Overall dofs:" in line:
+			if "New structure: " in line:
 				if atClash==1:
 					# print "Adding clashes at it "+str(currentIt)+": "
 					# print currentClashes
@@ -336,7 +335,7 @@ def getAllClashes(pdbPath,pathList,reversePathList):
 
 def getAtomResidueList(pdbFileIn):
 	#This function returns a map between atoms and residues for the given pdb file
-
+	print os.getcwd()
 	atomResidueList={}
 	with open(pdbFileIn,"r") as pdbFile:
 		for line in pdbFile:
@@ -365,6 +364,45 @@ def collectAtomClashes(allClashes):
 	sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
 	sorted_collection.reverse()
 	return sorted_collection
+
+def collectAllResidues(residueCollection,atomClashes,atomResidueList):
+	
+	for entries in atomClashes:
+		val = operator.itemgetter(1)(entries)
+		key = operator.itemgetter(0)(entries)
+		atom1=key[0]
+		atom2=key[1]
+
+		#Atom to residue informaiton
+		resId1 = atomResidueList[atom1]
+		resId2 = atomResidueList[atom2]
+
+		#Add the first residue
+		if resId1 in residueCollection:
+			oldVal=residueCollection[resId1]
+			residueCollection[resId1]=oldVal+val
+		else:
+			residueCollection[resId1]=val
+
+		#Add second residue, if not the same as resid1 to prevent double counting of internal clashes
+		if resId1 != resId2:
+			# if resId2 == 55:
+			# 	print "Res 55, atom "+str(atom2)+", clash with res "+str(resId1)+", atom : "+str(atom1)+", "+str(val)+" times."
+			if resId2 in residueCollection:
+				oldVal=residueCollection[resId2]
+				residueCollection[resId2]=oldVal+val
+			else:
+				residueCollection[resId2]=val
+			
+	# Add remaining residues without clashes
+	for atom in atomResidueList:
+		res = atomResidueList[atom]
+		if res in residueCollection:
+			continue
+		else:
+			residueCollection[res]=0
+			
+	return residueCollection
 
 def collectResidueClashes(clashCollection,atomClashes, atomResidueList):
 	# This function returns pairwise residue clashes (not sorted)

@@ -90,13 +90,14 @@ class Atom:
         self.tempFactor = float(atom_string[60:66])
         if (self.name[0] == "D"):#case of Deuterium
             self.name = "H"+self.name[1:]
-        if len(atom_string)>=78:
+        if len(atom_string.strip())>=78:
             self.elem = atom_string[76:78].strip()
             self.elem = self.elem[0]
             if self.elem == "D":
                 self.elem = "H"
         else:
-            self.elem = self.name[0]
+            name_nodigits = filter(lambda x: x.isalpha(), self.name)
+            self.elem = name_nodigits[0]
         self.neighbors = []
         self.rings = 0
         self.atomType = ""
@@ -141,8 +142,12 @@ class Atom:
         return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2)
 
     def getPDBline(self):
-        line = "%-6s%5d %-4s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
+        if len(self.name)<=3: #Takes care of four-letter atom name alignment
+            line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
                 self.pos[0], self.pos[1], self.pos[2], self.occ, self.tempFactor, self.elem)
+        else:         
+            line = "%-6s%5d %-4s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
+                    self.pos[0], self.pos[1], self.pos[2], self.occ, self.tempFactor, self.elem)
 
         return line
     
@@ -458,6 +463,8 @@ class PDBFile:
             # raise RuntimeError("No hydrogens present in "+self.name+". Consider running `reduce` first.")
 
     def checkAltConformations(self):
+        if altloc=="all":
+            return
         alt_confs =  [a for a in self.atoms if not (a.alt in [" ", altloc])]
         self.atoms = [a for a in self.atoms if      a.alt in [" ", altloc] ]
         for a in self.atoms:
@@ -486,6 +493,7 @@ class PDBFile:
         currentChain = self.atoms[0].chain
         resOffset = 0
         resList=[] #temporarily stores atoms of one residue
+        inconsistencyFlag = 0
         for atom in self.atoms:
             if atom.hetatm: #Only need continuous sequence for residues
                 continue
@@ -493,30 +501,53 @@ class PDBFile:
                 currentChain = atom.chain #Set to new chain
                 currentResId = atom.resi #Set to new first resi
                 resList=[] #clear list
-                resList.append(atom.name)
+                resList.append((atom.name, atom.alt))
+                if atom.alt != " ":  
+                    resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                if atom.alt == " ":
+                    resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                 continue
-            if atom.resi != currentResId or (atom.name in resList): #New residue or wrong numbering
+            if atom.resi != currentResId or ((atom.name, atom.alt) in resList) : #New residue or wrong numbering
+                # print atom.resi, atom.alt
                 if atom.resi == currentResId + 1: #desired ID in contiguous sequence, go on
                     currentResId = atom.resi #move current residue one up
                     resList=[]
-                    resList.append(atom.name)
+                    resList.append((atom.name, atom.alt))
+                    if atom.alt != " ":  
+                        resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                    if atom.alt == " ":
+                        resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                     continue
                 if atom.resi > currentResId + 1: #This is a gap
                     print "Chain "+str(currentChain)+": residue gap between "+str(currentResId)+" and "+str(atom.resi)
                     currentResId = atom.resi #move current residue across gap (user has to ensure correct sequence)
                     resList=[]
-                    resList.append(atom.name)
+                    resList.append((atom.name, atom.alt))
+                    if atom.alt != " ":  
+                        resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                    if atom.alt == " ":
+                        resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                     continue
                 else: #weird numbering (e.g. 52 and 52A)
-                    if atom.name in resList: #New residue (even if same wrong number, or same name)
-                        print "Inconsistent residue name at "+str(atom.resi)+atom.resn+" in chain "+str(currentChain)
+                    if ( (atom.name, atom.alt) in resList): #New residue (even if same wrong number, or same name)
+                        if inconsistencyFlag == 0:
+                            print "Inconsistent residue name at "+str(atom.resi)+atom.resn+" in chain "+str(currentChain)
+                            inconsistencyFlag = 1
                         currentResId += 1
                         atom.resi = currentResId
                         resList=[]
-                        resList.append(atom.name)
+                        resList.append((atom.name, atom.alt))
+                        if atom.alt != " ":  
+                            resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                        if atom.alt == " ":
+                            resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
                     else: #wrong numbering, in same residue
                         atom.resi = currentResId #adopt current ID
-                        resList.append(atom.name)
+                        resList.append((atom.name, atom.alt))
+                        if atom.alt != " ":  
+                            resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                        if atom.alt == " ":
+                            resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
             else:      
                 #Everything regular, just add name to list
                 resList.append(atom.name) #keep track of atom names (each atom only once)
@@ -621,6 +652,7 @@ class MultiModel:
 
         models = []
         atoms = []
+        remarks = []
         for line in f.readlines():
             if line[0:5]=="MODEL":
                 if atoms: raise RuntimeError("A MODEL was not stopped (ENDMDL) before a new one started")
@@ -639,6 +671,8 @@ class MultiModel:
                         atoms.append(atom)
                     if waters and atom.resn == "HOH": #only add waters if specified
                         atoms.append(atom)
+            # elif line[0:6]=="REMARK":
+            #     
 
         if atoms:
             models.append(atoms)

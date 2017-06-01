@@ -4,6 +4,7 @@ import numpy as py
 from math import floor
 import fnmatch
 import os
+import re
 
 def extractPath(pdbPath):
 	reversePathList=[]
@@ -26,12 +27,13 @@ def extractPath(pdbPath):
 			break;
 	
 	fp.close()
-	if fwd==0:
-		pathList = pathStr.split(", ")
-	else:
-		pathList = pathStr.split(" ")
+	pathList = re.split(' |, ',pathStr)
+	# if fwd==0:
+	# 	pathList = pathStr.split(", ")
+	# else:
+	# 	pathList = pathStr.split(" ")
 	if rev==1:
-		reversePathList = reversePathStr.split(", ")
+		reversePathList = re.split(' |, ',reversePathStr)
 		
 	del pathList[-1] #Remove last element
 	pathList = map(int, pathList) #Convert to list-of-int
