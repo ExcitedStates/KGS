@@ -714,9 +714,9 @@ def printUsage(argv):
     print("  -pymol        : output a .pml file that displays constraints")
     print("  -noWaters     : remove all waters ")
     print("  -noLigands    : remove all ligands")
-    print("  -alt    : keeping specified alt loc (and empty alt loc) ")
-    print("  -chain    : keeping only specified chain")
-    print("  -energy    : energy cutoff for hydrogen bonds")
+    print("  -alt          : keeping specified alt loc (and empty alt loc) ")
+    print("  -chain        : keeping only specified chain")
+    print("  -energy       : energy cutoff for hydrogen bonds")
     sys.exit(-1)
 
 if __name__ == "__main__":
