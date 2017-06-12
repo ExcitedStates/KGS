@@ -94,7 +94,7 @@ class PDBFile:
 
         lines = f.readlines()
         for line in lines:
-            if line[0:4] == "ATOM":
+            if line[0:4] == "ATOM" or line[0:6] == "HETATM":
                     if cur_model==None: cur_model = []
                     cur_model.append(Atom(line))
             if (line[0:6] == "ENDMDL" or line[0:5] == "MODEL") and cur_model!=None:
