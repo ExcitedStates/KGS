@@ -50,11 +50,8 @@ class KinGraph {
   ~KinGraph ();
   KinVertex* addVertex(Rigidbody *rb);
   KinVertex* getVertex(int rb_id);
-  KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond); // Add a directed edge from rb_id1 to rb_id2
 
   void print ();
-
-//  const std::vector<Rigidbody*> getRigidbodies() const;
 
 };
 

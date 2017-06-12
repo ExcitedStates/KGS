@@ -62,6 +62,10 @@ class KinTree: public KinGraph
 
   void print() const;
 
+
+  /** Add a directed edge from `vertex1` to `vertex2` */
+  KinEdge* addEdgeDirected (KinVertex *vertex1, KinVertex *vertex2, Bond * bond);
+
   /** Find the lowest common ancestor for v1 and v2 */
   KinVertex* findCommonAncestor (KinVertex *v1, KinVertex *v2);
 
