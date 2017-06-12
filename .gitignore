@@ -3,6 +3,7 @@
 *.lo
 *.o
 *.obj
+*.pyc
 
 # Precompiled Headers
 *.gch
@@ -29,3 +30,6 @@
 *.app
 
 *.idea/
+debug
+release
+build
