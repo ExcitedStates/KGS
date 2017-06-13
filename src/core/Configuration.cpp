@@ -480,7 +480,7 @@ void Configuration::computeJacobians() {
   }
 
 //  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
-//  int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
+//  int row_num = hBond_row_num * 5; // 5 times the number of cycles, non-redundant description
   int col_num = m_molecule->m_spanningTree->getNumCycleDOFs(); // number of DOFs in cycles
 
   if(CycleJacobian==nullptr){
@@ -569,24 +569,23 @@ void Configuration::computeJacobians() {
 
         Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
-        Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
         Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
-        gsl_matrix_set(CycleJacobian,i + 0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i + 1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i + 2,dof_id,jacobianEntryTrans.z);
+        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
         if(bond_ptr->isHBond()) {
+          Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
           double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
           double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
           gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
           gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
-        }
 
-        ///Matrix to check hBond Rotation
-        if(bond_ptr->isHBond()) {
+          ///Matrix to check hBond Rotation
           double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
           gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
         }
+
       }
       vertex1 = parent;
     }
@@ -617,18 +616,16 @@ void Configuration::computeJacobians() {
 
         Math3D::Vector3 jacobianEntryTrans= -0.5*(derivativeP1 + derivativeP2);
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
-        gsl_matrix_set(CycleJacobian,i+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i+1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i+2,dof_id,jacobianEntryTrans.z);
+        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
         if(bond_ptr->isHBond()) {
           double jacobianEntryRot1 = dot((p1 - p1_prev), (derivativeP2 - derivativeP1));
           double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
           gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
           gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
-        }
 
-        ///Matrix to check hBond Rotation
-        if(bond_ptr->isHBond()) {
+          ///Matrix to check hBond Rotation
           double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
           gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
         }
