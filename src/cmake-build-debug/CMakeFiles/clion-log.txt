@@ -1,7 +1,0 @@
-/Applications/CLion.app/Contents/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /Users/rfonseca/Documents/KGS/src
--- /Library/Developer/CommandLineTools/usr/bin/c++  -std=c++11
--- Found GSL: /usr/local/Cellar/gsl/2.2.1
--- Found MKL: /opt/intel/compilers_and_libraries_2017.1.126/mac/mkl/include
--- Configuring done
--- Generating done
--- Build files have been written to: /Users/rfonseca/Documents/KGS/src/cmake-build-debug

@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/c++    -std=c++11 -D__INTEL_MKL -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/kgs_loopexplore.dir/applications/MainLoopExplore.cpp.o  -o kgs_loopexplore  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread libKGS.a -L/usr/local/Cellar/gsl/2.2.1/lib -lgsl -lgslcblas 

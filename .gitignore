@@ -33,3 +33,4 @@
 debug
 release
 build
+cmake-build-debug
