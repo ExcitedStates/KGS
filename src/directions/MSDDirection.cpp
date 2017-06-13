@@ -158,7 +158,7 @@ for ( KinVertex* const& currVertex: m_sortedVertices ){
   KinEdge* currEdge = currVertex->m_parent->findEdge(currVertex);
   Bond * bond_ptr = currEdge->getBond();
   Atom* atom1 = bond_ptr->Atom1;
-  Atom* atom2 = bond_ptr->Atom2;
+  Atom* atom2 = bond_ptr->m_atom2;
 
   f.setZero();
   g.setZero();

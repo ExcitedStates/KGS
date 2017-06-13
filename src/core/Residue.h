@@ -46,9 +46,11 @@ class Residue {
   void setLastResidue(Residue* last);
   void setNextResidue(Residue* next);
   int getId () const;
-  Atom* addAtom (const std::string& atomName,
-                 const int& atomId,
-                 const Coordinate& position);
+  Atom* addAtom (
+      const bool& hetatm,
+      const std::string& atomName,
+      const int& atomId,
+      const Coordinate& position);
   Atom* getAtom (std::string atom_name) const;
   const std::list<Atom*>& getAtoms() const;
   const Chain* getChain () const;

@@ -9,8 +9,8 @@ const double TorsionDOF::m_maxValue = 0.05;
 
 Math3D::Vector3 TorsionDOF::getDerivative(Coordinate& coord) const
 {
-  Coordinate& p1 = m_edge->getBond()->Atom1->m_position;
-  Coordinate& p2 = m_edge->getBond()->Atom2->m_position;
+  Coordinate& p1 = m_edge->getBond()->m_atom1->m_position;
+  Coordinate& p2 = m_edge->getBond()->m_atom2->m_position;
   Math3D::Vector3 axis = p2-p1;
   axis.inplaceNormalize();
   Math3D::Vector3 arm = coord-p1;
@@ -39,8 +39,8 @@ void TorsionDOF::updateEndVertexTransformation()
   //  return;
   //}
 
-  Coordinate& p1 = m_edge->getBond()->Atom1->m_position;
-  Coordinate& p2 = m_edge->getBond()->Atom2->m_position;
+  Coordinate& p1 = m_edge->getBond()->m_atom1->m_position;
+  Coordinate& p2 = m_edge->getBond()->m_atom2->m_position;
   Math3D::Vector3 axis = p2-p1;
   axis.inplaceNormalize();
 

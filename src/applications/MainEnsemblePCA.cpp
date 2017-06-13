@@ -27,8 +27,8 @@ Molecule * readProtein(char* path){
 
 double torsion(Bond * bond){
 	Atom *a1,*a2,*a3,*a4;
-	a2 = bond->Atom1;
-	a3 = bond->Atom2;
+	a2 = bond->m_atom1;
+	a3 = bond->m_atom2;
 	//Find min neighbor of a2 (not a3)
 	a1 = a2->Cov_neighbor_list[0]; if(a1==a3) a1 = a2->Cov_neighbor_list[1];
 	for(int i=1;i<a2->Cov_neighbor_list.size();i++) if( a2->Cov_neighbor_list[i]!=a3 && a2->Cov_neighbor_list[i]->getName()<a1->getName() ) a1 = a2->Cov_neighbor_list[i];
@@ -196,8 +196,8 @@ int main(int argc, char* argv[]){
 			int dof = e->getDOF()->getIndex();
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 			evec_component = fabs(evec_component)*eval_i*eval_i*100.0;
-			int id1 = e->getBond()->Atom1->getId();
-			int id2 = e->getBond()->Atom2->getId();
+			int id1 = e->getBond()->m_atom1->getId();
+			int id2 = e->getBond()->m_atom2->getId();
 			atom_def[id1]+=evec_component;
 			atom_def[id2]+=evec_component;
 //			cout<<e<<" "<<evec_component<<endl;

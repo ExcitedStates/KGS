@@ -39,7 +39,7 @@ class Rigidbody {
  public:
   //unsigned int RbId;
   std::vector<Atom*> Atoms;
-  std::vector<Bond *> Bonds;
+  std::vector<Bond *> m_bonds;
 
   Rigidbody();
   Rigidbody(unsigned int id);

@@ -47,6 +47,10 @@ void randomSampling(ExploreOptions& options) {
   protein->setCollisionFactor(options.collisionFactor);
 
   if (options.collapseRigid > 0) {
+    log("samplingStatus")<<"Before collapsing edges:"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" constraints"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs" << endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->Vertex_map.size() << " rigid bodies" << endl;
     protein = protein->collapseRigidBonds(options.collapseRigid);
   }
 //  if(!options.annotationFile.empty())

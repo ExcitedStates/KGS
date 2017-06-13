@@ -99,7 +99,7 @@ void VDWDirection::computeAtomJacobian (Atom* atom, gsl_matrix* jacobian) {
     int dof_id = edge->getDOF()->getIndex();
 //    Bond * bond_ptr = edge->getBond();
 //    Coordinate bp1 = bond_ptr->Atom1->m_position;
-//    Coordinate bp2 = bond_ptr->Atom2->m_position;
+//    Coordinate bp2 = bond_ptr->m_atom2->m_position;
 //    Math3D::Vector3 jacobian_entry = ComputeJacobianEntry(bp1,bp2,atom->m_position);
     Math3D::Vector3 jacobian_entry = edge->getDOF()->getDerivative(atom->m_position);
     gsl_matrix_set(jacobian,0,dof_id,jacobian_entry.x);

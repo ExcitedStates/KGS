@@ -53,7 +53,7 @@ void Rigidbody::addAtom (Atom* atom) {
 }
 
 void Rigidbody::addBond (Bond * bond) {
-	Bonds.push_back(bond);
+	m_bonds.push_back(bond);
 }
 
 void Rigidbody::setVertex (KinVertex* vertex) {
@@ -77,9 +77,9 @@ KinVertex* Rigidbody::getVertex (){
 //		//	(*ait)->removeBiggerRigidbody(rb);
 //		//}
 //	}
-//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-//		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHbond() ){
-//			Bonds.push_back((*bit));
+//	for(vector<Bond *>::iterator bit = rb->m_bonds.begin(); bit != rb->m_bonds.end(); bit++){
+//		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHBond() ){
+//			m_bonds.push_back((*bit));
 //		}
 //	}
 //}
@@ -99,8 +99,8 @@ KinVertex* Rigidbody::getVertex (){
 //		//}
 //	}
 //
-//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-//			Bonds.push_back((*bit));
+//	for(vector<Bond *>::iterator bit = rb->m_bonds.begin(); bit != rb->m_bonds.end(); bit++){
+//			m_bonds.push_back((*bit));
 //	}
 //}
 
@@ -132,12 +132,12 @@ int Rigidbody::size () const {
 //	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
 //		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
 //
-//	cout << "\t\t numBonds = " << Bonds.size() << endl;
-//	for (vector<Bond *>::const_iterator it=Bonds.begin(); it != Bonds.end(); ++it) {
+//	cout << "\t\t numBonds = " << m_bonds.size() << endl;
+//	for (vector<Bond *>::const_iterator it=m_bonds.begin(); it != m_bonds.end(); ++it) {
 //        	cout << "\t\t Bond: " << (*it)->Atom1->getResidue()->getId() << " " << (*it)->Atom1->getId() << " " << (*it)->Atom1->getName() <<
 //					    "\t ---------> \t"
-//				   << (*it)->Atom2->getResidue()->getId() << " " << (*it)->Atom2->getId() << " " << (*it)->Atom2->getName();
-//		cout << "\t\t Type: " << ((*it)->BondType=="HB"?"HB":"CV") << endl;
+//				   << (*it)->m_atom2->getResidue()->getId() << " " << (*it)->m_atom2->getId() << " " << (*it)->m_atom2->getName();
+//		cout << "\t\t Type: " << ((*it)->m_bondType=="HB"?"HB":"CV") << endl;
 //	}
 //}
 

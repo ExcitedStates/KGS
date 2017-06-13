@@ -47,8 +47,8 @@ class Hbond : public Bond {
   Hbond(Hbond & hbond);
 
   bool isSame (Hbond * b2);
-  Atom* atom1(){ return Bond::Atom1; }
-  Atom* atom2(){ return Bond::Atom2; }
+  Atom* atom1(){ return Bond::m_atom1; }
+  Atom* atom2(){ return Bond::m_atom2; }
   Math3D::Vector3 getIdealHPoint();
   Math3D::Vector3 getIdealAcceptorPoint();
   double getLength();

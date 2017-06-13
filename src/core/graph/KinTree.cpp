@@ -125,13 +125,13 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
       log("debug") << "Molecule::buildSpanningTree() - Visiting vertex of size " <<
                    current_vertex->m_rigidbody->Atoms.size() << ", rbID: " << current_vertex->m_rigidbody->id() << ", "
                    <<
-                   current_vertex->m_rigidbody->Bonds.size() << " bonds" << endl;
+                   current_vertex->m_rigidbody->m_bonds.size() << " bonds" << endl;
 
-      for (Bond *const &bond: current_vertex->m_rigidbody->Bonds) {
+      for (Bond *const &bond: current_vertex->m_rigidbody->m_bonds) {
         // Determine which other rigid body bond is connected to
-        KinVertex *bonded_vertex = bond->Atom2->getRigidbody()->getVertex();
+        KinVertex *bonded_vertex = bond->m_atom2->getRigidbody()->getVertex();
         if (bonded_vertex == current_vertex)
-          bonded_vertex = bond->Atom1->getRigidbody()->getVertex();
+          bonded_vertex = bond->m_atom1->getRigidbody()->getVertex();
 
         if (current_vertex == bonded_vertex) {
           log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
@@ -144,12 +144,16 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
 
         visitedBonds.insert(bond);
 
-        if (bond->isHbond()) {
+        if (bond->isHBond()) {
           // If it's an H-bond, it closes a cycle. Add it in m_cycleAnchorEdges.
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
           log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
-//          cout<< "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge->getBond()->Atom1->getId() <<", "<<edge->getBond()->Atom2->getId() << endl;
+//          cout<< "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge->getBond()->Atom1->getId() <<", "<<edge->getBond()->m_atom2->getId() << endl;
+        } else if (bond->isDBond()) {
+          KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
+          cycleEdges.push_back(edge);
+          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from d-bond " << edge << endl;
         } else {
           if (visitedVertices.count(bonded_vertex) > 0) {
             KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
@@ -262,11 +266,11 @@ KinEdge* KinTree::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond *
     //log("debugRas")<<"KinGraph::addEdgeDirected("<<vertex1->m_rigidbody<<", "<<vertex2->m_rigidbody<<", "<<bond<<"..)"<<endl;
     Atom *atom2, *atom3, *atom4;
     Bond *bond_copy = new Bond(*bond);
-    atom2 = bond_copy->Atom1;
-    atom3 = bond_copy->Atom2;
+    atom2 = bond_copy->m_atom1;
+    atom3 = bond_copy->m_atom2;
     atom4 = nullptr;
 
-    // Find out the atom that covalently bonded to atom3 with smallest Id. It participates in the definition of the torsional angle.
+    // Find out the atom that covalently bonded to atom3 with smallest m_id. It participates in the definition of the torsional angle.
     for (vector<Atom *>::iterator aitr = atom3->Cov_neighbor_list.begin();
          aitr != atom3->Cov_neighbor_list.end(); ++aitr) {
       if ((*aitr) == atom2) continue;
@@ -287,9 +291,9 @@ KinEdge* KinTree::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond *
     for (vector<Atom *>::iterator svIT = vertex1->m_rigidbody->Atoms.begin();
          svIT != vertex1->m_rigidbody->Atoms.end(); ++svIT) {
       if ((*svIT) == atom4) {
-        tmp_atom = bond_copy->Atom1;
-        bond_copy->Atom1 = bond_copy->Atom2;
-        bond_copy->Atom2 = tmp_atom;
+        tmp_atom = bond_copy->m_atom1;
+        bond_copy->m_atom1 = bond_copy->m_atom2;
+        bond_copy->m_atom2 = tmp_atom;
         break;
       }
     }

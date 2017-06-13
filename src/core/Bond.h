@@ -34,9 +34,9 @@ class Atom;
 
 class Bond {
   public:
-	Atom* Atom1; // Atom1 Id is always smaller than Atom2 Id (is this correct?! @D)
-	Atom* Atom2;
-	std::string BondType;
+	Atom* m_atom1; // m_atom1 m_id is always smaller than m_atom2 m_id (is this correct?! @D)
+	Atom* m_atom2;
+	std::string m_bondType;
 	int Bars;
 	bool rigidified;
 
@@ -48,8 +48,9 @@ class Bond {
 
 	bool isLocked() const;
 	bool isPeptideBond() const;
-	bool isHbond() const;
-	
+	bool isHBond() const;
+	bool isDBond() const;
+
   double getTorsion();
 
 	static bool compareIDs(Bond* bond1, Bond* bond2);//Compare by IDs, used to sort

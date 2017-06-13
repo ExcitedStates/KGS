@@ -308,7 +308,7 @@ void ExploreOptions::printUsage(char* pname){
 //  log("so")<<"how to generate a hbondFile are printed."<<endl;
 //  log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
 //  log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
-  log("so")<<"  --extraCovBonds <atomid1>-<atomid2>[,...] \t: Bonds over which forward kinematics can be propagated. Can override an h-bond."<<endl;
+  log("so")<<"  --extraCovBonds <atomid1>-<atomid2>[,...] \t: m_bonds over which forward kinematics can be propagated. Can override an h-bond."<<endl;
   log("so")<<"  --workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
   //log("so")<<"\t--rigidbodiesFromFIRST    \t: Indicates that FIRST should be used to identify rigid bodies. If not specified ";
   //log("so")<<"rigid bodies are identified using builtin definitions of partial double-bonds (works for RNA/DNA/proteins)"<<endl;

@@ -40,12 +40,12 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	AA = aa;
 
 	// super-class attributes
-	Atom1 = hatom;
-	Atom2 = acceptor;
-	BondType = "HB";
+	m_atom1 = hatom;
+	m_atom2 = acceptor;
+	m_bondType = "HB";
 	Bars = 5;
 	rigidified = false;
-	m_iniDist_H_A = VectorLength(Atom1->m_position,Atom2->m_position);
+	m_iniDist_H_A = VectorLength(m_atom1->m_position,m_atom2->m_position);
 	m_iniAngle_D_H_A = getAngle_D_H_A();
 	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
@@ -63,9 +63,9 @@ Hbond::Hbond(Hbond & hbond) {
 	m_iniEnergy = hbond.m_iniEnergy;
 
 	// super-class attributes
-	Atom1 = hbond.Atom1;
-	Atom2 = hbond.Atom2;
-	BondType = hbond.BondType;
+	m_atom1 = hbond.m_atom1;
+	m_atom2 = hbond.m_atom2;
+	m_bondType = hbond.m_bondType;
 	Bars = hbond.Bars;
 	rigidified = hbond.rigidified;
 	m_iniDist_H_A = hbond.m_iniDist_H_A;

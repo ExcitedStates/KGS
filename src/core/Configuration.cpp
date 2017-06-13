@@ -206,7 +206,7 @@ void Configuration::rigidityAnalysis() {
     if (nullspace->isHBondRigid(i++)) {
       Bond* bond = edge->getBond();
       //If its a rigid hbond convert it to a rigid covalent bond
-      if (bond->isHbond()) {
+      if (bond->isHBond()) {
         bond->rigidified = true;
       }
     }//end if
@@ -279,7 +279,7 @@ void Configuration::rigidityAnalysis() {
 ////		cout<<"Bigger rb with ID "<<it->first<<" contains atoms with IDs: "<<endl;
 //    auto ait = it->second->Atoms.begin();
 //    while( ait != it->second->Atoms.end() ){
-//      //cout<<(*ait)->Id<<endl;
+//      //cout<<(*ait)->m_id<<endl;
 //      ait++;
 //      num++;
 //    }
@@ -326,14 +326,14 @@ void Configuration::rigidityAnalysis() {
 //  for (auto const& bond: m_molecule->getCovBonds()){
 //    //First, simply check if bond is rigidified
 //    if( bond->rigidified || bond->Bars == 6){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //    }
 //  }
 //
 //  //Also, do the same thing for the hydrogen bonds insert the h-bonds at the correct place
 //  for(auto const& bond: m_molecule->getHBonds()){
 //    if( bond->rigidified ){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //    }
 //  }
 //
@@ -456,6 +456,7 @@ void Configuration::Print () {
 
 
 void Configuration::computeJacobians() {
+  log("debug")<<"computeJacobians"<<endl;
   if(CycleJacobianOwner==this) return;
   CycleJacobianOwner = this;
 
@@ -467,8 +468,19 @@ void Configuration::computeJacobians() {
     return;
   }
 
-  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
-  int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
+  int hBond_row_num = 0;
+  int row_num = 0;
+  for(auto const& edge: m_molecule->m_spanningTree->m_cycleAnchorEdges){
+    if(edge.first->getBond()->isDBond()) {
+      row_num += 3;
+    }else{
+      row_num += 5;
+      hBond_row_num += 1;
+    }
+  }
+
+//  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
+//  int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
   int col_num = m_molecule->m_spanningTree->getNumCycleDOFs(); // number of DOFs in cycles
 
   if(CycleJacobian==nullptr){
@@ -496,6 +508,7 @@ void Configuration::computeJacobians() {
 
   // for each cycle, fill in the Jacobian entries
   int i=0;
+  int hbidx=0;
   for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanningTree->m_cycleAnchorEdges)
   {
     // get end-effectors
@@ -505,8 +518,8 @@ void Configuration::computeJacobians() {
 //    int bondIndex = bond_ptr
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = bond_ptr->Atom1;
-    Atom* atom2 = bond_ptr->Atom2;
+    Atom* atom1 = bond_ptr->m_atom1;
+    Atom* atom2 = bond_ptr->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
     log("debug")<<"Jacobian row "<<i<<", atom 1: "<<atom1->getId()<<", atom 2: "<<atom2->getId()<<endl;
@@ -528,7 +541,7 @@ void Configuration::computeJacobians() {
         if(a!=atom2 && a->getName()<atom1_prev->getName())
           atom1_prev = a;
     }
-    //Make sure a4 is the covalent neighbor of Atom2 with lexicographically smallest name
+    //Make sure a4 is the covalent neighbor of m_atom2 with lexicographically smallest name
     for(vector<Atom*>::iterator ait = atom2->Cov_neighbor_list.begin(); ait!=atom2->Cov_neighbor_list.end(); ait++){
         Atom* a = *ait;
         if(a!=atom1 && a->getName()<atom2_prev->getName())
@@ -559,17 +572,21 @@ void Configuration::computeJacobians() {
         Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
         Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
-        double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
-        double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
-        gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
-        gsl_matrix_set(CycleJacobian,i*5+3,dof_id,jacobianEntryRot1);
-        gsl_matrix_set(CycleJacobian,i*5+4,dof_id,jacobianEntryRot2);
+        gsl_matrix_set(CycleJacobian,i + 0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i + 1,dof_id,jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i + 2,dof_id,jacobianEntryTrans.z);
+        if(bond_ptr->isHBond()) {
+          double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
+          double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
+          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
+        }
 
         ///Matrix to check hBond Rotation
-        double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
-        gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
+        if(bond_ptr->isHBond()) {
+          double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
+          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+        }
       }
       vertex1 = parent;
     }
@@ -585,7 +602,7 @@ void Configuration::computeJacobians() {
         //	cout<<"KinEdge "<<p_edge<<endl;
         /*
         Atom* ea1 = p_edge->getBond()->Atom1;
-        Atom* ea2 = p_edge->getBond()->Atom2;
+        Atom* ea2 = p_edge->getBond()->m_atom2;
 
         // Jacobian_entry is the derivative of the vertices of the hydrogen bond
         // Now, we also have to calculate the derivatives of the other neighboring atoms!
@@ -599,22 +616,31 @@ void Configuration::computeJacobians() {
         Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
 
         Math3D::Vector3 jacobianEntryTrans= -0.5*(derivativeP1 + derivativeP2);
-        double jacobianEntryRot1 = dot((p1 - p1_prev),(derivativeP2-derivativeP1));
-        double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
-        gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
-        gsl_matrix_set(CycleJacobian,i*5+3,dof_id,jacobianEntryRot1);
-        gsl_matrix_set(CycleJacobian,i*5+4,dof_id,jacobianEntryRot2);
+        gsl_matrix_set(CycleJacobian,i+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i+1,dof_id,jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i+2,dof_id,jacobianEntryTrans.z);
+        if(bond_ptr->isHBond()) {
+          double jacobianEntryRot1 = dot((p1 - p1_prev), (derivativeP2 - derivativeP1));
+          double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
+          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
+        }
 
         ///Matrix to check hBond Rotation
-        double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
-        gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
+        if(bond_ptr->isHBond()) {
+          double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
+          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+        }
       }
       vertex2 = parent;
     }
-    ++i;
+//    ++i;
+    if(bond_ptr->isHBond()){
+      i+=5;
+      hbidx++;
+    }
+    else if(bond_ptr->isDBond()) i+=3;
   }
 
 }
@@ -731,7 +757,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->Atom2->m_position,p1);
+//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->m_atom2->m_position,p1);
         Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
@@ -757,7 +783,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 //				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
 //            p_edge->getBond()->Atom1->m_position,
-//            p_edge->getBond()->Atom2->m_position,
+//            p_edge->getBond()->m_atom2->m_position,
 //            p2); //b
         Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
         double jacobianEntryClash = - dot(clashNormal, derivativeP2);

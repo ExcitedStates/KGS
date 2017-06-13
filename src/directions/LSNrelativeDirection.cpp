@@ -155,7 +155,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 //        Atom* ea1 = p_edge->getBond()->Atom1;
-//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Atom* ea2 = p_edge->getBond()->m_atom2;
 //        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(atom1->m_position);
 
@@ -172,7 +172,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 //        Atom* ea1 = p_edge->getBond()->Atom1;
-//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Atom* ea2 = p_edge->getBond()->m_atom2;
 //        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(atom2->m_position);
 

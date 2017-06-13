@@ -55,17 +55,19 @@ const string& Chain::getName () const {
   return Name;
 }
 
-Atom* Chain::addAtom (const std::string& resName,
-                     const int& resId,
-                     const std::string& atomName,
-                     const int& atomId,
-                     const Coordinate& position )
+Atom* Chain::addAtom (
+    const bool& hetatm,
+    const std::string& resName,
+    const int& resId,
+    const std::string& atomName,
+    const int& atomId,
+    const Coordinate& position )
 {
   Residue* res = getResidue(resId);
   if (res == nullptr) { // this is a new residue
     res = addResidue(resName,resId);
   }
-  return res->addAtom(atomName, atomId, position);
+  return res->addAtom(hetatm, atomName, atomId, position);
 }
 
 std::vector<Residue*>& Chain::getResidues()

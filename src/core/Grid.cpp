@@ -134,7 +134,7 @@ vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerI
 				for (vector<Atom*>::const_iterator atom_itr=map_itr->second->begin(); atom_itr!=map_itr->second->end(); ++atom_itr)
 //					if ( (*atom_itr) != atom && (*atom_itr)->isWithinDistanceFrom( atom, radius ) ) {
           if ( (*atom_itr) != atom && (*atom_itr)->m_position.distanceSquared(atom->m_position)<=radius*radius ) {
-					//	if (neighborWithLargerId && (*atom_itr)->Id<atom->Id)
+					//	if (neighborWithLargerId && (*atom_itr)->m_id<atom->m_id)
 					//		continue;
 						if (noCovBondNeighbor && atom->isCovNeighbor(*atom_itr))
 							continue;
@@ -157,7 +157,7 @@ vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerI
 bool Grid::inCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_collision_list, std::string collisionCheckAtoms, bool onlyCheckLargerIds) const {
 
 	vector<Atom*> neighbors = getNeighboringAtoms(atom,onlyCheckLargerIds);
-	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->Id;
+	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->m_id;
 	//cout << "   with " << neighbors.size() << " neighbors." << endl;
 	for (vector<Atom*>::const_iterator it=neighbors.begin(); it!=neighbors.end(); ++it) {
 		if ( atom->isCovNeighbor(*it) || atom->isSecondCovNeighbor(*it) || atom->isHbondNeighbor(*it) || !(atom->isCollisionCheckAtom(collisionCheckAtoms))) {
@@ -186,7 +186,7 @@ bool Grid::inCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_coll
  */
 double Grid::minFactorWithoutCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_collision_list, std::string collisionCheckAtoms,bool onlyCheckLargerIds) const {
 	vector<Atom*> neighbors = getNeighboringAtoms(atom,onlyCheckLargerIds);
-	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->Id;
+	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->m_id;
 	//cout << "   with " << neighbors.size() << " neighbors." << endl;
 	double minFactorWithoutCollision = 999;
 	for (vector<Atom*>::const_iterator it=neighbors.begin(); it!=neighbors.end(); ++it) {
@@ -238,8 +238,8 @@ vector<Atom*> Grid::getAllCollisions (
       auto mit = initial_collision_list.find(collision_pair);
 			if ( mit!=initial_collision_list.end() ) continue;
 
-			//cout << "Collision: atom1: " << atom->getResidue()->getId() << " " << atom->Name << " " << atom->Id << 
-			//	      " \t atom2: " << (*it)->getResidue()->getId() << " " << (*it)->Name << " " << (*it)->Id << " , dist=" << dist << " , threshold=" << threshold << endl;
+			//cout << "Collision: atom1: " << atom->getResidue()->getId() << " " << atom->m_name << " " << atom->m_id <<
+			//	      " \t atom2: " << (*it)->getResidue()->getId() << " " << (*it)->m_name << " " << (*it)->m_id << " , dist=" << dist << " , threshold=" << threshold << endl;
 			collisions.push_back(*it);
 		}
 	}

@@ -38,6 +38,7 @@
 #include "Rigidbody.h"
 #include "core/graph/KinGraph.h"
 #include "core/Configuration.h"
+#include "DBond.h"
 
 class Chain;
 class Grid;
@@ -66,7 +67,9 @@ class Molecule {
   const std::list<Bond*>& getCovBonds() const;
   std::list<Bond*>& getCovBonds();
   const std::list<Hbond*>& getHBonds() const;
+  const std::list<DBond*>& getDBonds() const;
   std::list<Hbond*>& getHBonds();
+  std::list<DBond*>& getDBonds();
 
   int getMinResidueNumber();
   int getMaxResidueNumber();
@@ -91,6 +94,7 @@ class Molecule {
 
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
+  void addDBond (DBond * db);
   void setToHbondIntersection (Molecule * p2);
   unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
 
@@ -119,6 +123,7 @@ class Molecule {
   Grid *m_grid;
   std::list<Bond *> m_covBonds;
   std::list<Hbond *> m_hBonds;
+  std::list<DBond *> m_dBonds;
   std::vector<Atom*> m_atoms;
   std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
   double m_collisionFactor;
@@ -127,12 +132,15 @@ class Molecule {
   void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
 
   Chain* addChain (const std::string& chainName);
-  Atom* addAtom(const std::string& chain_name,
-                const std::string& res_name,
-                const int& res_id,
-                const std::string& atomName,
-                const int& atomId,
-                const Coordinate& position );
+  Atom* addAtom(
+      const bool& hetatm,
+      const std::string& chain_name,
+      const std::string& res_name,
+      const int& res_id,
+      const std::string& atomName,
+      const int& atomId,
+      const Coordinate& position
+  );
   Bond* addCovBond(Atom* atom1, Atom* atom2);
 
   void sortHbonds();

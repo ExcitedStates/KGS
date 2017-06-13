@@ -48,6 +48,7 @@
 #include "core/Chain.h"
 #include "core/Bond.h"
 #include "core/HBond.h"
+#include "core/DBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"
@@ -107,6 +108,7 @@ Molecule* IO::readPdb (
   string line, temp;
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
+  vector< pair<int,int> > distanceConstraints;
 
   int atomCount=0;
 
@@ -138,6 +140,15 @@ Molecule* IO::readPdb (
 
       continue;
     }
+    if( line.substr(0,29)=="REMARK 555 DistanceConstraint"){
+      std::istringstream iss(line.substr(29));
+      int id1, id2;
+      //TODO: Fail gracefully
+      iss>>id1>>id2;
+      distanceConstraints.push_back( make_pair(id1,id2) );
+
+      continue;
+    }
 
     //Parse ATOM/HETATM records and add them to molecule
     if( line.substr(0, 4) == "ATOM" || line.substr(0, 6) == "HETATM" ) {
@@ -159,13 +170,14 @@ Molecule* IO::readPdb (
         temp_name += atom_name.substr(0, 1);
         atom_name = temp_name;
       }
+      bool hetatm = line.substr(0,6) == "HETATM";
 
       double x = atof(line.substr(30+offset, 8).c_str()); // line[31:38]
       double y = atof(line.substr(38+offset, 8).c_str()); // line[39:46]
       double z = atof(line.substr(46+offset, 8).c_str()); // line[47:54]
 
       Coordinate pos(x, y, z);
-      Atom* atom = molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
+      Atom* atom = molecule->addAtom(hetatm, chain_name, res_name, res_id, atom_name, atom_id, pos);
 
       float occupancy = 0.0;
       if(line.length()>=59) occupancy = atof(line.substr(56+offset,4).c_str());
@@ -407,8 +419,8 @@ Molecule* IO::readPdb (
   // No need to work on H-bonds because we assume all of them have 5 bars.
   for (auto const& bond: molecule->getCovBonds()) {
 
-    Atom* a1 = bond->Atom1;
-    Atom* a2 = bond->Atom2;
+    Atom* a1 = bond->m_atom1;
+    Atom* a2 = bond->m_atom2;
     //If the residue containing a1 (R1) precedes the one containing a2 (R2) there are four patterns in
     //FIXED_BOND_PROFILES that can match: R1_a1_+a2, R1_+a2_a1, R2_-a1_a2 and R2_a2_-a1. Since atom names
     //were ordered in the previous loop, however, we only have to check R1_+a2_a1 and R2_-a1_a2.
@@ -493,6 +505,13 @@ Molecule* IO::readPdb (
     Atom* AA = oatom->getFirstCovNeighbor();
     Hbond *new_hb = new Hbond(hatom, oatom, donor, AA, DEFAULT_HBOND_ENERGY);
     molecule->addHbond(new_hb);
+  }
+
+  for(const pair<int,int>& constraint: distanceConstraints) {
+    Atom* a1 = molecule->getAtom(constraint.first);
+    Atom* a2 = molecule->getAtom(constraint.second);
+    DBond *new_db = new DBond(a1, a2);
+    molecule->addDBond(new_db);
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
@@ -657,7 +676,7 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //
 //    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
 //      //cout<<"IO::readRigidBody - Bars=6"<<endl;
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      continue;
 //    }
 //
@@ -740,14 +759,14 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //  for (auto const& bond: molecule->getCovBonds()){
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
 //  for (auto const& bond: molecule->getHBonds()){
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -816,8 +835,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //
 //    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
 //      //cout<<"IO::readRigidBody - Bars=6"<<endl;
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-//      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
+//      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->m_atom2->getId() << endl;
 //      continue;
 //    }
 //
@@ -902,10 +921,10 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 ////  for (list<Bond *>::iterator bit=molecule->m_covBonds.begin(); bit != molecule->m_covBonds.end(); ++bit) {
 //  for (auto const& bond: molecule->getCovBonds()){
 ////    Bond* bond = *bit;
-//    //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
+//    //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->m_atom2->getId()<<endl;
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -913,7 +932,7 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //  for (auto const& bond: molecule->getHBonds()) {
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -960,7 +979,10 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
     Residue* res = atom->getResidue();
     char buffer[100];
 //    int bigRBId = atom->getBiggerRigidbody()==nullptr?0:atom->getBiggerRigidbody()->id();
-    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
+    string head = "ATOM  ";
+    if (atom->isHetatm()) head = "HETATM";
+    sprintf(buffer,"%s%5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
+            head.c_str(),
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             atom->m_position.x,atom->m_position.y,atom->m_position.z,
@@ -991,11 +1013,11 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     if(edge->getBond()==nullptr) continue;
 
     int dof_id = edge->getDOF()->getIndex();
-    int resId = edge->getBond()->Atom1->getResidue()->getId();
+    int resId = edge->getBond()->m_atom1->getResidue()->getId();
     int cycleDOF_id = edge->getDOF()->getCycleIndex();
     double val = edge->getDOF()->getValue();
     bool onBackbone=false;
-    if( edge->getBond()->Atom1->isBackboneAtom() && edge->getBond()->Atom2->isBackboneAtom())
+    if( edge->getBond()->m_atom1->isBackboneAtom() && edge->getBond()->m_atom2->isBackboneAtom())
       onBackbone = true;
     int second = 1;
     if(cycleDOF_id == -1)
@@ -1015,7 +1037,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 //  for (list<Bond*>::iterator bond_itr=molecule->m_covBonds.begin(); bond_itr!=molecule->m_covBonds.end(); ++bond_itr) {
   for (auto const& bond: molecule->getCovBonds()){
 //    Bond* bond = (*bond_itr);
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output << bondVec.norm() << endl;
   }
   output.close();
@@ -1025,7 +1047,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanningTree->Edges.begin(); edge_itr!=molecule->m_spanningTree->Edges.end(); ++edge_itr) {
     Bond* bond = (*edge_itr)->getBond();
     if(bond==nullptr) continue;
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output1 << bondVec.norm() << endl;
   }
   output1.close();
@@ -1034,7 +1056,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   ofstream output2(anchorEdgeFile.c_str());
   for (vector< pair<KinEdge*,KinVertex*> >::iterator edge_itr=molecule->m_spanningTree->m_cycleAnchorEdges.begin(); edge_itr!=molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++edge_itr) {
     Bond* bond = edge_itr->first->getBond();
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output2 << bondVec.norm() << endl;
   }
   output2.close();
@@ -1045,8 +1067,8 @@ void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
 //  for (list<Bond *>::iterator bond_itr=molecule->m_covBonds.begin(); bond_itr != molecule->m_covBonds.end(); ++bond_itr) {
   for (auto const& bond: molecule->getCovBonds()){
-    output << right << setw(8) << bond->Atom1->getId();
-    output << right << setw(8) << bond->Atom2->getId();
+    output << right << setw(8) << bond->m_atom1->getId();
+    output << right << setw(8) << bond->m_atom2->getId();
     output << right << setw(8) << bond->Bars << endl;
   }
   output.close();
@@ -1595,8 +1617,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
 
-      site_1 = eit->first->getBond()->Atom1->getId();
-      site_2 = eit->first->getBond()->Atom2->getId();
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
       pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
 
     }
@@ -1606,8 +1628,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 
   for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
 
-    site_1 = eit->first->getBond()->Atom1->getId();
-    site_2 = eit->first->getBond()->Atom2->getId();
+    site_1 = eit->first->getBond()->m_atom1->getId();
+    site_2 = eit->first->getBond()->m_atom2->getId();
     pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
 
   }
@@ -1838,12 +1860,12 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       //					num=2;
       //				else
       //					num=3;
-      //				if( resiColorMap.find(res->Id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->Id)->second)
-      //						resiColorMap.insert( make_pair(res->Id, num) );
+      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
+      //					if( num < resiColorMap.find(res->m_id)->second)
+      //						resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //				else{
-      //					resiColorMap.insert( make_pair(res->Id, num) );
+      //					resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //			}
 
@@ -1958,12 +1980,12 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       //					num=2;
       //				else
       //					num=3;
-      //				if( resiColorMap.find(res->Id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->Id)->second)
-      //						resiColorMap.insert( make_pair(res->Id, num) );
+      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
+      //					if( num < resiColorMap.find(res->m_id)->second)
+      //						resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //				else{
-      //					resiColorMap.insert( make_pair(res->Id, num) );
+      //					resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //			}
 
@@ -2070,8 +2092,8 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
 
   for (auto  const& eit: molecule->m_spanningTree->m_cycleAnchorEdges){
 
-    site_1 = eit.first->getBond()->Atom1->getId();
-    site_2 = eit.first->getBond()->Atom2->getId();
+    site_1 = eit.first->getBond()->m_atom1->getId();
+    site_2 = eit.first->getBond()->m_atom2->getId();
     pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
 
   }

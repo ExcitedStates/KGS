@@ -90,7 +90,7 @@ std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
     vector<Bond *>& ret = m_cachedBonds[mol];
     for (auto const &bond: mol->getCovBonds()) {
       //Check if both end-atoms are in selection
-      if (m_rootClause->inSelection(bond->Atom1) && m_rootClause->inSelection(bond->Atom2))
+      if (m_rootClause->inSelection(bond->m_atom1) && m_rootClause->inSelection(bond->m_atom2))
         ret.push_back(bond);
     }
   }
@@ -101,7 +101,7 @@ std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
 bool Selection::inSelection( const Atom* a ) const { return m_rootClause->inSelection(a); }
 
 bool Selection::inSelection( const Bond* b ) const{
-  return m_rootClause->inSelection(b->Atom1) && m_rootClause->inSelection(b->Atom2);
+  return m_rootClause->inSelection(b->m_atom1) && m_rootClause->inSelection(b->m_atom2);
 }
 
 bool Selection::inSelection( const Residue* r) const{

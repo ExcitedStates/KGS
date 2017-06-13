@@ -38,6 +38,7 @@ add_library( libKGS
         core/Molecule.h
         core/Bond.h
         core/HBond.h
+        core/DBond.h
         core/Residue.h
         ResidueProfiles.h
         core/Rigidbody.h
@@ -97,6 +98,7 @@ add_library( libKGS
         core/Molecule.cpp
         core/Bond.cpp
         core/HBond.cpp
+        core/DBond.cpp
         core/Residue.cpp
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp

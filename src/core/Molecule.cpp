@@ -103,6 +103,9 @@ Molecule::~Molecule() {
   for (list<Hbond *>::iterator it=m_hBonds.begin(); it != m_hBonds.end(); ++it) {
     delete (*it);
   }
+  for (list<DBond *>::iterator it=m_dBonds.begin(); it != m_dBonds.end(); ++it) {
+    delete (*it);
+  }
 
   // delete m_spanningTree
   if (m_spanningTree!=nullptr)
@@ -119,6 +122,7 @@ string Molecule::getName () const {
 }
 
 Atom* Molecule::addAtom(
+    const bool& hetatm,
     const std::string& chainName,
     const std::string& resName,
     const int& resId,
@@ -130,7 +134,7 @@ Atom* Molecule::addAtom(
   if (chain==nullptr)  // this is a new chain
     chain = addChain(chainName);
 
-  Atom* ret = chain->addAtom(resName,resId, atomName, atomId, position);
+  Atom* ret = chain->addAtom(hetatm, resName,resId, atomName, atomId, position);
   m_atoms.push_back(ret);
 
   return ret;
@@ -241,8 +245,16 @@ const std::list<Hbond*>& Molecule::getHBonds() const {
   return m_hBonds;
 }
 
+const std::list<DBond*>& Molecule::getDBonds() const {
+  return m_dBonds;
+}
+
 std::list<Hbond*>& Molecule::getHBonds(){
   return m_hBonds;
+}
+
+std::list<DBond*>& Molecule::getDBonds(){
+  return m_dBonds;
 }
 
 int Molecule::size() const {
@@ -358,14 +370,19 @@ void Molecule::printAllCollisions () const {
 void Molecule::addCovBond (Bond * bond) {
   //log()<<"Molecule::addCovBond("<<bond<<")"<<endl;
   m_covBonds.push_back(bond);
-  bond->Atom1->addCovBond(bond);
-  bond->Atom2->addCovBond(bond);
+  bond->m_atom1->addCovBond(bond);
+  bond->m_atom2->addCovBond(bond);
 }
 
 void Molecule::addHbond (Hbond * hb) {
   m_hBonds.push_back(hb);
-  hb->Atom1->addHbond(hb);
-  hb->Atom2->addHbond(hb);
+  hb->m_atom1->addHbond(hb);
+  hb->m_atom2->addHbond(hb);
+}
+void Molecule::addDBond (DBond * db) {
+  m_dBonds.push_back(db);
+//  db->m_atom1->addDBond(db);
+//  db->m_atom2->addDBond(db);
 }
 
 unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
@@ -374,7 +391,7 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   unsigned int maxId = m_rigidBodyMap.size();
   if(rootRBId >= 0){//user-specified, or standard choice of rb id == 0
     if(rootRBId > maxId){
-      cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard Id."<<endl;
+      cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard m_id."<<endl;
       return bestId;
     }
     cout<<"Choosing user-specified rigid body id "<<rootRBId<<" as m_root."<<endl;
@@ -475,8 +492,8 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
   for (auto const& bond: getCovBonds()){
     if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
       count++;
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+      ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->m_atom1->getId() << " - " << bond->m_atom2->getId() << endl;
       continue;
     }
   }
@@ -486,8 +503,8 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
   for (auto const& bond: getHBonds()){
     if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
       count++;
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+      ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->m_atom1->getId() << " - " << bond->m_atom2->getId() << endl;
       continue;
     }
   }
@@ -542,16 +559,23 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
 
   //Store bonds in rigid bodies
   for (auto const& bond: getCovBonds()){
-    int setId1 = ds.FindSet(bond->Atom1->getId());
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
     m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-    int setId2 = ds.FindSet(bond->Atom2->getId());
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
     if(setId1!=setId2)
       m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
   }
   for (auto const& bond: getHBonds()) {
-    int setId1 = ds.FindSet(bond->Atom1->getId());
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
     m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-    int setId2 = ds.FindSet(bond->Atom2->getId());
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
+    if(setId1!=setId2)
+      m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
+  }
+  for (auto const& bond: getDBonds()) {
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
+    m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
     if(setId1!=setId2)
       m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
   }
@@ -857,8 +881,8 @@ void Molecule::sortHbonds() {
 int Molecule::countOriginalDofs () const {
   int num = 0;
   for (list<Bond *>::const_iterator it=m_covBonds.begin(); it != m_covBonds.end(); ++it) {
-    Atom* a1 = (*it)->Atom1;
-    Atom* a2 = (*it)->Atom2;
+    Atom* a1 = (*it)->m_atom1;
+    Atom* a2 = (*it)->m_atom2;
     if ( a1->Cov_neighbor_list.size()==1 || a2->Cov_neighbor_list.size()==1 )
       continue;
     ++num;
@@ -904,15 +928,15 @@ double Molecule::checkCycleClosure(Configuration *q){
 
     // get end-effectors
     cycleEdge = pair_it->first;
-    if( !cycleEdge->getBond()->isHbond()) continue; // for now have to check for hbonds
+    if( !cycleEdge->getBond()->isHBond()) continue; // for now have to check for hbonds
     //Todo: Make this more general using a torsional constraint class which is the cycle edges
 
     KinVertex* common_ancestor = pair_it->second;
     Hbond * hBond = reinterpret_cast<Hbond *>(cycleEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = hBond->Atom1;
-    Atom* atom2 = hBond->Atom2;
+    Atom* atom1 = hBond->m_atom1;
+    Atom* atom2 = hBond->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
 
@@ -999,8 +1023,8 @@ void Molecule::computeCycleViolation(Configuration *q, gsl_vector* currentViolat
     Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = hBond->Atom1;
-    Atom* atom2 = hBond->Atom2;
+    Atom* atom1 = hBond->m_atom1;
+    Atom* atom2 = hBond->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
 
@@ -1041,9 +1065,9 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
   vector<int> recloseDOFs;
   for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
     KinEdge* e = *eit;
-    int res1 = e->getBond()->Atom1->getResidue()->getId();
-    int res2 = e->getBond()->Atom2->getResidue()->getId();
-    if( res1==(startRes-1) && res2==(startRes-1) && e->getBond()->Atom1->getName()=="C3'" && e->getBond()->Atom2->getName()=="O3'" ){
+    int res1 = e->getBond()->m_atom1->getResidue()->getId();
+    int res2 = e->getBond()->m_atom2->getResidue()->getId();
+    if( res1==(startRes-1) && res2==(startRes-1) && e->getBond()->m_atom1->getName()=="C3'" && e->getBond()->m_atom2->getName()=="O3'" ){
       recloseDOFs.push_back(e->getDOF()->getIndex());
       if(aggression>=2){
         resetDOFs.push_back(e->getDOF()->getIndex());
@@ -1051,8 +1075,8 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
       }
     }
     if( res1==endRes && res2==endRes && (
-        e->getBond()->Atom1->getName()=="P" ||
-        e->getBond()->Atom1->getName()=="O5'"
+        e->getBond()->m_atom1->getName()=="P" ||
+        e->getBond()->m_atom1->getName()=="O5'"
     ) ){
       recloseDOFs.push_back(e->getDOF()->getIndex());
       if(aggression>=2){
@@ -1061,20 +1085,20 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
       }
     }
     if( (res1>=startRes && res1<endRes) || (res2>=startRes && res2<endRes) ){
-      if(	e->getBond()->Atom1->getName()=="P" || e->getBond()->Atom2->getName()=="P" ||
-           e->getBond()->Atom1->getName()=="C5'" || e->getBond()->Atom2->getName()=="C5'" ||
-           e->getBond()->Atom1->getName()=="C4'" || e->getBond()->Atom2->getName()=="C4'" ||
-           e->getBond()->Atom1->getName()=="C3'" || e->getBond()->Atom2->getName()=="C3'" ||
-           e->getBond()->Atom1->getName()=="O3'" || e->getBond()->Atom2->getName()=="O3'" ||
-           e->getBond()->Atom1->getName()=="O5'" || e->getBond()->Atom2->getName()=="O5'" ){
+      if(	e->getBond()->m_atom1->getName()=="P" || e->getBond()->m_atom2->getName()=="P" ||
+           e->getBond()->m_atom1->getName()=="C5'" || e->getBond()->m_atom2->getName()=="C5'" ||
+           e->getBond()->m_atom1->getName()=="C4'" || e->getBond()->m_atom2->getName()=="C4'" ||
+           e->getBond()->m_atom1->getName()=="C3'" || e->getBond()->m_atom2->getName()=="C3'" ||
+           e->getBond()->m_atom1->getName()=="O3'" || e->getBond()->m_atom2->getName()=="O3'" ||
+           e->getBond()->m_atom1->getName()=="O5'" || e->getBond()->m_atom2->getName()=="O5'" ){
         recloseDOFs.push_back(e->getDOF()->getIndex());
         if(aggression>=2){
           resetDOFs.push_back(e->getDOF()->getIndex());
           resetValues.push_back(RandomAngleUniform(3.1415));
         }
       }else if(
-          e->getBond()->Atom1->getName()=="C2'" || e->getBond()->Atom2->getName()=="C2'" ||
-          e->getBond()->Atom1->getName()=="C1'" || e->getBond()->Atom2->getName()=="C1'" ){
+          e->getBond()->m_atom1->getName()=="C2'" || e->getBond()->m_atom2->getName()=="C2'" ||
+          e->getBond()->m_atom1->getName()=="C1'" || e->getBond()->m_atom2->getName()=="C1'" ){
         if(aggression>=1){
           resetDOFs.push_back(e->getDOF()->getIndex());
           resetValues.push_back(RandomAngleUniform(3.1415));
@@ -1100,7 +1124,7 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
  * a connected subgraph the behavior of this method is unspecified.
  * Returns the configuration and leaves the m_molecule with that configuration set.
  */
-Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& resetValues, vector<int>& recloseDOFs, vector<int>& ignoreDOFs, Configuration* cur){
+Configuration* Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& resetValues, vector<int>& recloseDOFs, vector<int>& ignoreDOFs, Configuration* cur){
   //enableLogger("debugRebuild");
 
   double start_time, end_time, total_time;
@@ -1171,10 +1195,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     KinEdge* e = *eit;
     if(e->getBond()!=nullptr) {
-      storedPositions.push_back(e->getBond()->Atom1->m_position);
-      storedPositions.push_back(e->getBond()->Atom2->m_position);
+      storedPositions.push_back(e->getBond()->m_atom1->m_position);
+      storedPositions.push_back(e->getBond()->m_atom2->m_position);
       //log("debugRas")<<"Cylinder["<<e->getBond()->Atom1->m_position[0]<<", "<<e->getBond()->Atom1->m_position[1]<<", "<<e->getBond()->Atom1->m_position[2]<<", ";
-      //log("debugRas")<<e->getBond()->Atom2->m_position[0]<<", "<<e->getBond()->Atom2->m_position[1]<<", "<<e->getBond()->Atom2->m_position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
+      //log("debugRas")<<e->getBond()->m_atom2->m_position[0]<<", "<<e->getBond()->m_atom2->m_position[1]<<", "<<e->getBond()->m_atom2->m_position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
 
       //log("debugRebuild")<<"1: storedTorsion["<<storedTorsions.size()<<"] .. ";
       storedTorsions.push_back(e->getBond()->getTorsion());
@@ -1190,14 +1214,14 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   }
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     //(*eit)->getBond()->Atom1->m_bPositionModified = false;
-    //(*eit)->getBond()->Atom2->m_bPositionModified = false;
-    (*eit)->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-    (*eit)->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+    //(*eit)->getBond()->m_atom2->m_bPositionModified = false;
+    (*eit)->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+    (*eit)->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
   }
   //entry->getBond()->Atom1->m_bPositionModified = false;
-  //entry->getBond()->Atom2->m_bPositionModified = false;
-  entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-  entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+  //entry->getBond()->m_atom2->m_bPositionModified = false;
+  entry->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+  entry->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
   //TODO: Also sugars
 
   //Change DOFs in resetDOFs to values indicated in resetValues
@@ -1221,8 +1245,8 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     int c = 0;
     for(vector<KinEdge*>::iterator bit = boundary.begin(); bit!=boundary.end(); bit++){
       KinEdge* eBoundary = *bit;
-      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->Atom1->m_position);
-      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->Atom2->m_position);
+      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->m_atom1->m_position);
+      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->m_atom2->m_position);
       //log("debugRas")<<"Stored["<<c*2+0<<"]"
       gsl_vector_set(e, c*6+0, v1[0]*e_scaling);
       gsl_vector_set(e, c*6+1, v1[1]*e_scaling);
@@ -1275,10 +1299,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
         int dof = find(recloseDOFs.begin(), recloseDOFs.end(), e->getDOF()->getIndex())-recloseDOFs.begin();
         //log("debugRas")<<"DOF: "<<dof<<endl;
         if(dof<recloseDOFs.size()){ // Continue if the edge is not in the recloseDOFs
-          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom1->m_position);
-          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom2->m_position);
-          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom1->m_position);
-          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom2->m_position);
+          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->m_atom2->m_position, eBoundary->getBond()->Atom1->m_position);
+          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->m_atom2->m_position, eBoundary->getBond()->m_atom2->m_position);
+          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->m_atom1->m_position);
+          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->m_atom2->m_position);
           gsl_matrix_set(J, c*6+0, dof, v1[0]);
           gsl_matrix_set(J, c*6+1, dof, v1[1]);
           gsl_matrix_set(J, c*6+2, dof, v1[2]);
@@ -1333,11 +1357,11 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
       }
     }
     for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
-      (*eit)->getBond()->Atom1->m_position = (*eit)->getBond()->Atom1->m_referencePosition;
-      (*eit)->getBond()->Atom2->m_position = (*eit)->getBond()->Atom2->m_referencePosition;
+      (*eit)->getBond()->m_atom1->m_position = (*eit)->getBond()->m_atom1->m_referencePosition;
+      (*eit)->getBond()->m_atom2->m_position = (*eit)->getBond()->m_atom2->m_referencePosition;
     }
-    entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-    entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+    entry->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+    entry->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
 
     //Move according to J_dag·e
     _SetConfiguration(ret, entry->StartVertex, subVerts);//, false);
@@ -1382,7 +1406,8 @@ Molecule* Molecule::deepClone() const{
 
   //Clone atoms
   for(auto const& atom: getAtoms()){
-    Atom* newAtom = ret->addAtom(
+    ret->addAtom(
+        atom->isHetatm(),
         atom->getResidue()->getChain()->getName(),
         atom->getResidue()->getName(),
         atom->getResidue()->getId(),
@@ -1397,8 +1422,8 @@ Molecule* Molecule::deepClone() const{
 
   //Clone covalent bonds
   for(auto const& covBond: getCovBonds()){
-    Atom* a1_new = ret->getAtom( covBond->Atom1->getId() );
-    Atom* a2_new = ret->getAtom( covBond->Atom2->getId() );
+    Atom* a1_new = ret->getAtom( covBond->m_atom1->getId() );
+    Atom* a2_new = ret->getAtom( covBond->m_atom2->getId() );
 //    Bond* newBond = ret->addCovBond( a1_new->getResidue(), a2_new->getResidue(), a1_new->getName(), a2_new->getName() );
     Bond* newBond = ret->addCovBond( a1_new, a2_new );
     if(newBond){
@@ -1417,6 +1442,15 @@ Molecule* Molecule::deepClone() const{
     new_hb->Bars = hbond->Bars;
     new_hb->rigidified = hbond->rigidified;
     ret->addHbond(new_hb);
+  }
+
+  //Clone dbonds
+  for(auto const& dbond: getDBonds()) {
+    Atom *a1 = ret->getAtom(dbond->m_atom1->getId());
+    Atom *a2 = ret->getAtom(dbond->m_atom2->getId());
+    DBond *new_db = new DBond(a1, a2);
+    new_db->Bars = dbond->Bars;
+    ret->addDBond(new_db);
   }
 
   // Fill in the second_cov_neighbor_list
@@ -1461,9 +1495,9 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel){
       //Get corresponding rigidity information
       if (m_conf->getNullspace()->isHBondRigid(i++)) {
         //If its a rigid hbond convert it to a rigid covalent bond
-        if (edge->getBond()->isHbond()) {
-          Atom *a1_new = ret->getAtom(edge->getBond()->Atom1->getId());
-          Atom *a2_new = ret->getAtom(edge->getBond()->Atom2->getId());
+        if (edge->getBond()->isHBond()) {
+          Atom *a1_new = ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new = ret->getAtom(edge->getBond()->m_atom2->getId());
           Bond *newBond = ret->addCovBond(a1_new, a2_new);
           if (newBond) {
             newBond->rigidified = true;

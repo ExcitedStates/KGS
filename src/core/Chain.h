@@ -45,11 +45,13 @@ class Chain {
 	~Chain();
 	const std::string& getName() const;
 
-  Atom* addAtom (const std::string& res_name,
-                 const int& res_id,
-                 const std::string& atomName,
-                 const int& atomId,
-                 const Coordinate& position );
+  Atom* addAtom (
+      const bool& hetatm,
+      const std::string& res_name,
+      const int& res_id,
+      const std::string& atomName,
+      const int& atomId,
+			const Coordinate& position );
 
 	std::vector<Residue*>& getResidues();
   Residue* getResidue (int res_id);

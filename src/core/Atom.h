@@ -85,7 +85,7 @@ class Rigidbody;
 class Atom {
  public:
 
-  Atom(const std::string &name, const int &id, const Coordinate &pos, Residue *residue);
+  Atom(const bool& hetatm, const std::string &name, const int &id, const Coordinate &pos, Residue *residue);
 
   const std::string &getName() const;
 
@@ -137,6 +137,8 @@ class Atom {
 
   bool inSameRigidbody(Atom *another) const;
 
+  bool isHetatm() const;
+
   std::string getType() const; //TODO: Return type should be char or AtomType
   bool isSidechainAtom() const;
 
@@ -166,9 +168,9 @@ class Atom {
   AtomType m_element;
 
  private:
-//  bool On_sidechain;
-  const int Id;
-  const std::string Name;
+  const bool m_hetatm;
+  const int m_id;
+  const std::string m_name;
   Residue *m_parentResidue;
   Rigidbody *m_rigidbody;
   Rigidbody *m_biggerRigidbody;

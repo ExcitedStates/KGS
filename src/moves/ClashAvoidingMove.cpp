@@ -200,7 +200,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-//        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->Atom2->m_position,p1);
+//        Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->m_atom2->m_position,p1);
         Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
@@ -226,7 +226,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
 //        Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
 //            p_edge->getBond()->Atom1->m_position,
-//            p_edge->getBond()->Atom2->m_position,
+//            p_edge->getBond()->m_atom2->m_position,
 //            p2); //b
 
         Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);

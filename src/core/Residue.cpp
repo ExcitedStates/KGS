@@ -75,11 +75,13 @@ void Residue::print() const {
 }
 
 
-Atom* Residue::addAtom(const std::string& atomName,
-                      const int& atomId,
-                      const Coordinate& position)
+Atom* Residue::addAtom(
+		const bool& hetatm,
+		const std::string& atomName,
+		const int& atomId,
+		const Coordinate& position)
 {
-  Atom* atom = new Atom(atomName, atomId, position, this);
+  Atom* atom = new Atom(hetatm, atomName, atomId, position, this);
 	//name_to_atom_map[atom->getName()] = atom;
   m_atoms.push_back(atom);
   return atom;
