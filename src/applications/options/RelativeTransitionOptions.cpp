@@ -11,15 +11,20 @@
 #include "core/Molecule.h"
 #include "core/Atom.h"
 #include "core/Chain.h"
+#include "ApplicationOptions.h"
 
 using namespace std;
 
-RelativeTransitionOptions::RelativeTransitionOptions(){
+RelativeTransitionOptions::RelativeTransitionOptions():
+    ApplicationOptions()
+{
   initializeVariables();
 }
 
-RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[])
+RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[]):
+    ApplicationOptions(argc, argv)
 {
+
   initializeVariables();
 
   if(argc<2){
@@ -28,8 +33,7 @@ RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[])
     exit(-1);
   }
 
-  int i;
-  for(i=1;i<argc;i++){
+  for(int i=1; i < argc; i++){
     string arg = argv[i];
     if(arg=="--initial"){                       initialStructureFile = argv[++i];                   continue; }
     if(arg=="--workingDirectory"){              workingDirectory = argv[++i];                       continue; }
@@ -58,6 +62,7 @@ RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[])
     if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
     if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                    continue; }
     if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
+    if(arg=="--logger"){                        ++i;                                                continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -203,47 +208,4 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
   log("so")<<"  --relativeDistances <file name> \t: File with the desired distance between atoms of residueNetwork option. Each line is one couple 'id atom_id2,id atom_id2,distance'. Each line should contain only two spaces, one after each word 'id'"<<endl;
 }
-
-
-
-/** From http://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exist-using-standard-c-c11-c */
-inline bool RelativeTransitionOptions::fileExists (const std::string& name) {
-  if (FILE *file = fopen(name.c_str(), "r")) {
-    fclose(file);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-RelativeTransitionOptions* RelativeTransitionOptions::instance = nullptr;
-
-RelativeTransitionOptions* RelativeTransitionOptions::getOptions()
-{
-  if(instance==nullptr) {
-    cerr << "RelativeTransitionOptions::getInstance - Sampling options haven't been initialized"<<endl;
-    throw "RelativeTransitionOptions::getInstance - Sampling options haven't been initialized";
-  }
-
-  return instance;
-}
-
-RelativeTransitionOptions* RelativeTransitionOptions::createOptions(int argc, char* argv[] )
-{
-  if(instance!=nullptr) {
-    delete instance;
-  }
-  instance = new RelativeTransitionOptions(argc, argv);
-  return instance;
-}
-
-RelativeTransitionOptions* RelativeTransitionOptions::createOptions()
-{
-  if(instance!=nullptr) {
-    delete instance;
-  }
-  instance = new RelativeTransitionOptions();
-  return instance;
-}
-
 

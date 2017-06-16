@@ -3,6 +3,7 @@
 #include <iostream>
 #include <list>
 #include <regex>
+#include <math/gsl_helpers.h>
 
 #include "core/Configuration.h"
 #include "core/Molecule.h"
@@ -30,13 +31,8 @@ double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_di
 int main( int argc, char* argv[] ) {
   enableLogger("default");
   enableLogger("samplingStatus");
-//  enableLogger("dominik");
 
-
-  //RelativeTransitionOptions options(argc,argv);
-  RelativeTransitionOptions::createOptions(argc, argv);
-
-  RelativeTransitionOptions &options = *(RelativeTransitionOptions::getOptions());
+  RelativeTransitionOptions options(argc, argv);
 
   if (loggerEnabled("samplingStatus")) {
     enableLogger("so");//RelativeTransitionOptions
@@ -128,6 +124,8 @@ int main( int argc, char* argv[] ) {
     d1->gradient(seed, seed, tmp1); //directed move
     d2->gradient(seed, seed, tmp2); //random move
     scale_gradient(tmp2, protein, options.maxRotation);
+    gsl_vector_out(tmp1, log("directedGradient"));
+
     double max_val1 = 0;
     double max_val2 = 0;
     for (int j=0;j<protein->m_spanningTree->getNumDOFs();j++){ //looking for the maximal rotation

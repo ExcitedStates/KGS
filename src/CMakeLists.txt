@@ -43,6 +43,7 @@ add_library( libKGS
         ResidueProfiles.h
         core/Rigidbody.h
         core/graph/KinGraph.h
+        applications/options/ApplicationOptions.h
         applications/options/ExploreOptions.h
         applications/options/TransitionOptions.h
         applications/options/RelativeTransitionOptions.h
@@ -103,6 +104,7 @@ add_library( libKGS
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
         math/SVD.cpp
+        applications/options/ApplicationOptions.cpp
         applications/options/ExploreOptions.cpp
         applications/options/TransitionOptions.cpp
         applications/options/RelativeTransitionOptions.cpp
@@ -174,7 +176,7 @@ add_library( libKGS
         core/graph/Constraint.cpp
         core/graph/Constraint.h
         core/ConstraintSet.cpp
-        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h)
+        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h applications/options/ApplicationOptions.cpp applications/options/ApplicationOptions.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 

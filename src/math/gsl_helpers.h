@@ -14,8 +14,11 @@ void gsl_matrix_outtofile ( const gsl_matrix *m, const std::string& filename    
 /** Print vector to file specified by `filename` */
 void gsl_vector_outtofile ( const gsl_vector *v, const std::string& filename    );
 
+/** Print vector to output-stream */
+void gsl_vector_out (const gsl_vector *v, std::ostream& os);
+
 /** Print vector to cout */
-void gsl_vector_cout (      const gsl_vector *v );
+void gsl_vector_cout (const gsl_vector *v);
 
 /** Return length of vector */
 double gsl_vector_length(   const gsl_vector *v );

@@ -5,10 +5,13 @@
 #include <vector>
 #include <stdio.h>
 #include "Selection.h"
+#include "ApplicationOptions.h"
 
-class RelativeTransitionOptions
+class RelativeTransitionOptions: ApplicationOptions
 {
  public:
+  RelativeTransitionOptions();
+  RelativeTransitionOptions(int argc, char* argv[] );
 
   /** File-path for the initial structure. */
   std::string initialStructureFile;
@@ -72,20 +75,10 @@ class RelativeTransitionOptions
   void print();
 
  private:
-  RelativeTransitionOptions();
-  RelativeTransitionOptions(int argc, char* argv[] );
 
   void printUsage(char* pname);
-  inline bool fileExists ( const std::string& name);
   void initializeVariables();
-
-  //Singleton pattern
-  static RelativeTransitionOptions* instance;
- public:
-  static RelativeTransitionOptions* getOptions();
-  static RelativeTransitionOptions* createOptions(int argc, char* argv[] );
-  static RelativeTransitionOptions* createOptions();
 
 };
 
-#endif // SAMPLINGOPTIONS_H
+#endif // RELATIVETRANSITIONOPTIONS_H
