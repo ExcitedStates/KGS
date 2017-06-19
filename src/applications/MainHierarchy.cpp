@@ -29,6 +29,8 @@
 #include "Logger.h"
 #include "applications/options/HierarchyOptions.h"
 #include "moves/CompositeMove.h"
+#include "directions/MSDDirection.h"
+#include "directions/LSNullspaceDirection.h"
 
 extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
@@ -111,6 +113,9 @@ int main( int argc, char* argv[] ) {
   gsl_matrix_memcpy(baseNullspaceV, ns.getSVD()->V);
   gsl_matrix* baseJacobian = gsl_matrix_calloc(ns.getMatrix()->size1,ns.getMatrix()->size2);
   gsl_matrix_memcpy(baseJacobian, ns.getMatrix());
+
+//  gsl_matrix_outtofile(baseJacobian, "gasJacobian.txt");
+//  gsl_matrix_outtofile(baseNullspaceV,"gasV.txt");
 
   log("hierarchy") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
   log("hierarchy") << numCols << " columns" << endl;
@@ -283,6 +288,94 @@ int main( int argc, char* argv[] ) {
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
     log("data")<<sampleCount<<" "<<inCollision<<" "<<inNullspace<<" "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<normDeltaHEnergy<<endl;
   }
+
+  ///If target structure is available, also test direction towards target
+  if(options.targetStructureFile != ""){
+    Molecule* target = IO::readPdb(
+        options.targetStructureFile,
+        movingResidues,
+        options.extraCovBonds,
+        options.roots,
+        options.hydrogenbondMethod,
+        options.hydrogenbondFile,
+        protein
+    );
+    target->setCollisionFactor(options.collisionFactor);
+
+    string targetName = target->getName();
+    IO::writeHbonds(target,"hBonds_target.txt" );
+
+    Configuration* targetConf = target->m_conf;
+    Selection gradientSelection("heavy"); //maybe backbone is useful for amide-only HDXMS data comparison?
+    Direction* targetGrad;
+    //exchange this for other directions if desired
+    targetGrad = new MSDDirection(gradientSelection, true);
+    //Compute full-length gradient
+    targetGrad->gradient(conf,targetConf,allDofs);
+
+    conf->convertAllDofsToCycleDofs(projected_gradient, allDofs);
+
+    //Scale to desired step size
+    gsl_vector_scale_to_length(projected_gradient, options.stepSize);
+    gsl_vector_outtofile(projected_gradient,"gasDesiredGradient.txt");
+
+    //Identify predictedViolation
+//    double predictedViolation = gsl_vector_get(singValVector,numCols - v_i - 1)*options.stepSize;
+    //Use the multiplication to ensure it works, even for systems with 5m < n (where the singular value does not exist)
+    gsl_vector* violationVec= gsl_matrix_vector_mul(baseJacobian,projected_gradient);
+    double predictedViolation = gsl_vector_length(violationVec);
+    gsl_vector_outtofile(violationVec, "gradientVectorViolation.txt");
+    gsl_vector_free(violationVec);
+
+    double gradNorm = gsl_vector_length(projected_gradient);
+    //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
+    // Convert back to full length DOFs vector
+    for( auto const& edge: protein->m_spanningTree->Edges){
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+      if ( cycle_dof_id!=-1 ) {
+        gsl_vector_set(allDofs,dof_id,gsl_vector_get(projected_gradient,cycle_dof_id));
+      }
+      else if ( dof_id!=-1 ) {//use zeros for free dofs, they don't affect h-bonds
+        gsl_vector_set(allDofs,dof_id,0);
+      }
+    }
+
+    Configuration *qNew = new Configuration(conf);
+    qNew->m_id = maxSamples+1; //greater than previous sample
+    std::copy(
+        allDofs->data,
+        allDofs->data + qNew->getNumDOFs(),
+        qNew->m_dofs);
+
+    string outFile = "output/targetGradDofs_"+std::to_string(static_cast<long long>(qNew->m_id))+".txt";
+    gsl_vector_outtofile(allDofs, outFile);
+
+    bool inCollision = qNew->updatedMolecule()->inCollision();
+    if (inCollision) {
+      log("hierarchy") << "Configuration in m_direction " << qNew->m_id << " is in collision. " << endl;
+    }
+//    else {//collision-free //todo: do we want to reject colliding configurations?
+    qNew->updateMolecule();
+
+    //Potentially reject new config if large violations?
+    double observedViolation = protein->checkCycleClosure(qNew);
+    double normDeltaHEnergy = HbondIdentifier::computeHbondNormedEnergyDifference(qNew);
+
+    qNew->writeQToBfactor();
+    log("hierarchy") << "> Target-gradient structure: " << ++sampleCount;
+    log("hierarchy") << ", pred. violation: "<<predictedViolation;
+    log("hierarchy") << ", obs. violation: "<<observedViolation;
+    IO::writeNewSample(qNew, conf, sampleCount, options.workingDirectory, options.saveData);
+
+    hBondOut = "output/hBonds_target_"+std::to_string(static_cast<long long>(qNew->m_id))+".txt";
+    IO::writeHbondsChange(qNew,hBondOut);
+
+    //Store output data in this file, space-separated in this order
+//    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
+    log("data")<<sampleCount<<" "<<inCollision<<" 0 "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<normDeltaHEnergy<<endl;
+  }
+
   gsl_vector_free(projected_gradient);
   gsl_vector_free(allDofs);
   gsl_vector_free(singValVector);

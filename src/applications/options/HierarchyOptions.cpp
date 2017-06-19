@@ -36,6 +36,7 @@ HierarchyOptions::HierarchyOptions(int argc, char* argv[])
   for(i=1;i<argc;i++){
     string arg = argv[i];
     if(arg=="--initial"){                       initialStructureFile = argv[++i];                   continue; }
+    if(arg=="--target"){                        targetStructureFile = argv[++i];                    continue; }
     if(arg=="--annotation"){                    annotationFile = argv[++i];                         continue; }
     if(arg=="--hbondMethod"){                   hydrogenbondMethod = argv[++i];                     continue; }
     if(arg=="--hbondFile"){                     hydrogenbondFile = argv[++i];                       continue; }
@@ -81,6 +82,7 @@ HierarchyOptions::HierarchyOptions(int argc, char* argv[])
 
 void HierarchyOptions::initializeVariables(){
   initialStructureFile      = "";
+  targetStructureFile       = "";
   annotationFile            = "";
   hydrogenbondFile          = "";
   hydrogenbondMethod        = "";
@@ -98,7 +100,7 @@ void HierarchyOptions::initializeVariables(){
 void HierarchyOptions::print(){
   log("so")<<"Sampling options:"<<std::endl;
   log("so")<<"\t--initial "<<initialStructureFile<<endl;
-//  log("so")<<"\t--target "<<targetStructureFile<<endl;
+  log("so")<<"\t--target "<<targetStructureFile<<endl;
   log("so")<<"\t--annotation "<<annotationFile<<endl;
   if(!hydrogenbondFile.empty()) {
     log("so")<<"\t--hbondMethod "<<hydrogenbondMethod<<endl;

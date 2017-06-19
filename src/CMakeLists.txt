@@ -174,7 +174,7 @@ add_library( libKGS
         core/graph/Constraint.cpp
         core/graph/Constraint.h
         core/ConstraintSet.cpp
-        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h)
+        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h applications/options/AlignOptions.cpp applications/options/AlignOptions.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -231,6 +231,7 @@ add_executable( kgs_rigidity        applications/MainRigidity.cpp )
 #add_executable( kgs_print_torsions  applications/MainTorsionPrinter.cpp )
 add_executable( kgs_ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( kgs_rmsd            applications/MainRmsd.cpp )
+add_executable( kgs_align            applications/MainAlign.cpp )
 add_executable( kgs_transition      applications/MainTransition.cpp )
 add_executable( kgs_loopexplore     applications/MainLoopExplore.cpp )
 add_executable( kgs_hierarchy       applications/MainHierarchy.cpp )
@@ -243,6 +244,7 @@ target_link_libraries( kgs_rigidity         libKGS ${GSL_LIBRARIES} )
 #target_link_libraries( kgs_print_torsions   libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_rmsd             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_align             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_transition       libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_hierarchy        libKGS ${GSL_LIBRARIES} )

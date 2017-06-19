@@ -24,6 +24,8 @@ class HierarchyOptions {
   /** File-path for the initial structure. */
   std::string initialStructureFile;
   /** Annotation file-path common for all initial structures. */
+  std::string targetStructureFile;
+  /** Annotation file-path common for all initial structures. */
   std::string annotationFile;
   /** File containing hydrogen bond definitions. */
   std::string hydrogenbondFile;

@@ -175,6 +175,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
 
   collectDOFs();
   //Sort cycle anchor edges to maintain constant row order for different roots
+  //This is important for the hydrogen-bond hierarchy analysis!
   cycleEdges.sort(KinEdge::compareIDs);
 
   // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
