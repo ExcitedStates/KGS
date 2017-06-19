@@ -47,6 +47,12 @@ void gsl_matrix_outtofile (const gsl_matrix *m, const string& filename) {
   output.close();
 }
 
+void gsl_vector_out (const gsl_vector *v, ostream& os) {
+  for (int i=0; i<v->size; ++i)
+    os << gsl_vector_get(v,i) << "\t";
+  os << endl;
+}
+
 void gsl_vector_cout (const gsl_vector *v) {
   for (int i=0; i<v->size; ++i)
     cout << gsl_vector_get(v,i) << "\t";

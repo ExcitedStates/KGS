@@ -43,10 +43,13 @@ add_library( libKGS
         ResidueProfiles.h
         core/Rigidbody.h
         core/graph/KinGraph.h
+        applications/options/ApplicationOptions.h
         applications/options/ExploreOptions.h
         applications/options/TransitionOptions.h
         applications/options/RelativeTransitionOptions.h
  	applications/options/RigidityOptions.h
+	applications/options/AlignOptions.h
+	applications/options/HierarchyOptions.h
         planners/SamplingPlanner.h
         planners/DihedralRRT.h
         planners/RRTPlanner.h
@@ -103,10 +106,13 @@ add_library( libKGS
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
         math/SVD.cpp
+        applications/options/ApplicationOptions.cpp
         applications/options/ExploreOptions.cpp
         applications/options/TransitionOptions.cpp
         applications/options/RelativeTransitionOptions.cpp
 	applications/options/RigidityOptions.cpp 
+	applications/options/AlignOptions.cpp
+	applications/options/HierarchyOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
@@ -174,7 +180,7 @@ add_library( libKGS
         core/graph/Constraint.cpp
         core/graph/Constraint.h
         core/ConstraintSet.cpp
-        core/ConstraintSet.h applications/options/HierarchyOptions.cpp applications/options/HierarchyOptions.h applications/options/AlignOptions.cpp applications/options/AlignOptions.h)
+        core/ConstraintSet.h )
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
