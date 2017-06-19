@@ -817,6 +817,25 @@ void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector
 
 }
 
+void Configuration::convertCycleDofsToAllDofs( gsl_vector *allDofsAfter, gsl_vector *cycleDofs, gsl_vector *allDofsBefore){
+
+  Molecule* M = getMolecule();
+
+  // Convert back to full length DOFs vector
+  for( auto const& edge: M->m_spanningTree->Edges){
+    int dof_id = edge->getDOF()->getIndex();
+    int cycle_dof_id = edge->getDOF()->getCycleIndex();
+    if ( cycle_dof_id!=-1 ) {
+      gsl_vector_set(allDofsAfter,dof_id,gsl_vector_get(cycleDofs,cycle_dof_id));
+    }
+    else if ( dof_id!=-1 ) {
+      if (allDofsBefore == nullptr)
+        gsl_vector_set(allDofsAfter,dof_id,0);
+      else
+        gsl_vector_set(allDofsAfter,dof_id,gsl_vector_get(allDofsBefore,dof_id));
+    }
+  }
+}
 
 void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
   Nullspace* N = getNullspace();
@@ -846,16 +865,8 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
       gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     // Convert back to full length DOFs vector
-    for( auto const& edge: M->m_spanningTree->Edges){
-      int dof_id = edge->getDOF()->getIndex();
-      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-      if ( cycle_dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
-      }
-      else if ( dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
-      }
-    }
+    convertCycleDofsToAllDofs(after_project,after_proj_short,to_project);
+
     gsl_vector_free(to_proj_short);
     gsl_vector_free(after_proj_short);
   }
