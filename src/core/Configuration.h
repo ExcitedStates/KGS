@@ -88,6 +88,7 @@ class Configuration
   void projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
   void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
+  void convertCycleDofsToAllDofs( gsl_vector *allDofsAfter, gsl_vector *cycleDofs, gsl_vector *allDofsBefore = nullptr);
 
 //  static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
