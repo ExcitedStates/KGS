@@ -32,7 +32,7 @@
 #include "Util.h"
 
 using namespace std;
- 
+
 string Util::i2s(int x, int length) {
 	string s = i2s(x);
 	while (s.length() < length) {
@@ -45,30 +45,30 @@ string Util::d2s (double x) {
 	std::ostringstream o;
 	o << x;
 	return o.str();
-} 
+}
 
 string Util::f2s (float x) {
 	std::ostringstream o;
 	o << x;
 	return o.str();
-} 
+}
 
 string Util::i2s (int x) {
-        std::ostringstream o;
-        o << x;
-        return o.str();
+	std::ostringstream o;
+	o << x;
+	return o.str();
 }
 
 bool Util::stob (string s) {
-        return ( s == "true" || s == "1" );
+	return ( s == "true" || s == "1" );
 }
 
-string Util::trim(string s,char c) { 
-	int start= 0, end = s.size() -1; 
-	int i = 0; 
-	while (s[i++]==c) ++start; 
-	i = s.size() -1; 
-	while (s[i--]==c) --end; 
+string Util::trim(string s,char c) {
+	int start= 0, end = s.size() - 1;
+	int i = 0;
+	while (s[i++]==c) ++start;
+	i = s.size() -1;
+	while (s[i--]==c) --end;
 	return s.substr(start, end-start+1);
 }
 
@@ -90,10 +90,10 @@ string Util::getBaseName (string s) {
 }
 
 string Util::formatNumber(string number, int digits_num) {
-        while ( number.length()<digits_num ) {
-                number = "0" + number;
-        }
-        return number;
+	while ( number.length()<digits_num ) {
+		number = "0" + number;
+	}
+	return number;
 }
 
 float Util::round(float number, int precision) {
@@ -111,12 +111,12 @@ string Util::cutDecimal(float number, int decimals) {
 }
 
 vector<string>& Util::split( const string& s, char delim, vector<string>& words ) {
-  words.clear();
-  stringstream ss(s);
-  string item;
-  while( getline(ss, item, delim) )
-    words.push_back(item);
-  return words;
+	words.clear();
+	stringstream ss(s);
+	string item;
+	while( getline(ss, item, delim) )
+		words.push_back(item);
+	return words;
 }
 
 vector<int>& Util::split( const string &s, char delim, vector<int> &numbers ) {
@@ -131,27 +131,27 @@ vector<int>& Util::split( const string &s, char delim, vector<int> &numbers ) {
 }
 
 vector<string> Util::split( const string& s, char delim ) {
-  vector<string> words;
-  split(s, delim, words);
-  return words;
+	vector<string> words;
+	split(s, delim, words);
+	return words;
 }
 
 vector<string> Util::split( const string& s, const string& delim ) {
-  vector<string> words;
-  auto i = 0, pos = 0;
-  do{
-    pos = s.find(delim, i);
-    words.push_back(s.substr(i, pos-i));
-    i = pos+delim.size();
-  }while(pos!=string::npos);
-  return words;
+	vector<string> words;
+	auto i = 0, pos = 0;
+	do{
+		pos = s.find(delim, i);
+		words.push_back(s.substr(i, pos-i));
+		i = pos+delim.size();
+	}while(pos!=string::npos);
+	return words;
 }
 
 bool Util::contains( const string& s, const string& substring ) {
-  return s.find(substring)!=string::npos;
+	return s.find(substring)!=string::npos;
 }
 
 bool Util::startsWith( const string& s, const string& substring ) {
-  return s.compare(0, substring.length(), substring)==0;
+	return s.compare(0, substring.length(), substring)==0;
 }
 
