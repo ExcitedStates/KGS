@@ -35,34 +35,35 @@ RelativeTransitionOptions::RelativeTransitionOptions(int argc, char* argv[]):
 
   for(int i=1; i < argc; i++){
     string arg = argv[i];
-    if(arg=="--initial"){                       initialStructureFile = argv[++i];                   continue; }
-    if(arg=="--workingDirectory"){              workingDirectory = argv[++i];                       continue; }
-    if(arg=="--samples" || arg=="-s"){          samplesToGenerate = atoi(argv[++i]);                continue; }
-    if(arg=="--hbondMethod"){                   hydrogenbondMethod = argv[++i];                     continue; }
-    if(arg=="--hbondFile"){                     hydrogenbondFile = argv[++i];                       continue; }
-    if(arg=="--extraCovBonds"){                 Util::split( string(argv[++i]),',', extraCovBonds );   continue; }
-    if(arg=="--gradient" || arg=="-g"){         gradient = atoi(argv[++i]);                         continue; }
-    if(arg=="--collisionFactor" || arg=="-c"){  collisionFactor = atof(argv[++i]);                  continue; }
-    if(arg=="--decreaseSteps" ){                decreaseSteps = atoi(argv[++i]);                    continue; }
-    if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                   continue; }
-    if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
-    if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
-    if(arg=="--metric"){                        metric_string = argv[++i];                          continue; }
-    if(arg=="--metricSelection"){               metricSelection = argv[++i];                        continue; }
-    if(arg=="--seed"){                          seed = atoi(argv[++i]);                             continue; }
-    if(arg=="--biasToTarget" || arg=="-bias"){  biasToTarget = atof(argv[++i]);                     continue; }
-    if(arg=="--convergeDistance"){              convergeDistance = atof(argv[++i]);                 continue; } //Previously rmsdThreshold
-    if(arg=="--residueNetwork" || arg=="-res"){ residueNetwork = argv[++i];                         continue; }
-    if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
-    if(arg=="--alignSelection"){                alignSelection = argv[++i];                         continue; }
-    if(arg=="--gradientSelection"){             gradientSelection = argv[++i];                      continue; }
-    if(arg=="--roots"){                         Util::split( string(argv[++i]),',', roots );        continue; }
-    if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
-    if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
-    if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                    continue; }
-    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
-    if(arg=="--logger"){                        ++i;                                                continue; }
+    if(arg=="--initial"){                       initialStructureFile = argv[++i];                    continue; }
+    if(arg=="--workingDirectory"){              workingDirectory = argv[++i];                        continue; }
+    if(arg=="--samples" || arg=="-s"){          samplesToGenerate = atoi(argv[++i]);                 continue; }
+    if(arg=="--hbondMethod"){                   hydrogenbondMethod = argv[++i];                      continue; }
+    if(arg=="--hbondFile"){                     hydrogenbondFile = argv[++i];                        continue; }
+    if(arg=="--extraCovBonds"){                 Util::split( string(argv[++i]),',', extraCovBonds ); continue; }
+    if(arg=="--gradient" || arg=="-g"){         gradient = atoi(argv[++i]);                          continue; }
+    if(arg=="--collisionFactor" || arg=="-c"){  collisionFactor = atof(argv[++i]);                   continue; }
+    if(arg=="--decreaseSteps" ){                decreaseSteps = atoi(argv[++i]);                     continue; }
+    if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                    continue; }
+    if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                          continue; }
+    if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                       continue; }
+    if(arg=="--metric"){                        metric_string = argv[++i];                           continue; }
+    if(arg=="--metricSelection"){               metricSelection = argv[++i];                         continue; }
+    if(arg=="--seed"){                          seed = atoi(argv[++i]);                              continue; }
+    if(arg=="--biasToTarget" || arg=="-bias"){  biasToTarget = atof(argv[++i]);                      continue; }
+    if(arg=="--convergeDistance"){              convergeDistance = atof(argv[++i]);                  continue; }
+    if(arg=="--residueNetwork" || arg=="-res"){ residueNetwork = argv[++i];                          continue; }
+    if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);              continue; }
+    if(arg=="--alignSelection"){                alignSelection = argv[++i];                          continue; }
+    if(arg=="--gradientSelection"){             gradientSelection = argv[++i];                       continue; }
+    if(arg=="--roots"){                         Util::split( string(argv[++i]),',', roots );         continue; }
+    if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);          continue; }
+    if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                          continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
+    if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                     continue; }
+    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                       continue; }
+    if(arg=="--predictStrain"){                 predictStrain = Util::stob(argv[++i]);               continue; }
+    if(arg=="--logger"){                        ++i;                                                 continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -151,6 +152,7 @@ void RelativeTransitionOptions::initializeVariables(){
   svdCutoff                 = 1.0e-12;
   collapseRigid             = false;
   relativeDistances         = "";
+  predictStrain             = false;
 }
 
 void RelativeTransitionOptions::print(){
@@ -180,6 +182,8 @@ void RelativeTransitionOptions::print(){
   log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
   log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
   log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --relativeDistances "<<relativeDistances<<endl;
+  log("so")<<"  --predictStrain "<<predictStrain<<endl;
 }
 
 void RelativeTransitionOptions::printUsage(char* pname){
@@ -207,5 +211,6 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
   log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
   log("so")<<"  --relativeDistances <file name> \t: File with the desired distance between atoms of residueNetwork option. Each line is one couple 'id atom_id2,id atom_id2,distance'. Each line should contain only two spaces, one after each word 'id'"<<endl;
+  log("so")<<"  --predictStrain <true|false> \t: Indicate whether strain on constraints should be printed."<<endl;
 }
 

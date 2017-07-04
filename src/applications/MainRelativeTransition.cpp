@@ -27,6 +27,7 @@ extern double selectNodeTime;
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol, double maxRotation);
 double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
+void printStrain(const Molecule& mol, const RelativeTransitionOptions& options);
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
@@ -56,14 +57,19 @@ int main( int argc, char* argv[] ) {
 
   protein->setCollisionFactor(options.collisionFactor);
 
-  if(options.collapseRigid>0)
-    protein = protein->collapseRigidBonds(options.collapseRigid);
+  if(options.collapseRigid>0) {
+    protein=protein->collapseRigidBonds(options.collapseRigid);
+  }
 
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+
+  if(options.predictStrain){
+    printStrain(*protein, options);
+  }
 
   //Initialize move
   Move* move;
@@ -178,6 +184,9 @@ int main( int argc, char* argv[] ) {
   return 0;
 }
 
+void printStrain(const Molecule& prot, const RelativeTransitionOptions& options){
+
+}
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol,double maxRotation)
 {

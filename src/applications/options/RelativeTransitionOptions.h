@@ -71,6 +71,8 @@ class RelativeTransitionOptions: ApplicationOptions
   int collapseRigid;
   /** Specified distance to reach between couple of atoms */
   std::string relativeDistances;
+  /** Indicates if constraint strain should be predicted and printed */
+  bool predictStrain;
 
   void print();
 
