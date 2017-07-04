@@ -55,7 +55,7 @@ with open(outputFile) as log_file:
         if "Target has:" in line:
             fwdHbonds=False
             continue
-        if "hydrogen bonds" in line:
+        if "constraints" in line:
             tokens = line.split(' ')
             if fwdHbonds == True:
                 numHBonds = int(tokens[1])
@@ -162,72 +162,95 @@ reverse_strainedBonds=[0, 0]*targetNumHBonds
 reverse_secStrainedBonds=[0, 0]*targetNumHBonds
 reverse_allBonds = {}
 foundStrain=0
-print reverse_path_ids
-with open(constraint_file_name) as constraintFile:
-    for line in constraintFile:
-        if line.startswith("Conformation"):
-            currentConf = int(line[13:])
-            continue
-        if(currentConf != reverse_path_ids [currentPathEntry-1]):
-            continue
-        tokens = line.split(' ')
-        bondId = int(tokens[3])
-        id1= int(tokens[5])
-        id2 = int(tokens[7])
-        
-#        print "At configuration: ",currentConf
-#        print "At hbond: ",bondId
-        strain = float(tokens[11])
-        reverse_meanStrain += abs(strain)
-        if(abs(strain) > reverse_maxStrain):
-            reverse_maxStrain = abs(strain)
-        if(abs(strain)>reverse_binData[bondId-1]):
-            reverse_binData[bondId-1]=abs(strain)
-        # if(abs(strain)>bins[-4]):
-        #     print "Bin 0.1 to 1: ",id1,",",id2
-        if(abs(strain)>bins[-3]):
-            reverse_secStrainedBonds[bondId]=[id1, id2]
-            foundSec=1
-        if(abs(strain)>bins[-2]):
-            reverse_strainedBonds[bondId]=[id1, id2]
-            foundStrain=1
-
-        # all bonds in order
-        cons = (id1,id2)
-        if cons in reverse_allBonds:
-            oldVal = reverse_allBonds[cons]
-            if ( abs(strain) > oldVal ):
-                reverse_allBonds[cons] = abs(strain)
-        else:
-            reverse_allBonds[cons] = abs(strain)
+# print reverse_path_ids
+if (len(reverse_path_ids) != 0):
+    with open(constraint_file_name) as constraintFile:
+        for line in constraintFile:
+            if line.startswith("Conformation"):
+                currentConf = int(line[13:])
+                continue
+            if(currentConf != reverse_path_ids [currentPathEntry-1]):
+                continue
+            tokens = line.split(' ')
+            bondId = int(tokens[3])
+            id1= int(tokens[5])
+            id2 = int(tokens[7])
             
-        if(bondId == targetNumHBonds):#reached end of current conf
-            reverse_meanStrains.append(reverse_meanStrain/targetNumHBonds)
-            reverse_maxStrains.append(reverse_maxStrain)
-            reverse_maxStrain=0
-            reverse_meanStrain=0
-            currentPathEntry += 1
-        if currentPathEntry == reverse_pathLength:
-            break
-
-print "REVERSE PATH"
-# if foundStrain==1:
-#     print "Bin > 10 %"
-#     print reverse_strainedBonds
-# else:
-#     print "Bin 1 to 10 %"
-#     print reverse_secStrainedBonds
-
-sorted_reverse_bondStrains = sorted(reverse_allBonds.items(),key=operator.itemgetter(1))
-sorted_reverse_bondStrains.reverse()
-print "Top ten strained bonds"
-for i in range(0,min(len(sorted_reverse_bondStrains),10)):
-    entry =  sorted_reverse_bondStrains[i]
-    key = entry[0]
-    print "distance strained = id "+str(key[0])+", id "+str(key[1])
-    if key[0] ==1382:
-        print "Strain at id "+str(key[0])+", id "+str(key[1])+": "+str(entry)
+    #        print "At configuration: ",currentConf
+    #        print "At hbond: ",bondId
+            strain = float(tokens[11])
+            reverse_meanStrain += abs(strain)
+            if(abs(strain) > reverse_maxStrain):
+                reverse_maxStrain = abs(strain)
+            if(abs(strain)>reverse_binData[bondId-1]):
+                reverse_binData[bondId-1]=abs(strain)
+            # if(abs(strain)>bins[-4]):
+            #     print "Bin 0.1 to 1: ",id1,",",id2
+            if(abs(strain)>bins[-3]):
+                reverse_secStrainedBonds[bondId]=[id1, id2]
+                foundSec=1
+            if(abs(strain)>bins[-2]):
+                reverse_strainedBonds[bondId]=[id1, id2]
+                foundStrain=1
     
+            # all bonds in order
+            cons = (id1,id2)
+            if cons in reverse_allBonds:
+                oldVal = reverse_allBonds[cons]
+                if ( abs(strain) > oldVal ):
+                    reverse_allBonds[cons] = abs(strain)
+            else:
+                reverse_allBonds[cons] = abs(strain)
+                
+            if(bondId == targetNumHBonds):#reached end of current conf
+                reverse_meanStrains.append(reverse_meanStrain/targetNumHBonds)
+                reverse_maxStrains.append(reverse_maxStrain)
+                reverse_maxStrain=0
+                reverse_meanStrain=0
+                currentPathEntry += 1
+            if currentPathEntry == reverse_pathLength:
+                break
+    
+    print "REVERSE PATH"
+    # if foundStrain==1:
+    #     print "Bin > 10 %"
+    #     print reverse_strainedBonds
+    # else:
+    #     print "Bin 1 to 10 %"
+    #     print reverse_secStrainedBonds
+    
+    sorted_reverse_bondStrains = sorted(reverse_allBonds.items(),key=operator.itemgetter(1))
+    sorted_reverse_bondStrains.reverse()
+    print "Top ten strained bonds"
+    for i in range(0,min(len(sorted_reverse_bondStrains),10)):
+        entry =  sorted_reverse_bondStrains[i]
+        key = entry[0]
+        print "distance strained = id "+str(key[0])+", id "+str(key[1])
+
+
+currentPath = os.getcwd()
+d="constraintPlots"
+if not os.path.exists(d):
+    os.makedirs(d)
+os.chdir("constraintPlots")
+
+print" Path: ",pathLengths
+print" Means: ",meanStrains
+print "Maxs: ",maxStrains
+
+if len(pathLengths) == len(meanStrains):
+    plotConstraintViolation(pathLengths,meanStrains,maxStrains,saveFileName="forwardPath_meanMaxViolation.png")
+
+#plotHistogram(binData,bins,saveFileName="hist_maxBondViolation.png")
+
+if len(reverse_pathLengths) != 0:   
+    plotConstraintViolation(reverse_pathLengths,reverse_meanStrains,reverse_maxStrains,saveFileName="reversePath_meanMaxViolation.png")
+
+#plotHistogram(reverse_binData,bins,saveFileName="histRev_maxBondViolation.png")
+
+
+os.chdir(currentPath)
+
 def plotConstraintViolation(xData,meanY,maxY,saveFileName=None):
     import matplotlib.pyplot as plt
     fig, ax1 = plt.subplots()
@@ -274,25 +297,3 @@ def plotHistogram(binData,bins,saveFileName=None):
         plt.savefig(saveFileName)
     else:
         plt.show()
-
-currentPath = os.getcwd()
-d="constraintPlots"
-if not os.path.exists(d):
-    os.makedirs(d)
-os.chdir("constraintPlots")
-
-#print" Path: ",pathLengths
-#print" Means: ",meanStrains
-#print "Maxs: ",maxStrains
-
-plotConstraintViolation(pathLengths,meanStrains,maxStrains,saveFileName="forwardPath_meanMaxViolation.png")
-
-#plotHistogram(binData,bins,saveFileName="hist_maxBondViolation.png")
-
-
-plotConstraintViolation(reverse_pathLengths,reverse_meanStrains,reverse_maxStrains,saveFileName="reversePath_meanMaxViolation.png")
-
-#plotHistogram(reverse_binData,bins,saveFileName="histRev_maxBondViolation.png")
-
-
-os.chdir(currentPath)

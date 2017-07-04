@@ -239,18 +239,6 @@ ax.set_zlabel('Vdw energy')
 plt.savefig("energy.png", transparent='True')
 #plt.show()
 
-figEnRev = plt.figure()
-ax = figEnRev.add_subplot(111, projection='3d')
-
-ax.set_zlim(min(reverse_energy)-1000, max(reverse_energy)+1000)
-
-ax.scatter(reverse_distanceToTarget,reverse_distanceToIni,reverse_energy, cmap=cmx.coolwarm, marker='s')
-
-ax.set_xlabel('RMSD to ini')
-ax.set_ylabel('RMSD to target')
-ax.set_zlabel('Vdw energy')
-plt.savefig("reverse_energy.png", transparent='True')
-#plt.show()
 
 orig_stdout = sys.stdout
 fout = file('vdwEnergy.txt', 'w')
@@ -262,13 +250,28 @@ for i in range(len(energy)):
 sys.stdout = orig_stdout
 fout.close()
 
-fout = file('vdwEnergyReverse.txt', 'w')
-sys.stdout = fout
-
-for i in range(len(reverse_energy)):
-    print reverse_distanceToIni[i], reverse_distanceToTarget[i], reverse_energy[i]
+if (len(reverse_energy) != 0):
+    figEnRev = plt.figure()
+    ax = figEnRev.add_subplot(111, projection='3d')
     
-sys.stdout = orig_stdout
-fout.close()
+    ax.set_zlim(min(reverse_energy)-1000, max(reverse_energy)+1000)
+    
+    ax.scatter(reverse_distanceToTarget,reverse_distanceToIni,reverse_energy, cmap=cmx.coolwarm, marker='s')
+    
+    ax.set_xlabel('RMSD to ini')
+    ax.set_ylabel('RMSD to target')
+    ax.set_zlabel('Vdw energy')
+    plt.savefig("reverse_energy.png", transparent='True')
+    #plt.show()
+
+
+    fout = file('vdwEnergyReverse.txt', 'w')
+    sys.stdout = fout
+    
+    for i in range(len(reverse_energy)):
+        print reverse_distanceToIni[i], reverse_distanceToTarget[i], reverse_energy[i]
+        
+    sys.stdout = orig_stdout
+    fout.close()
 
 os.chdir(currentPath)

@@ -435,5 +435,5 @@ if __name__ == "__main__":
 
         for aa,a,h,d,energy in pdb.getHydrogenBonds(cutoff):
             # print(str(a.id)+" "+str(h.id)+" "+str(energy)) #KGS output
-            # print("distance hbonds, ID "+str(a.id)+", ID "+str(h.id)) #Pymol output
-            print(str(a.chain)+"/"+str(a.resi)+"/"+str(a.name)+" "+str(h.chain)+"/"+str(h.resi)+"/"+str(h.name)+" "+str(energy)) #KGS output
+            print("distance hbonds, ID "+str(a.id)+", ID "+str(h.id)) #Pymol output
+            #print(str(a.chain)+"/"+str(a.resi)+"/"+str(a.name)+" "+str(h.chain)+"/"+str(h.resi)+"/"+str(h.name)+" "+str(energy)) #KGS output

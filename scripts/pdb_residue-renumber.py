@@ -146,20 +146,22 @@ def main():
     # file_list, options = cmdline.parseCommandLine()
     
     if len(sys.argv)<3:
-        print "Usage: "+sys.argv[0]+"<pdb-file> <start_res> "#, <reverse pdb file>, <forward pdb file> "
+        print "Usage: "+sys.argv[0]+" <start_res> <pdb-files>"#, <reverse pdb file>, <forward pdb file> "
         sys.exit(1)
 
-    pdb_file = str(sys.argv[1])
-    f = open(pdb_file,'r')
-    pdb = f.readlines()
-    f.close()
+    for file_name in sys.argv[2:]:
+        pdb_file = str(file_name)
+        f = open(pdb_file,'r')
+        pdb = f.readlines()
+        f.close()
 
-    pdb_out, alignment = pdbResidueRenumber(pdb,int(sys.argv[2]))
+        pdb_out, alignment = pdbResidueRenumber(pdb,int(sys.argv[1]))
 
-    short_pdb = pdb_file[0:pdb_file.rfind(".pdb")]
-    g = open("%s_res-renum.pdb" % short_pdb,"w")
-    g.writelines(pdb_out)
-    g.close()
+        short_pdb = pdb_file[0:pdb_file.rfind(".pdb")]
+        # g = open("%s_res-renum.pdb" % short_pdb,"w")
+        g = open(pdb_file,"w")
+        g.writelines(pdb_out)
+        g.close()
 
     # for pdb_file in file_list:
     #     

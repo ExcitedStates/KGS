@@ -98,6 +98,7 @@ class Atom:
         else:
             name_nodigits = filter(lambda x: x.isalpha(), self.name)
             self.elem = name_nodigits[0]
+       
         self.neighbors = []
         self.rings = 0
         self.atomType = ""

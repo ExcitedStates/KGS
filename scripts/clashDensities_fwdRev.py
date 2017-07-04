@@ -87,9 +87,9 @@ def main():
 			if "--target " in line:
 				pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
 				break;
+			
+	outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/out")] if outputTxtFile.rfind("/out") != -1 else '.'
 	
-	outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
-
 	# pdbPath=sys.argv[3]
 	# if( len(sys.argv) > 4):
 	# 	pdbFile=sys.argv[-1]
