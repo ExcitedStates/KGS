@@ -173,7 +173,7 @@ class Atom:
 
 
 class PDBModel:
-    """ A representation of a single-model PDB-file """
+    """ A representation of a single model of a PDB-file """
 
     def clean_dehydro_hoh(self):
         dehydro_hoh = [a for a in self.atoms if a.resn == "HOH" and len(a.neighbors) == 0]
@@ -182,20 +182,28 @@ class PDBModel:
             print("%s: removed %d waters with no hydrogens" % (self.name, len(dehydro_hoh)))
 
     def get_nearby(self, v, radius):
-        """
-        Locate all atoms within `radius` of `v`.
-        :param v: A list of coordinates, or an `Atom`
-        :param radius: A number
-        :return: A list of atoms near `v`
+        """ Locate all atoms within a certain radius of a point
+
+        Args:
+            v: A list of coordinates, or an `Atom` around which to search
+            radius: A number indicating the radius in which to search
+
+        Returns:
+            A list of atoms within the distance `radius` of `v`
         """
         return [a for a in self.get_approx_nearby(v, radius) if a.distance(v) <= radius]
 
     def get_approx_nearby(self, v, radius):
         """
         Locate all atoms within `radius` of `v`.
-        :param v: A list of coordinates, or an `Atom`
-        :param radius: A number
-        :return: A list of atoms near `v`
+
+        Args:
+            v: A list of coordinates, or an `Atom` around which to search
+            radius: An indication of the size of the vicinity
+
+        Returns:
+            A list of atoms in the vicinity of `v`. All atoms closer to `v` than `radius` are guaranteed to be in this
+            list.
         """
         irad = int(math.ceil(radius))
         ivx, ivy, ivz = int(v[0]+0.5), int(v[1]+0.5), int(v[2]+0.5)
@@ -535,6 +543,8 @@ class PDBModel:
             a.id = i+1
 
     def clean_residue_sequence(self):
+        """ Checks for gaps .. ?
+        """
         currentresid = self.atoms[0].resi
         currentchain = self.atoms[0].chain
         reslist = []  # temporarily stores atoms of one residue
@@ -599,10 +609,20 @@ class PDBModel:
                 reslist.append(atom.name)  # keep track of atom names (each atom only once)
         
     def check_collisions(self):
+        """ Check for collisions and print warnings if there are any.
+
+        Two atoms are consider colliding if the distance between their centers is less than the sum of their van der
+        Waals radii multiplied by 0.6. A special message is printed if the distance is less than 0.7 of the sum of
+        covalent radii (a serious collision).
+
+        Returns:
+            A list of collisions represented as a triple of two atoms and their distance
+        """
         serious_collisions = []
         collisions = []
         for atom1 in self.atoms:
-            for atom2 in self.get_approx_nearby(atom1.pos, atom1.vdw_radius()+2.0):  # 2.0 is the largest vdw radius for atom2
+            # 2.0 is the largest vdw radius for atom2
+            for atom2 in self.get_approx_nearby(atom1.pos, atom1.vdw_radius()+2.0):
                 if atom1.id <= atom2.id:
                     continue
                 if abs(atom1.resi-atom2.resi) <= 1 and atom1.chain == atom2.chain:
