@@ -5,12 +5,14 @@
 #include <vector>
 #include <stdio.h>
 #include "Selection.h"
+#include "ApplicationOptions.h"
 
 class Molecule;
 
 class Atom;
 
-class ExploreOptions {
+class ExploreOptions: ApplicationOptions
+{
  public:
 
   /** The working directory */

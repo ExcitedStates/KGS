@@ -14,7 +14,9 @@
 
 using namespace std;
 
-ExploreOptions::ExploreOptions(){
+ExploreOptions::ExploreOptions():
+    ApplicationOptions()
+{
   initializeVariables();
 }
 
@@ -73,6 +75,7 @@ ExploreOptions::ExploreOptions(int argc, char* argv[])
     if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
     if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
 //    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
+    if(arg=="--logger"){                        ++i;                                                 continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
