@@ -47,7 +47,8 @@ PoissonPlanner::PoissonPlanner(
     int stopAfter,
     int maxRejects,
     double stepSize,
-    const string &gradientSelection
+    const string &gradientSelection,
+    bool enableBVH
 ):
   SamplingPlanner(),
   m_stopAfter(stopAfter),
@@ -55,7 +56,8 @@ PoissonPlanner::PoissonPlanner(
   m_bigRad(stepSize*4.0/3.0),
   m_lilRad(m_bigRad/2),
   m_molecule(molecule),
-  m_gradientSelection(gradientSelection)
+  m_gradientSelection(gradientSelection),
+  m_checkAll(!enableBVH)
 {
   m_root = new Configuration( molecule );
   m_root->m_id = 0;
@@ -76,8 +78,8 @@ PoissonPlanner::~PoissonPlanner() {
 void PoissonPlanner::generateSamples()
 {
   ofstream reportStream;
-  reportStream.open("kgs_poissonDistances.log");
-  enableLogger("poissonDistances", reportStream);
+//  reportStream.open("kgs_poissonDistances.log");
+//  enableLogger("poissonDistances", reportStream);
   //cout<<"PoissonPlanner::generateSamples()"<<endl;
   Selection sel(m_gradientSelection);
   Direction* direction = new RandomDirection(sel);
@@ -98,23 +100,24 @@ void PoissonPlanner::generateSamples()
     vector<Configuration*> nearSeed;
     if(!m_checkAll) {
       collectPossibleChildCollisions(seed, nearSeed, m_root, m_bigRad);
+    } else {
+      // In practice this will collect everything
+      collectPossibleChildCollisions(seed, nearSeed, m_root, m_bigRad*10000);
     }
-
 
     //Make m_maxRejectsBeforeClose attempts at perturbing it
     size_t attempt;
-    for( attempt=0; attempt<m_maxRejectsBeforeClose; attempt++ ) {
-      //cout<<"PoissonPlanner::generateSamples() - attempt "<<attempt<<endl;
+    for (attempt = 0; attempt < m_maxRejectsBeforeClose; attempt++) {
       m_move->setStepSize(origStepSize);
-      direction->gradient(seed, nullptr, gradient); // Compute random gradient
-      gsl_vector_scale(gradient,1.0);
-      Configuration *pert = m_move->move(seed, gradient); //Perform move
+      direction->gradient(seed, nullptr, gradient);  // Compute random gradient
+      gsl_vector_scale(gradient, 1.0);
+      Configuration *pert = m_move->move(seed, gradient);  // Perform move
 
       // Scale gradient so move is in Poisson disc
       double dist = m_metric->distance(pert, seed);
       int scaleAttempts = 0;
-      while( dist<m_lilRad || dist>m_bigRad ){
-        if(++scaleAttempts==5) break;
+      while (dist < m_lilRad || dist > m_bigRad) {
+        if (++scaleAttempts == 5) break;
         double gradientScale = (m_bigRad+m_lilRad)/(2.0*dist);
         gsl_vector_scale(gradient, gradientScale);
         delete pert;
@@ -122,23 +125,23 @@ void PoissonPlanner::generateSamples()
         dist = m_metric->distance(pert, seed);
       }
 
-      if(scaleAttempts==5){
+      if (scaleAttempts == 5) {
         delete pert;
-        cout<<"Bailing as we can't scale. Final dist: "<<dist<<endl;
+        cout << "Bailing as we can't scale. Final dist: " << dist << endl;
         continue;
       }
 
-      //If clashing just continue
-      if(pert->updatedMolecule()->inCollision() ) {
+      // If clashing just continue
+      if (pert->updatedMolecule()->inCollision()) {
         rejected_clash++;
         delete pert;
         continue;
       }
 
 
-      //Check if close to existing
+      // Check if close to existing
       bool too_close_to_existing = false;
-      for (auto const &v: nearSeed) {
+      for (auto const &v : nearSeed) {
         double dist = memo_distance(pert, v);
         if (dist < m_lilRad) {
           too_close_to_existing = true;

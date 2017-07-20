@@ -95,6 +95,8 @@ class ExploreOptions: ApplicationOptions
   std::string alignSelection;
   /** Specifies the residues used for gradient computation. */
   std::string gradientSelection;
+  /** Specifies whether to use the BVH in the poisson sampler. Should always be true (exists only for benchmarking)*/
+  bool enableBVH;
   /** The vector of atom IDs that will be part of root rigid bodies */
   std::vector<int> roots;
   /** Whether or not to project the gradient onto the constraint manifold. */

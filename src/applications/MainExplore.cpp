@@ -164,7 +164,8 @@ void randomSampling(ExploreOptions& options) {
         options.samplesToGenerate,
         options.poissonMaxRejectsBeforeClose,
         options.stepSize,
-        options.gradientSelection
+        options.gradientSelection,
+        options.enableBVH
     );
   }else{
     cerr<<"Unknown planner option specified!"<<endl;

@@ -4,6 +4,7 @@
 #include <list>
 #include <regex>
 #include <math/gsl_helpers.h>
+#include <math/NullspaceSVD.h>
 
 #include "core/Configuration.h"
 #include "core/Molecule.h"
@@ -26,7 +27,7 @@ extern double rigidityTime;
 extern double selectNodeTime;
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol, double maxRotation);
-double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > &goal_distances);
 void printStrain(const Molecule& mol, const RelativeTransitionOptions& options);
 
 int main( int argc, char* argv[] ) {
@@ -42,6 +43,8 @@ int main( int argc, char* argv[] ) {
 
   // Set seed
   srand(options.seed);
+
+  NullspaceSVD::setSingularValueTolerance(options.svdCutoff);
 
   string pdb_file = options.initialStructureFile;
   Selection movingResidues(options.residueNetwork);
@@ -184,9 +187,6 @@ int main( int argc, char* argv[] ) {
   return 0;
 }
 
-void printStrain(const Molecule& prot, const RelativeTransitionOptions& options){
-
-}
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol,double maxRotation)
 {
@@ -203,7 +203,7 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol,double maxRotation)
 }
 
 
-double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances)
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > &goal_distances)
 {
   double d=0;
   for (int i=0; i< goal_distances.size();i++){
@@ -213,4 +213,10 @@ double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_di
     d=d+fabs((sqrt((c1.x-c2.x)*(c1.x-c2.x)+(c1.y-c2.y)*(c1.y-c2.y)+(c1.z-c2.z)*(c1.z-c2.z))-get<2>(goal_distances[i])));
   }
   return d;
+}
+
+
+void printStrain(const Molecule& mol, const RelativeTransitionOptions& options)
+{
+
 }

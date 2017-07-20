@@ -1,4 +1,5 @@
 #include "ExploreOptions.h"
+
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -72,10 +73,11 @@ ExploreOptions::ExploreOptions(int argc, char* argv[])
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
-    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                   continue; }
+    if(arg=="--enableBVH"){                     enableBVH = Util::stob(argv[++i]);                  continue; }
 //    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
-    if(arg=="--logger"){                        ++i;                                                 continue; }
+    if(arg=="--logger"){                        ++i;                                                continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -242,11 +244,9 @@ void ExploreOptions::initializeVariables(){
   roots                     = {1}; //Choose the first atom
   projectConstraints        = true;
   collisionCheck            = "all";
-//  frontSize                 = 50;
-//  switchAfter               = 20000;
   svdCutoff                 = 1.0e-12;
   collapseRigid             = false;
-//  relativeDistances         = "";
+  enableBVH                 = true;
 }
 
 void ExploreOptions::print(){

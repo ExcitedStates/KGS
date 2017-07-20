@@ -57,7 +57,8 @@ class PoissonPlanner : public SamplingPlanner {
       int stopAfter,
       int maxRejects,
       double stepSize,
-      const std::string &gradientSelection
+      const std::string &gradientSelection,
+      bool enableBVH = true
   );
 
   ~PoissonPlanner();
@@ -66,7 +67,6 @@ class PoissonPlanner : public SamplingPlanner {
 
   std::list<Configuration *> &getSamples() { return all_samples; }
 
-  bool m_checkAll = false;
  private:
   /// Even if open_samples is non-empty sampling will stop after this many new samples have been generated
   const int m_stopAfter;
@@ -80,6 +80,9 @@ class PoissonPlanner : public SamplingPlanner {
   std::list<Configuration *> all_samples;      ///< For convenience and return
 
   std::vector<std::tuple<Residue *> > m_tripeptides; ///< Preprocessed residue triples for use in exact IK
+
+  /// Indicates if all generated samples should be checked for collision (enabled BVH)
+  bool m_checkAll = false;
 
   Molecule *m_molecule;
 
