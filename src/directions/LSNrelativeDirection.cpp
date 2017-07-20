@@ -53,7 +53,7 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
 {
   Molecule* protein = conf->getMolecule();
 
-  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
+//  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
   //current_q->ComputeCycleJacobianAndNullSpace();
   gsl_matrix* N = conf->getNullspace()->getBasis();
   int dof=protein->totalDofNum();
@@ -208,11 +208,10 @@ gsl_matrix* LSNrelativeDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
   gsl_matrix *Tbis = gsl_matrix_mul(Ut, TargetDirection);
   gsl_matrix_free(Ut);
   //cout<<V->size1<<" "<<U->size1<<endl;
-  gsl_matrix *moveb = gsl_matrix_calloc(V->size1,
-                                        1); //TODO: Was S->size2. Make sure its correct. Amelie S->size2 is V->size1 now I guess
+  gsl_matrix *moveb = gsl_matrix_calloc(V->size1, 1);
   gsl_matrix_set_zero(moveb);
-  for (int i = 0; i < V->size1; i++) { //TODO: Same here Amelie S->size2 is V->size1 now I guess
-    if (i < U->size1) { //TODO: Same here Amelie S->size1 is U->size1 now I guess
+  for (int i = 0; i < V->size1; i++) {
+    if (i < U->size1) {
       if (gsl_vector_get(S, i) * gsl_vector_get(S, i) > 0.0000000000001) {
         //cout<<gsl_vector_get(S, i)<<endl;
         gsl_matrix_set(moveb, i, 0, gsl_matrix_get(Tbis, i, 0) / gsl_vector_get(S, i));
