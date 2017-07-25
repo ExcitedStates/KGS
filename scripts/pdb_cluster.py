@@ -91,7 +91,7 @@ class HierarchicalClustering:
 
 	@staticmethod
 	def atomDistanceMatrix(pdbFile):
-		coordMat = pdbFile.coordMatrix(names=["C1'","CB"])
+		coordMat = pdbFile.coord_matrix(names=["C1'", "CB"])
 		atoms = coordMat.shape[0]
 		assert atoms>0
 
