@@ -33,6 +33,14 @@ class TestPDBFile(unittest.TestCase):
         nearby = pdb_file.models[0].get_nearby(near_water.pos, 1.8)
         self.assertEqual(len(nearby), 2)  # Now only near itself and CA
 
+    def test_rmsd(self):
+        pdb1 = PDBFile("5udi.pdb").models[0]
+        pdb2 = PDBFile("5udi_perturbed.pdb").models[0]
+
+        rmsd = pdb1.rmsd(pdb2, names=['CA'])
+        self.assertTrue(5.2 < rmsd < 5.4, msg="CA RMSD is "+str(rmsd));
+        self.assertTrue(pdb1.rmsd(pdb1) < 0.01, msg="RMSD is "+str(rmsd));
+
 
 if __name__ == '__main__':
     unittest.main()

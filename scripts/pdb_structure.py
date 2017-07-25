@@ -111,6 +111,10 @@ class Atom:
     def distance(self, a):
         return norm(sub(self, a))
 
+    def distance_squared(self, a):
+        diff = sub(self, a)
+        return dot(diff, diff)
+
     def vdwradius(self):
         try:
             return vdw_radii[self.elem.upper()]
@@ -498,6 +502,74 @@ class PDBModel:
         """Computes the amount of atoms within a `radius` from `atom`"""
         neighborhood = [a for a in self.get_nearby(atom.pos, radius)]
         return len(neighborhood)
+
+    def coordMatrix(self, names=["C4'", "CA"]):
+        """
+        Get a coordinate-matrix of shape (a, 3) where a is the number of atoms with one of the specified names.
+        New: an optional list of residues can limit the coordinate Matrix to specified residues only, useful for
+        comparison across non-identical sequences or with missing loops.
+        """
+        import numpy as np
+        ret = np.zeros(shape=(len(self.atoms), 3))
+        a = 0
+        for atom in [at for at in self.atoms if not names or at.name in names]:
+            ret[a][0] = atom.pos[0]
+            ret[a][1] = atom.pos[1]
+            ret[a][2] = atom.pos[2]
+            a += 1
+        ret.resize(a, 3)
+        return ret
+
+    def rmsd(self, other, names=None):
+        """
+        Return the smallest root-mean-square-deviation between coordinates in `self` and `other`.
+        If `names` is None, then all atoms are used.
+        """
+        import numpy as np
+
+        crds1 = self.coordMatrix(names=names)
+        crds2 = other.coordMatrix(names=names)
+        assert (crds1.shape[1] == 3)
+        if crds1.shape[0] != crds2.shape[0]:
+            print "Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")"
+            assert (crds1.shape == crds2.shape)
+        n = np.shape(crds1)[0]
+
+        # Move crds1 to origo
+        avg1 = np.zeros(3)
+        for c1 in crds1: avg1 += c1
+        avg1 /= n
+        for c1 in crds1: c1 -= avg1
+
+        # Move crds2 to origo
+        avg2 = np.zeros(3)
+        for c2 in crds2: avg2 += c2
+        avg2 /= n
+        for c2 in crds2: c2 -= avg2
+
+        # Get optimal rotation
+        # From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
+        correlation_matrix = np.dot(np.transpose(crds1), crds2)
+        u, s, v_tr = np.linalg.svd(correlation_matrix)
+        r = np.dot(u, v_tr)
+        r_det = np.linalg.det(r)
+        if r_det < 0:
+            # print 'WARNING: MIRRORING'
+            u[:, -1] = -u[:, -1]
+            r = np.dot(u, v_tr)
+        # is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr))
+        # if is_reflection:
+        #       u[:,-1] = -u[:,-1]
+
+        # Apply rotation and find rmsd
+        import itertools
+        rms = 0.0
+        for c1, c2 in itertools.izip(crds1, crds2):
+            c2_r = np.dot(r, c2)
+            tmp = c1 - c2_r
+            rms += np.dot(tmp, tmp)
+
+        return math.sqrt(rms / n)
 
     def __repr__(self):
         return "PDBModel('"+self.name+"')"
