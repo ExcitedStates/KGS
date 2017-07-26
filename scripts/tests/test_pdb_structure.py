@@ -53,6 +53,29 @@ class TestPDBFile(unittest.TestCase):
         last_atom = pdb_file.models[0].atoms[-1]
         self.assertEqual(last_atom.id, 7993)
 
+    def test_rmsd(self):
+        pdb1 = PDBFile("5udi.pdb").models[0]
+        pdb2 = PDBFile("5udi_perturbed.pdb").models[0]
+
+        rmsd = pdb1.rmsd(pdb2, names=['CA'])
+        self.assertTrue(5.2 < rmsd < 5.4, msg="CA RMSD is "+str(rmsd));
+        self.assertTrue(pdb1.rmsd(pdb1) < 0.01, msg="RMSD is "+str(rmsd));
+
+    def test_align(self):
+        pdb0 = PDBFile("5udi.pdb").models[0]
+        pdb1 = PDBFile("5udi.pdb").models[0]
+        pdb2 = PDBFile("5udi_perturbed.pdb").models[0]
+        names = ['CA']
+
+        pdb1.alignto(pdb2, names)
+
+        rmsd01 = pdb0.rmsd_cur(pdb1, names)
+        rmsd12 = pdb1.rmsd_cur(pdb2, names)
+        rmsd02 = pdb0.rmsd_cur(pdb2, names)
+
+        self.assertTrue(1.0 < rmsd01, msg="CA RMSD from 0 to 1 is "+str(rmsd01))
+        self.assertTrue(rmsd12 < rmsd02, msg="CA RMSD should decrease")
+        self.assertAlmostEqual(rmsd12, pdb0.rmsd(pdb2, names), msg="CA RMSD should match after alignment")
 
 if __name__ == '__main__':
     unittest.main()
