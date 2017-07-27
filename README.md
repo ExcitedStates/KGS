@@ -34,8 +34,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ../src
 make -j
 ```
 After modifying files in `src` simply type `make` in the build-dir to
-recompile.  To use Intels compiler (WARNING: as of 2016 `icpc` doesn't 
-support C++11 regular expressions and therefore doesn't work) replace the 
+recompile.  To use Intels compiler (v17.0.3 or later) replace the 
 third step with
 ```bash
 CXX=icpc cmake -DCMAKE_BUILD_TYPE=Release <repo path>/source
