@@ -9,6 +9,7 @@ Strong overlap if less than one, dissimilar if greater than one
 
 from pdb_structure import *
 import itertools
+import sys
 
 
 def getMinRMSD(kgs_model, md_ensemble):
@@ -40,6 +41,13 @@ def getMaxRMSD(md_ensemble):
             max_rmsd = rmsd
     return max_rmsd
 
+if not len(sys.argv)==3:
+    print("Usage: "+sys.arv[0]+" ....")
+    print("...")
+    sys.exit(-1)
+    
+kgs_file = sys.argv[1]
+md_file = sys.argv[2]
 
 kgs_ensemble = PDBFile("KGS_Results.pdb")
 md_ensemble = PDBFile("MD_Results.pdb")
