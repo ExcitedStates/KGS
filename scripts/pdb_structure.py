@@ -111,6 +111,10 @@ class Atom:
     def distance(self, a):
         return norm(sub(self, a))
 
+    def distance_squared(self, a):
+        diff = sub(self, a)
+        return dot(diff, diff)
+
     def vdwradius(self):
         try:
             return vdw_radii[self.elem.upper()]
@@ -498,6 +502,140 @@ class PDBModel:
         """Computes the amount of atoms within a `radius` from `atom`"""
         neighborhood = [a for a in self.get_nearby(atom.pos, radius)]
         return len(neighborhood)
+
+    def coord_matrix(self, names=None):
+        """
+        Get a coordinate-matrix of shape (a, 3) where a is the number of atoms with one of the specified names.
+        New: an optional list of residues can limit the coordinate Matrix to specified residues only, useful for
+        comparison across non-identical sequences or with missing loops.
+        """
+        import numpy as np
+        ret = np.zeros(shape=(len(self.atoms), 3))
+        a = 0
+        for atom in [at for at in self.atoms if not names or at.name in names]:
+            ret[a][0] = atom.pos[0]
+            ret[a][1] = atom.pos[1]
+            ret[a][2] = atom.pos[2]
+            a += 1
+        ret.resize(a, 3)
+        return ret
+
+    @staticmethod
+    def _optimal_transformation(crds1, crds2):
+        """ The transformation to `crds2` that minimizes the rmsd to `crds1`.
+
+        A call to this function will move the coordinates to their respective averages and apply optimal rotation of
+        `crds2`.
+
+        Args:
+            crds1 and crds2: Float matrices of shape (n, 3) where n is the number of points
+
+        Returns:
+            a triple representing a transformation matrix. The first entry is the first translation to perform, second
+            entry is the rotation and third entry is the last translation
+        """
+        import numpy as np
+
+        assert (crds1.shape[1] == 3)
+        assert (crds2.shape[1] == 3)
+        if crds1.shape[0] != crds2.shape[0]:
+            print "Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")"
+            assert (crds1.shape == crds2.shape)
+        n = crds1.shape[0]
+
+        # Move crds1 to origo
+        avg1 = np.zeros(3)
+        for c1 in crds1: avg1 += c1
+        avg1 /= n
+        for c1 in crds1: c1 -= avg1
+
+        # Move crds2 to origo
+        avg2 = np.zeros(3)
+        for c2 in crds2: avg2 += c2
+        avg2 /= n
+        for c2 in crds2: c2 -= avg2
+
+        # Get optimal rotation
+        # From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
+        correlation_matrix = np.dot(np.transpose(crds1), crds2)
+        u, s, v_tr = np.linalg.svd(correlation_matrix)
+        r = np.dot(u, v_tr)
+        r_det = np.linalg.det(r)
+        if r_det < 0:
+            # print 'WARNING: MIRRORING'
+            u[:, -1] = -u[:, -1]
+            r = np.dot(u, v_tr)
+            # is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr))
+            # if is_reflection:
+            #       u[:,-1] = -u[:,-1]
+
+        for c2 in crds2:
+            tmp = np.dot(r, c2)
+            c2[0] = tmp[0]
+            c2[1] = tmp[1]
+            c2[2] = tmp[2]
+
+        return avg2, r, avg1
+
+    def rmsd(self, other, names=None):
+        """
+        Return the smallest root-mean-square-deviation between coordinates in `self` and `other`.
+        If `names` is None, then all atoms are used.
+        """
+        import numpy as np
+        crds1 = self.coord_matrix(names=names)
+        crds2 = other.coord_matrix(names=names)
+
+        PDBModel._optimal_transformation(crds1, crds2)
+
+        # Apply rotation and find rmsd
+        import itertools
+        rms = 0.0
+        for c1, c2 in itertools.izip(crds1, crds2):
+            tmp = c1 - c2
+            rms += np.dot(tmp, tmp)
+
+        return math.sqrt(rms / crds1.shape[0])
+
+    def rmsd_cur(self, other, names=None):
+        """
+        Return the smallest root-mean-square-deviation between coordinates in `self` and `other`.
+        If `names` is None, then all atoms are used.
+        """
+        import numpy as np
+        crds1 = self.coord_matrix(names=names)
+        crds2 = other.coord_matrix(names=names)
+
+        # Apply rotation and find rmsd
+        import itertools
+        rms = 0.0
+        for c1, c2 in itertools.izip(crds1, crds2):
+            tmp = c1 - c2
+            rms += np.dot(tmp, tmp)
+
+        return math.sqrt(rms / crds1.shape[0])
+
+    def alignto(self, other, names=None):
+        """ Transform the coordinates of `self` so the RMSD to `other` is minimized. """
+        import numpy as np
+
+        crds2 = self.coord_matrix(names=names)
+        crds1 = other.coord_matrix(names=names)
+
+        assert (crds1.shape[1] == 3)
+
+        if crds1.shape[0] != crds2.shape[0]:
+            print "Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")"
+            # assert(crds1.shape == crds2.shape)
+
+        d1, r, d2 = PDBModel._optimal_transformation(crds1, crds2)
+
+        # Apply rotation and find rmsd
+        for a in self.atoms:
+            a.pos = np.dot(r, a.pos - d1) + d2
+
+    def __repr__(self):
+        return "PDBModel('"+self.name+"')"
 
     def check_hydrogens(self):
         hydrogens = [a for a in self.atoms if a.elem == "H"]
