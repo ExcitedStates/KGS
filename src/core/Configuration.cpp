@@ -456,7 +456,7 @@ void Configuration::Print () {
 
 
 void Configuration::computeJacobians() {
-  log("debug")<<"computeJacobians"<<endl;
+//  log("debug")<<"computeJacobians"<<endl;
   if(CycleJacobianOwner==this) return;
   CycleJacobianOwner = this;
 
