@@ -143,7 +143,7 @@ class Atom:
     def is_acceptor(self):
         return self.elem == "O" or (self.elem == "N" and len(self.neighbors) <= 2)
 
-    def get_pdb_line(self):
+    def pdb_str(self):
         if len(self.name) <= 3:  # Takes care of four-letter atom name alignment
             line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % \
                    ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi,
@@ -499,9 +499,6 @@ class PDBModel:
         neighborhood = [a for a in self.get_nearby(atom.pos, radius)]
         return len(neighborhood)
 
-    def __repr__(self):
-        return "PDBModel('"+self.name+"')"
-
     def check_hydrogens(self):
         hydrogens = [a for a in self.atoms if a.elem == "H"]
         if not hydrogens:
@@ -658,12 +655,22 @@ class PDBModel:
 
         return odd_atoms
 
+    def __repr__(self):
+        return "PDBModel('"+self.name+"')"
+
+    def pdb_str(self):
+        """ Return the model atoms as a PDB string """
+        ret = ""
+        for atom in self.atoms:
+            ret += atom.pdb_str()
+        return ret
+
     def write_pdb(self, fname):
         """ Write the model to a PDB file """
         f = open(fname, 'w')
 
         for atom in self.atoms:
-            f.write(atom.get_pdb_line())
+            f.write(atom.pdb_str())
         
         # Write CONECT records based on bond profile
         for atom in self.atoms:
