@@ -138,33 +138,33 @@ ExploreOptions::ExploreOptions(int argc, char* argv[])
 //    }
 //  }
 
-  //Check initial structure
+  // Check initial structure
   if(initialStructureFile.empty()) {
     enableLogger("so");
-    cerr<<"Initial structure file must be supplied"<<endl<<endl;
+    cerr << "Initial structure file must be supplied" << endl << endl;
     exit(-1);
   }
 
-  //Check for valid metric
+  // Check for valid metric
   std::transform(metric_string.begin(), metric_string.end(), metric_string.begin(), ::tolower);
-  if(metric_string!="dihedral" && metric_string!="rmsd" && metric_string!="rmsdnosuper"){
-    cerr<<"Invalid --metric option: "<<metric_string<<". Must be either 'dihedral', 'RMSD', or 'RMSDnosuper."<<endl;
+  if (metric_string != "dihedral" && metric_string != "rmsd" && metric_string != "rmsdnosuper") {
+    cerr << "Invalid --metric option: " << metric_string << ". Must be either 'dihedral', 'RMSD', or 'RMSDnosuper." << endl;
     exit(-1);
   }
 
-  //Check for valid planner
+  // Check for valid planner
   std::transform(planner_string.begin(), planner_string.end(), planner_string.begin(), ::tolower);
-  if( planner_string!="dihedralrrt" &&
-      planner_string!="binnedrrt" &&
-      planner_string!="dccrrt" &&
-      planner_string!="poisson2" &&
-      planner_string!="poisson"){
-    cerr<<"Invalid --planner option: "<<planner_string<<endl;
+  if (planner_string != "dihedralrrt" &&
+      planner_string != "binnedrrt" &&
+      planner_string != "dccrrt" &&
+      planner_string != "poisson2" &&
+      planner_string != "poisson") {
+    cerr << "Invalid --planner option: " << planner_string << endl;
     exit(-1);
   }
 
   //Ensure that decreaseSteps>0 if preventClashes set
-  if(preventClashes && decreaseSteps==0)
+  if (preventClashes && decreaseSteps==0)
     decreaseSteps=5;
 
   //Set workingDirectory and moleculeName using the initialStructureFile.
