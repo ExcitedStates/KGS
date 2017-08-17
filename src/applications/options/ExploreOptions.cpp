@@ -21,7 +21,8 @@ ExploreOptions::ExploreOptions():
   initializeVariables();
 }
 
-ExploreOptions::ExploreOptions(int argc, char* argv[])
+ExploreOptions::ExploreOptions(int argc, char* argv[]):
+    ApplicationOptions(argc, argv)
 {
   initializeVariables();
 
