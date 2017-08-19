@@ -290,7 +290,7 @@ void Molecule::setCollisionFactor(double collisionFactor)
 {
   m_collisionFactor = collisionFactor;
 
-  m_grid->setCollisionFactor(collisionFactor);
+  getGrid()->setCollisionFactor(collisionFactor);
 
   //Recompute initial collisions
   m_initialCollisions.clear();
@@ -315,20 +315,23 @@ void Molecule::setCollisionFactor(double collisionFactor)
 //}
 
 
-bool Molecule::inCollision (string collisionCheckAtoms ) const {
+bool Molecule::inCollision (string collisionCheckAtoms ) {
+
+  Grid* grid = getGrid();
 
   for (vector<Atom*>::const_iterator itr= m_atoms.begin(); itr != m_atoms.end(); ++itr)
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) )
-    if ( m_grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
+    if ( grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
       return true;
   return false;
 }
 
-double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
+double Molecule::minCollisionFactor (string collisionCheckAtoms) {
   double minCollFactor = 10000;
+  Grid* grid = getGrid();
   for (vector<Atom*>::const_iterator itr=m_atoms.begin(); itr!=m_atoms.end(); ++itr){
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) ){
-      double factor = m_grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
+      double factor = grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
       if(factor < minCollFactor){
         minCollFactor = factor;
       }
@@ -341,16 +344,18 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 /*
  * Get a list of colliding atoms in the current protein configuration.
  */
-std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
+std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionCheckAtoms ){
   if(m_conf==nullptr) {
     cerr << "Molecule::getAllCollisions - No configuration set" << endl;
     throw "Molecule::getAllCollisions - No configuration set";
   }
 
+  Grid* grid = getGrid();
+
   set< pair<Atom*,Atom*>> collisions;
   for (auto const& atom: m_atoms) {
     if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
-      vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
+      vector<Atom *> colliding_atoms = grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
       for (auto const& colliding_atom : colliding_atoms) {
         pair<Atom *, Atom *> collision_pair = make_pair(atom, colliding_atom);
         collisions.insert(collision_pair);
@@ -361,7 +366,7 @@ std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionC
 }
 //---------------------------------------------------------
 
-void Molecule::printAllCollisions () const {
+void Molecule::printAllCollisions () {
   for (auto const& atom_pair: getAllCollisions()){
     log() << atom_pair.first->getId() << " " << atom_pair.second->getId() << endl;
   }
@@ -673,7 +678,8 @@ void Molecule::_SetConfiguration(Configuration *q ){
   KinVertex *root = m_spanningTree->m_root;
   root->forwardPropagate();
 
-  indexAtoms();
+//  indexAtoms();
+  m_grid = nullptr;
 }
 
 
@@ -711,7 +717,8 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
     }
   }
 
-  indexAtoms();
+//  indexAtoms();
+  m_grid = nullptr;
 }
 
 int Molecule::totalDofNum () const {
@@ -738,7 +745,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = getGrid()->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 
@@ -787,7 +794,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = getGrid()->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 
