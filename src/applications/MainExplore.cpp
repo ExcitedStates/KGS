@@ -47,25 +47,25 @@ void randomSampling(ExploreOptions& options) {
   protein->setCollisionFactor(options.collisionFactor);
 
   if (options.collapseRigid > 0) {
-    log("samplingStatus")<<"Before collapsing edges:"<<endl;
-    log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" constraints"<<endl;
-    log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs" << endl;
-    log("samplingStatus")<<"> "<<protein->m_spanningTree->Vertex_map.size() << " rigid bodies" << endl;
+    log("samplingStatus") << "Before collapsing edges:" << endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->Vertex_map.size()  <<  " rigid bodies"  <<  endl;
     protein = protein->collapseRigidBonds(options.collapseRigid);
   }
 //  if(!options.annotationFile.empty())
 //    IO::readAnnotations(protein, options.annotationFile);
 
   for(auto const& coll: protein->getAllCollisions()){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+    log("dominik") << "Ini coll: " << coll.first->getId() << " " << coll.first->getName() << " " << coll.second->getId() << coll.second->getName() << endl;
   }
 
-  log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" constraints"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs" << endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->Vertex_map.size() << " rigid bodies" << endl;
+  log("samplingStatus") << "Molecule has:" << endl;
+  log("samplingStatus") << "> " << protein->getAtoms().size()  <<  " atoms"  <<  endl;
+  log("samplingStatus") << "> " << protein->getInitialCollisions().size() << " initial collisions" << endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->Vertex_map.size()  <<  " rigid bodies"  <<  endl;
 
   if(protein->m_spanningTree->m_cycleAnchorEdges.size()==0){
     log("samplingStatus")<<"Warning: There are no constraints"<<endl;
