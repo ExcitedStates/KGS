@@ -330,7 +330,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLN","C","OXT"},
     {"GLN","C","O1"},
     {"GLN","C","O2"},
-    {"GLM","C","HXT"},
+    {"GLN","C","HXT"},
     {"GLN","-C","N"},
     {"ARG","N","H"},
     {"ARG","N","HN"},

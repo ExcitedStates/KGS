@@ -97,7 +97,7 @@ def main():
 
 	# This is on a residue-clash based level
 	clashCollection = {}
-	clashCollection = collectResidueClashes(clashCollection,fwdClashes,atomResidueList)
+	clashCollection = collectResidueClashes(clashCollection,allClashes,atomResidueList)
 	sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
 	sorted_collection.reverse()
 

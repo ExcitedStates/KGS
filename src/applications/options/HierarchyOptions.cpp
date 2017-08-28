@@ -111,6 +111,7 @@ void HierarchyOptions::print(){
   log("so")<<"\t--samples "<<samples<<endl;
   log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
   log("so")<<"\t--saveData "<<saveData<<endl;
+  log("so")<<"\t--residueNetwork "<<residueNetwork<<endl;
   log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
   log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
@@ -134,6 +135,7 @@ void HierarchyOptions::printUsage(char* pname){
   log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
   log("so")<<"checking for collisions. The default is 0.75."<<endl;
   log("so")<<"  --saveData <0|1|2|3>\t: Indicate whether files shall be saved! 0=none, 1=pdb, 2=pdb and q, 3=all. Default: 1"<<endl;
+  log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies deformable residues during sampling. Default is 'all'."<<endl;
   log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
   log("so")<<"  --collisionCheck <string>\t: Atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace. Default: 1.0e-12. Higher value can artificially increase nullspace."<<endl;

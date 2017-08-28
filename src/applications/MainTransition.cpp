@@ -240,10 +240,12 @@ void targetedSampling(TransitionOptions& options){
 
     log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs()
           << ", Max accessible DOFs: " << protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs() +
-                                          protein->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
+                                          protein->m_conf->getNullspace()->getNullspaceSize()
+          << " Nullspace DOFs: " << protein->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
     log() << "Total DOFs in target: " << target->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << target->m_spanningTree->getNumCycleDOFs()
           << ", Max accessible DOFs: " << target->m_spanningTree->getNumDOFs() - target->m_spanningTree->getNumCycleDOFs() +
-                                          target->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
+                                          target->m_conf->getNullspace()->getNullspaceSize()
+          << " Nullspace DOFs: " << target->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
 
     if(options.saveData > 1){
       string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
@@ -305,17 +307,17 @@ int main( int argc, char* argv[] ) {
   enableLogger("default");
   enableLogger("samplingStatus");
 
-  ofstream reportStream;
-  reportStream.open("kgs_report.log");
-  enableLogger("report", reportStream);
+//  ofstream reportStream;
+//  reportStream.open("kgs_report.log");
+//  enableLogger("report", reportStream);
 
-  ofstream plannerStream;
-  plannerStream.open("kgs_planner.log");
-  enableLogger("dominik", plannerStream);
+//  ofstream plannerStream;
+//  plannerStream.open("kgs_planner.log");
+//  enableLogger("dominik", plannerStream);
 
-  ofstream debugStream;
-  debugStream.open("kgs_debug.log");
-  enableLogger("debug", debugStream);
+//  ofstream debugStream;
+//  debugStream.open("kgs_debug.log");
+//  enableLogger("debug", debugStream);
 
   TransitionOptions::createOptions(argc, argv);
 
@@ -341,8 +343,8 @@ int main( int argc, char* argv[] ) {
 
   targetedSampling(options);
 
-  reportStream.close();
-  plannerStream.close();
+//  reportStream.close();
+//  plannerStream.close();
 
   return 0;
 }

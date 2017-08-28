@@ -14,6 +14,7 @@
 #include <gsl/gsl_matrix_double.h>
 #include <math/NullspaceSVD.h>
 #include <gsl/gsl_vector_double.h>
+#include <gsl/gsl_vector.h>
 
 #include "core/Molecule.h"
 #include "core/Chain.h"
@@ -96,7 +97,14 @@ int main( int argc, char* argv[] ) {
   double initialVdwEnergy = protein->vdwEnergy(options.collisionCheck);
   //conf->computeCycleJacobianAndNullSpace();
 
+  int numResis = 0;
+  for(auto chain : protein->m_chains) {
+    std::vector<Residue *> &residues = chain->getResidues();
+    numResis += residues.size();
+  }
   log("hierarchy") << "Molecule has:" << endl;
+  log("hierarchy") << "> " << protein->m_chains.size() << " chains" << endl;
+  log("hierarchy") << "> " << numResis << " residues" << endl;
   log("hierarchy") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("hierarchy") << "> " << protein->getInitialCollisions().size() << " initial collisions" << endl;
   log("hierarchy") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " hydrogen bonds" << endl;
@@ -128,22 +136,20 @@ int main( int argc, char* argv[] ) {
   protein->writeRigidbodyIDToBFactor();
   IO::writePdb(protein,out_file);
   //Necessary for postprocessing, potentially do rigid cluster decomp as well or plot violations
+  string statFile = out_path + "output/" + name + "_stats.txt";
+  string singVals = out_path + "output/singVals.txt";
+  IO::writeStats(protein, statFile);
+  gsl_vector_outtofile(singValVector, singVals);
 
   if(options.saveData > 1) {
     ///save pyMol coloring script
     string pyMol = out_path + "output/" + name + "_pyMol.pml";
-    string statFile = out_path + "output/" + name + "_stats.txt";
     string rbFile=out_path + "output/" +  name + "_RBs.txt";
-    string singVals = out_path + "output/singVals.txt";
-    IO::writePdb(protein,out_file);
     ///Write pyMol script
     IO::writePyMolScript(protein, out_file, pyMol);
     ///Write statistics
-    IO::writeStats(protein, statFile);
     ///Write rigid bodies
     IO::writeRBs(protein, rbFile);
-    gsl_vector_outtofile(singValVector, singVals);
-
     string outJac = out_path + "output/" + name + "_jac.txt";
     gsl_matrix_outtofile(baseJacobian, outJac);
   }
@@ -155,12 +161,105 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  string outProd="fullProduct_JV.txt";
-  gsl_matrix_outtofile(fullProduct, outProd);
-  gsl_matrix_free(fullProduct);
+  if(options.saveData > 1) {
+    string outProd = "fullProduct_JV.txt";
+    gsl_matrix_outtofile(fullProduct, outProd);
+    gsl_matrix_free(fullProduct);
 
-  string outMat="Vmatrix.txt";
-  gsl_matrix_outtofile(baseNullspaceV, outMat);
+    string outMat = "Vmatrix.txt";
+    gsl_matrix_outtofile(baseNullspaceV, outMat);
+  }
+
+  //Save the output for comparison to normal modes via iMode
+  //This requires a contiguous residue sequence without gaps
+  Residue* const firstResi = (protein->getAtoms())[0]->getResidue();
+  int dofCounter = 0;
+  int numProlines = 0;
+  std::map< pair<Residue*,int>, int> iModDofIndices;
+  std::vector<Residue *>::iterator resIt;
+  for(auto chain : protein->m_chains) {
+    std::vector<Residue *> &residues = chain->getResidues();
+    for(auto const resi : residues){
+      if (resi == firstResi){//Special case where first dof is fixed in iMod
+        iModDofIndices.insert(make_pair( make_pair(resi,1), dofCounter++) );
+        continue;
+      }
+      iModDofIndices.insert(make_pair( make_pair(resi,0), dofCounter++) );
+      if (resi->getName()!="PRO"){
+        iModDofIndices.insert(make_pair( make_pair(resi,1), dofCounter++) );
+      }
+      else
+        numProlines++;
+    }
+  }
+  int numImodDofs = numResis * 2 - 1 - numProlines;
+  log("hierarchy")<<"KGS predicts "<<numImodDofs<<" imod dofs."<<endl;
+  gsl_vector* iModDofs = gsl_vector_calloc(numImodDofs);
+
+  //Open the output file
+  string outIMode = "singVecsKGS_ic.evec";
+  ofstream output( outIMode.c_str() );
+  if(!output.is_open()) {
+    cerr<<"Cannot write to "<<outIMode<<". You might need to create output directory first"<<endl;
+    exit(-1);
+  }
+  //Write header
+  output<<"Eigenvector file: COVAR"<<endl;
+  output<<numCols<<" "<<numImodDofs<<" Contains "<<numCols<<" singular vectors"<<endl;
+  //Loop through the dofs in V and in the molecule
+  for( int v_i = 0; v_i < numCols; ++v_i) {
+    gsl_vector_view projected_gradient_view = gsl_matrix_column(baseNullspaceV,numCols - v_i - 1);
+    gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
+    //Scale to desired step size
+    gsl_vector_scale_to_length(projected_gradient, options.stepSize);
+    //Refill iModDofs vector
+    gsl_vector_set_zero(iModDofs);
+    for( auto const edge : protein->m_spanningTree->Edges){
+      Bond *bond = edge->getBond();
+      // Check for global dof bonds
+      if (bond == nullptr)
+        continue;
+
+      int idx=-1; //iMod index
+      int cycleDofID =  edge->getDOF()->getCycleIndex(); //KGS cycle index
+      if (cycleDofID != -1) {//if cycle DOF in KGS
+        Atom *atom1 = bond->m_atom1;
+        if (bond->m_atom1->getName() == "N" and bond->m_atom2->getName() == "CA") {
+          idx = iModDofIndices[make_pair(atom1->getResidue(),0)];
+//          log("hierarchy") << "First dof in resi " << atom1->getResidue()->getId() << ": " << idx << endl;
+        } else {
+          if (bond->m_atom1->getName() == "CA" and bond->m_atom2->getName() == "C") {
+            idx = iModDofIndices[make_pair(atom1->getResidue(),1)];
+//            log("hierarchy") << "Second dof in resi " << atom1->getResidue()->getId() << ": " << idx << endl;
+          } else
+            idx = -1;
+        }
+        if (idx >= 0 && idx <= numImodDofs) {
+//          log("hierarchy") << "IDX " << idx << " length " << iModDofs->size << " cycle IDX " << cycleDofID << " length "
+//               << projected_gradient->size << endl;
+          gsl_vector_set(iModDofs, idx, gsl_vector_get(projected_gradient, cycleDofID));
+        }
+      }
+    }
+    //Scale to desired step size
+    gsl_vector_scale_to_length(iModDofs, options.stepSize);
+    //Write iMod vector information to file
+    output<<"****"<<endl;
+    if (numCols - v_i - 1 < singValVector->size) {
+      output << v_i + 1 << " " << gsl_vector_get(singValVector, numCols - v_i - 1) << endl;
+    }
+    else{
+      output << v_i + 1 << " " << 0.0 << endl;
+    }
+    for(int i=0; i<numImodDofs; i++){
+      output<<gsl_vector_get(iModDofs,i);
+      if (i<numImodDofs-1) {
+        output << " ";
+      }
+    }
+    output<<endl;
+  }
+  output.close();
 
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;

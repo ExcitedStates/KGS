@@ -46,13 +46,7 @@ class BidirectionalMovingFront : public SamplingPlanner{
       bool alignAlways,
       double biasToTarget
   );
-//  BidirectionalMovingFront(Molecule * protein,
-//                           Direction* direction,
-//                           Molecule * target,
-//                           Selection * metricSelection,
-//                           bool blendedDirection,
-//                           int stopAfter,
-//                           int frontSize  );
+
   ~BidirectionalMovingFront();
 
   void generateSamples();

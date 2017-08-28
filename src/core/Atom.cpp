@@ -185,6 +185,23 @@ Atom* Atom::getBondNeighbor (Bond * bond) const {
   return bond->m_atom1;
 }
 
+Bond* Atom::getBond(Atom *other) const {
+  for (vector<Bond*>::const_iterator bit=Cov_bond_list.begin(); bit!=Cov_bond_list.end(); ++bit) {
+    Bond* bond = *bit;
+    if ( bond->m_atom1 == this){
+      if( bond->m_atom2 == other){
+        return bond;
+      }
+    }
+    else{
+      if( bond->m_atom1 == other){
+        return bond;
+      }
+    }
+  }
+  return nullptr;
+}
+
 Residue* Atom::getResidue () const{
   return m_parentResidue;
 }

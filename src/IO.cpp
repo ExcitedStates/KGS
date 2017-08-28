@@ -40,6 +40,7 @@
 #include <sys/types.h>
 #include <metrics/RMSD.h>
 #include <math/NullspaceSVD.h>
+#include <math/gsl_helpers.h>
 
 
 #include "CTKTimer.h"
@@ -2275,11 +2276,11 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
     //gsl_vector_outtofile(conf->CycleNullSpace->singularValues,outSing);
 
     if (NullspaceSVD *derived = dynamic_cast<NullspaceSVD *>(conf->getNullspace())) {
-      derived->writeMatricesToFiles(outJac, outNull, outSing);
+      gsl_vector_outtofile(derived->getSVD()->S, outSing);
+      derived->writeMatricesToFiles(outJac, outNull);
     }
     IO::writeRBs(protein, rbFile);
     IO::writeStats(protein, statFile);
 
   }
-
 }

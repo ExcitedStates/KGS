@@ -239,7 +239,7 @@ def plotEnthalpyAndEntropy(xData,samples1, samples2,yString1,yString2,saveFileNa
 	from pylab import rcParams
 	# rcParams['figure.figsize'] = 6.5, 6.5*3/4
 
-	ftSize=24
+	ftSize=20
 	mpl.rc('xtick', labelsize=ftSize) 
 	mpl.rc('ytick', labelsize=ftSize)
 
@@ -248,7 +248,7 @@ def plotEnthalpyAndEntropy(xData,samples1, samples2,yString1,yString2,saveFileNa
 	
 	maxLength = len(xData)
 	fig=plt.figure()
-	ax = fig.add_axes([0.2,0.2,0.68,0.75])
+	ax = fig.add_axes([0.18,0.2,0.64,0.75]) #
 	ax.set_xlabel('transition path [100 steps]',fontsize=ftSize)
 	majorTicks = np.arange(0,maxLength,500)
 	majorTickLabels = np.arange(0,(maxLength)/100+1,5)
@@ -414,16 +414,21 @@ def main():
 	# 	
 	# os.chdir("../..")
 		
-	samples = np.arange(0,len(energy))
-	
-	deltaS=[log(y) for y in relDofs]
-	Tfac=1000
-	deltaG=[x-Tfac*y for x,y in zip(deltaH,deltaS)]
-	
-	rev_deltaS=[log(y) for y in rev_relDofs]
-	rev_Tfac=Tfac
-	rev_deltaG=[x-Tfac*y for x,y in zip(rev_deltaH,rev_deltaS)]
-
+	#New idea: entropy via fluctuating dofs along the path
+	deltaS = np.gradient(relDofs)
+	deltaS = deltaS.tolist()
+	# print deltaS
+	rev_deltaS = np.gradient(rev_relDofs)
+	rev_deltaS = rev_deltaS.tolist()
+	#Internal energy differences along the path
+	deltaU = np.gradient(energy)
+	deltaU = deltaU.tolist()
+	rev_deltaU = np.gradient(rev_energy)
+	rev_deltaU = rev_deltaU.tolist()
+	#Free Helmholtz energy (volume changes ignored, otherwise Gibb's free energy)
+	Tfac = 300
+	deltaF = [x-Tfac*y for x,y in zip(deltaU,deltaS)]
+	rev_deltaF = [x-Tfac*y for x,y in zip(rev_deltaU,rev_deltaS)]
 	
 	d="energyPlots"
 	if not os.path.exists(d):
@@ -435,7 +440,8 @@ def main():
 	sys.stdout = fout
 
 	for i in range(len(samples)):
-		print samples[i], deltaG[i], deltaH[i], deltaS[i]
+		# print samples[i], deltaG[i], deltaH[i], deltaS[i]
+		print samples[i], deltaF[i], deltaU[i], deltaS[i]
 		
 	sys.stdout = orig_stdout
 	fout.close()
@@ -449,7 +455,8 @@ def main():
 		sys.stdout = fout
 
 		for i in range(len(samples)):
-			print samples[i], rev_deltaG[i], rev_deltaH[i], rev_deltaS[i]
+			#print samples[i], rev_deltaG[i], rev_deltaH[i], rev_deltaS[i]
+			print samples[i], rev_deltaF[i], rev_deltaU[i], rev_deltaS[i]
 			
 		sys.stdout = orig_stdout
 		fout.close()
@@ -458,17 +465,22 @@ def main():
 		samples = np.arange(0,len(energy)+len(rev_energy))
 		rev_energy.reverse()
 		rev_clashConstraints.reverse()
-		rev_deltaH.reverse()
+		
 		rev_deltaS.reverse()
-		rev_deltaG.reverse()
+		# rev_deltaH.reverse()
+		# rev_deltaG.reverse()
+		rev_deltaU.reverse()
+		rev_deltaF.reverse()
 		
-		switch=len(deltaG)
+		switch=len(deltaS)
 		
-		deltaG.extend(rev_deltaG)
 		energy.extend(rev_energy)
 		clashConstraints.extend(rev_clashConstraints)
-		deltaH.extend(rev_deltaH)
+		# deltaG.extend(rev_deltaG)
+		# deltaH.extend(rev_deltaH)
 		deltaS.extend(rev_deltaS)
+		deltaU.extend(rev_deltaU)
+		deltaF.extend(rev_deltaF)
 		
 		plotEnthalpyAndEntropy(samples,energy,clashConstraints,"vdW energy [kcal/mol]","independent clash constraints","vdwAndClashes_completePath.png",switch)
 		plotEnthalpy(samples,energy,"vdW energy [kcal/mol]","vdw_completePath.png")		
@@ -488,7 +500,8 @@ def main():
 		spamwriter = csv.writer(csvfile, delimiter=',')
 		spamwriter.writerow(['sample','dG','dH','dS'])
 		for i in range(len(samples)):
-			spamwriter.writerow([samples[i], deltaG[i], deltaH[i], deltaS[i]])
+			# spamwriter.writerow([samples[i], deltaG[i], deltaH[i], deltaS[i]])
+			spamwriter.writerow([samples[i], deltaF[i], deltaU[i], deltaS[i]])
 	
 if __name__ == "__main__":
 	main()
