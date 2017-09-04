@@ -119,6 +119,8 @@ class Atom {
 
   Atom *getBondNeighbor(Bond *bond) const;
 
+  Bond* getBond(Atom *other) const;
+
   //TODO: Let the Coordinate class take care of this.
   double distanceTo(Atom *other) const; // Euclidean distance between atom self and other
   //TODO: Let the Coordinate class take care of this. This impl. is also slow (uses pow)

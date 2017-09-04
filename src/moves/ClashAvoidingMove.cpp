@@ -108,7 +108,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       clashAvoidingNullSpace->projectOnNullSpace(projected_gradient, projected_gradient);
 
       new_q->m_usedClashPrevention = true;
-      new_q->m_clashFreeDofs = clashAvoidingNullSpace->getNullspaceSize();
+      new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanningTree->getNumCycleDOFs() + clashAvoidingNullSpace->getNullspaceSize();
 
       log("dominik")<<"New nullspace dimension: "<< clashAvoidingNullSpace->getNullspaceSize()<<endl;
 

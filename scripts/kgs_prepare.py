@@ -67,13 +67,19 @@ vdwRadii = {
         "C" : 1.700, "N" : 1.625, "O" : 1.490, "S" : 1.782, "H" : 1.000, "P" : 1.871, 
         "F" : 1.560, "Cl": 1.735,"CL": 1.735,"Br": 1.978,"BR": 1.978, "I" : 2.094, "?" : 2.000 }
 
+ionRadii = {
+    "C"
+}
+
 verbose = False
 writePml = False
+writeIMOD = False
 waters = True
 ligands = True
 altloc= "A"
 cutoff=-1.0
 chainID="all"
+model = -1
 
 class Atom:
     """ Container class for PDB atoms """
@@ -90,16 +96,17 @@ class Atom:
         self.tempFactor = float(atom_string[60:66])
         if (self.name[0] == "D"):#case of Deuterium
             self.name = "H"+self.name[1:]
-        if len(atom_string.strip())>=78:
-            self.elem = atom_string[76:78].strip()
-            self.elem = self.elem[0]
-            if self.elem == "D":
-                self.elem = "H"
-        else:
-            name_nodigits = filter(lambda x: x.isalpha(), self.name)
-            self.elem = name_nodigits[0]
+        # if len(atom_string.strip())>=78:
+        #     self.elem = atom_string[76:78].strip()
+        #     self.elem = self.elem[0]
+        #     if self.elem == "D":
+        #         self.elem = "H"
+        # else:
+        name_nodigits = filter(lambda x: x.isalpha(), self.name)
+        self.elem = name_nodigits[0]
        
         self.neighbors = []
+        self.hBondNeighbors = []
         self.rings = 0
         self.atomType = ""
         self.hetatm = atom_string.startswith("HETATM")
@@ -214,11 +221,19 @@ class PDBFile:
                 if atom1.id<=atom2.id: continue
                 dist = atom1.distance(atom2)
                 covsum = atom1.covRadius()+atom2.covRadius()
-
                 if dist<=covsum+0.4:
                     if (atom1.hetatm * atom2.hetatm): #Only covalent bonds between atom pairs or hetatm pairs
                         atom1.neighbors.append(atom2)
-                        atom2.neighbors.append(atom1)         
+                        atom2.neighbors.append(atom1)
+                        
+    def buildHbondNeighbors(self):
+        #Resetting neighbor information
+        for atom in self.atoms:
+            atom.hBondNeighbors=[]
+            
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
+            a.hBondNeighbors.append(h)
+            h.hBondNeighbors.append(a)
 
     def buildRingCounts(self):
         """Construct spanning tree to determine rings"""
@@ -325,6 +340,7 @@ class PDBFile:
         self.name = name
         self.atoms = atom_records
         self.constraints = []
+        self.iModBonds = []
         
         self.checkHydrogens() #check if hydrogens are present
         self.checkAltConformations() #check and remove alt locs
@@ -427,6 +443,7 @@ class PDBFile:
             hydrogen (Atom), donor (Atom), and energy (float)
         """
         bonds = []
+        print "Identifying hbonds at energy cutoff ",threshold
         for acceptor in self.atoms:
             if not acceptor.isAcceptor(): continue
             #for donor in self.atoms: # All-pairs
@@ -602,6 +619,11 @@ class PDBFile:
     def checkHydrogenBonds(self):
         for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             self.constraints.append( "RevoluteConstraint %d %d %s %s"%(a.id, h.id, str(a), str(h)) )
+            if writeIMOD:   #save h-bonds as stiff springs between donor and acceptor for usage in iMod
+                firstNeighbor = d.neighbors[0]
+                self.iModBonds.append( "%d %d %d"%(a.id,firstNeighbor.id, 10) )
+                self.iModBonds.append( "%d %d %d"%(a.id, d.id, 10) )
+                self.iModBonds.append( "%d %d %d"%(aa.id, d.id, 10) )
 
     def writePDB(self,fname):
         f = open(fname,'w')
@@ -639,7 +661,18 @@ class PDBFile:
         ret = [a for a in self.atoms if a.resi==resi and a.name==name]
         if ret: return ret[0]
         return None
-
+    
+    def writeIMOD(self,fname):
+        f = open(fname,'w')       
+        for entry in self.iModBonds:
+            f.write( "%s\n"%(entry) )
+            
+    def meanCoordination(self):
+        self.buildHbondNeighbors()
+        meanCoordination = 0.0
+        for atom in self.atoms:
+            meanCoordination += len(atom.neighbors)+len(atom.hBondNeighbors)
+        return meanCoordination/len(self.atoms)
 
 class MultiModel:
     def __init__(self, pdb_file):
@@ -734,7 +767,16 @@ class MultiModel:
             fname = m_prefix+".kgs.pml"
             print("Writing constraints to "+fname)
             m.writePML(fname)
-    
+ 
+    def writeIMODs(self, prefix):
+       for i,m in enumerate(self.pdbs): 
+           if len(self.pdbs)==1:
+               m_prefix = "%s"%(prefix) if prefix else m.name
+           else:
+               m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
+           fname = m_prefix+"_imod_ff.txt"
+           print("Writing h-bond springs to "+fname)
+           m.writeIMOD(fname)   
 
 def printUsage(argv):
     print("Reads a PDB-file, prepares it for execution in KGS and stores the result")
@@ -752,6 +794,7 @@ def printUsage(argv):
     print("  -alt          : keeping specified alt loc (and empty alt loc) ")
     print("  -chain        : keeping only specified chain")
     print("  -energy       : energy cutoff for hydrogen bonds")
+    print("  -imod         : save donor-acceptor connections for use as springs in iMod")
     sys.exit(-1)
 
 if __name__ == "__main__":
@@ -809,6 +852,17 @@ if __name__ == "__main__":
         argv.remove(cutoff)
         print "Minimum h-bond energy "+cutoff
         cutoff = float(cutoff)
+        
+    if "-imod" in argv:
+        writeIMOD = True
+        argv.remove("-imod")
+        
+    if "-model" in argv:
+        model = sys.argv[sys.argv.index("-model")+1]
+        argv.remove("-model")
+        argv.remove(model)
+        print "Keeping only model",model
+        model = int(model)
 
     #Only thing left of argv should be the program name and input file
     if not len(argv)==2:
@@ -816,6 +870,8 @@ if __name__ == "__main__":
     input_file = argv[1]
 
     models = MultiModel(input_file)
+    if model != -1:
+        models.pdbs = models.pdbs[model]
     models.checkCollisions()
     models.checkCovalentBonds()
     models.checkDisulphideBonds()
@@ -824,5 +880,12 @@ if __name__ == "__main__":
     # models.pdbs[0].writePDB("init.kgs.pdb")
     if writePml:
         models.writePMLs(prefix)
+    if writeIMOD:
+        models.writeIMODs(prefix)
+    
 
-
+            
+        
+    # testVals= np.arange(-6,0,0.25)
+    # for cutoff in testVals:
+    #     print "Mean coordination of first model",models.pdbs[0].meanCoordination(),"cutoff",cutoff

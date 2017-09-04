@@ -61,12 +61,10 @@ void NullspaceSVD::updateFromMatrix()
 
 void NullspaceSVD::writeMatricesToFiles(
     const std::string& jac_file,
-    const std::string& null_file,
-    const std::string& sval_file) const
+    const std::string& null_file) const
 {
   gsl_matrix_outtofile(m_svd->matrix, jac_file);
   gsl_matrix_outtofile(m_svd->V, null_file);
-  gsl_vector_outtofile(m_svd->S, sval_file);
 }
 
 SVD *NullspaceSVD::getSVD() const {

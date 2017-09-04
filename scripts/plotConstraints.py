@@ -103,8 +103,7 @@ with open(constraint_file_name) as constraintFile:
             maxStrain = abs(strain)
         if(abs(strain)>binData[bondId-1]):
             binData[bondId-1]=abs(strain)
-        # if(abs(strain)>bins[-4]):
-        #     print "Bin 0.1 to 1: ",id1,",",id2
+
         if(abs(strain)>bins[-3]):
             secStrainedBonds[bondId]=[id1, id2]
             foundSec=1

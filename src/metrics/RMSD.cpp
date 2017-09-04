@@ -17,29 +17,47 @@ double RMSD::distance(Configuration *c1, Configuration *c2) {
 
   const std::vector<Atom *> &atomsRMSD1 = m_selection.getSelectedAtoms(c1->getMolecule());
 
+  Molecule* m1 = c1->getMolecule();
+  Molecule* m2 = c2->getMolecule();
+
+  // Build two vectors of atoms where each entry in one has matching chain name, residue id, and atom name in the other
+  std::vector<Atom*> *matchedAtoms1;
+  std::vector<Atom*> *matchedAtoms2;
+  if (m1 == m2){
+    matchedAtoms1 = new std::vector<Atom*>(atomsRMSD1);
+    matchedAtoms2 = new std::vector<Atom*>(atomsRMSD1);
+  }else {
+    matchedAtoms1 = new std::vector<Atom*>();
+    matchedAtoms2 = new std::vector<Atom*>();
+
+    for (auto const &aIt : atomsRMSD1) {
+      const std::string &name = aIt->getName();
+      const std::string &chainName = aIt->getResidue()->getChain()->getName();
+      int resId = aIt->getResidue()->getId();
+      Atom *a1 = &(*aIt);
+      Atom *a2 = m2->getAtom(chainName, resId, name);
+      if (a2 != nullptr) {
+        matchedAtoms1->push_back(a1);
+        matchedAtoms2->push_back(a2);
+      }
+    }
+  }
+
   if (atomsRMSD1.empty()) {
     cerr << "RMSD::distance - Atom-selection given to RMSD metric contained no atoms: " << m_selection << endl;
     exit(-1);
   }
 
-  Molecule *protein = c1->updatedMolecule();
-  int atom_num = atomsRMSD1.size();
+  int atom_num = matchedAtoms1->size();
   assert(atom_num > 3);
 
   gsl_matrix *static_matrix = gsl_matrix_alloc(atom_num, 3);
   gsl_matrix *moving_matrix = gsl_matrix_alloc(atom_num, 3);
 
+  c1->updateMolecule();
   unsigned int i = 0;
-  for (auto const &aIt : atomsRMSD1) {
-    const std::string &name = aIt->getName();
-    const std::string &chainName = aIt->getResidue()->getChain()->getName();
-    int resId = aIt->getResidue()->getId();
-    const Atom *a1 = protein->getAtom(chainName, resId, name);
-    const Atom *a2 = c2->getMolecule()->getAtom(chainName, resId, name);
-
-    if (a2 == nullptr) continue;
-
-    const Coordinate &c1 = a1->m_position;
+  for (auto const &aIt : *matchedAtoms1) {
+    const Coordinate &c1 = (*aIt).m_position;
     gsl_matrix_set(static_matrix, i, 0, c1.x);
     gsl_matrix_set(static_matrix, i, 1, c1.y);
     gsl_matrix_set(static_matrix, i, 2, c1.z);
@@ -54,17 +72,10 @@ double RMSD::distance(Configuration *c1, Configuration *c2) {
     i++;
   }
 
-  protein = c2->updatedMolecule();
+  c2->updateMolecule();
   i = 0;
-  for (auto const &atom: atomsRMSD1) {
-    const string &name = atom->getName();
-    const string &chainName = atom->getResidue()->getChain()->getName();
-    const int resId = atom->getResidue()->getId();
-    Atom *a2 = protein->getAtom(chainName, resId, name);
-
-    if (a2 == nullptr) continue;
-
-    const Coordinate &c2 = a2->m_position;
+  for (auto const &aIt: *matchedAtoms2) {
+    const Coordinate &c2 = (*aIt).m_position;
     gsl_matrix_set(moving_matrix, i, 0, c2.x);
     gsl_matrix_set(moving_matrix, i, 1, c2.y);
     gsl_matrix_set(moving_matrix, i, 2, c2.z);
@@ -81,6 +92,9 @@ double RMSD::distance(Configuration *c1, Configuration *c2) {
 
   gsl_matrix *rotate = gsl_matrix_alloc(3, 3);
   gsl_vector *transl = gsl_vector_alloc(3);
+
+  delete matchedAtoms1;
+  delete matchedAtoms2;
 
   /// Compute the optimal rotation and translation, returns remaining rmsd
   return kabsch(moving_matrix, static_matrix, rotate, transl);

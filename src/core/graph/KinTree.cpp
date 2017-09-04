@@ -34,7 +34,9 @@
 
 #include "Logger.h"
 
-using namespace std;
+using std::endl;
+using std::cout;
+using std::cerr;
 
 
 KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<Atom*>& roots ):
@@ -48,7 +50,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
     addVertex(rb);
   }
 
-  list<KinEdge *> cycleEdges;
+  std::list<KinEdge *> cycleEdges;
 
   //Initialize chain-roots by adding them to the queue and setting up edges from the super-root
   auto my_comp = [](const KinVertex* v1, const KinVertex* v2){
@@ -56,7 +58,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
     int id2 = v2->m_rigidbody == nullptr ? 0: v2->m_rigidbody->id();
     return id1>id2;
   };
-  std::priority_queue<KinVertex*,vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
+  std::priority_queue<KinVertex*, std::vector<KinVertex*>,decltype(my_comp)> queue(my_comp);
 
 
   //Build new vector with chain roots given by the user at the front
@@ -113,7 +115,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
     e4->setDOF(new GlobalRotateDOF(e4, 0));
     e5->setDOF(new GlobalRotateDOF(e5, 1));
     e6->setDOF(new GlobalRotateDOF(e6, 2));
-    log("debug") << "Molecule::buildSpanningTree() - Connecting " << chainRoot->m_rigidbody->Atoms[0]
+    log("debug") << "KinTree::KinTree(..) - Connecting " << chainRoot->m_rigidbody->Atoms[0]
                  << " to super-root using 6 dofs" << endl;
 
     queue.push(chainRoot);
@@ -122,7 +124,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
       KinVertex *current_vertex = queue.top();
       queue.pop();
       visitedVertices.insert(current_vertex);
-      log("debug") << "Molecule::buildSpanningTree() - Visiting vertex of size " <<
+      log("debug") << "KinTree::KinTree(..) - Visiting vertex of size " <<
                    current_vertex->m_rigidbody->Atoms.size() << ", rbID: " << current_vertex->m_rigidbody->id() << ", "
                    <<
                    current_vertex->m_rigidbody->m_bonds.size() << " bonds" << endl;
@@ -134,11 +136,11 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
           bonded_vertex = bond->m_atom1->getRigidbody()->getVertex();
 
         if (current_vertex == bonded_vertex) {
-          log("debug") << "Molecule::buildSpanningTree() - Bond connecting same rigid body " << bond << endl;
+          log("debug") << "KinTree::KinTree(..) - Bond connecting same rigid body " << bond << endl;
           continue;
         }
         if (visitedBonds.count(bond) > 0) {
-          log("debug") << "Molecule::buildSpanningTree() - Already visited bond " << bond << endl;
+          log("debug") << "KinTree::KinTree(..) - Already visited bond " << bond << endl;
           continue;
         }
 
@@ -148,17 +150,17 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
           // If it's an H-bond, it closes a cycle. Add it in m_cycleAnchorEdges.
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
-          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge << endl;
+          log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from h-bond " << edge << endl;
 //          cout<< "Molecule::buildSpanningTree() - Adding cycle-edge from h-bond " << edge->getBond()->Atom1->getId() <<", "<<edge->getBond()->m_atom2->getId() << endl;
         } else if (bond->isDBond()) {
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
-          log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from d-bond " << edge << endl;
+          log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from d-bond " << edge << endl;
         } else {
           if (visitedVertices.count(bonded_vertex) > 0) {
             KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
             cycleEdges.push_back(edge);
-            log("debug") << "Molecule::buildSpanningTree() - Adding cycle-edge from covalent bond " << edge << endl;
+            log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from covalent bond " << edge << endl;
 
           } else {
             // If it's a covalent bond, add it into the tree m_edges
@@ -166,7 +168,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
             queue.push(bonded_vertex);
             KinEdge *edge = addEdgeDirected(current_vertex, bonded_vertex, bond);
             edge->setDOF(new TorsionDOF(edge));
-            log("debug") << "Molecule::buildSpanningTree() - Adding torsion-edge " << edge << endl;
+            log("debug") << "KinTree::KinTree(..) - Adding torsion-edge " << edge << endl;
           }
         }
       }
@@ -174,31 +176,35 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
   }
 
   collectDOFs();
+
   //Sort cycle anchor edges to maintain constant row order for different roots
   //This is important for the hydrogen-bond hierarchy analysis!
   cycleEdges.sort(KinEdge::compareIDs);
 
   // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
   // end-points to the LCA into m_spanningTree->m_cycleDOFs.
-  for( auto const &h_edge: cycleEdges ) {
+  for (auto const &h_edge : cycleEdges) {
     KinVertex *lca = findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);
-    m_cycleAnchorEdges.push_back(make_pair(h_edge, lca));
+    m_cycleAnchorEdges.push_back(std::make_pair(h_edge, lca));
 
-    for( KinVertex *v=h_edge->StartVertex; v != lca; v=v->m_parent ) {
-      KinEdge *edge=v->m_parent->findEdge(v);
+    for( KinVertex *v = h_edge->StartVertex; v != lca; v = v->m_parent ) {
+      KinEdge *edge = v->m_parent->findEdge(v);
       addCycleDOF(edge->getDOF());
     }
 
-    for( KinVertex *v=h_edge->EndVertex; v != lca; v=v->m_parent ) {
-      KinEdge *edge=v->m_parent->findEdge(v);
+    for( KinVertex *v = h_edge->EndVertex; v != lca; v = v->m_parent ) {
+      KinEdge *edge = v->m_parent->findEdge(v);
       addCycleDOF(edge->getDOF());
     }
   }
 }
 
 KinTree::~KinTree () {
-  for (vector< pair<KinEdge*,KinVertex*> >::iterator it=m_cycleAnchorEdges.begin(); it!=m_cycleAnchorEdges.end(); ++it) {
-    delete it->first;
+//  for (std::vector< std::pair<KinEdge*,KinVertex*> >::iterator it=m_cycleAnchorEdges.begin(); it!=m_cycleAnchorEdges.end(); ++it) {
+//  delete it->first;
+//}
+  for (auto edge_nca_pair: m_cycleAnchorEdges) {
+    delete edge_nca_pair.first;
   }
 }
 
@@ -210,7 +216,7 @@ void KinTree::print() const {
   //return;
   // breadth-first-traverse
   log() << "Breadth-first-traversal of the tree:" << endl;
-  queue<KinVertex*> node_queue;
+  std::queue<KinVertex*> node_queue;
   node_queue.push(m_root);
   while ( node_queue.size()>0 ) {
     // get the first element in the queue
@@ -272,14 +278,14 @@ KinEdge* KinTree::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond *
     atom4 = nullptr;
 
     // Find out the atom that covalently bonded to atom3 with smallest m_id. It participates in the definition of the torsional angle.
-    for (vector<Atom *>::iterator aitr = atom3->Cov_neighbor_list.begin();
+    for (std::vector<Atom *>::iterator aitr = atom3->Cov_neighbor_list.begin();
          aitr != atom3->Cov_neighbor_list.end(); ++aitr) {
       if ((*aitr) == atom2) continue;
       if (atom4 == nullptr || (*aitr)->getId() < atom4->getId()) {
         atom4 = *aitr;
       }
     }
-    for (vector<Atom *>::iterator aitr = atom3->Hbond_neighbor_list.begin();
+    for (std::vector<Atom *>::iterator aitr = atom3->Hbond_neighbor_list.begin();
          aitr != atom3->Hbond_neighbor_list.end(); ++aitr) {
       if ((*aitr) == atom2) continue;
       if (atom4 == nullptr || (*aitr)->getId() < atom4->getId()) {
@@ -289,7 +295,7 @@ KinEdge* KinTree::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond *
 
     // If atom4 is in vertex1, then should flip atom2 and atom3 so that the bond is pointing from vertex1 to vertex2
     Atom *tmp_atom;
-    for (vector<Atom *>::iterator svIT = vertex1->m_rigidbody->Atoms.begin();
+    for (std::vector<Atom *>::iterator svIT = vertex1->m_rigidbody->Atoms.begin();
          svIT != vertex1->m_rigidbody->Atoms.end(); ++svIT) {
       if ((*svIT) == atom4) {
         tmp_atom = bond_copy->m_atom1;
@@ -312,7 +318,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   KinVertex *cur_node = v1;
   do {
     cur_node->Visited = true;
-    //log("debug")<<"Cur node [1] : "<<cur_node->m_rigidbody<<endl;
+//    log("debug")<<"Cur node [1] : "<<cur_node->m_rigidbody<<endl;
     if (cur_node == m_root)
       break;
     else{
@@ -326,9 +332,9 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
   } while (true);
   // traverse from v2 to m_root, and stop until meeting a Visited vertex
   cur_node = v2;
-  //log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
+//  log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
   while ( !cur_node->Visited ) {
-    //log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
+//    log("debug")<<"Cur node [2] : "<<cur_node->m_rigidbody<<endl;
     if(cur_node->m_parent==nullptr){
       cerr<<"KinTree::findCommonAncestor("<<v1->m_rigidbody<<","<<v2->m_rigidbody<<") node has no m_parent: "<<cur_node->m_rigidbody<<endl;
       cerr<<"You might see this error because of multiple occupancy atoms in the structure"<<endl;
@@ -337,7 +343,7 @@ KinVertex* KinTree::findCommonAncestor (KinVertex *v1, KinVertex *v2) {
     cur_node = cur_node->m_parent;
   }
   KinVertex *ancestor = cur_node;
-  //log("debug")<<"done [3] "<<endl;
+  // log("debug")<<"done [3] "<<endl;
   // unmark all the Visited nodes
   cur_node = v1;
   do {
@@ -357,8 +363,8 @@ void KinTree::collectDOFs()
 
 void KinTree::collectDOFs(KinVertex* v)
 {
-  for(auto const& edge: v->m_edges){
-    if( std::find(m_dofs.begin(),m_dofs.end(), edge->getDOF())==m_dofs.end() ) {
+  for (auto const& edge : v->m_edges) {
+    if( std::find(m_dofs.begin(), m_dofs.end(), edge->getDOF()) == m_dofs.end() ) {
       DOF* dof = edge->getDOF();
       dof->setIndex(m_dofs.size());
       m_dofs.push_back(dof);
@@ -370,20 +376,20 @@ void KinTree::collectDOFs(KinVertex* v)
 
 
 DOF* KinTree::getDOF(unsigned int idx) const{
-  assert(idx<m_dofs.size());
+  assert(idx < m_dofs.size());
   return m_dofs[idx];
 }
 
 DOF* KinTree::getCycleDOF(unsigned int idx) const
 {
-  assert(idx<m_cycleDOFs.size());
+  assert(idx < m_cycleDOFs.size());
   return m_cycleDOFs[idx];
 }
 
 void KinTree::addCycleDOF(DOF* dof)
 {
-  if(std::find(m_cycleDOFs.begin(), m_cycleDOFs.end(), dof)==m_cycleDOFs.end()) {
-    //DOF is not already in m_cycleDOFs
+  if (std::find(m_cycleDOFs.begin(), m_cycleDOFs.end(), dof) == m_cycleDOFs.end()) {
+    // DOF is not already in m_cycleDOFs
     dof->setCycleIndex(m_cycleDOFs.size());
     m_cycleDOFs.push_back(dof);
   }

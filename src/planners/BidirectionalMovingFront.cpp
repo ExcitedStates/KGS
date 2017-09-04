@@ -122,6 +122,8 @@ void BidirectionalMovingFront::generateSamples() {
 
   //Must be initialized here as m_metric is only set in `initialize` (not constructor)
   m_minDistance = m_metric->distance(m_fwdRoot, m_revRoot);
+  m_fwdRoot->m_distanceToTarget = m_minDistance;
+  m_revRoot->m_distanceToTarget = m_minDistance;
 
   while (numSamples < m_stopAfter) {//sample at most until the number of samples has been reached
     ++totalTrials;

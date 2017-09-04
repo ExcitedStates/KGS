@@ -44,12 +44,12 @@ Selection::Selection(const string& selectionPattern) :
 
 vector<Atom*>& Selection::getSelectedAtoms( const Molecule* mol )
 {
-  if( m_cachedAtoms.count(mol)==0 ){
+  if ( m_cachedAtoms.count(mol)==0 ){
     m_cachedAtoms[mol] = std::move(std::vector<Atom*>());
     vector<Atom*>& ret = m_cachedAtoms[mol];
 
     for(auto const& a: mol->getAtoms()){
-      if( m_rootClause->inSelection(a) )
+      if ( m_rootClause->inSelection(a) )
         ret.push_back(a);
     }
   }
@@ -59,7 +59,7 @@ vector<Atom*>& Selection::getSelectedAtoms( const Molecule* mol )
 
 vector<Residue*>& Selection::getSelectedResidues( const Molecule *mol )
 {
-  if(m_cachedResidues.count(mol)==0) {
+  if (m_cachedResidues.count(mol)==0) {
 
     m_cachedResidues[mol] = std::move(std::vector<Residue*>());
     vector<Residue *>& ret = m_cachedResidues[mol];
@@ -85,7 +85,7 @@ vector<Residue*>& Selection::getSelectedResidues( const Molecule *mol )
 
 std::vector<Bond *>& Selection::getSelectedBonds( const Molecule *mol )
 {
-  if(m_cachedBonds.count(mol)==0) {
+  if (m_cachedBonds.count(mol)==0) {
     m_cachedBonds[mol] = std::move(vector<Bond*>());
     vector<Bond *>& ret = m_cachedBonds[mol];
     for (auto const &bond: mol->getCovBonds()) {
@@ -106,26 +106,26 @@ bool Selection::inSelection( const Bond* b ) const{
 
 bool Selection::inSelection( const Residue* r) const{
   for(auto const& a: r->getAtoms())
-    if(!m_rootClause->inSelection(a)) return false;
+    if (!m_rootClause->inSelection(a)) return false;
   return true;
 }
 
 
 Selection::Clause* Selection::parseClause(const std::string &input) {
-  if(Util::contains(input, " or ") || Util::contains(input, " + ")) return new OrClause(input);
-  if(Util::contains(input, " and ") || Util::contains(input, " & ")) return new AndClause(input);
-  if(Util::startsWith(input, "not ") || Util::startsWith(input, "!")) return new NotClause(input);
-  if(Util::startsWith(input, "resi ")) return new ResiClause(input);
-  if(Util::startsWith(input, "resn ")) return new ResnClause(input);
-  if(Util::startsWith(input, "name ")) return new NameClause(input);
-  if(Util::startsWith(input, "elem ")) return new ElemClause(input);
-  if(Util::startsWith(input, "id ")) return new IDClause(input);
-  if(Util::startsWith(input, "chain ")) return new ChainClause(input);
-  if(input=="all")      return new AllClause(input);
-  if(input=="")         return new NotClause(input);
-  if(input=="heavy")    return new HeavyClause(input);
-  if(input=="hydro")    return new HydroClause(input);
-  if(input=="backbone") return new BackboneClause(input);
+  if (Util::contains(input, " or ") || Util::contains(input, " + ")) return new OrClause(input);
+  if (Util::contains(input, " and ") || Util::contains(input, " & ")) return new AndClause(input);
+  if (Util::startsWith(input, "not ") || Util::startsWith(input, "!")) return new NotClause(input);
+  if (Util::startsWith(input, "resi ")) return new ResiClause(input);
+  if (Util::startsWith(input, "resn ")) return new ResnClause(input);
+  if (Util::startsWith(input, "name ")) return new NameClause(input);
+  if (Util::startsWith(input, "elem ")) return new ElemClause(input);
+  if (Util::startsWith(input, "id ")) return new IDClause(input);
+  if (Util::startsWith(input, "chain ")) return new ChainClause(input);
+  if (input=="all")      return new AllClause(input);
+  if (input=="")         return new NotClause(input);
+  if (input=="heavy")    return new HeavyClause(input);
+  if (input=="hydro")    return new HydroClause(input);
+  if (input=="backbone") return new BackboneClause(input);
 
   throw std::runtime_error("KGS error: Unrecognized pattern: \""+input+"\"");
 }
@@ -143,7 +143,7 @@ Selection::OrClause::OrClause(const std::string& input)
 bool Selection::OrClause::inSelection(const Atom* a) const
 {
   for(const Clause* subClause: m_childClauses)
-    if( subClause->inSelection(a) ) return true;
+    if ( subClause->inSelection(a) ) return true;
   return false;
 }
 
@@ -160,15 +160,15 @@ Selection::AndClause::AndClause(const std::string& input)
 bool Selection::AndClause::inSelection(const Atom* a) const
 {
   for(const Clause* subClause: m_childClauses)
-    if( !subClause->inSelection(a) ) return false;
+    if ( !subClause->inSelection(a) ) return false;
   return true;
 }
 
 Selection::NotClause::NotClause(const std::string& input)
 {
-  if(Util::startsWith(input, "not ")) m_childClause = parseClause(input.substr(4));
-  else if(Util::startsWith(input, "! ")) m_childClause = parseClause(input.substr(2));
-  else if(Util::startsWith(input, "!")) m_childClause = parseClause(input.substr(1));
+  if (Util::startsWith(input, "not ")) m_childClause = parseClause(input.substr(4));
+  else if (Util::startsWith(input, "! ")) m_childClause = parseClause(input.substr(2));
+  else if (Util::startsWith(input, "!")) m_childClause = parseClause(input.substr(1));
 }
 bool Selection::NotClause::inSelection(const Atom* a) const
 {
@@ -183,16 +183,16 @@ Selection::ResiClause::ResiClause(const std::string& input)
 
   const string resiInput = input.substr(5);
 
-  if( regex_match(resiInput, intListPat) ){
+  if (regex_match(resiInput, intListPat)) {
     vector<string> tokens = Util::split(resiInput, '+');
-    for(const string& token: tokens){
+    for (const string& token: tokens) {
       int resi = std::stoi(token);
       m_residueIDs.insert(resi);
     }
-  }else if(regex_match(resiInput, sm, intervalPat)){
+  }else if (regex_match(resiInput, sm, intervalPat)){
     int intervalStart = stoi(sm[1]);
     int intervalEnd = stoi(sm[2]);
-    for(int i=std::min(intervalStart, intervalEnd); i<=std::max(intervalStart, intervalEnd); i++){
+    for (int i = std::min(intervalStart, intervalEnd); i <= std::max(intervalStart, intervalEnd); i++){
       m_residueIDs.insert(i);
     }
   }else{
@@ -208,7 +208,7 @@ Selection::ResnClause::ResnClause(const std::string& input)
   regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
   const string resnInput = input.substr(5);
 
-  if( regex_match(resnInput, strListPat) ){
+  if ( regex_match(resnInput, strListPat) ){
     vector<string> tokens = Util::split(resnInput, '+');
     for(const string& token: tokens){
       m_residueNames.push_back(token);
@@ -225,7 +225,7 @@ Selection::NameClause::NameClause(const std::string& input)
   regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
   const string nameInput = input.substr(5);
 
-  if( regex_match(nameInput, strListPat) ){
+  if ( regex_match(nameInput, strListPat) ){
     vector<string> tokens = Util::split(nameInput, '+');
     for(const string& token: tokens){
       m_atomNames.push_back(token);
@@ -243,7 +243,7 @@ Selection::IDClause::IDClause(const std::string& input)
   regex intListPat("\\-?[[:digit:]]+(\\+\\-?[[:digit:]]+)*");
   const string elemInput = input.substr(3);
 
-  if( regex_match(elemInput, intListPat) ){
+  if ( regex_match(elemInput, intListPat) ){
     vector<string> tokens = Util::split(elemInput, '+');
     for(const string& token: tokens){
       int id = std::stoi(token);
@@ -261,10 +261,10 @@ Selection::ChainClause::ChainClause(const std::string& input)
   regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
   const string elemInput = input.substr(6);
 
-  if( regex_match(elemInput, strListPat) ){
+  if ( regex_match(elemInput, strListPat) ){
     vector<string> tokens = Util::split(elemInput, '+');
     for(const string& token: tokens){
-      if( token.length()!=1 ){
+      if ( token.length()!=1 ){
         std::cerr<<"Warning - Selection::ChainClause: Chain name longer than 1 character: \""<<token<<"\"";
       }
       m_atomChains.push_back(token);
@@ -286,7 +286,7 @@ Selection::ElemClause::ElemClause(const std::string& input)
   regex strListPat("([^\\+ ])+(\\+[^+ ]+)*");
   const string elemInput = input.substr(5);
 
-  if( regex_match(elemInput, strListPat) ){
+  if ( regex_match(elemInput, strListPat) ){
     vector<string> tokens = Util::split(elemInput, '+');
     for(const string& token: tokens){
       m_atomElements.push_back(token);
@@ -350,8 +350,8 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //	cout<<"Selection)\t selectionWords = ";
 //	for(vector<string>::const_iterator it = selectionWords_.begin(); it != selectionWords_.end(); ++it) {
 //		cout<<"\'"<<(*it);
-//		//if( it != prev(selectionWords_.end()) ) cout<<"\', "; //c++11
-//		if( (it+1) != selectionWords_.end() ) cout<<"\', ";
+//		//if ( it != prev(selectionWords_.end()) ) cout<<"\', "; //c++11
+//		if ( (it+1) != selectionWords_.end() ) cout<<"\', ";
 //		else cout<<"\'";
 //	}
 //	cout<<endl;
@@ -362,8 +362,8 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //	cout<<"Selection)\t"<<selName<<"  selectionWords = ";
 //	for(vector<string>::const_iterator it = selectionWords_.begin(); it != selectionWords_.end(); ++it) {
 //		cout<<"\'"<<(*it);
-//		//if( it != prev(selectionWords_.end()) ) cout<<"\', "; //c++11
-//		if( (it+1) != selectionWords_.end() ) cout<<"\', ";
+//		//if ( it != prev(selectionWords_.end()) ) cout<<"\', "; //c++11
+//		if ( (it+1) != selectionWords_.end() ) cout<<"\', ";
 //		else cout<<"\'";
 //	}
 //	cout<<endl;
@@ -415,14 +415,14 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //	vector<string> words = selectionWords();
 //	bool isInSelection;
 //
-//	if( (*words.begin()) == "resid" ||
+//	if ( (*words.begin()) == "resid" ||
 //			//( (*words.begin()) == "not" && *next(words.begin()) == "resid" ) ) {
 //			( (*words.begin()) == "not" && *(words.begin()+1) == "resid" ) ) {
 //		vector<Residue*> residuesProtein = protein->chains[0]->getResidues();
 //		unsigned int res1ID, res2ID = 0;
 //		//vector<string>::const_iterator itwstart = next(words.begin());
 //		vector<string>::const_iterator itwstart = (words.begin()+1);
-//		if( (*words.begin()) == "not" )
+//		if ( (*words.begin()) == "not" )
 //			itwstart = (words.begin()+2);
 //			//itwstart = next(words.begin(),2);
 //
@@ -432,7 +432,7 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //			isInSelection = false;
 //			res2ID=0;
 //			for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
-//				if( (*itw) != "to" ) {
+//				if ( (*itw) != "to" ) {
 //					res1ID = atoi( (*itw).c_str() );
 //					if ( res2ID == res1ID ) continue;
 //					//if ( next(itw) != words.end() ) {
@@ -446,13 +446,13 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //					}else
 //						res2ID = res1ID;
 //
-//					if( res->isWithinResidueRange( res1ID, res2ID ) ) {
-//						if( (*words.begin()) != "not" ) residues.push_back( res );
+//					if ( res->isWithinResidueRange( res1ID, res2ID ) ) {
+//						if ( (*words.begin()) != "not" ) residues.push_back( res );
 //						else isInSelection = true;
 //						break;
 //					}
 //				}
-//			if( (*words.begin()) == "not" && !isInSelection ) residues.push_back( res );
+//			if ( (*words.begin()) == "not" && !isInSelection ) residues.push_back( res );
 //		}
 //	}
 //	return residues;
@@ -482,32 +482,32 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //	bool isInSelection;
 //
 //	// TODO: This has to go to a separate routine/function
-//	if( (*words.begin()) == "backbone" ) selection( "name N CA C O" );
-//	else if( (*words.begin()) == "not" && *(words.begin()+1) == "backbone" ) selection( "not name N CA C O" );
-//	//else if( (*words.begin()) == "not" && *next(words.begin()) == "backbone" ) selection( "not name N CA C O" );
-//	else if( (*words.begin()) == "heavy" ) selection( "not name H*" );
-//	else if( (*words.begin()) == "not" && *(words.begin()+1) == "heavy" ) selection( "name H*" );
-//	//else if( (*words.begin()) == "not" && *next(words.begin()) == "heavy" ) selection( "name H*" );
-//	else if( (*words.begin()) == "all" ) selection( "name C* N* O* P* S* H*" );
-//	else if( (*words.begin()) == "none" ) return atoms;
+//	if ( (*words.begin()) == "backbone" ) selection( "name N CA C O" );
+//	else if ( (*words.begin()) == "not" && *(words.begin()+1) == "backbone" ) selection( "not name N CA C O" );
+//	//else if ( (*words.begin()) == "not" && *next(words.begin()) == "backbone" ) selection( "not name N CA C O" );
+//	else if ( (*words.begin()) == "heavy" ) selection( "not name H*" );
+//	else if ( (*words.begin()) == "not" && *(words.begin()+1) == "heavy" ) selection( "name H*" );
+//	//else if ( (*words.begin()) == "not" && *next(words.begin()) == "heavy" ) selection( "name H*" );
+//	else if ( (*words.begin()) == "all" ) selection( "name C* N* O* P* S* H*" );
+//	else if ( (*words.begin()) == "none" ) return atoms;
 //
 //	words = selectionWords();
 //
-//	if( (*words.begin()) == "name" ||
+//	if ( (*words.begin()) == "name" ||
 //			( (*words.begin()) == "not" && *(words.begin()+1) == "name" ) ) {
 //			//( (*words.begin()) == "not" && *next(words.begin()) == "name" ) ) {
 //		vector<string>::const_iterator itwstart = (words.begin()+1);
 //		//vector<string>::const_iterator itwstart = next(words.begin());
-//		if( (*words.begin()) == "not" )
+//		if ( (*words.begin()) == "not" )
 //			itwstart = (words.begin()+2);
 //			//itwstart = next(next(words.begin()));
 //		for ( vector<Residue*>::const_iterator itres = residues.begin();
 //						    	  itres != residues.end(); ++itres ) {
 //			Residue* res = *itres;
-//			if( (*words.begin()) != "not" ) {
+//			if ( (*words.begin()) != "not" ) {
 ////				//Todo: this does not work for names with * in the end --> case "all", case "not heavy"
 ////				for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
-////					if( res->Atom_map_by_name.find(*itw) != res->Atom_map_by_name.end() ){
+////					if ( res->Atom_map_by_name.find(*itw) != res->Atom_map_by_name.end() ){
 ////						cout<<"Pushing back: "<<res->Atom_map_by_name.find(*itw)->second<<endl;
 ////						atoms.push_back( res->Atom_map_by_name.find(*itw)->second );
 ////					}
@@ -515,38 +515,38 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //				for(auto const& atom: res->getAtoms() ) {
 //					isInSelection = false;
 //					for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
-//						if( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
+//						if ( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
 //						    		      (*itw) == "O*" || (*itw) == "P*" || (*itw) == "S*" ) {
-//							if( atom->compareType( (*itw).substr(0,1) ) ) {
+//							if ( atom->compareType( (*itw).substr(0,1) ) ) {
 //								isInSelection = true;
 //								break;
 //							}
 //						}else{
-//							if( atom->compareName(*itw) ) {
+//							if ( atom->compareName(*itw) ) {
 //								isInSelection = true;
 //								break;
 //							}
 //						}
-//          if( isInSelection ) atoms.push_back( atom );
+//          if ( isInSelection ) atoms.push_back( atom );
 //				}
 //			}else{
 //				// Loop over all the atoms of the residue
 //        for(auto const& atom: res->getAtoms() ) {
 //					isInSelection = false;
 //					for(vector<string>::const_iterator itw = itwstart; itw != words.end(); ++itw)
-//						if( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
+//						if ( (*itw) == "H*" || (*itw) == "C*" || (*itw) == "N*" ||
 //						    		      (*itw) == "O*" || (*itw) == "P*" || (*itw) == "S*" ) {
-//              if( atom->compareType( (*itw).substr(0,1) ) ) {
+//              if ( atom->compareType( (*itw).substr(0,1) ) ) {
 //								isInSelection = true;
 //								break;
 //							}
 //						}else{
-//              if( atom->compareName(*itw) ) {
+//              if ( atom->compareName(*itw) ) {
 //								isInSelection = true;
 //								break;
 //							}
 //						}
-//					if( !isInSelection ) atoms.push_back( atom );
+//					if ( !isInSelection ) atoms.push_back( atom );
 //				}
 //			}
 //		}
@@ -565,8 +565,8 @@ std::ostream& operator<<(std::ostream& os, const Selection* s)
 //	s.clear();
 //	for(vector<string>::const_iterator it = words.begin(); it != words.end(); ++it) {
 //		s.append( (*it) );
-//		if( it != (words.end()-1) ) s.append( delim_ );
-//		//if( it != prev(words.end()) ) s.append( delim_ ); //c++11
+//		if ( it != (words.end()-1) ) s.append( delim_ );
+//		//if ( it != prev(words.end()) ) s.append( delim_ ); //c++11
 //	}
 //	return s;
 //}

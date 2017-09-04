@@ -75,10 +75,10 @@ class Molecule {
   int getMaxResidueNumber();
   int size() const;
   int totalDofNum () const;
-  bool inCollision (std::string collisionCheckAtoms = "all" ) const;
-  std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
-  double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
-  void printAllCollisions () const;
+  bool inCollision (std::string collisionCheckAtoms = "all" );
+  std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" );
+  double minCollisionFactor (std::string collisionCheckAtoms = "all" );
+  void printAllCollisions () ;
   double alignReferencePositionsTo(Molecule * base,Selection &sel);
   void translateReferencePositionsToRoot(Molecule * base);
   Grid* getGrid();

@@ -61,7 +61,16 @@ int main( int argc, char* argv[] ) {
   protein->setCollisionFactor(options.collisionFactor);
 
   if(options.collapseRigid>0) {
-    protein=protein->collapseRigidBonds(options.collapseRigid);
+    log("samplingStatus")<<"Before collapsing"<<endl;
+    log("samplingStatus")<<"Molecule has:"<<endl;
+    log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
+    log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+    gsl_matrix_outtofile(protein->m_conf->getCycleJacobian(),"nonCollapsedCycleJacobian.txt");
+    gsl_matrix_outtofile(protein->m_conf->getNullspace()->getBasis(),"nonCollapsedNullspace.txt");
+
+    protein = protein->collapseRigidBonds(options.collapseRigid);
   }
 
   log("samplingStatus")<<"Molecule has:"<<endl;
