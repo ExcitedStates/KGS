@@ -290,6 +290,7 @@ void ExploreOptions::print(){
   log("so")<<"\t--preventClashes "<<preventClashes<<endl;
   log("so")<<"\t--alignSelection "<<alignSelection<<endl;
   log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
+  log("so")<<"\t--residueNetwork "<<residueNetwork<<endl;
   log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
   log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
