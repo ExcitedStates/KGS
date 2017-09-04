@@ -158,6 +158,7 @@ ExploreOptions::ExploreOptions(int argc, char* argv[]):
   if (planner_string != "dihedralrrt" &&
       planner_string != "binnedrrt" &&
       planner_string != "dccrrt" &&
+      planner_string != "mcmc" &&
       planner_string != "poisson2" &&
       planner_string != "poisson") {
     cerr << "Invalid --planner option: " << planner_string << endl;

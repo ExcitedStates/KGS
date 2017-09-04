@@ -24,66 +24,67 @@ endif()
 	message (STATUS "${CMAKE_CXX_COMPILER} ${CMAKE_CXX_FLAGS}")
 add_library( libKGS
 
-        core/Atom.h
-        core/Chain.h
-        core/Configuration.h
-        core/Coordinate.h
-        Color.h
-        CTKTimer.h
-        DisjointSets.h
-        core/Grid.h
-        HbondIdentifier.h
-        IO.h
-        Logger.h
-        core/Molecule.h
-        core/Bond.h
-        core/HBond.h
-        core/DBond.h
-        core/Residue.h
-        ResidueProfiles.h
-        core/Rigidbody.h
-        core/graph/KinGraph.h
-        applications/options/ApplicationOptions.h
-        applications/options/ExploreOptions.h
-        applications/options/TransitionOptions.h
-        applications/options/RelativeTransitionOptions.h
- 	applications/options/RigidityOptions.h
-	applications/options/AlignOptions.h
-	applications/options/HierarchyOptions.h
-        planners/SamplingPlanner.h
-        planners/DihedralRRT.h
-        planners/RRTPlanner.h
-        planners/PoissonPlanner.h
-        planners/PoissonPlanner2.h
-        planners/BidirectionalMovingFront.h
-        Selection.h
-        SiteID.h
-        Util.h
-        KGSExceptions.h
-        freeMKL.h
-        moves/Move.h
-        moves/RawMove.h
-#        moves/CompositeMove.h
-        moves/NullspaceMove.h
-        moves/RebuildMove.h
-        moves/FastClashAvoidingMove.h
-        moves/ClashAvoidingMove.h
-        moves/DecreaseStepMove.h
-        directions/Direction.h
-        directions/BlendedDirection.h
-        directions/RandomDirection.h
-        directions/DihedralDirection.h
-        directions/MSDDirection.h
-        directions/LSNullspaceDirection.h
-        directions/VDWDirection.h
-        math/MathUtility.h
-        math/SVD.h
-        math/infnan.h
-        math/math.h
-        math3d/primitives.h
-        metrics/Metric.h
-        metrics/RMSD.h
-        metrics/RMSDnosuper.h
+		core/Atom.h
+		core/Chain.h
+		core/Configuration.h
+		core/Coordinate.h
+		Color.h
+		CTKTimer.h
+		DisjointSets.h
+		core/Grid.h
+		HbondIdentifier.h
+		IO.h
+		Logger.h
+		core/Molecule.h
+		core/Bond.h
+		core/HBond.h
+		core/DBond.h
+		core/Residue.h
+		ResidueProfiles.h
+		core/Rigidbody.h
+		core/graph/KinGraph.h
+		applications/options/ApplicationOptions.h
+		applications/options/ExploreOptions.h
+		applications/options/TransitionOptions.h
+		applications/options/RelativeTransitionOptions.h
+		applications/options/RigidityOptions.h
+		applications/options/AlignOptions.h
+		applications/options/HierarchyOptions.h
+		planners/SamplingPlanner.h
+		planners/DihedralRRT.h
+		planners/RRTPlanner.h
+		planners/MCMCPlanner.h
+		planners/PoissonPlanner.h
+		planners/PoissonPlanner2.h
+		planners/BidirectionalMovingFront.h
+		Selection.h
+		SiteID.h
+		Util.h
+		KGSExceptions.h
+		freeMKL.h
+		moves/Move.h
+		moves/RawMove.h
+		#        moves/CompositeMove.h
+		moves/NullspaceMove.h
+		moves/RebuildMove.h
+		moves/FastClashAvoidingMove.h
+		moves/ClashAvoidingMove.h
+		moves/DecreaseStepMove.h
+		directions/Direction.h
+		directions/BlendedDirection.h
+		directions/RandomDirection.h
+		directions/DihedralDirection.h
+		directions/MSDDirection.h
+		directions/LSNullspaceDirection.h
+		directions/VDWDirection.h
+		math/MathUtility.h
+		math/SVD.h
+		math/infnan.h
+		math/math.h
+		math3d/primitives.h
+		metrics/Metric.h
+		metrics/RMSD.h
+		metrics/RMSDnosuper.h
 
         core/Atom.cpp
         core/Chain.cpp
@@ -107,15 +108,16 @@ add_library( libKGS
         core/graph/KinGraph.cpp
         math/SVD.cpp
         applications/options/ApplicationOptions.cpp
-        applications/options/ExploreOptions.cpp
-        applications/options/TransitionOptions.cpp
-        applications/options/RelativeTransitionOptions.cpp
-	applications/options/RigidityOptions.cpp 
-	applications/options/AlignOptions.cpp
-	applications/options/HierarchyOptions.cpp
+		applications/options/ExploreOptions.cpp
+		applications/options/TransitionOptions.cpp
+		applications/options/RelativeTransitionOptions.cpp
+		applications/options/RigidityOptions.cpp
+		applications/options/AlignOptions.cpp
+		applications/options/HierarchyOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
+		planners/MCMCPlanner.cpp
         planners/PoissonPlanner.cpp
         planners/PoissonPlanner2.cpp
         planners/BidirectionalMovingFront.cpp

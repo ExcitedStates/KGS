@@ -75,13 +75,9 @@ RRTPlanner::RRTPlanner(
   //pSmp->updateMolecule();
   //pSmp->computeCycleJacobianAndNullSpace();
   m_molecule->m_conf = pSmp;
-  m_target = nullptr;
   m_samples.push_back(pSmp);
   pSmp->m_vdwEnergy = 99999;
   pSmp->m_id = 0; // m_root
-
-  m_deform_mag = 0.25;
-  m_rand_radius = 2;
 
   m_numBuckets = NUM_BINS;
   m_bucketSize =

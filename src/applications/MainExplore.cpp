@@ -25,6 +25,7 @@
 #include <planners/PoissonPlanner2.h>
 #include <applications/options/ExploreOptions.h>
 #include <math/NullspaceSVD.h>
+#include <planners/MCMCPlanner.h>
 
 using namespace std;
 
@@ -166,6 +167,14 @@ void randomSampling(ExploreOptions& options) {
         options.stepSize,
         options.gradientSelection,
         options.enableBVH
+    );
+  }else if(options.planner_string=="mcmc"){
+    log("samplingStatus")<<"Using MCMC planner"<<endl;
+    planner = new MCMCPlanner(
+        protein,
+        direction,
+        options.samplesToGenerate,
+        options.stepSize
     );
   }else{
     cerr<<"Unknown planner option specified!"<<endl;

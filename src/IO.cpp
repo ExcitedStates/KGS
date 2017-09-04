@@ -947,12 +947,14 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
       mkdir(output_file_name.substr(0,i).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
   }
+
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {
     //cerr<<"Cannot write to "<<output_file_name<<". You might need to create output directory first"<<endl;
     cerr<<"Cannot write to "<<output_file_name<<endl;
     exit(-1);
   }
+
   if(molecule->m_conf!=nullptr){
     Configuration* c = molecule->m_conf;
     output << "REMARK\tID = " << c->m_id << endl;

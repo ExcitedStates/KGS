@@ -25,9 +25,11 @@
 
 
 */
-#ifndef RRTPLANNER_H
-#define RRTPLANNER_H
 
+#ifndef MCMCPLANNER_H_
+#define MCMCPLANNER_H_
+
+#include <vector>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -37,67 +39,38 @@
 #include "core/Configuration.h"
 #include "planners/SamplingPlanner.h"
 
-
 class Molecule;
 
-#define MAX_BUCKET_NUM 101
-#define NUM_BINS 100
-#define DEFAULT_MAX_RMSD 25
-
-
-class RRTPlanner : public SamplingPlanner {
+/**
+ * A sampling planner based on MCMC sampling.
+ */
+class MCMCPlanner : public SamplingPlanner {
  public:
-  RRTPlanner(
-      Molecule *mol,
+  MCMCPlanner(
+      Molecule *molecule,
       Direction *direction,
-      double radius,
-      int numSamples,
-      int gradientSelection,
-      double stepSize,
-      double maxRotation,
-      bool scaleToRadius
+      int stopAfter,
+      double stepSize
   );
 
-  ~RRTPlanner();
+  ~MCMCPlanner();
 
   void generateSamples();
 
   std::list<Configuration *> &getSamples() { return m_samples; }
 
- protected:
-  Configuration *GenerateRandConf();
-
-  Configuration *SelectNodeFromBuckets(Configuration *pTarget);
-
-  unsigned int m_current_max_bucket_id;
-  std::list<Configuration *> distance_buckets[MAX_BUCKET_NUM];
-
-  Direction *direction;
-
-
  private:
+  std::list<Configuration *> m_samples;      ///< For convenience and return
+
+  const int m_stopAfter;              ///< Stop after this many samples have been generated
+  const double m_bigRad;              ///< Largest allowed step-size
+  const double m_lilRad;              ///< Smallest allowed distance between any two samples
+  Direction* m_direction;
+
+
+
+
   Molecule *m_molecule;
-
-  double m_radius;
-  double m_bucketSize;
-  int m_numBuckets; //number of buckets
-
-  int m_numDOFs;
-  std::list<Configuration *> m_samples;
-  std::vector<Configuration *> m_path;
-
-  double m_top_min_rmsd;
-  int m_top_min_rmsd_id;
-  double m_minMovDihDistance;
-  int m_minMovDihDistance_id;
-
-  int m_numSamples;
-  int m_gradientSelection;
-  double m_stepSize;
-  double m_maxRotation;
-  bool m_scaleToRadius;
 };
 
-
-#endif
-
+#endif /* MCMCPLANNER_H_ */

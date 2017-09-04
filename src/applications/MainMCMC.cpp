@@ -144,8 +144,6 @@ int main( int argc, char* argv[] ) {
 
     log()<<"Number of rigid clusters: "<<protein->m_conf->m_numClusters;
     log()<<", biggest cluster: index "<<protein->m_conf->m_maxIndex<<" with "<<protein->m_conf->m_maxSize<<" atoms!"<<endl;
-    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
-    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
     log()<< protein->m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
     log()<<" and " << ( protein->m_conf->getNullspace()->getNumDOFs()-
                         protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
