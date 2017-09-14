@@ -41,9 +41,10 @@ with open(args.licensefile, 'r') as f:
 comment_start = "/*\n"
 comment_end = "*/\n"
 
-# re.S = DOTALL
+# Define header pattern and option re.S = DOTALL which means '.*' should match across line-breaks
 header_pat = re.compile(r"^\s*/\*.*?\*/", re.S)
 
+# Count how many source files were modified
 source_count = 0
 
 # For each source file check for existing license, remove it and add new license
