@@ -1388,6 +1388,12 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CSO","OD","HD"},
     {"CSO","C","O"},
     {"CSO","-C","N"},
+
+    //Extension to waters
+    {"HOH","O","H"},
+    {"HOH","O","H1"},
+    {"HOH","O","H2"},
+    
     {"END", "",""}//Must always be LAST
 };
 
