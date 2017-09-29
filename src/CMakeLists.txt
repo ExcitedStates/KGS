@@ -74,6 +74,7 @@ add_library( libKGS
 		directions/BlendedDirection.h
 		directions/RandomDirection.h
 		directions/DihedralDirection.h
+		directions/RelativeMSDDirection.h
 		directions/MSDDirection.h
 		directions/LSNullspaceDirection.h
 		directions/VDWDirection.h
@@ -138,7 +139,8 @@ add_library( libKGS
         directions/BlendedDirection.cpp
         directions/RandomDirection.cpp
         directions/DihedralDirection.cpp
-        directions/MSDDirection.cpp
+        directions/RelativeMSDDirection.cpp
+		directions/MSDDirection.cpp
         directions/LSNullspaceDirection.cpp
         directions/VDWDirection.cpp
         metrics/Dihedral.cpp

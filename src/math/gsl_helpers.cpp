@@ -1,14 +1,15 @@
 
 #include "gsl_helpers.h"
 
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_vector_double.h>
+#include <assert.h>
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <cmath>
-#include <gsl/gsl_blas.h>
-#include <assert.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_vector_double.h>
 
 #include "Logger.h"
 #include "MathUtility.h"
