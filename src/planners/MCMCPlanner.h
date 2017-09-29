@@ -26,4 +26,52 @@ IN THE SOFTWARE.
 
 */
 
-typedef unsigned int SiteID;
+
+#ifndef MCMCPLANNER_H_
+#define MCMCPLANNER_H_
+
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <directions/Direction.h>
+
+#include "metrics/Metric.h"
+#include "core/Configuration.h"
+#include "planners/SamplingPlanner.h"
+
+class Molecule;
+
+/**
+ * A sampling planner based on MCMC sampling.
+ */
+class MCMCPlanner : public SamplingPlanner {
+ public:
+  MCMCPlanner(
+      Molecule *molecule,
+      Direction *direction,
+      int stopAfter,
+      double stepSize
+  );
+
+  ~MCMCPlanner();
+
+  void generateSamples();
+
+  std::list<Configuration *> &getSamples() { return m_samples; }
+
+ private:
+  std::list<Configuration *> m_samples;      ///< For convenience and return
+
+  const int m_stopAfter;              ///< Stop after this many samples have been generated
+  const double m_bigRad;              ///< Largest allowed step-size
+  const double m_lilRad;              ///< Smallest allowed distance between any two samples
+  Direction* m_direction;
+
+
+
+
+  Molecule *m_molecule;
+};
+
+#endif /* MCMCPLANNER_H_ */

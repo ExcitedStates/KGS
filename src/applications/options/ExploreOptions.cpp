@@ -1,3 +1,31 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
 #include "ExploreOptions.h"
 
 #include <iostream>
@@ -158,6 +186,7 @@ ExploreOptions::ExploreOptions(int argc, char* argv[]):
   if (planner_string != "dihedralrrt" &&
       planner_string != "binnedrrt" &&
       planner_string != "dccrrt" &&
+      planner_string != "mcmc" &&
       planner_string != "poisson2" &&
       planner_string != "poisson") {
     cerr << "Invalid --planner option: " << planner_string << endl;
@@ -291,6 +320,7 @@ void ExploreOptions::print(){
   log("so")<<"\t--preventClashes "<<preventClashes<<endl;
   log("so")<<"\t--alignSelection "<<alignSelection<<endl;
   log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
+  log("so")<<"\t--residueNetwork "<<residueNetwork<<endl;
   log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
   log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;

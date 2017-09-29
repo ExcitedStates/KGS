@@ -1,10 +1,42 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+#include <gsl/gsl_vector.h>
+
 #include <stdexcept>
 #include <string>
 #include <iostream>
 #include <list>
 #include <regex>
-#include <math/gsl_helpers.h>
-#include <math/NullspaceSVD.h>
+
+#include "math/gsl_helpers.h"
+#include "math/NullspaceSVD.h"
+#include "directions/RelativeMSDDirection.h"
 
 #include "core/Configuration.h"
 #include "core/Molecule.h"
@@ -67,7 +99,7 @@ int main( int argc, char* argv[] ) {
     log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
     log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
     log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
-    gsl_matrix_outtofile(protein->m_conf->getCycleJacobian(),"nonCollapsedCycleJacobian.txt");
+    gsl_matrix_outtofile(protein->m_conf->getCycleJacobian(), "nonCollapsedCycleJacobian.txt");
     gsl_matrix_outtofile(protein->m_conf->getNullspace()->getBasis(),"nonCollapsedNullspace.txt");
 
     protein = protein->collapseRigidBonds(options.collapseRigid);
@@ -106,7 +138,8 @@ int main( int argc, char* argv[] ) {
   std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
       IO::readRelativeDistances(options.relativeDistances, protein);
 
-  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
+  Direction* d1 = new RelativeMSDDirection(goal_distances);
+//  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
   Direction* d2 = new RandomDirection(resNetwork,options.maxRotation);
 
 
@@ -139,8 +172,8 @@ int main( int argc, char* argv[] ) {
 //    cout<<"Iteration "<<i<<endl;
 
     Configuration* seed = samples.back();
-    d1->gradient(seed, seed, tmp1); //directed move
-    d2->gradient(seed, seed, tmp2); //random move
+    d1->gradient(seed, nullptr, tmp1); //directed move
+    d2->gradient(seed, nullptr, tmp2); //random move
     scale_gradient(tmp2, protein, options.maxRotation);
     gsl_vector_out(tmp1, log("directedGradient"));
 
