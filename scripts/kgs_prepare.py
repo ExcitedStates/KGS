@@ -67,6 +67,7 @@ vdwRadii = {
         "C" : 1.700, "N" : 1.625, "O" : 1.490, "S" : 1.782, "H" : 1.000, "P" : 1.871, 
         "F" : 1.560, "Cl": 1.735,"CL": 1.735,"Br": 1.978,"BR": 1.978, "I" : 2.094, "?" : 2.000 }
 
+#Todo: implement ionic radii based on the coordination number
 ionRadii = {
     "C"
 }
@@ -96,14 +97,19 @@ class Atom:
         self.tempFactor = float(atom_string[60:66])
         if (self.name[0] == "D"):#case of Deuterium
             self.name = "H"+self.name[1:]
-        # if len(atom_string.strip())>=78:
-        #     self.elem = atom_string[76:78].strip()
-        #     self.elem = self.elem[0]
-        #     if self.elem == "D":
-        #         self.elem = "H"
-        # else:
-        name_nodigits = filter(lambda x: x.isalpha(), self.name)
-        self.elem = name_nodigits[0]
+        if len(atom_string.strip())>=78:
+            self.elem = atom_string[76:78].strip()
+            if self.isIon():
+                self.elem=self.name
+            else:
+                self.elem = self.elem[0]
+                # if self.elem == "D":
+                #     self.elem = "H"
+        else: #element column not provided in input
+            name_nodigits = filter(lambda x: x.isalpha(), self.name)
+            self.elem=name_nodigits
+            if ~self.isIon():
+                self.elem = name_nodigits[0]
        
         self.neighbors = []
         self.hBondNeighbors = []
@@ -130,8 +136,8 @@ class Atom:
         except AttributeError:
             pass
         except KeyError:
-            RuntimeError("Unknown element for atom: "+str(self));
-        raise RuntimeError("Unknown element for atom: "+str(self));
+            RuntimeError("Unknown element for atom: "+str(self),self.name,self.atomType);
+        raise RuntimeError("Unknown element for atom: "+str(self),self.name,self.elem);
 
     def getSP(self):
         if self.atomType in ["C3","N3+","N3","O3","S3+","S3","P3+"]:
@@ -174,6 +180,11 @@ class Atom:
                 neighborCount += 1
             line += '\n' #new line
         return line
+    
+    def isIon(self):
+        if self.elem in ["MG","ZN","K","FE"]: #Todo: increase list for ions of interest
+            return True
+        return False
     
 class PDBFile:
     """ A representation of a single-model PDB-file """
@@ -331,7 +342,19 @@ class PDBFile:
                     for n in npls:
                         n.atomType = "Ng+"
 
-
+    #Check metal ions (e.g. magnesium)
+    def ionCoordination(self):
+        for atom in self.atoms:
+            if atom.isIon():
+                for neighbor in atom.neighbors:
+                    if neighbor.resn in ["A","G","C","U","T"]: #RNA/DNA
+                        #......... TODO ................
+                        # 1) identify neighbors for the ion
+                        # 2) suitable distance constraints for ion interactions
+                        # 3) Identify coordination for metal ions
+                        pass
+                    else:
+                        print "MG ion close to protein:",atom.name,atom.id, neighbor.name,neighbor.id
 
 
     def __init__(self, name, atom_records):
@@ -365,6 +388,9 @@ class PDBFile:
         # self.rebuildCovBonds()
         self.buildRingCounts()
         self.buildIDATM()
+        
+        #Check ion neighborhood and coordination
+        self.ionCoordination()
 
 
     def hydrogenBondEnergy(self,aa, acceptor, hydrogen, donor):
@@ -675,7 +701,7 @@ class PDBFile:
         return meanCoordination/len(self.atoms)
 
 class MultiModel:
-    def __init__(self, pdb_file):
+    def __init__(self, pdb_file,modelNum):
         """ Initialize a multi-model object using a PDB file name. """
 
         if pdb_file.endswith(".gz"): 
@@ -687,12 +713,18 @@ class MultiModel:
         models = []
         atoms = []
         remarks = []
+        modelCount = 0;
         for line in f.readlines():
             if line[0:5]=="MODEL":
                 if atoms: raise RuntimeError("A MODEL was not stopped (ENDMDL) before a new one started")
             elif line[0:6]=="ENDMDL":
                 if not atoms: raise RuntimeError("Reached ENDMDL without reading any atoms")
-                models.append(atoms)
+                if (modelNum == -1): # -1 for all models, modelIndex for specific model only
+                    models.append(atoms)
+                if (modelCount == modelNum):
+                    models.append(atoms)
+                    break; #Only keeping this model
+                modelCount += 1;
                 atoms = []
             elif line[0:4] == "ATOM":
                 atom = Atom(line)
@@ -869,9 +901,7 @@ if __name__ == "__main__":
         printUsage(argv)
     input_file = argv[1]
 
-    models = MultiModel(input_file)
-    if model != -1:
-        models.pdbs = models.pdbs[model]
+    models = MultiModel(input_file,model)
     models.checkCollisions()
     models.checkCovalentBonds()
     models.checkDisulphideBonds()
@@ -884,8 +914,6 @@ if __name__ == "__main__":
         models.writeIMODs(prefix)
     
 
-            
-        
     # testVals= np.arange(-6,0,0.25)
     # for cutoff in testVals:
     #     print "Mean coordination of first model",models.pdbs[0].meanCoordination(),"cutoff",cutoff
