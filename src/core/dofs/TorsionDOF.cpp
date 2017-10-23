@@ -72,15 +72,24 @@ void TorsionDOF::updateEndVertexTransformation()
   Math3D::Vector3 axis = p2-p1;
   axis.inplaceNormalize();
 
-  Math3D::RigidTransform m1, m2, m3;
-  m1.setIdentity();
-  m2.setIdentity();
-  m3.setIdentity();
+  /// Previous implementation
+//  Math3D::RigidTransform m1, m2, m3;
+//  m1.setIdentity();
+//  m2.setIdentity();
+//  m3.setIdentity();
+//
+//  //Done: Theres a closed-form expression that would save some matrix multiplications and make this faster
+//  m1.setTranslate(p1);
+//  m2.setRotate(FindRotationMatrix(axis, -m_value)); //FindRotationMatrix returns left-handed rotation
+//  m3.setTranslate(-1.0*p1);
+//
+//  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m1*m2*m3;
 
-  //TODO: Theres a closed-form expression that would save some matrix multiplications and make this faster
-  m1.setTranslate(p1);
-  m2.setRotate(FindRotationMatrix(axis, -m_value)); //FindRotationMatrix returns left-handed rotation
-  m3.setTranslate(-1.0*p1);
+  ///Closed-form expression
+  Math3D::RigidTransform m;
+  m.setIdentity();
+  m.setRotation(FindRotationMatrix(axis, -m_value));
+  m.setTranslation(p1 - m.R * p1 );
 
-  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m1*m2*m3;
+  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * m;
 }
