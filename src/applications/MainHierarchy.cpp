@@ -276,18 +276,18 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  if(options.saveData > 1) {
+  if(options.saveData > 0) {
     string outMat = "Vmatrix.txt";
     gsl_matrix_outtofile(baseNullspaceV, outMat);
-  }
-
-  if(options.saveData > 2) {
     string outProd = "fullProduct_JV.txt";
     gsl_matrix_outtofile(fullProduct, outProd);
+  }
+
+  if(options.saveData > 1) {
     imodeComparisonFiles(protein, options, ns, baseNullspaceV, singValVector, numResis);
   }
 
-  if(options.saveData > 3) {
+  if(options.saveData > 2) {
     string outJac = out_path + "output/" + name + "_jac.txt";
     gsl_matrix_outtofile(baseJacobian, outJac);
     ///save pyMol coloring script
