@@ -276,7 +276,7 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  if(options.saveData > 0) {
+  if(options.saveData > -1) {
     string outMat = "Vmatrix.txt";
     gsl_matrix_outtofile(baseNullspaceV, outMat);
     string outProd = "fullProduct_JV.txt";
@@ -347,8 +347,10 @@ int main( int argc, char* argv[] ) {
         allDofs->data + qNew->getNumDOFs(),
         qNew->m_dofs);
 
-    string outFile = "output/allDofs_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
-    gsl_vector_outtofile(allDofs, outFile);
+    if(options.saveData > 1) {
+      string outFile = "output/allDofs_" + std::to_string(static_cast<long long>(v_i + 1)) + ".txt";
+      gsl_vector_outtofile(allDofs, outFile);
+    }
 
     bool inCollision = qNew->updatedMolecule()->inCollision();
     if (inCollision) {
@@ -420,8 +422,10 @@ int main( int argc, char* argv[] ) {
     log("hierarchy") << ", delta vdw: "<<deltaVdwEnergy<<endl;
     IO::writeNewSample(qNew, conf, sampleCount, options.workingDirectory, options.saveData);
 
-    hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
-    IO::writeHbondsChange(qNew,hBondOut);
+    if(options.saveData > 1) {
+      hBondOut = "output/hBonds_" + std::to_string(static_cast<long long>(v_i + 1)) + ".txt";
+      IO::writeHbondsChange(qNew, hBondOut);
+    }
 
     //Store output data in this file, space-separated in this order
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
