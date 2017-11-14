@@ -99,7 +99,7 @@ IN THE SOFTWARE.
 class NullBuffer : public std::streambuf
 {
  public:
-  int overflow(int c) { return c; }
+  int overflow(int c) override { return c; }
 };
 
 class onullstream : public std::ostream {
