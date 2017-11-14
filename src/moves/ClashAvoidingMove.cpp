@@ -64,7 +64,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   Molecule *protein = current->updatedMolecule();
 
   double currNorm = gsl_vector_length(gradient);
-  log("dominik") << "Norm of gradient: " << currNorm << endl;
+//  log("planner") << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(protein->totalDofNum());
@@ -83,7 +83,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
 
     double currProjNorm = gsl_vector_length(projected_gradient);
-    log("dominik")<<"Norm of projected gradient: "<<currProjNorm<<endl;
+//    log("planner")<<"Norm of projected gradient: "<<currProjNorm<<endl;
 
     // Normalize projected_gradient
 //    if (currProjNorm > 0.001)
@@ -101,18 +101,18 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
 
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
-      log("dominik") << "Rejected!" << endl;
+      log("planner") << "Rejected!" << endl;
       m_movesRejected++;
 
-      log("dominik")<<"Now computing a clash free m_direction!"<<endl;
+//      log("planner")<<"Now computing a clash free m_direction!"<<endl;
       allCollisions = protein->getAllCollisions(m_collisionCheckAtomTypes);//get all collisions at this configuration
 
-      for(auto const& prev_coll: previousCollisions){//collisions from previous trial
-        log("dominik")<<"Prev coll: "<<prev_coll.first->getId()<<" "<<prev_coll.first->getName()<<" "<<prev_coll.second->getId()<<" "<<prev_coll.second->getName()<<endl;
-      }
-      for(auto const& coll: allCollisions){//collisions from this trial
-        log("dominik")<<"Curr coll: "<<coll.first<<" "<<coll.first->getName()<<" "<<coll.second<<" "<<coll.second->getName()<<endl;
-      }
+//      for(auto const& prev_coll: previousCollisions){//collisions from previous trial
+//        log("planner")<<"Prev coll: "<<prev_coll.first->getId()<<" "<<prev_coll.first->getName()<<" "<<prev_coll.second->getId()<<" "<<prev_coll.second->getName()<<endl;
+//      }
+//      for(auto const& coll: allCollisions){//collisions from this trial
+//        log("planner")<<"Curr coll: "<<coll.first<<" "<<coll.first->getName()<<" "<<coll.second<<" "<<coll.second->getName()<<endl;
+//      }
 
       for(auto const& prev_coll: previousCollisions){//combine collisions
         auto ait = allCollisions.find(prev_coll);
@@ -138,7 +138,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       new_q->m_usedClashPrevention = true;
       new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanningTree->getNumCycleDOFs() + clashAvoidingNullSpace->getNullspaceSize();
 
-      log("dominik")<<"New nullspace dimension: "<< clashAvoidingNullSpace->getNullspaceSize()<<endl;
+//      log("planner")<<"New nullspace dimension: "<< clashAvoidingNullSpace->getNullspaceSize()<<endl;
 
       delete clashAvoidingNullSpace;
       delete clashAvoidingSVD;
@@ -150,7 +150,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       m_movesAccepted++;
 
       //Enthalpy and entropy computation
-      log("dominik")<<"Length of all collisions: "<<allCollisions.size()<<endl;
+//      log("planner")<<"Length of all collisions: "<<allCollisions.size()<<endl;
 //      pair<double,double> enthalpyVals= new_q->getMolecule()->vdwEnergy(&allCollisions,m_collisionCheckAtomTypes);
 //      new_q->m_vdwEnergy = enthalpyVals.first;
 //      new_q->m_deltaH = enthalpyVals.second - new_q->m_vdwEnergy;
@@ -207,7 +207,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
   for(auto const& coll: allCollisions){
     Atom* atom1 = coll.first;
     Atom* atom2 = coll.second;
-    log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
+    log("planner") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
@@ -233,7 +233,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
         gsl_matrix_set(ret,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//				log("dominik")<<"Setting clash entry on left branch at "<<dof_id<<endl;
+//				log("planner")<<"Setting clash entry on left branch at "<<dof_id<<endl;
       }
 
       //Quick trick for plotting the clash cycles (don't use in real sampling)

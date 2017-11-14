@@ -97,13 +97,18 @@ void GlobalRotateDOF::updateEndVertexTransformation()
   //Rotation around origin
 //  m_edge->EndVertex->m_transformation = m_edge->StartVertex->m_transformation * tr;
 
+  /// Previous implementation
   //Rotation around first atom
   Math3D::RigidTransform m1, m3;
-  m1.setIdentity();
-  m3.setIdentity();
-  m1.setTranslate(     m_firstAtom->m_position);
-  m3.setTranslate(-1.0*m_firstAtom->m_position);
-  m_edge->EndVertex->m_transformation =
-      m_edge->StartVertex->m_transformation * m1 * tr * m3;
+//  m1.setIdentity();
+//  m3.setIdentity();
+//  m1.setTranslate(     m_firstAtom->m_position);
+//  m3.setTranslate(-1.0*m_firstAtom->m_position);
+//  m_edge->EndVertex->m_transformation =
+//      m_edge->StartVertex->m_transformation * m1 * tr * m3;
 
+  ///New: Closed-form expression
+  tr.setTranslation(m_firstAtom->m_position - tr.R*m_firstAtom->m_position);
+  m_edge->EndVertex->m_transformation =
+      m_edge->StartVertex->m_transformation * tr;
 }

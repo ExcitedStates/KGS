@@ -129,16 +129,16 @@ void RRTPlanner::generateSamples() {
     double start_time = timer.getTimeNow();
 
 //    if (ExploreOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
-      log("dominik") << "Generating new target, getting new seed" << endl;
+//      log("planner") << "Generating new target, getting new seed" << endl;
       createNewTarget = false;
       pTarget = GenerateRandConf();//used in selection ONLY if no target molecule is specified
       pClosestSmp = SelectNodeFromBuckets(pTarget);
-      log("dominik") << " .. picked sample " << pClosestSmp->m_id << endl;
+//      log("planner") << " .. picked sample " << pClosestSmp->m_id << endl;
       //pClosestSmp = SelectClosestNode(pTarget,nBatch);
       double end_time = timer.getTimeNow();
       selectNodeTime += end_time - start_time;
 //    } else {
-//      log("dominik") << "Using latest sample as seed" << endl;
+//      log("planner") << "Using latest sample as seed" << endl;
 //      pClosestSmp = m_samples.back();
 //    }
 
@@ -245,7 +245,7 @@ Configuration *RRTPlanner::SelectNodeFromBuckets(Configuration *pTarget) {
     do {
       selected_bucket_id = rand() % (m_numBuckets - 1);
     } while (distance_buckets[selected_bucket_id].empty());
-    log("dominik") << "Seed from bucket: " << selected_bucket_id << endl;
+//    log("planner") << "Seed from bucket: " << selected_bucket_id << endl;
     for (list<Configuration *>::iterator iter = distance_buckets[selected_bucket_id].begin();
          iter != distance_buckets[selected_bucket_id].end(); ++iter) {
       pSmp = *iter;

@@ -279,7 +279,7 @@ Molecule* IO::readPdb (
 //      makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //      molecule->addCovBond(a1->getResidue(), a2->getResidue(),a1->getName(), a2->getName());
       molecule->addCovBond(a1,a2);
-      log("dominik") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+      log("planner") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
     }
   }
   else {
@@ -1010,7 +1010,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     exit(-1);
   }
   if(protein->m_conf->getNumDOFs() != referenceConf->getNumDOFs()){
-    log("dominik")<<"Configurations don't have same dof number, not writing a q file."<<endl;
+    log("planner")<<"Configurations don't have same dof number, not writing a q file."<<endl;
     return;
   }
 

@@ -276,18 +276,18 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  if(options.saveData > 1) {
+  if(options.saveData > -1) {
     string outMat = "Vmatrix.txt";
     gsl_matrix_outtofile(baseNullspaceV, outMat);
-  }
-
-  if(options.saveData > 2) {
     string outProd = "fullProduct_JV.txt";
     gsl_matrix_outtofile(fullProduct, outProd);
+  }
+
+  if(options.saveData > 1) {
     imodeComparisonFiles(protein, options, ns, baseNullspaceV, singValVector, numResis);
   }
 
-  if(options.saveData > 3) {
+  if(options.saveData > 2) {
     string outJac = out_path + "output/" + name + "_jac.txt";
     gsl_matrix_outtofile(baseJacobian, outJac);
     ///save pyMol coloring script
@@ -347,8 +347,10 @@ int main( int argc, char* argv[] ) {
         allDofs->data + qNew->getNumDOFs(),
         qNew->m_dofs);
 
-    string outFile = "output/allDofs_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
-    gsl_vector_outtofile(allDofs, outFile);
+    if(options.saveData > 1) {
+      string outFile = "output/allDofs_" + std::to_string(static_cast<long long>(v_i + 1)) + ".txt";
+      gsl_vector_outtofile(allDofs, outFile);
+    }
 
     bool inCollision = qNew->updatedMolecule()->inCollision();
     if (inCollision) {
@@ -420,8 +422,10 @@ int main( int argc, char* argv[] ) {
     log("hierarchy") << ", delta vdw: "<<deltaVdwEnergy<<endl;
     IO::writeNewSample(qNew, conf, sampleCount, options.workingDirectory, options.saveData);
 
-    hBondOut = "output/hBonds_"+std::to_string(static_cast<long long>(v_i+1))+".txt";
-    IO::writeHbondsChange(qNew,hBondOut);
+    if(options.saveData > 1) {
+      hBondOut = "output/hBonds_" + std::to_string(static_cast<long long>(v_i + 1)) + ".txt";
+      IO::writeHbondsChange(qNew, hBondOut);
+    }
 
     //Store output data in this file, space-separated in this order
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
@@ -456,7 +460,7 @@ int main( int argc, char* argv[] ) {
 
     //Scale to desired step size
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
-    gsl_vector_outtofile(projected_gradient,"gasDesiredGradient.txt");
+    gsl_vector_outtofile(projected_gradient,"desiredGradient.txt");
 
     //Identify predictedViolation
 //    double predictedViolation = gsl_vector_get(singValVector,numCols - v_i - 1)*options.stepSize;
@@ -465,6 +469,12 @@ int main( int argc, char* argv[] ) {
     double predictedViolation = gsl_vector_length(violationVec);
     gsl_vector_outtofile(violationVec, "gradientVectorViolation.txt");
     gsl_vector_free(violationVec);
+
+    //Overlap with singular vectors
+    gsl_vector* overlapVec= gsl_matrix_vector_mul(baseNullspaceV,projected_gradient);
+    double overlapNorm = gsl_vector_length(overlapVec);
+    gsl_vector_outtofile(overlapVec, "gradientOverlap.txt");
+    gsl_vector_free(overlapVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
