@@ -87,7 +87,7 @@ void randomSampling(ExploreOptions& options) {
 //    IO::readAnnotations(protein, options.annotationFile);
 
   for(auto const& coll: protein->getAllCollisions()){
-    log("dominik") << "Ini coll: " << coll.first->getId() << " " << coll.first->getName() << " " << coll.second->getId() << coll.second->getName() << endl;
+    log("planner") << "Ini coll: " << coll.first->getId() << " " << coll.first->getName() << " " << coll.second->getId() << coll.second->getName() << endl;
   }
 
   log("samplingStatus") << "Molecule has:" << endl;
