@@ -61,14 +61,14 @@ FastClashAvoidingMove::FastClashAvoidingMove(
 Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
 //  enableLogger("clashBug");
   double currNorm = gsl_vector_length(gradient);
-  log("dominik") << "Norm of gradient: " << currNorm << endl;
+//  log("planner") << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(current->getNumDOFs());
   current->projectOnCycleNullSpace(gradient, projected_gradient);
 
   double currProjNorm = gsl_vector_length(projected_gradient);
-  log("dominik") << "Norm of projected gradient: " << currProjNorm << endl;
+//  log("planner") << "Norm of projected gradient: " << currProjNorm << endl;
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
@@ -104,7 +104,7 @@ Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_ve
 
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
-      log("dominik") << "Rejected!" << endl;
+      log("planner") << "Rejected!" << endl;
 
       previousCollisions = allCollisions;
       if(trialStep==m_trialSteps-1){
@@ -116,7 +116,7 @@ Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_ve
       delete new_q;
 
     } else {//collision free
-      log("dominik") << "Accepted!" << endl;
+      log("planner") << "Accepted!" << endl;
       m_movesAccepted++;
 
       return new_q;
@@ -222,7 +222,7 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   double currProjNorm = gsl_vector_length(projected_gradient);
 
   Configuration* new_q = new Configuration(conf);
-//  log("dominik")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
+//  log("planner")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
     new_q->m_dofs[i] = formatRangeRadian( conf->m_dofs[i] + gsl_vector_get(projected_gradient, i) );
   gsl_vector_free(projected_gradient);
@@ -287,7 +287,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
   for(auto const& coll: collisions){
     Atom* atom1 = coll.first;
     Atom* atom2 = coll.second;
-    log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
+    log("planner") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2

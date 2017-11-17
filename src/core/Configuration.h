@@ -126,6 +126,7 @@ class Configuration
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
 
   void rigidityAnalysis();
+  void deleteNullspace(); ///if not needed anymore, save memory
 
   Configuration* getParent();   ///< Access configuration that spawned this one
   std::list<Configuration*>& getChildren(); ///< Access child configurations

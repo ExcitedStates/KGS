@@ -279,7 +279,7 @@ Molecule* IO::readPdb (
 //      makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //      molecule->addCovBond(a1->getResidue(), a2->getResidue(),a1->getName(), a2->getName());
       molecule->addCovBond(a1,a2);
-      log("dominik") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+      log("planner") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
     }
   }
   else {
@@ -1002,7 +1002,9 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
 }
 
 void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_file_name) {
-
+  ///Bug fix for asking rigidity information later
+  protein->m_conf->rigidityAnalysis();
+  ///
   string myfile_s = output_file_name.substr(0,output_file_name.length()-4) + ".txt";
   ofstream myfile(myfile_s.c_str());
   if(!myfile.is_open()) {
@@ -1010,7 +1012,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     exit(-1);
   }
   if(protein->m_conf->getNumDOFs() != referenceConf->getNumDOFs()){
-    log("dominik")<<"Configurations don't have same dof number, not writing a q file."<<endl;
+    log("planner")<<"Configurations don't have same dof number, not writing a q file."<<endl;
     return;
   }
 

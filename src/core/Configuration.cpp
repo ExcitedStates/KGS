@@ -255,6 +255,13 @@ void Configuration::rigidityAnalysis() {
   rigidityTime += new_time - old_time;
 }
 
+void Configuration::deleteNullspace(){
+  if(nullspace) {
+    delete nullspace;
+    nullspace = nullptr;
+  }
+}
+
 //void Configuration::identifyBiggerRigidBodies(){
 //
 //  /// Now, all dihedrals and hBonds that are fixed have the set flag constrained = true!
@@ -738,7 +745,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 //		consCounter++;
     Atom* atom1 = mit->first.first;
     Atom* atom2 = mit->first.second;
-    log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
+    log("planner") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
@@ -764,7 +771,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
         gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//				log("dominik")<<"Setting clash entry on left branch at "<<dof_id<<endl;
+//				log("planner")<<"Setting clash entry on left branch at "<<dof_id<<endl;
       }
 
       //Quick trick for plotting the clash cycles (don't use in real sampling)
@@ -791,7 +798,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
         double jacobianEntryClash = - dot(clashNormal, derivativeP2);
 
         gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//				log("dominik")<<"Setting clash entry on right branch at "<<dof_id<<endl;
+//				log("planner")<<"Setting clash entry on right branch at "<<dof_id<<endl;
       }
 
 //			//Quick trick for plotting the clash cycles (don't use in real sampling)

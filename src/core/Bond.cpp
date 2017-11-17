@@ -125,7 +125,7 @@ double Bond::getTorsion() {
 		ret = formatRangeRadian(ret);
 	}
 	else{
-//		log("dominik")<<"Setting global torsion to zero at bond between atom "<<Atom1->getId()<<" and "<<m_atom2->getId()<<endl;
+//		log("planner")<<"Setting global torsion to zero at bond between atom "<<Atom1->getId()<<" and "<<m_atom2->getId()<<endl;
 	}
 	return ret;
     

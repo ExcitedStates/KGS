@@ -173,38 +173,77 @@ double RMSD::distance_noOptimization(Configuration *c1, Configuration *c2) {
 }
 
 double RMSD::align(Molecule *moving_mol, Molecule *static_mol) {
+  const std::vector<Atom *> &atomsRMSD1 = m_selection.getSelectedAtoms(static_mol);
 
-  vector<Atom *> &atomsRMSD2 = m_selection.getSelectedAtoms(static_mol);
+  Molecule* m1 = static_mol;
+  Molecule* m2 = moving_mol;
 
-  if (atomsRMSD2.empty()) {
-    cout << "RMSD::align - Found no atoms to align .. using all" << endl;
+  // Build two vectors of atoms where each entry in one has matching chain name, residue id, and atom name in the other
+  std::vector<Atom*> *matchedAtoms1;
+  std::vector<Atom*> *matchedAtoms2;
+  if (m1 == m2){
+    matchedAtoms1 = new std::vector<Atom*>(atomsRMSD1);
+    matchedAtoms2 = new std::vector<Atom*>(atomsRMSD1);
+  }else {
+    matchedAtoms1 = new std::vector<Atom*>();
+    matchedAtoms2 = new std::vector<Atom*>();
+
+    for (auto const &aIt : atomsRMSD1) {
+      const std::string &name = aIt->getName();
+      const std::string &chainName = aIt->getResidue()->getChain()->getName();
+      int resId = aIt->getResidue()->getId();
+      Atom *a1 = &(*aIt);
+      Atom *a2 = m2->getAtom(chainName, resId, name);
+      if (a2 != nullptr) {
+        matchedAtoms1->push_back(a1);
+        matchedAtoms2->push_back(a2);
+      }
+    }
+  }
+
+  if (atomsRMSD1.empty()) {
+    cerr << "RMSD::distance - Atom-selection given to RMSD metric contained no atoms: " << m_selection << endl;
     exit(-1);
   }
 
-  int atom_size = atomsRMSD2.size();
-  gsl_matrix *static_matrix = gsl_matrix_alloc(atom_size, 3);
-  gsl_matrix *moving_matrix = gsl_matrix_alloc(atom_size, 3);
+  int atom_num = matchedAtoms1->size();
+  assert(atom_num > 3);
+
+  gsl_matrix *static_matrix = gsl_matrix_alloc(atom_num, 3);
+  gsl_matrix *moving_matrix = gsl_matrix_alloc(atom_num, 3);
 
   unsigned int i = 0;
-  for (auto const &aIt : atomsRMSD2) {
-    const std::string &name = aIt->getName();
-    const std::string &chainName = aIt->getResidue()->getChain()->getName();
-    int resId = aIt->getResidue()->getId();
-    const Atom *a1 = static_mol->getAtom(chainName, resId, name);
-    const Atom *a2 = moving_mol->getAtom(chainName, resId, name);
+  for (auto const &aIt : *matchedAtoms1) {
+    const Coordinate &c1 = (*aIt).m_position;
+    gsl_matrix_set(static_matrix, i, 0, c1.x);
+    gsl_matrix_set(static_matrix, i, 1, c1.y);
+    gsl_matrix_set(static_matrix, i, 2, c1.z);
 
-    if (a2 != nullptr) {
-      const Coordinate &c1 = a1->m_position;
-      gsl_matrix_set(static_matrix, i, 0, c1.x);
-      gsl_matrix_set(static_matrix, i, 1, c1.y);
-      gsl_matrix_set(static_matrix, i, 2, c1.z);
+    assert(!std::isnan(c1.x));
+    assert(!std::isnan(c1.y));
+    assert(!std::isnan(c1.z));
+    assert(c1.x < 10000.0);
+    assert(c1.y < 10000.0);
+    assert(c1.z < 10000.0);
 
-      const Coordinate &c2 = a2->m_position;
-      gsl_matrix_set(moving_matrix, i, 0, c2.x);
-      gsl_matrix_set(moving_matrix, i, 1, c2.y);
-      gsl_matrix_set(moving_matrix, i, 2, c2.z);
-      i++;
-    }
+    i++;
+  }
+
+  i = 0;
+  for (auto const &aIt: *matchedAtoms2) {
+    const Coordinate &c2 = (*aIt).m_position;
+    gsl_matrix_set(moving_matrix, i, 0, c2.x);
+    gsl_matrix_set(moving_matrix, i, 1, c2.y);
+    gsl_matrix_set(moving_matrix, i, 2, c2.z);
+
+    assert(!std::isnan(c2.x));
+    assert(!std::isnan(c2.y));
+    assert(!std::isnan(c2.z));
+    assert(c2.x < 10000.0);
+    assert(c2.y < 10000.0);
+    assert(c2.z < 10000.0);
+
+    i++;
   }
 
   gsl_matrix *rotate = gsl_matrix_alloc(3, 3);

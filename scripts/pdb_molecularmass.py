@@ -50,14 +50,14 @@ def domainCOM(atoms, massWeighted=True):
         if massWeighted:
             if a.elem in atomic_weight:
                 m = atomic_weight[a.elem.upper()]
-                x += a.x * m
-                y += a.y * m
-                z += a.z * m
+                x += a.pos[0] * m
+                y += a.pos[1] * m
+                z += a.pos[2] * m
                 totmass += m
         else:
-            x += a.x
-            y += a.y
-            z += a.z
+            x += a.pos[0]
+            y += a.pos[1]
+            z += a.pos[2]
 
     # print totmass
     if massWeighted:
