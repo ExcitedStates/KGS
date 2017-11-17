@@ -136,8 +136,8 @@ class Configuration
   void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
   double *m_dofs_global;                 ///< DOF-values in a global system (not relative to Atom::reference_position)
   Molecule * const m_molecule;           ///< The molecule related to the configuration
-  Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from
-  std::list<Configuration*> m_children;          ///< List of child-configurations
+  Configuration * m_parent;              ///< The parent-configuration this configuration was generated from
+  std::list<Configuration*> m_children;  ///< List of child-configurations
 
   void computeCycleJacobianAndNullSpace();
   void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian
