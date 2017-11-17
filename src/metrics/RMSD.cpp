@@ -125,7 +125,14 @@ double RMSD::distance(Configuration *c1, Configuration *c2) {
   delete matchedAtoms2;
 
   /// Compute the optimal rotation and translation, returns remaining rmsd
-  return kabsch(moving_matrix, static_matrix, rotate, transl);
+  double rmsd = kabsch(moving_matrix, static_matrix, rotate, transl);
+
+  gsl_matrix_free(moving_matrix);
+  gsl_matrix_free(static_matrix);
+  gsl_matrix_free(rotate);
+  gsl_vector_free(transl);
+
+  return rmsd;
 }
 
 double RMSD::distance_noOptimization(Configuration *c1, Configuration *c2) {
@@ -450,6 +457,7 @@ double RMSD::kabsch(
   gsl_matrix_free(R);
   gsl_vector_free(cy);
   gsl_vector_free(cx);
+  gsl_matrix_free(Xrot);
 
   if(U_ok == 1)
     return rmsd;

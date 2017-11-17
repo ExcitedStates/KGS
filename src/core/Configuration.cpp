@@ -502,6 +502,7 @@ void Configuration::computeJacobians() {
     gsl_matrix_set_zero(CycleJacobian);
   }else{
     gsl_matrix_free(CycleJacobian);
+    delete JacobianSVD;
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
     JacobianSVD = SVD::createSVD(CycleJacobian);//new SVDMKL(CycleJacobian);
   }

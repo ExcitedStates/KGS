@@ -46,11 +46,7 @@ KinVertex::KinVertex (Rigidbody* rb_ptr):
   m_transformation.setIdentity();
 }
 
-KinVertex::~KinVertex () {
-  for (auto eit=m_edges.begin(); eit!=m_edges.end(); ++eit) {
-    delete *eit;
-  }
-}
+KinVertex::~KinVertex () {}
 
 void KinVertex::setParent(KinVertex* v) {
   m_parent = v;
