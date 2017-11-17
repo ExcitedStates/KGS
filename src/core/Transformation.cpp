@@ -212,7 +212,7 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
     for (vector<Atom*>::iterator aitr=atom1->Hbond_neighbor_list.begin(); aitr!=atom1->Hbond_neighbor_list.end(); ++aitr) {
       if ( (*aitr)->getId()==atom_id2 ) continue;
       if ( atom3==nullptr ) { // || (*aitr)->getId()<atom3->getId()
-        //			log("dominik")<<"Using hbond neighbor for bond between "<<this->Atom1<<" and "<<this->Atom2<<endl;
+        //			log("planner")<<"Using hbond neighbor for bond between "<<this->Atom1<<" and "<<this->Atom2<<endl;
         atom3 = *aitr;
       }
     }
@@ -247,7 +247,7 @@ void Confvec2MatrixIndividual(Configuration *q, KinVertex *node, double* iniRef,
     double rot = q->getGlobalTorsions(pEdge->getDOF()->getIndex()) - currentTorsion;
 //		cout<<"Updated torsion from "<< pEdge->getBond()->getTorsion()<<" to "<<currentTorsion<<endl;
     rot = formatRangeRadian(rot);
-//		log("dominik")<<"Transformation at edge "<<pEdge->getDOF()->getIndex()<<" for node "<<newNode->id<<" with rot "<<q->getGlobalTorsions(pEdge->DOF_id)<<" - "<<currentTorsion<<" = "<<rot<<endl;
+//		log("planner")<<"Transformation at edge "<<pEdge->getDOF()->getIndex()<<" for node "<<newNode->id<<" with rot "<<q->getGlobalTorsions(pEdge->DOF_id)<<" - "<<currentTorsion<<" = "<<rot<<endl;
 
     vec = pEdge->getBond()->Atom2->m_Position - pEdge->getBond()->Atom1->m_Position;
 

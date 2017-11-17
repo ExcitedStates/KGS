@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # coding: utf-8
 """
 Classes for representing and manipulating pdb-structures.
@@ -111,10 +111,6 @@ class Atom:
     def distance(self, a):
         return norm(sub(self, a))
 
-    def distance_squared(self, a):
-        diff = sub(self, a)
-        return dot(diff, diff)
-
     def vdwradius(self):
         try:
             return vdw_radii[self.elem.upper()]
@@ -147,7 +143,7 @@ class Atom:
     def is_acceptor(self):
         return self.elem == "O" or (self.elem == "N" and len(self.neighbors) <= 2)
 
-    def pdb_str(self):
+    def get_pdb_line(self):
         if len(self.name) <= 3:  # Takes care of four-letter atom name alignment
             line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % \
                    ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi,
@@ -177,7 +173,7 @@ class Atom:
 
 
 class PDBModel:
-    """ A representation of a single model of a PDB-file """
+    """ A representation of a single-model PDB-file """
 
     def clean_dehydro_hoh(self):
         dehydro_hoh = [a for a in self.atoms if a.resn == "HOH" and len(a.neighbors) == 0]
@@ -186,28 +182,20 @@ class PDBModel:
             print("%s: removed %d waters with no hydrogens" % (self.name, len(dehydro_hoh)))
 
     def get_nearby(self, v, radius):
-        """ Locate all atoms within a certain radius of a point
-
-        Args:
-            v: A list of coordinates, or an `Atom` around which to search
-            radius: A number indicating the radius in which to search
-
-        Returns:
-            A list of atoms within the distance `radius` of `v`
+        """
+        Locate all atoms within `radius` of `v`.
+        :param v: A list of coordinates, or an `Atom`
+        :param radius: A number
+        :return: A list of atoms near `v`
         """
         return [a for a in self.get_approx_nearby(v, radius) if a.distance(v) <= radius]
 
     def get_approx_nearby(self, v, radius):
         """
         Locate all atoms within `radius` of `v`.
-
-        Args:
-            v: A list of coordinates, or an `Atom` around which to search
-            radius: An indication of the size of the vicinity
-
-        Returns:
-            A list of atoms in the vicinity of `v`. All atoms closer to `v` than `radius` are guaranteed to be in this
-            list.
+        :param v: A list of coordinates, or an `Atom`
+        :param radius: A number
+        :return: A list of atoms near `v`
         """
         irad = int(math.ceil(radius))
         ivx, ivy, ivz = int(v[0]+0.5), int(v[1]+0.5), int(v[2]+0.5)
@@ -503,137 +491,6 @@ class PDBModel:
         neighborhood = [a for a in self.get_nearby(atom.pos, radius)]
         return len(neighborhood)
 
-    def coord_matrix(self, names=None):
-        """
-        Get a coordinate-matrix of shape (a, 3) where a is the number of atoms with one of the specified names.
-        New: an optional list of residues can limit the coordinate Matrix to specified residues only, useful for
-        comparison across non-identical sequences or with missing loops.
-        """
-        import numpy as np
-        ret = np.zeros(shape=(len(self.atoms), 3))
-        a = 0
-        for atom in [at for at in self.atoms if not names or at.name in names]:
-            ret[a][0] = atom.pos[0]
-            ret[a][1] = atom.pos[1]
-            ret[a][2] = atom.pos[2]
-            a += 1
-        ret.resize(a, 3)
-        return ret
-
-    @staticmethod
-    def _optimal_transformation(crds1, crds2):
-        """ The transformation to `crds2` that minimizes the rmsd to `crds1`.
-
-        A call to this function will move the coordinates to their respective averages and apply optimal rotation of
-        `crds2`.
-
-        Args:
-            crds1 and crds2: Float matrices of shape (n, 3) where n is the number of points
-
-        Returns:
-            a triple representing a transformation matrix. The first entry is the first translation to perform, second
-            entry is the rotation and third entry is the last translation
-        """
-        import numpy as np
-
-        assert (crds1.shape[1] == 3)
-        assert (crds2.shape[1] == 3)
-        if crds1.shape[0] != crds2.shape[0]:
-            print "Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")"
-            assert (crds1.shape == crds2.shape)
-        n = crds1.shape[0]
-
-        # Move crds1 to origo
-        avg1 = np.zeros(3)
-        for c1 in crds1: avg1 += c1
-        avg1 /= n
-        for c1 in crds1: c1 -= avg1
-
-        # Move crds2 to origo
-        avg2 = np.zeros(3)
-        for c2 in crds2: avg2 += c2
-        avg2 /= n
-        for c2 in crds2: c2 -= avg2
-
-        # Get optimal rotation
-        # From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
-        correlation_matrix = np.dot(np.transpose(crds1), crds2)
-        u, s, v_tr = np.linalg.svd(correlation_matrix)
-        r = np.dot(u, v_tr)
-        r_det = np.linalg.det(r)
-        if r_det < 0:
-            # print 'WARNING: MIRRORING'
-            u[:, -1] = -u[:, -1]
-            r = np.dot(u, v_tr)
-            # is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr))
-            # if is_reflection:
-            #       u[:,-1] = -u[:,-1]
-
-        for c2 in crds2:
-            tmp = np.dot(r, c2)
-            c2[0] = tmp[0]
-            c2[1] = tmp[1]
-            c2[2] = tmp[2]
-
-        return avg2, r, avg1
-
-    def rmsd(self, other, names=None):
-        """
-        Return the smallest root-mean-square-deviation between coordinates in `self` and `other`.
-        If `names` is None, then all atoms are used.
-        """
-        import numpy as np
-        crds1 = self.coord_matrix(names=names)
-        crds2 = other.coord_matrix(names=names)
-
-        PDBModel._optimal_transformation(crds1, crds2)
-
-        # Apply rotation and find rmsd
-        import itertools
-        rms = 0.0
-        for c1, c2 in itertools.izip(crds1, crds2):
-            tmp = c1 - c2
-            rms += np.dot(tmp, tmp)
-
-        return math.sqrt(rms / crds1.shape[0])
-
-    def rmsd_cur(self, other, names=None):
-        """
-        Return the smallest root-mean-square-deviation between coordinates in `self` and `other`.
-        If `names` is None, then all atoms are used.
-        """
-        import numpy as np
-        crds1 = self.coord_matrix(names=names)
-        crds2 = other.coord_matrix(names=names)
-
-        # Apply rotation and find rmsd
-        import itertools
-        rms = 0.0
-        for c1, c2 in itertools.izip(crds1, crds2):
-            tmp = c1 - c2
-            rms += np.dot(tmp, tmp)
-
-        return math.sqrt(rms / crds1.shape[0])
-
-    def alignto(self, other, names=None):
-        """ Transform the coordinates of `self` so the RMSD to `other` is minimized. """
-        import numpy as np
-
-        crds2 = self.coord_matrix(names=names)
-        crds1 = other.coord_matrix(names=names)
-
-        assert (crds1.shape[1] == 3)
-
-        if crds1.shape[0] != crds2.shape[0]:
-            print "Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")"
-            # assert(crds1.shape == crds2.shape)
-
-        d1, r, d2 = PDBModel._optimal_transformation(crds1, crds2)
-
-        # Apply rotation and find rmsd
-        for a in self.atoms:
-            a.pos = np.dot(r, a.pos - d1) + d2
-
     def __repr__(self):
         return "PDBModel('"+self.name+"')"
 
@@ -678,8 +535,6 @@ class PDBModel:
             a.id = i+1
 
     def clean_residue_sequence(self):
-        """ Checks for gaps .. ?
-        """
         currentresid = self.atoms[0].resi
         currentchain = self.atoms[0].chain
         reslist = []  # temporarily stores atoms of one residue
@@ -744,20 +599,10 @@ class PDBModel:
                 reslist.append(atom.name)  # keep track of atom names (each atom only once)
         
     def check_collisions(self):
-        """ Check for collisions and print warnings if there are any.
-
-        Two atoms are consider colliding if the distance between their centers is less than the sum of their van der
-        Waals radii multiplied by 0.6. A special message is printed if the distance is less than 0.7 of the sum of
-        covalent radii (a serious collision).
-
-        Returns:
-            A list of collisions represented as a triple of two atoms and their distance
-        """
         serious_collisions = []
         collisions = []
         for atom1 in self.atoms:
-            # 2.0 is the largest vdw radius for atom2
-            for atom2 in self.get_approx_nearby(atom1.pos, atom1.vdw_radius()+2.0):
+            for atom2 in self.get_approx_nearby(atom1.pos, atom1.vdw_radius()+2.0):  # 2.0 is the largest vdw radius for atom2
                 if atom1.id <= atom2.id:
                     continue
                 if abs(atom1.resi-atom2.resi) <= 1 and atom1.chain == atom2.chain:
@@ -793,22 +638,12 @@ class PDBModel:
 
         return odd_atoms
 
-    def __repr__(self):
-        return "PDBModel('"+self.name+"')"
-
-    def pdb_str(self):
-        """ Return the model atoms as a PDB string """
-        ret = ""
-        for atom in self.atoms:
-            ret += atom.pdb_str()
-        return ret
-
     def write_pdb(self, fname):
         """ Write the model to a PDB file """
         f = open(fname, 'w')
 
         for atom in self.atoms:
-            f.write(atom.pdb_str())
+            f.write(atom.get_pdb_line())
         
         # Write CONECT records based on bond profile
         for atom in self.atoms:
@@ -822,12 +657,75 @@ class PDBModel:
             return ret[0]
         return None
 
+    def getAtomsInResi(self, resi):
+        ret = []
+        for atom in self.atoms:
+            if atom.resi==resi:
+                ret.append(atom)
+        return ret
+
+    def getResidues(self):
+        '''
+        Return a sorted list of all residue numbers in this structure
+        '''
+        ret = set()
+        for atom in self.atoms:
+            ret.add(atom.resi)
+        return sorted(list(ret))
+
+    def getResidueIDsandNames(self):
+        '''
+        Return a sorted list of all residue numbers and names in this structure
+        '''
+        ret = set()
+        for atom in self.atoms:
+            ret.add((atom.resi,atom.resn))
+        return sorted(list(ret))
 
 class PDBFile:
 
+    def pdbDownload(self,pdb_id):
+        hostname="ftp.wwpdb.org"
+        directory="/pub/pdb/data/structures/all/pdb/"
+        prefix="pdb"
+        suffix=".ent.gz"
+
+        import os, sys, ftplib, shutil, gzip
+
+        # Log into server
+        #print "Downloading %s from %s ..." % (pdb_id, hostname)
+        ftp = ftplib.FTP()
+        ftp.connect(hostname)
+        ftp.login()
+
+        # Download all files in file_list
+        to_get = "%s/%s%s%s" % (directory,prefix,pdb_id.lower(),suffix)
+        to_write = "%s%s" % (pdb_id,suffix)
+        final_name = "%s.pdb" % to_write[:to_write.index(".")]
+        try:
+            ftp.retrbinary("RETR %s" % to_get,open(to_write,"wb").write)
+            f = gzip.open(to_write,'r')
+            g = open(final_name,'w')
+            g.writelines(f.readlines())
+            f.close()
+            g.close()
+            os.remove(to_write)
+        except ftplib.error_perm:
+            os.remove(to_write)
+            print "ERROR! %s could not be retrieved from PDB!" % to_get
+            ftp.quit()
+            return None
+
+        # Log out
+        ftp.quit()
+        return final_name
+        
     def __init__(self, pdb_file):
         """ Initialize a multi-model object using a PDB file name. """
 
+        if len(pdb_file)==4: 
+            pdb_file = self.pdbDownload(pdb)
+            
         if pdb_file.endswith(".gz"): 
             import gzip
             f = gzip.open(pdb_file, 'rb')
@@ -895,3 +793,24 @@ class PDBFile:
     def check_covalent_bonds(self):
         for m in self.models:
             m.check_covalent_bonds()
+            
+    def getAtomsInResi(self, resi, model_number = 0):
+        '''
+        Return all atoms in residue
+        '''
+        m = self.models[model_number]
+        return m.getAtomsInResi(resi)
+
+    def getResidues(self, model_number = 0):
+        '''
+        Return a sorted list of all residue numbers in this structure
+        '''
+        m = self.models[model_number]
+        return m.getResidues()
+            
+    def getResidueIDsandNames(self, model_number = 0):
+        '''
+        Return a sorted list of all residue numbers and names in this structure
+        '''
+        m = self.models[model_number]
+        return m.getResidueIDsandNames()

@@ -98,7 +98,7 @@ void targetedSampling(TransitionOptions& options){
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
 //  protein->m_initialCollisions = protein->getAllCollisions();
   for(auto const& coll: protein->getInitialCollisions()){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+    log("planner")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
   }
 
   /// Rigid bodies, spanning trees, and initial collisions for the target
@@ -116,7 +116,7 @@ void targetedSampling(TransitionOptions& options){
 //  target->m_initialCollisions = target->getAllCollisions();
 //    	for(mit=target->m_initialCollisions.begin(); mit != target->m_initialCollisions.end();mit++){
 //    		Atom* atom1=mit->second.first;
-//        	log("dominik")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
+//        	log("planner")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
 //    	}
 
 
@@ -340,9 +340,9 @@ int main( int argc, char* argv[] ) {
 //  reportStream.open("kgs_report.log");
 //  enableLogger("report", reportStream);
 
-//  ofstream plannerStream;
-//  plannerStream.open("kgs_planner.log");
-//  enableLogger("dominik", plannerStream);
+  ofstream plannerStream;
+  plannerStream.open("kgs_planner.log");
+  enableLogger("planner", plannerStream);
 
 //  ofstream debugStream;
 //  debugStream.open("kgs_debug.log");
@@ -373,7 +373,7 @@ int main( int argc, char* argv[] ) {
   targetedSampling(options);
 
 //  reportStream.close();
-//  plannerStream.close();
+  plannerStream.close();
 
   return 0;
 }

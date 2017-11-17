@@ -43,14 +43,14 @@ NullspaceMove::NullspaceMove(double maxRotation):
 
 Configuration* NullspaceMove::performMove(Configuration* current, gsl_vector* gradient) {
   double currNorm = gsl_vector_length(gradient);
-  log("dominik") << "Norm of gradient: " << currNorm << endl;
+  log("planner") << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(current->getNumDOFs());
   current->projectOnCycleNullSpace(gradient, projected_gradient);
 
   double currProjNorm = gsl_vector_length(projected_gradient);
-  log("dominik") << "Norm of projected gradient: " << currProjNorm << endl;
+  log("planner") << "Norm of projected gradient: " << currProjNorm << endl;
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)

@@ -161,7 +161,7 @@ void BidirectionalMovingFront::generateSamples() {
 
 //    if (ExploreOptions::getOptions()->sampleRandom || qNew == nullptr || m_addedToFront == false || swapped == true) {//create new target and compute closest seed
     if (qNew == nullptr || m_addedToFront == false || swapped == true) {//create new target and compute closest seed
-      log("dominik") << "Generating new target" << endl;
+//      log("planner") << "Generating new target" << endl;
       swapped = false;
       if (qTarget != nullptr) {//prevent leakage, delete existing target configuration from previous round
         delete qTarget;
@@ -172,16 +172,16 @@ void BidirectionalMovingFront::generateSamples() {
       double end_time = timer.getTimeNow();
       selectNodeTime += end_time - start_time;
     } else {//we found a valid sample in the last round and aim towards the same target using the latest configuration as new seed
-      log("dominik") << "Using latest sample and previous target" << endl;
+//      log("planner") << "Using latest sample and previous target" << endl;
       qSeed = m_fwdSamples.back();
     }
 
-    log("dominik") << "Using sample " << qSeed->m_id << " as base" << endl;
-    log("dominik") << "Base dofs " << qSeed->m_dofs <<endl;
-    log("dominik") << "Using sample " << qTarget->m_id << " as target" << endl;
+//    log("planner") << "Using sample " << qSeed->m_id << " as base" << endl;
+//    log("planner") << "Base dofs " << qSeed->m_dofs <<endl;
+//    log("planner") << "Using sample " << qTarget->m_id << " as target" << endl;
 
     gsl_vector *gradient = gsl_vector_calloc(m_protein->totalDofNum());
-    log("dominik") << "Base dofs " << qSeed->m_dofs <<endl;
+//    log("planner") << "Base dofs " << qSeed->m_dofs <<endl;
     if (m_isBlended) {
       BlendedDirection &blendedDir = reinterpret_cast<BlendedDirection &>(*direction);
       blendedDir.changeWeight(0, double(numSamples) / double(m_stopAfter));
@@ -211,18 +211,16 @@ void BidirectionalMovingFront::generateSamples() {
 
       //Distance computations
       evaluateDistances(qNew);
-      //Check if front needs to be updated
-      updateFwdFront(qNew);
 
       //Enthalpy and entropy computation
-//      log("dominik")<<"Length of all collisions: "<<allCollisions.size()<<endl;
+//      log("planner")<<"Length of all collisions: "<<allCollisions.size()<<endl;
 //      pair<double,double> enthalpyVals=m_molecule->vdwEnergy(&allCollisions,m_options.collisionCheck);
 //      qNew->m_vdw = enthalpyVals.first;
 //      qNew->m_deltaH = enthalpyVals.second - new_q->m_vdw;
 
       qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(m_collisionCheck);
 
-      log("dominik") << "> New structure: " << qNew->getMolecule()->getName() << "_new_" << numSamples
+      log("planner") << "> New structure: " << qNew->getMolecule()->getName() << "_new_" << numSamples
                      << ".pdb, accessible dofs: " << qNew->m_clashFreeDofs << endl << endl;
 
       log("samplingStatus") << "> New structure: " << qNew->getMolecule()->getName() << "_new_" << numSamples << ".pdb";
@@ -235,6 +233,9 @@ void BidirectionalMovingFront::generateSamples() {
                             << " and " << m_closestRevSample->m_id << ", Distance: " << m_minDistance << endl << endl;
 
       IO::writeNewSample(qNew, m_fwdRoot, qNew->m_id, m_workingDir, m_saveData);
+
+      //Check if front needs to be updated, deletes nullspace if not necessary anymore
+      updateFwdFront(qNew);
 
       //Check if target has been reached!
       if (m_minDistance < m_convergeDistance) {
@@ -262,8 +263,7 @@ void BidirectionalMovingFront::updateFwdFront(Configuration *qNew) {
 
   for (cit = m_fwdFront.begin(); cit != m_fwdFront.end(); cit++) {
     if (qNew->m_paretoFrontDistance <= (*cit)->m_paretoFrontDistance) {
-      log("dominik") << "Inserting into pareto front at: " << i << ", with distance: " << qNew->m_paretoFrontDistance
-                     << endl;
+//      log("planner") << "Inserting into pareto front at: " << i << ", with distance: " << qNew->m_paretoFrontDistance << endl;
       m_fwdFront.insert(cit, qNew); //potentially use it as new seed / target for reverse planner
       m_addedToFront = true;
       break;
@@ -272,11 +272,16 @@ void BidirectionalMovingFront::updateFwdFront(Configuration *qNew) {
   }
   if (cit == m_fwdFront.end() && m_fwdFront.size() < m_frontSize) {
     m_fwdFront.push_back(qNew);
-    log("dominik") << "Inserting at the end at: " << i << ", with distance: " << qNew->m_paretoFrontDistance << endl;
+//    log("planner") << "Inserting at the end at: " << i << ", with distance: " << qNew->m_paretoFrontDistance << endl;
     m_addedToFront = true;
   }
   if (m_fwdFront.size() > m_frontSize)
     m_fwdFront.pop_back();//keep length at maximum
+
+  ///Configurations outside of front will never be used as seeds, delete nullspace
+  if(!m_addedToFront){
+    qNew->deleteNullspace();
+  }
 }
 
 void BidirectionalMovingFront::evaluateDistances(Configuration *qNew) {
@@ -330,11 +335,11 @@ Configuration *BidirectionalMovingFront::GenerateRandConf() {
   randVal = Random01();
 
   if (randVal <= m_biasToTarget) {//use directly the unperturbed target configuration
-    log("dominik") << "Using global target" << endl;
+//    log("planner") << "Using global target" << endl;
     pTarget = m_currentGlobalTarget->clone();
   } else {
     pTarget = new Configuration(m_revRoot);
-    log("dominik") << "Using random target" << endl;
+//    log("planner") << "Using random target" << endl;
     for (int i = 0; i < pTarget->getNumDOFs(); ++i) {
       pTarget->m_dofs[i] = Math3D::dPi * RandomN1P1();
     }
@@ -382,9 +387,9 @@ void BidirectionalMovingFront::swapFwdRev() {
   //Here, we set a sample from the existing forward front as target, and then switch search directions
   std::list<Configuration *>::iterator cit;
   Configuration *pSmp;
-  log("dominik") << "Size of pareto front: " << m_fwdFront.size() << endl;
+  log("planner") << "Size of pareto front: " << m_fwdFront.size() << endl;
   int randConf = rand() % (m_fwdFront.size()); //todo: change this to more often use the "best sample"
-  log("dominik") << "Choosing rand conf number " << randConf << endl;
+//  log("planner") << "Choosing rand conf number " << randConf << endl;
   int i = 0;
   for (cit = m_fwdFront.begin(); cit != m_fwdFront.end(); cit++) {
     if (i == randConf) {
@@ -394,7 +399,7 @@ void BidirectionalMovingFront::swapFwdRev() {
     i++;
   }
   //This will be the target for the next round
-  log("dominik") << "Using sample " << pSmp->m_id << " as current global target!" << endl;
+//  log("planner") << "Using sample " << pSmp->m_id << " as current global target!" << endl;
   pSmp->updateMolecule();
   m_currentGlobalTarget = pSmp;
 

@@ -460,7 +460,7 @@ int main( int argc, char* argv[] ) {
 
     //Scale to desired step size
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
-    gsl_vector_outtofile(projected_gradient,"gasDesiredGradient.txt");
+    gsl_vector_outtofile(projected_gradient,"desiredGradient.txt");
 
     //Identify predictedViolation
 //    double predictedViolation = gsl_vector_get(singValVector,numCols - v_i - 1)*options.stepSize;
@@ -469,6 +469,12 @@ int main( int argc, char* argv[] ) {
     double predictedViolation = gsl_vector_length(violationVec);
     gsl_vector_outtofile(violationVec, "gradientVectorViolation.txt");
     gsl_vector_free(violationVec);
+
+    //Overlap with singular vectors
+    gsl_vector* overlapVec= gsl_matrix_vector_mul(baseNullspaceV,projected_gradient);
+    double overlapNorm = gsl_vector_length(overlapVec);
+    gsl_vector_outtofile(overlapVec, "gradientOverlap.txt");
+    gsl_vector_free(overlapVec);
 
     double gradNorm = gsl_vector_length(projected_gradient);
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=

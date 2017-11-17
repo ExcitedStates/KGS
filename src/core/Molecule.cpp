@@ -662,7 +662,7 @@ void Molecule::setConfiguration(Configuration *q){
   _SetConfiguration(q);
 
 //  if(q->getGlobalTorsions() == nullptr){
-//    log("dominik")<<"Now updating global torsions"<<endl;
+//    log("planner")<<"Now updating global torsions"<<endl;
 //    q->updateGlobalTorsions();
 //  }
 }
