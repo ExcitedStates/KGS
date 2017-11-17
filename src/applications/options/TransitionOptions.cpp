@@ -76,7 +76,7 @@ TransitionOptions::TransitionOptions(int argc, char* argv[])
     if(arg=="--decreaseFactor"){                decreaseFactor = atof(argv[++i]);                   continue; }
     if(arg=="--stepSize"){                      stepSize = atof(argv[++i]);                         continue; }
     if(arg=="--maxRotation"   ){                maxRotation = atof(argv[++i]);                      continue; }
-    if(arg=="--rejectsBeforeClose"){            poissonMaxRejectsBeforeClose = atoi(argv[++i]); continue; }
+    if(arg=="--rejectsBeforeClose"){            poissonMaxRejectsBeforeClose = atoi(argv[++i]);     continue; }
     if(arg=="--metric"){                        metric_string = argv[++i];                          continue; }
     if(arg=="--metricSelection"){               metricSelection = argv[++i];                        continue; }
     if(arg=="--planner"   ){                    planner_string = argv[++i];                         continue; }
@@ -97,9 +97,10 @@ TransitionOptions::TransitionOptions(int argc, char* argv[])
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
     if(arg=="--frontSize"){                     frontSize = atoi(argv[++i]);                        continue; }
     if(arg=="--switchAfter"){                   switchAfter = atoi(argv[++i]);                      continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
-    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                    continue; }
     if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
+    if(arg=="--hbondIntersect"){                hbondIntersect = argv[++i];                         continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -285,6 +286,7 @@ void TransitionOptions::initializeVariables(){
   svdCutoff                 = 1.0e-12;
   collapseRigid             = false;
   relativeDistances         = "";
+  hbondIntersect            = false;
 }
 
 void TransitionOptions::print(){
@@ -330,6 +332,7 @@ void TransitionOptions::print(){
   log("so")<<"\t--switchAfter "<<switchAfter<<endl;
   log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
   log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"\t--hbondIntersect "<<hbondIntersect<<endl;
 }
 
 void TransitionOptions::printUsage(char* pname){
@@ -391,7 +394,7 @@ void TransitionOptions::printUsage(char* pname){
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
   log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
   log("so")<<"  --relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
-
+  log("so")<<"  --hbondIntersect <bool> \t: limit hydrogen bonds to intersection between initial and target structure"<<endl;
 }
 
 

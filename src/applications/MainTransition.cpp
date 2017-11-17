@@ -119,6 +119,10 @@ void targetedSampling(TransitionOptions& options){
 //        	log("planner")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
 //    	}
 
+  if(TransitionOptions::getOptions()->hbondIntersect){
+    log("samplingStatus")<<"Limiting constraints to hbond intersection"<<endl;
+    protein->setToHbondIntersection(target);
+  }
 
 //	m_molecule.m_spanningTree->print();
   log("samplingStatus")<<"Molecule has:"<<endl;
@@ -336,9 +340,9 @@ int main( int argc, char* argv[] ) {
   enableLogger("default");
   enableLogger("samplingStatus");
 
-//  ofstream reportStream;
-//  reportStream.open("kgs_report.log");
-//  enableLogger("report", reportStream);
+  ofstream reportStream;
+  reportStream.open("kgs_report.log");
+  enableLogger("report", reportStream);
 
   ofstream plannerStream;
   plannerStream.open("kgs_planner.log");

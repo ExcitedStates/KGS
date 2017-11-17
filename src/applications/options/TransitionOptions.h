@@ -124,6 +124,8 @@ class TransitionOptions {
   int collapseRigid;
   /** Specified distance to reach between couple of atoms */
   std::string relativeDistances;
+  /** Limit hydrogen bonds to intersection of initial and target hbonds */
+  bool hbondIntersect;
 
   void print();
 
