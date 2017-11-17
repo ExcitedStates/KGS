@@ -1002,7 +1002,9 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
 }
 
 void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_file_name) {
-
+  ///Bug fix for asking rigidity information later
+  protein->m_conf->rigidityAnalysis();
+  ///
   string myfile_s = output_file_name.substr(0,output_file_name.length()-4) + ".txt";
   ofstream myfile(myfile_s.c_str());
   if(!myfile.is_open()) {
