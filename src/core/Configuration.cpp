@@ -153,6 +153,9 @@ Configuration::~Configuration(){
 
   if( m_parent!=nullptr )
     m_parent->m_children.remove(this);
+
+  for( auto &child: m_children )
+    child->m_parent = nullptr;
 }
 
 void Configuration::computeCycleJacobianAndNullSpace() {
