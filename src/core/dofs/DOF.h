@@ -46,6 +46,7 @@ class KinEdge;
 class DOF {
  public:
   DOF(const KinEdge* edge);
+  virtual ~DOF();
 
   /**
    * Return the partial derivative of the specified position assuming that `coord` is affected

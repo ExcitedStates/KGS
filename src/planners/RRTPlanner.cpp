@@ -72,7 +72,7 @@ RRTPlanner::RRTPlanner(
     m_scaleToRadius(scaleToRadius)
 //m_maxDistance(ExploreOptions::getOptions()->explorationRadius)
 {
-  m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//Edges.size();
+  m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//m_edges.size();
   Configuration *pSmp = new Configuration(m_molecule);
   //pSmp->updateMolecule();
   //pSmp->computeCycleJacobianAndNullSpace();

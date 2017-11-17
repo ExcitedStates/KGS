@@ -47,7 +47,7 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
 //  const std::vector<int>& resNetwork = ExploreOptions::getOptions()->residueNetwork;
 //  bool allResidues = resNetwork.size() == 0 ? true:false;
 
-  for (auto const& edge: protein->m_spanningTree->Edges){
+  for (auto const& edge: protein->m_spanningTree->m_edges){
     if( edge->getBond()==nullptr ) continue; //This excludes global dofs from being computed here
     if( !m_resNetwork.inSelection(edge->getBond()) ) continue;
 

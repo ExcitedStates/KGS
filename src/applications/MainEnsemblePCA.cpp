@@ -76,14 +76,14 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		//Configuration* conf = new Configuration(native->m_spanningTree->getNumDOFs());
 
     /*
-		for(auto vit = struc->m_spanningTree->Vertex_map.begin(); vit != struc->m_spanningTree->Vertex_map.end(); vit++){
+		for(auto vit = struc->m_spanningTree->m_vertices.begin(); vit != struc->m_spanningTree->m_vertices.end(); vit++){
 			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(vertex);
 				double strucTorsion = v->initTorsion;
 				double nativeTorsion = 1000;
 
-				for(auto nvit = native->m_spanningTree->Vertex_map.begin(); nvit != native->m_spanningTree->Vertex_map.end(); nvit++){
+				for(auto nvit = native->m_spanningTree->m_vertices.begin(); nvit != native->m_spanningTree->m_vertices.end(); nvit++){
 					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
@@ -109,13 +109,13 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		}
      */
 
-		for(vector<KinEdge*>::iterator eit=struc->m_spanningTree->Edges.begin(); eit!=struc->m_spanningTree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit=struc->m_spanningTree->m_edges.begin(); eit!=struc->m_spanningTree->m_edges.end(); ++eit){
 			KinEdge* e = *eit;
 
 			double strucTorsion = torsion(e->getBond());
 			double nativeTorsion = 1000;
 
-			for(vector<KinEdge*>::iterator neit=native->m_spanningTree->Edges.begin(); neit!=native->m_spanningTree->Edges.end(); ++neit){
+			for(vector<KinEdge*>::iterator neit=native->m_spanningTree->m_edges.begin(); neit!=native->m_spanningTree->m_edges.end(); ++neit){
 				KinEdge* ne = *neit;
 				if(ne->getDOF()->getIndex()==e->getDOF()->getIndex()){
 					nativeTorsion = torsion(ne->getBond());
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]){
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		double eval_i = gsl_vector_get(eval, component);
 		
-		for(vector<KinEdge*>::iterator eit = native->m_spanningTree->Edges.begin(); eit != native->m_spanningTree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit = native->m_spanningTree->m_edges.begin(); eit != native->m_spanningTree->m_edges.end(); ++eit){
 			KinEdge* e = *eit;
 			int dof = e->getDOF()->getIndex();
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]){
 		}
 
     /*
-		for (auto vit=native->m_spanningTree->Vertex_map.begin(); vit!=native->m_spanningTree->Vertex_map.end(); vit++){
+		for (auto vit=native->m_spanningTree->m_vertices.begin(); vit!=native->m_spanningTree->m_vertices.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 				int dof = v->getDOF()->getIndex();

@@ -64,7 +64,7 @@ double Dihedral::distance(Configuration* c1, Configuration* c2)
 
   int count = 0;
   double distance=0.0;
-  for(KinEdge*& edge: m_protein->m_spanningTree->Edges){
+  for(KinEdge*& edge: m_protein->m_spanningTree->m_edges){
     if(edge->getBond()==nullptr || !m_selection.inSelection(edge->getBond())) continue;
     int dofId = edge->getDOF()->getIndex();
     double angle_diff;

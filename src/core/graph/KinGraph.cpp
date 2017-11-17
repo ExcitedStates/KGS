@@ -42,29 +42,32 @@ KinGraph::KinGraph () {
 }
 
 KinGraph::~KinGraph () {
-	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
+	for (auto it=m_vertices.begin(); it!=m_vertices.end(); ++it) {
 		delete it->second;
+	}
+	for (auto &edge: m_edges){
+		delete edge;
 	}
 }
 
 KinVertex* KinGraph::addVertex(Rigidbody* rb){
 	KinVertex* new_vertex = new KinVertex(rb);
   if(rb!=nullptr)
-    Vertex_map[rb->id()] = new_vertex;
+    m_vertices[rb->id()] = new_vertex;
 
 	return new_vertex;
 }
 
 
 KinVertex* KinGraph::getVertex (int rb_id) {
-  auto vmapIt = Vertex_map.find(rb_id);
-  if( vmapIt==Vertex_map.end() ) return nullptr;
+  auto vmapIt = m_vertices.find(rb_id);
+  if( vmapIt==m_vertices.end() ) return nullptr;
   return vmapIt->second;
 }
 
 
 void KinGraph::print () {
-	for (auto it=Vertex_map.begin(); it!=Vertex_map.end(); ++it) {
+	for (auto it=m_vertices.begin(); it!=m_vertices.end(); ++it) {
 		KinVertex *vertex = it->second;
 //		log() << "KinVertex " << vertex->id << ": " << vertex->m_rigidbody->Atoms.size() << " atoms and " << vertex->m_edges.size() << " m_edges" << endl;
 		vertex->print();
@@ -73,8 +76,8 @@ void KinGraph::print () {
 		log() << endl;
 	}
 
-    log() << "Total number of edges = " << Edges.size()/2 << endl;
-    log() << "Total number of rigid bodies = " << Vertex_map.size() << endl;
+    log() << "Total number of edges = " << m_edges.size()/2 << endl;
+    log() << "Total number of rigid bodies = " << m_vertices.size() << endl;
 }
 
 

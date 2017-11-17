@@ -36,6 +36,8 @@ DOF::DOF(const KinEdge* edge):
     m_cycleIndex(-1)
 { }
 
+DOF::~DOF(){};
+
 
 void DOF::setValue(double val)
 {

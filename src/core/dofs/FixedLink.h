@@ -37,6 +37,7 @@ IN THE SOFTWARE.
 class FixedLink: public DOF {
  public:
   FixedLink(const KinEdge* edge): DOF(edge){}
+  ~FixedLink();
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const;
 

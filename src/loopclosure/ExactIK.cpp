@@ -151,7 +151,7 @@ std::vector<Configuration*> ExactIK::rebuildLoop(
     }
 //    cout<<"Setting dofs"<<endl;
 
-    for(auto const& edge: parent->getMolecule()->m_spanningTree->Edges){
+    for(auto const& edge: parent->getMolecule()->m_spanningTree->m_edges){
       Bond* b = edge->getBond();
       if(b==nullptr) continue;
       if(b->m_atom1==N1 && b->m_atom2==A1) { child->m_dofs[edge->getDOF()->getIndex()] += delPhi1; }
@@ -196,7 +196,7 @@ bool ExactIK::validRebuildLoop(const Residue* res1, const Residue* res2, const R
   if(res3->getAtom("N")==nullptr) return false;
 
   //Check for constraints between res1 and res3
-//  for(auto const& edge: res1->getChain()->getMolecule()->m_spanningTree->Edges){
+//  for(auto const& edge: res1->getChain()->getMolecule()->m_spanningTree->m_edges){
 //    Bond* bond = edge->getBond();
 //    TODO: check for constraints
 //  }

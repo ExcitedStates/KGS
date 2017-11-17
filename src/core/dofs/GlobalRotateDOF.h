@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 class GlobalRotateDOF: public DOF {
  public:
   GlobalRotateDOF(const KinEdge* edge, int axis);
+  ~GlobalRotateDOF(){};
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const override;
 

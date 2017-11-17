@@ -114,7 +114,7 @@ void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const Nu
     gsl_vector_scale_to_length(projected_gradient, options.stepSize);
     //Refill iModDofs vector
     gsl_vector_set_zero(iModDofs);
-    for( auto const edge : protein->m_spanningTree->Edges){
+    for( auto const edge : protein->m_spanningTree->m_edges){
       Bond *bond = edge->getBond();
       // Check for global dof bonds
       if (bond == nullptr)
@@ -329,7 +329,7 @@ int main( int argc, char* argv[] ) {
     double gradNorm = gsl_vector_length(projected_gradient);
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
     // Convert back to full length DOFs vector
-    for( auto const& edge: protein->m_spanningTree->Edges){
+    for( auto const& edge: protein->m_spanningTree->m_edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -361,51 +361,6 @@ int main( int argc, char* argv[] ) {
 
     //Potentially reject new config if large violations?
     double observedViolation = protein->checkCycleClosure(qNew);
-
-    /// New test with reclosing the cycles to obtain reduced energy violations etc.
-//    double eps = 1e-12;
-//    int maxIts = 10;
-//    gsl_vector* currentViolation = gsl_vector_alloc(qNew->getCycleJacobian()->size1);
-//    gsl_vector* qSol = gsl_vector_calloc(protein->m_spanningTree->getNumDOFs());
-//    int count = 0;
-//    while(observedViolation > eps && count <maxIts){
-//      cout<<"Iteration "<<count++<<", violation: "<<observedViolation<<endl;
-//      protein->computeCycleViolation(qNew,currentViolation);//compute residuum vector
-//      NullspaceSVD* ns_svd = static_cast<NullspaceSVD*> (qNew->getNullspace() ); //updates Jacobian and nullspace
-//      ns_svd->updateFromMatrix();
-//      gsl_matrix* Jinv = ns_svd->getSVD()->PseudoInverse();
-//      cout<<"Jinv dims: "<<Jinv->size1<<", "<<Jinv->size2<<endl;
-//      //delta vetor, on small dimensions
-//      gsl_vector* deltaQ = gsl_matrix_vector_mul( Jinv, currentViolation );
-//
-//      for( auto const& edge: protein->m_spanningTree->Edges){
-//        int dof_id = edge->getDOF()->getIndex();
-//        int cycle_dof_id = edge->getDOF()->getCycleIndex();
-//        if ( cycle_dof_id!=-1 ) {
-//          gsl_vector_set(qSol,dof_id,gsl_vector_get(allDofs,dof_id) - gsl_vector_get(deltaQ,cycle_dof_id));
-//        }
-//        else if ( dof_id!=-1 ) {//use zeros for free dofs
-//          gsl_vector_set(qSol,dof_id,0);
-//        }
-//      }
-//      gsl_vector_free(deltaQ);
-//      for (int ind = 0; ind < qSol->size; ++ind)
-//        gsl_vector_set(allDofs, ind, gsl_vector_get(qSol,ind));
-//
-//      delete qNew; //delete previous trial
-//      Configuration *qNew = new Configuration(conf);
-//      qNew->m_id = v_i+1;
-//      std::copy(
-//          qSol->data,
-//          qSol->data + qNew->getNumDOFs(),
-//          qNew->m_dofs);
-//
-//      qNew->updateMolecule();
-//      observedViolation = protein->checkCycleClosure(qNew);
-//    }
-//    gsl_vector_free(currentViolation);
-//    gsl_vector_free(qSol);
-//    /// END NEW TEST
 
     qNew->m_vdwEnergy = qNew->getMolecule()->vdwEnergy(HierarchyOptions::getOptions()->collisionCheck);
 //    double hBondEnergy = HbondIdentifier::computeHbondEnergy(qNew);
@@ -479,7 +434,7 @@ int main( int argc, char* argv[] ) {
     double gradNorm = gsl_vector_length(projected_gradient);
     //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
     // Convert back to full length DOFs vector
-    for( auto const& edge: protein->m_spanningTree->Edges){
+    for( auto const& edge: protein->m_spanningTree->m_edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {

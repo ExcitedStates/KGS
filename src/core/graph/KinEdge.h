@@ -46,6 +46,7 @@ class KinEdge {
  public:
 //  KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond, int dof_id);
   KinEdge(KinVertex * startv, KinVertex * endv, Bond * m_bond);
+  ~KinEdge();
 
   KinVertex *StartVertex;
   KinVertex *EndVertex;

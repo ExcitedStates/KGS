@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 class TorsionDOF: public DOF {
  public:
   TorsionDOF(const KinEdge* edge): DOF(edge){}
+  ~TorsionDOF(){};
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const override;
 

@@ -43,6 +43,11 @@ KinEdge::KinEdge(KinVertex *startv, KinVertex *endv, Bond *bond) :
 {
 //  Cycle_DOF_id = -1;
 }
+KinEdge::~KinEdge(){
+  if(m_dof){
+    delete m_dof;
+  }
+}
 
 void KinEdge::setDOF(DOF* dof) {
   if(m_dof){

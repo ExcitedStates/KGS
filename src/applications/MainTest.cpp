@@ -144,7 +144,7 @@ void testGlobalGradient(){
     int dof = 8;
     Coordinate pos = conf->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"Old OH pos: "<<pos<<endl;
-    Math3D::Vector3 der = mol->m_spanningTree->Edges.at(dof)->getDOF()->getDerivative(pos);
+    Math3D::Vector3 der = mol->m_spanningTree->m_edges.at(dof)->getDOF()->getDerivative(pos);
     der = der*0.01;
     cout<<der<<endl;
     Configuration* conf2 = new Configuration(conf);
@@ -152,10 +152,10 @@ void testGlobalGradient(){
     Coordinate pos2 = conf2->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"New OH pos: "<<pos2<<endl;
     cout<<"Expected:   "<<(pos+der)<<endl;
-    if(mol->m_spanningTree->Edges.at(dof)->getBond()==nullptr) {
+    if(mol->m_spanningTree->m_edges.at(dof)->getBond()==nullptr) {
       cout << "Global DOF" << endl;
     }else {
-      cout << "DOF bond:   " << (*mol->m_spanningTree->Edges.at(dof)->getBond()) << endl;
+      cout << "DOF bond:   " << (*mol->m_spanningTree->m_edges.at(dof)->getBond()) << endl;
     }
 
   } catch (const std::string& ex) {

@@ -71,7 +71,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
   std::vector<KinVertex*> vertexPriorityList;
 
   //Push the chain roots into Vertex Map, others to second prio map
-  for( auto const &id_vertex_pair: Vertex_map ) {
+  for( auto const &id_vertex_pair: m_vertices ) {
     KinVertex *vertex=id_vertex_pair.second;
 
     bool foundChainRoot = false;
@@ -226,7 +226,7 @@ void KinTree::print() const {
     // get the first element in the queue
     KinVertex *cur_node = node_queue.front();
     // for each edge, print it and insert the child into the queue
-    //for (map<unsigned int,KinEdge*>::iterator eit=cur_node->Edges.begin(); eit!=cur_node->Edges.end(); ++eit) {
+    //for (map<unsigned int,KinEdge*>::iterator eit=cur_node->m_edges.begin(); eit!=cur_node->m_edges.end(); ++eit) {
     for (auto eit=cur_node->m_edges.begin(); eit!=cur_node->m_edges.end(); ++eit) {
       //eit->second->print();
       //node_queue.push(eit->second->EndVertex);
@@ -237,7 +237,7 @@ void KinTree::print() const {
   }
 
   // print the m_edges closing cycles and common ancestors for the anchors in each edge
-  log() << "Edges closing cycles:" << endl;
+  log() << "m_edges closing cycles:" << endl;
   for (auto pit=m_cycleAnchorEdges.begin(); pit!=m_cycleAnchorEdges.end(); ++pit) {
     pit->first->print();
     log() << "Common ancestor: ";
@@ -313,7 +313,7 @@ KinEdge* KinTree::addEdgeDirected(KinVertex *vertex1, KinVertex *vertex2, Bond *
   KinEdge *edge1 = new KinEdge(vertex1,vertex2,bond);
   vertex1->addEdge(edge1);
   vertex2->setParent(vertex1);
-  Edges.push_back(edge1);
+  m_edges.push_back(edge1);
   return edge1;
 }
 

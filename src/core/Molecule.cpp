@@ -705,7 +705,7 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
     KinVertex* node = queue.front();
     queue.pop_front();
 
-    //map<unsigned int,KinEdge*> m_children = node->Edges;
+    //map<unsigned int,KinEdge*> m_children = node->m_edges;
 
     //for (map<unsigned int,KinEdge*>::iterator edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr){
     for (auto const& pEdge: node->m_edges){
@@ -1072,7 +1072,7 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
   vector<int> resetDOFs;
   vector<double> resetValues;
   vector<int> recloseDOFs;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
     int res1 = e->getBond()->m_atom1->getResidue()->getId();
     int res2 = e->getBond()->m_atom2->getResidue()->getId();
@@ -1154,7 +1154,7 @@ Configuration* Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& re
   vector<KinVertex*> subVerts;
   vector<KinEdge*> subEdges;
   KinEdge* entry = nullptr;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
     if(	find(resetDOFs.begin(), 	resetDOFs.end(), 	e->getDOF()->getIndex())!=resetDOFs.end() ||
          find(recloseDOFs.begin(), 	recloseDOFs.end(), 	e->getDOF()->getIndex())!=recloseDOFs.end() ||
@@ -1175,7 +1175,7 @@ Configuration* Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& re
 
   //Collect m_edges with endpoints in subgraph and choose the covalent edge nearest to the m_root
   vector<KinEdge*> boundary;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
     bool firstInSub = find(subVerts.begin(), subVerts.end(), e->StartVertex)!=subVerts.end();
     bool lastInSub = find(subVerts.begin(), subVerts.end(), e->EndVertex)!=subVerts.end();

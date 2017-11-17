@@ -384,7 +384,7 @@ void Configuration::deleteNullspace(){
 
 //------------------------------------------------------
 void Configuration::writeQToBfactor(){
-  for (auto const& edge: m_molecule->m_spanningTree->Edges) {
+  for (auto const& edge: m_molecule->m_spanningTree->m_edges) {
     if(edge->EndVertex->m_rigidbody == NULL)
       continue; //global dofs
     float value = m_dofs[edge->getDOF()->getIndex() ];
@@ -404,7 +404,7 @@ void Configuration::updateGlobalTorsions(){
   for(int i=0; i<getNumDOFs(); ++i){
     m_dofs_global[i] = m_molecule->m_spanningTree->getDOF(i)->getGlobalValue();
   }
-  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->Edges.begin(); itr!= m_molecule->m_spanningTree->Edges.end(); ++itr) {
+  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->m_edges.begin(); itr!= m_molecule->m_spanningTree->m_edges.end(); ++itr) {
   //  KinEdge* pEdge = (*itr);
   //  int dof_id = pEdge->DOF_id;
   //  if (dof_id==-1)
@@ -717,8 +717,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
   //Convert the cycle Jacobian to a full Jacobian
   //Columns correspond to cycle_dof_ids
   if(projectConstraints){
-//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanningTree->Edges.begin(); eit!=m_molecule->m_spanningTree->Edges.end(); ++eit) {
-    for (auto const& edge: m_molecule->m_spanningTree->Edges){
+//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanningTree->m_edges.begin(); eit!=m_molecule->m_spanningTree->m_edges.end(); ++eit) {
+    for (auto const& edge: m_molecule->m_spanningTree->m_edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -816,7 +816,7 @@ void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector
 
   Molecule* M = getMolecule();
 
-  for (auto const& edge: M->m_spanningTree->Edges){
+  for (auto const& edge: M->m_spanningTree->m_edges){
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -831,7 +831,7 @@ void Configuration::convertCycleDofsToAllDofs( gsl_vector *allDofsAfter, gsl_vec
   Molecule* M = getMolecule();
 
   // Convert back to full length DOFs vector
-  for( auto const& edge: M->m_spanningTree->Edges){
+  for( auto const& edge: M->m_spanningTree->m_edges){
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {

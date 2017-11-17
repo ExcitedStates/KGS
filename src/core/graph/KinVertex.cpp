@@ -50,8 +50,6 @@ KinVertex::~KinVertex () {
   for (auto eit=m_edges.begin(); eit!=m_edges.end(); ++eit) {
     delete *eit;
   }
-  if(m_rigidbody)
-    m_rigidbody->setVertex(nullptr);
 }
 
 void KinVertex::setParent(KinVertex* v) {

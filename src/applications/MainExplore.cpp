@@ -80,7 +80,7 @@ void randomSampling(ExploreOptions& options) {
     log("samplingStatus") << "Before collapsing edges:" << endl;
     log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
     log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
-    log("samplingStatus") << "> " << protein->m_spanningTree->Vertex_map.size()  <<  " rigid bodies"  <<  endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->m_vertices.size()  <<  " rigid bodies"  <<  endl;
     protein = protein->collapseRigidBonds(options.collapseRigid);
   }
 //  if(!options.annotationFile.empty())
@@ -95,7 +95,7 @@ void randomSampling(ExploreOptions& options) {
   log("samplingStatus") << "> " << protein->getInitialCollisions().size() << " initial collisions" << endl;
   log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
   log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
-  log("samplingStatus") << "> " << protein->m_spanningTree->Vertex_map.size()  <<  " rigid bodies"  <<  endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->m_vertices.size()  <<  " rigid bodies"  <<  endl;
 
   if(protein->m_spanningTree->m_cycleAnchorEdges.size()==0){
     log("samplingStatus")<<"Warning: There are no constraints"<<endl;

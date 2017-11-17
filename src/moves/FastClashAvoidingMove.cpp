@@ -132,7 +132,7 @@ map<int,int> FastClashAvoidingMove::collectConstrainedDofMap(Configuration* conf
   map<int,int> ret;
 
   //First add all cycle-DOFs
-  for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
+  for(auto const& edge: conf->getMolecule()->m_spanningTree->m_edges){
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     int dof_id = edge->getDOF()->getIndex();
     if(cycle_dof_id>=0 && ret.count(dof_id)==0)
@@ -270,7 +270,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
 //  if(m_projectConstraints){
 //    map<unsigned int, KinVertex*>::iterator vit;
 //
-//    for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
+//    for(auto const& edge: conf->getMolecule()->m_spanningTree->m_edges){
 //      int dof_id = edge->getDOF()->getIndex();
 //      int cycle_dof_id = edge->getDOF()->getCycleIndex();
 //      if ( cycle_dof_id!=-1 ) {

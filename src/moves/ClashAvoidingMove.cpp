@@ -184,7 +184,7 @@ gsl_matrix* ClashAvoidingMove::computeClashAvoidingJacobian(Configuration* conf,
 
     gsl_matrix* cycleJac = conf->getCycleJacobian();
 
-    for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
+    for(auto const& edge: conf->getMolecule()->m_spanningTree->m_edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {

@@ -38,6 +38,7 @@ IN THE SOFTWARE.
 class GlobalTranslateDOF: public DOF {
  public:
   GlobalTranslateDOF(const KinEdge* edge, int axis);
+  ~GlobalTranslateDOF(){};
 
   Math3D::Vector3 getDerivative(Coordinate& coord) const override;
 

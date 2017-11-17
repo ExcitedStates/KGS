@@ -44,8 +44,8 @@ class KinEdge;
 
 class KinGraph {
  public:
-  std::map<int, KinVertex*> Vertex_map;
-  std::vector<KinEdge*> Edges;
+  std::map<int, KinVertex*> m_vertices;
+  std::vector<KinEdge*> m_edges;
 
   KinGraph ();
   ~KinGraph ();

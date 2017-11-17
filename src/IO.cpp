@@ -1017,7 +1017,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
   }
 
   //Keep track of changes (in magnitude)
-  for (auto const& edge: protein->m_spanningTree->Edges){
+  for (auto const& edge: protein->m_spanningTree->m_edges){
     if(edge->getBond()==nullptr) continue;
 
     int dof_id = edge->getDOF()->getIndex();
@@ -1052,7 +1052,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 
   string edgeFile = output_file_name + "_allEdges.txt";
   ofstream output1(edgeFile.c_str());
-  for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanningTree->Edges.begin(); edge_itr!=molecule->m_spanningTree->Edges.end(); ++edge_itr) {
+  for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanningTree->m_edges.begin(); edge_itr!=molecule->m_spanningTree->m_edges.end(); ++edge_itr) {
     Bond* bond = (*edge_itr)->getBond();
     if(bond==nullptr) continue;
     Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
@@ -1668,7 +1668,7 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 //    sit++;
 //  }
 
-//  for(auto const& it : molecule->m_spanningTree->Vertex_map) {
+//  for(auto const& it : molecule->m_spanningTree->m_vertices) {
 //    Rigidbody *rb = it.second->m_rigidbody;
 //    if (rb != nullptr && rb->Atoms.size() > MIN_CLUSTER_SIZE) {
 //      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
@@ -1711,7 +1711,7 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
   }
   if(protein->m_conf!=nullptr){
     Configuration* c = protein->m_conf;
-    for(auto const& it: c->getMolecule()->m_spanningTree->Vertex_map){
+    for(auto const& it: c->getMolecule()->m_spanningTree->m_vertices){
       Rigidbody* rb = it.second->m_rigidbody;
       if(rb==nullptr) continue;
       for(auto const& atom: rb->Atoms){
@@ -1856,7 +1856,7 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       //			}
 
       //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = molecule->m_spanningTree->Edges.begin(); eit != molecule->m_spanningTree->Edges.end(); eit++){
+      //			for( eit = molecule->m_spanningTree->m_edges.begin(); eit != molecule->m_spanningTree->m_edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
       //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
@@ -1944,7 +1944,7 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
 
 //    //Random permutation of all rigidbody ids for use in coloring
 //    vector<int> rbidPerm;
-//    for(size_t i=0;i<molecule->m_spanningTree->Vertex_map.size();i++)
+//    for(size_t i=0;i<molecule->m_spanningTree->m_vertices.size();i++)
 //      rbidPerm.push_back(i);
 //    std::random_shuffle ( rbidPerm.begin(), rbidPerm.end() );
 
@@ -1976,7 +1976,7 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       //				test++;
       //			}
       //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = target->m_spanningTree->Edges.begin(); eit != target->m_spanningTree->Edges.end(); eit++){
+      //			for( eit = target->m_spanningTree->m_edges.begin(); eit != target->m_spanningTree->m_edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
       //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
