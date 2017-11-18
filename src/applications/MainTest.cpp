@@ -78,7 +78,8 @@ int main( int argc, char* argv[] ) {
 
 void testIncDOFs(){
   Selection sel("all");
-  Molecule* mol = IO::readPdb("/Users/rfonseca/helix.pdb", sel );
+  Molecule* mol = IO::readPdb("/Users/rfonseca/helix.pdb");
+  mol->initializeTree(sel);
   int n = mol->m_spanningTree->getNumDOFs();
 
   Configuration* finalconf = new Configuration(mol);
@@ -121,7 +122,8 @@ void testSelection(){
     enableLogger("debug");
     Selection moving("all");
     std::vector<std::string> extraCovBonds;
-    Molecule* mol = IO::readPdb("/Users/rfonseca/2kmj_1.pdb", moving, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/2kmj_1.pdb",extraCovBonds);
+    mol->initializeTree(moving);
     Selection sel("resi 17 and id 4+7");
     for(auto a: sel.getSelectedAtoms(mol)){
       std::cout<<a<<endl;
@@ -136,7 +138,8 @@ void testGlobalGradient(){
     enableLogger("debug");
     std::vector<std::string> extraCovBonds;
     Selection sel("all");
-    Molecule* mol = IO::readPdb("/Users/rfonseca/Y.pdb", sel, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/Y.pdb",extraCovBonds);
+    mol->initializeTree(sel);
 
     Configuration* conf = new Configuration(mol);
     cout<<"DOFS: "<<conf->getNumDOFs()<<endl;
@@ -168,7 +171,8 @@ void testGetTorsion(){
   try {
     Selection all("all");
     std::vector<std::string> extraCovBonds;
-    Molecule* mol = IO::readPdb("/Users/rfonseca/1crn.pdb", all, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/1crn.pdb",extraCovBonds);
+    mol->initializeTree(all);
     Selection sel("backbone");
     for (auto const &b: sel.getSelectedBonds(mol)) {
       cout << b << " " << b->getTorsion() <<endl;

@@ -68,13 +68,12 @@ void randomSampling(ExploreOptions& options) {
   Selection movingResidues(options.residueNetwork);
   Molecule *protein = IO::readPdb(
       options.initialStructureFile,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
-  protein->setCollisionFactor(options.collisionFactor);
+  protein->initializeTree(movingResidues,options.collisionFactor,options.roots);
+//  protein->setCollisionFactor(options.collisionFactor);
 
   if (options.collapseRigid > 0) {
     log("samplingStatus") << "Before collapsing edges:" << endl;

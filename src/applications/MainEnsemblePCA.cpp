@@ -47,10 +47,8 @@ Molecule * readProtein(char* path){
 	if(tmp==nullptr){ cerr<<path<<" is not a valid PDB-file"<<endl; exit(-1); }
 
 	Selection movingResidues("all");
-	Molecule* protein = IO::readPdb(
-      path,
-			movingResidues
-	);
+	Molecule* protein = IO::readPdb(path);
+	protein->initializeTree(movingResidues,1.0);
 	return protein;
 }
 

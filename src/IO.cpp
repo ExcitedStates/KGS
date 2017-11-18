@@ -86,9 +86,7 @@ ResidueProfile IO::readResidueProfile () {
 
 Molecule* IO::readPdb (
     const string& pdb_file,
-    Selection movingResidues,
     const vector<string>& extraCovBonds,
-    const vector<int>& roots,
     const string& hbondMethod,
     const string& hbondFile,
     const Molecule* reference
@@ -522,12 +520,12 @@ Molecule* IO::readPdb (
   if(!hbondFile.empty()){
     readHbonds(hbondMethod, hbondFile, molecule);
   }
-
-  molecule->sortHbonds();
-  molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
-  molecule->buildSpanningTree(roots); //Necessary before conformations are defined
-  molecule->setConfiguration(new Configuration(molecule));
-  molecule->setCollisionFactor(1.0); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
+/// moved to molecule initializeTree()
+//  molecule->sortHbonds();
+//  molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+//  molecule->buildSpanningTree(roots); //Necessary before conformations are defined
+//  molecule->setConfiguration(new Configuration(molecule));
+//  molecule->setCollisionFactor(1.0); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
   return molecule;
 }
 

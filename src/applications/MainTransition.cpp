@@ -64,8 +64,8 @@ void targetedSampling(TransitionOptions& options){
 
   string pdb_file = options.initialStructureFile;
   Selection resNetwork(options.residueNetwork);
-  Molecule* protein = IO::readPdb( pdb_file, resNetwork, options.extraCovBonds );
-  protein->setCollisionFactor(options.collisionFactor);
+  Molecule* protein = IO::readPdb( pdb_file, options.extraCovBonds );
+//  protein->setCollisionFactor(options.collisionFactor);
   log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
 
   if(!options.annotationFile.empty())
@@ -73,55 +73,33 @@ void targetedSampling(TransitionOptions& options){
 
   // Do the same for the target
   string target_file = options.targetStructureFile;
-  Molecule* target = IO::readPdb( target_file, resNetwork, options.extraCovBonds );
-  target->setCollisionFactor(options.collisionFactor);
+  Molecule* target = IO::readPdb( target_file, options.extraCovBonds );
+//  target->setCollisionFactor(options.collisionFactor);
 
-  //makes sure we have the same hydrogen bonds in target and m_molecule (m_molecule hbonds is adapted as well)
-//  target->setToHbondIntersection(protein); // if desired, this has to be moved to before the tree construction
-
-  /// Rigid bodies, spanning trees, and initial collisions
-//  options.setResidueNetwork(protein);
-//  options.setAtomSets(protein,target);
-
-//  IO::readRigidbody( protein, resNetwork );
-//  protein->buildRigidBodies();
-
-//  unsigned int bestProteinRBId = protein->findBestRigidBodyMatch(options.m_root);//Todo: adapt this to usage without target
-//  protein->buildSpanningTree(bestProteinRBId, options.flexibleRibose);//with the rigid body tree in place, we can generate a configuration
-  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
-//  protein->buildSpanningTree(options.roots);//with the rigid body tree in place, we can generate a configuration
-
-  /// Done in IO right now; ToDo: write wrapper, move out of IO
-//  protein->setConfiguration(new Configuration(protein));
-
-  // Check for collision
-  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling.
-//  protein->m_initialCollisions = protein->getAllCollisions();
-  for(auto const& coll: protein->getInitialCollisions()){
-    log("planner")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
-  }
-
-  /// Rigid bodies, spanning trees, and initial collisions for the target
-//  IO::readRigidbody( target, resNetwork );
-//  target->buildRigidBodies();
-  //Build rigid body tree for target
-//  unsigned int bestTargetRBId = target->findBestRigidBodyMatch(options.m_root, &protein);
-//  target->buildSpanningTree(bestTargetRBId, options.flexibleRibose);
-//  target->buildSpanningTree(options.roots);
-
-
-//  target->setConfiguration(new Configuration(target));
-
-  // Check for collision
-//  target->m_initialCollisions = target->getAllCollisions();
-//    	for(mit=target->m_initialCollisions.begin(); mit != target->m_initialCollisions.end();mit++){
-//    		Atom* atom1=mit->second.first;
-//        	log("planner")<<"Ini coll target: "<< mit->first.first << " "<< mit->second.first->getName() << " " << mit->first.second << mit->second.second->getName() <<endl;
-//    	}
-
+  ///Deletes undesired hydrogen bonds if necessary
   if(TransitionOptions::getOptions()->hbondIntersect){
     log("samplingStatus")<<"Limiting constraints to hbond intersection"<<endl;
     protein->setToHbondIntersection(target);
+  }
+
+  vector<int> roots = TransitionOptions::getOptions()->roots;
+  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
+//  if(roots[0]== -1){
+//    unsigned int bestProteinRBId = protein->findBestRigidBodyMatch(roots[0]);
+//    unsigned int bestTargetRBId = target->findBestRigidBodyMatch(roots[0], &protein);
+//    roots[0] = bestProteinRBId;
+//  }
+  ///Now we have all constraints and desired roots present to build the tree
+  protein->initializeTree(resNetwork,options.collisionFactor,roots);
+  target->initializeTree(resNetwork,options.collisionFactor);
+
+  // Check for collision
+  // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling
+  for(auto const& coll: protein->getInitialCollisions()){
+    log("planner")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+  }
+  for(auto const& coll: target->getInitialCollisions()){
+    log("planner")<<"Ini coll target: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
   }
 
 //	m_molecule.m_spanningTree->print();

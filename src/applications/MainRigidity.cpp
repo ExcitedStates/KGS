@@ -67,12 +67,11 @@ int main( int argc, char* argv[] ){
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
+  protein->initializeTree(movingResidues,1.0,options.roots);
   string name = protein->getName();
 
   log("rigidity")<<"Molecule has:"<<endl;

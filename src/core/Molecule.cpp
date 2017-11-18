@@ -443,6 +443,13 @@ unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
   }
 }
 
+void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, const std::vector<int>& roots) {
+  this->sortHbonds();
+  this->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+  this->buildSpanningTree(roots); //Necessary before conformations are defined
+  this->setConfiguration(new Configuration(this));
+  this->setCollisionFactor(collisionFactor); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
+}
 
 
 void Molecule::buildRigidBodies(Selection& movingResidues) {

@@ -82,15 +82,13 @@ int main( int argc, char* argv[] ) {
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       pdb_file,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
+  protein->initializeTree(movingResidues,options.collisionFactor,options.roots);
   log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
 
-  protein->setCollisionFactor(options.collisionFactor);
 
   if(options.collapseRigid>0) {
     log("samplingStatus")<<"Before collapsing"<<endl;

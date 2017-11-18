@@ -97,13 +97,11 @@ int main( int argc, char* argv[] ) {
   Selection resNetwork(options.gradientSelection);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
-      resNetwork,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
-  protein->setCollisionFactor(options.collisionFactor);
+  protein->initializeTree(resNetwork,options.collisionFactor,options.roots);
 
   if(options.gradientSelection.empty()){
     cerr<<"Must supply --gradientSelection (e.g. \"resi 17-22 and resi 50-55\")"<<endl;

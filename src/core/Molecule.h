@@ -117,6 +117,7 @@ class Molecule {
 
   const std::vector<Rigidbody*> getRigidbodies() const;
   void buildRigidBodies (Selection& movingResidues);
+  void initializeTree(Selection& movingResidues,double collisionFactor = 1.0, const std::vector<int> &roots = {});
 
  private:
   std::string m_name;

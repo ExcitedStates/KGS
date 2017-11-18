@@ -202,13 +202,11 @@ int main( int argc, char* argv[] ) {
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
-  protein->setCollisionFactor(options.collisionFactor);
+  protein->initializeTree(movingResidues,options.collisionFactor,options.roots);
 
   string out_path = options.workingDirectory;
   string name = protein->getName();
@@ -391,14 +389,12 @@ int main( int argc, char* argv[] ) {
   if(options.targetStructureFile != ""){
     Molecule* target = IO::readPdb(
         options.targetStructureFile,
-        movingResidues,
         options.extraCovBonds,
-        options.roots,
         options.hydrogenbondMethod,
         options.hydrogenbondFile,
         protein
     );
-    target->setCollisionFactor(options.collisionFactor);
+    target->initializeTree(movingResidues,options.collisionFactor,options.roots);
 
     string targetName = target->getName();
     IO::writeHbonds(target,"hBonds_target.txt" );
