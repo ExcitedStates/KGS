@@ -66,15 +66,17 @@ void targetedSampling(TransitionOptions& options){
   Selection resNetwork(options.residueNetwork);
   Molecule* protein = IO::readPdb( pdb_file, options.extraCovBonds );
 //  protein->setCollisionFactor(options.collisionFactor);
-  log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(protein, options.annotationFile);
 
   // Do the same for the target
   string target_file = options.targetStructureFile;
+  if (target_file == ""){
+    cerr<<"Please specify target protein for targeted sampling"<<endl;
+    exit(-1);
+  }
   Molecule* target = IO::readPdb( target_file, options.extraCovBonds );
-//  target->setCollisionFactor(options.collisionFactor);
 
   ///Deletes undesired hydrogen bonds if necessary
   if(TransitionOptions::getOptions()->hbondIntersect){
@@ -82,16 +84,17 @@ void targetedSampling(TransitionOptions& options){
     protein->setToHbondIntersection(target);
   }
 
-  vector<int> roots = TransitionOptions::getOptions()->roots;
-  //TODO: With multi-chain the choice of chain roots must be redesigned or removed
-//  if(roots[0]== -1){
-//    unsigned int bestProteinRBId = protein->findBestRigidBodyMatch(roots[0]);
-//    unsigned int bestTargetRBId = target->findBestRigidBodyMatch(roots[0], &protein);
-//    roots[0] = bestProteinRBId;
-//  }
+  //Alignment
+  if(options.alignIni){
+    Selection alignSelection(options.alignSelection);
+    ///Aligning reference positions will modify atom positions
+    double initialRMSD = target->alignReferencePositionsTo(protein,alignSelection);//backup the aligned configuration
+    log("samplingStatus")<<"Aligning target to initial, RMSD in selection="<<initialRMSD<<endl;
+  }
+
   ///Now we have all constraints and desired roots present to build the tree
-  protein->initializeTree(resNetwork,options.collisionFactor,roots);
-  target->initializeTree(resNetwork,options.collisionFactor);
+  protein->initializeTree(resNetwork,options.collisionFactor,TransitionOptions::getOptions()->roots,target);
+  target->initializeTree(resNetwork,options.collisionFactor,TransitionOptions::getOptions()->roots,protein);
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling
@@ -103,6 +106,7 @@ void targetedSampling(TransitionOptions& options){
   }
 
 //	m_molecule.m_spanningTree->print();
+  log("samplingStatus")<<endl;
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
@@ -127,14 +131,14 @@ void targetedSampling(TransitionOptions& options){
     exit(-1);
   }
 
-  //Alignment
-  if(options.alignIni){
-    Selection alignSelection(options.alignSelection);
-    //Alignment invalidates the current configuration, so reset new configuration
-    Configuration* iniConf = target->m_conf;
-    double initialRMSD = target->alignReferencePositionsTo(protein,alignSelection);//backup the aligned configuration
-    target->setConfiguration(iniConf);
-  }
+//  //Alignment
+//  if(options.alignIni){
+//    Selection alignSelection(options.alignSelection);
+//    //Alignment invalidates the current configuration, so reset new configuration
+//    Configuration* iniConf = target->m_conf;
+//    double initialRMSD = target->alignReferencePositionsTo(protein,alignSelection);//backup the aligned configuration
+//    target->setConfiguration(iniConf);
+//  }
 
   //Initialize move
   Move* move;
@@ -262,11 +266,9 @@ void targetedSampling(TransitionOptions& options){
       string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
       IO::writeQ(protein, protein->m_conf, out);
     }
-
-    log()<<"Number of rigid clusters: "<<protein->m_conf->m_numClusters;
-    log()<<", biggest cluster: index "<<protein->m_conf->m_maxIndex<<" with "<<protein->m_conf->m_maxSize<<" atoms!"<<endl;
-    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigid << " rigidified and " << m_molecule.m_conf->CycleNullSpace->m_numCoordinated << " coordinated dihedrals" <<endl;
-    //log()<<m_molecule.m_conf->CycleNullSpace->m_numRigidHBonds<<" rigid out of "<<m_molecule.H_bonds.size()<<" hydrogen bonds!"<<endl<<endl;
+//    protein->m_conf->rigidityAnalysis();
+//    log()<<"Number of rigid clusters: "<<protein->m_conf->m_numClusters;
+//    log()<<", biggest cluster: index "<<protein->m_conf->m_maxIndex<<" with "<<protein->m_conf->m_maxSize<<" atoms!"<<endl;
     log()<< protein->m_conf->getNullspace()->getNumRigidDihedrals() << " rigidified";
     log()<<" and " << ( protein->m_conf->getNullspace()->getNumDOFs()-
                         protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
@@ -347,7 +349,7 @@ int main( int argc, char* argv[] ) {
 
   // Do the same for the target
   string target_file = options.targetStructureFile;
-  if (target_file.empty()) {
+  if (target_file=="") {
     cerr << "MainTransition.cpp:" << __LINE__ << " ERROR: Must supply a target structure" << endl;
     return -1;
   }

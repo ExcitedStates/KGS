@@ -61,6 +61,7 @@ class Molecule {
   void setName(const std::string& name);
   std::string getName() const;
   Chain* getChain (const std::string& chainName) const;
+  const std::vector<Chain*>  getChains () const { return m_chains;};
   Atom* getAtom (int atom_id) const;
   Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name) const;
   const std::vector<Atom*>& getAtoms() const;
@@ -97,7 +98,7 @@ class Molecule {
   void addHbond (Hbond * hb);
   void addDBond (DBond * db);
   void setToHbondIntersection (Molecule * p2);
-  unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
+  std::vector<int> findBestRigidBodyMatch(std::vector<int> rootID, Molecule * target = nullptr);
 
 
   std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
@@ -117,7 +118,7 @@ class Molecule {
 
   const std::vector<Rigidbody*> getRigidbodies() const;
   void buildRigidBodies (Selection& movingResidues);
-  void initializeTree(Selection& movingResidues,double collisionFactor = 1.0, const std::vector<int> &roots = {});
+  void initializeTree(Selection& movingResidues,double collisionFactor = 1.0, const std::vector<int> &roots = {},Molecule* target = nullptr);
 
  private:
   std::string m_name;

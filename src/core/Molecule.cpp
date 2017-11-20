@@ -392,61 +392,87 @@ void Molecule::addDBond (DBond * db) {
 //  db->m_atom2->addDBond(db);
 }
 
-unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
+std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, Molecule * target){
 
-  unsigned int bestId = 0;
-  unsigned int maxId = m_rigidBodyMap.size();
-  if(rootRBId >= 0){//user-specified, or standard choice of rb id == 0
-    if(rootRBId > maxId){
-      cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard m_id."<<endl;
-      return bestId;
-    }
-    cout<<"Choosing user-specified rigid body id "<<rootRBId<<" as m_root."<<endl;
-    return (unsigned int)rootRBId;
-  }
-  else {
-    if( target == nullptr ){
-      cout<<"No target to determine best m_root, choosing standard m_root id 0"<<endl;
-      return bestId;
-    }
-    //Check the rmsd between individual vertices and choose the closest pair as m_root
-    double bestSum = 9999;
-    for (map<unsigned int,Rigidbody*>::iterator rbit=m_rigidBodyMap.begin(); rbit!=m_rigidBodyMap.end(); ++rbit) {
-      vector<Atom*> *atomsRMSD = &(rbit->second->Atoms);
-      double sum=0;
-      bool allAtoms = true;
-      Coordinate c1, c2;
-      for (vector<Atom*>::iterator ait=atomsRMSD->begin(); ait!=atomsRMSD->end(); ++ait) {
-        string name = (*ait)->getName();
-        string chainName = (*ait)->getResidue()->getChain()->getName();
-        int resId = (*ait)->getResidue()->getId();
-        Atom* a1=this->getAtom(chainName,resId, name);
-        Atom* a2=target->getAtom(chainName,resId, name);
-        if(a1 && a2){
-          c1 = a1->m_position;
-          c2 = a2->m_position;
-          sum += c1.distanceSquared(c2);
-        } else{//only allow the rb's where all atoms are available in both proteins
-          allAtoms = false;
-        }
+  int standardId = 1; //standard choice for root rigid body
+  int maxId = m_atoms.size();
+  int chainCount = 0;
+  int rootId = 1;
+
+  std::vector<int> bestRootIDs;
+  for (const auto chain: this->getChains() ){
+    rootId = chainRoots[chainCount];
+    if (rootId >= 1) {//user-specified, or standard choice of atom id == 0
+      if (rootId > maxId) {
+        log("samplingStatus") << "User-specified root id " << rootId << " for chain " << chainCount <<" out of bounds. Choosing standard id "<<standardId << endl;
+        bestRootIDs.push_back(standardId);
       }
-      if(allAtoms){
-        sum = sqrt(sum/(atomsRMSD->size()));
-        if(sum<=bestSum){
-          bestSum=sum;
-          bestId=rbit->first;
-        }
+      else {
+        log("samplingStatus") << "Choosing user-specified atom id " << rootId << " as root for chain " << chainCount << endl;
+        bestRootIDs.push_back(rootId);
       }
     }
-    cout<<"Choosing rigid body id "<<bestId<<" as m_root. Root RB rmsd: "<<bestSum<<endl;
-    return bestId;
+    else { // root specified as <=0 --> therefore align and pick best rigid body
+      if (target == nullptr) {
+        log("samplingStatus") << "No target to determine best root, choosing standard root id "<<standardId << endl;
+        bestRootIDs.push_back(standardId);
+      }
+      //Check the rmsd between individual vertices and choose the closest pair as m_root
+      double bestSum = 9999;
+      int bestId = 1;
+      for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
+           rbit != m_rigidBodyMap.end(); ++rbit) {
+
+        vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
+        if (atomsRMSD->front()->getResidue()->getChain() != chain) {
+          continue;//skip if not this chain
+        }
+        double sum = 0;
+        bool allAtoms = true;
+        Coordinate c1, c2;
+        Atom* rootAtom = nullptr;
+
+        //loop through the rigid body atoms
+        for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
+          Atom* atom = (*ait);
+          string name = atom->getName();
+          string chainName = atom->getResidue()->getChain()->getName();
+          int resId = atom->getResidue()->getId();
+          if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom() ){
+            rootAtom = atom; //choose first heavy backbone atom as root
+          }
+          Atom *a2 = target->getAtom(chainName, resId, name);
+          if (atom && a2) {
+            c1 = atom->m_position;
+            c2 = a2->m_position;
+            sum += c1.distanceSquared(c2);
+          } else {//only allow the rb's where all atoms are available in both proteins
+            allAtoms = false;
+          }
+        }
+
+        if (allAtoms && rootAtom ) {
+          sum = sqrt(sum / (atomsRMSD->size()));
+          if (sum <= bestSum) {
+            bestSum = sum;
+            bestId = rootAtom->getId();
+          }
+        }
+      }
+      log("samplingStatus") << this->getName()<<": Choosing atom id " << bestId << " as root. Root RB rmsd: " << bestSum << endl;
+      bestRootIDs.push_back(bestId);
+    }
+    chainCount++;
   }
+  return bestRootIDs;
 }
 
-void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, const std::vector<int>& roots) {
+void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, const std::vector<int>& roots,Molecule* target) {
   this->sortHbonds();
   this->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
-  this->buildSpanningTree(roots); //Necessary before conformations are defined
+  ///adapted to multi-chain root choices based on input structures
+  vector<int> bestRoots = this->findBestRigidBodyMatch(roots,target);
+  this->buildSpanningTree(bestRoots); //Necessary before conformations are defined
   this->setConfiguration(new Configuration(this));
   this->setCollisionFactor(collisionFactor); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
 }

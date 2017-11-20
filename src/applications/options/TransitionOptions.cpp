@@ -332,7 +332,7 @@ void TransitionOptions::print(){
   log("so")<<"\t--switchAfter "<<switchAfter<<endl;
   log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
   log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
-  log("so")<<"\t--hbondIntersect "<<hbondIntersect<<endl;
+  log("so")<<"\t--hbondIntersect "<<hbondIntersect<<endl <<endl;
 }
 
 void TransitionOptions::printUsage(char* pname){
@@ -342,7 +342,7 @@ void TransitionOptions::printUsage(char* pname){
   log("so")<<"Options:"<<endl;
 
   log("so")<<"  --initial <pdb-file> \t: Specifies the initial structure."<<endl;
-  log("so")<<"  --target <pdb-file> \t: Specifies the target structure, optional."<<endl;
+  log("so")<<"  --target <pdb-file> \t: Specifies the target structure."<<endl;
 //  log("so")<<"  --annotation <file-path> \t: Annotations can specify secondary structures or other things ";
 //  log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
 //  log("so")<<"  --hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
