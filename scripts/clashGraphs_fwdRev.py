@@ -64,14 +64,14 @@ def build_graph(paths, network_length_threshold = 0):
     	pathway_exists = 0
     	for e in G.edges():
     	    if connection[0] in e and connection[1] in e:
-    	        G.edge[connection[0]][connection[1]]['weight'] += weightVal
-    	        if G.edge[connection[0]][connection[1]]['weight'] > maxVal:
-    	        	maxVal = G.edge[connection[0]][connection[1]]['weight']
+    	        G[connection[0]][connection[1]]['weight'] += weightVal
+    	        if G[connection[0]][connection[1]]['weight'] > maxVal:
+    	        	maxVal = G[connection[0]][connection[1]]['weight']
     	        pathway_exists = 1
     	if not pathway_exists:
     	    G.add_edge(connection[0],connection[1],weight=weightVal)
-    	    if G.edge[connection[0]][connection[1]]['weight'] > maxVal:
-    	    	maxVal = G.edge[connection[0]][connection[1]]['weight']
+    	    if G[connection[0]][connection[1]]['weight'] > maxVal:
+    	    	maxVal = G[connection[0]][connection[1]]['weight']
 
     connects = nx.connected_components(G)
     ###FILTER GRAPH TO ONLY NETWORKS > THRESHOLD
@@ -113,7 +113,7 @@ def main():
                 break;
             
 
-    outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
+    # outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
 
 	# pdbPath=sys.argv[3]
 	# if( len(sys.argv) > 4):
@@ -152,7 +152,7 @@ def main():
         os.chdir(currDir)
     
     #END of multi-path loop
-    os.chdir(outputPDBDir)
+    # os.chdir(outputPDBDir)
     fwdAtomResidueList = getAtomResidueList(pdbFile)
     revAtomResidueList = getAtomResidueList(pdbFileRev)
 
@@ -169,7 +169,7 @@ def main():
     sorted_collection.reverse()
     
     residueLinks = convertResidueClashesToLinks(clashCollection,minClashNumber,sumRuns)
-    
+    print residueLinks
     G, maxVal = build_graph(residueLinks)
 
     #make pictures and output networks

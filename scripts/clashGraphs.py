@@ -64,14 +64,14 @@ def build_graph(paths, network_length_threshold = 0):
     	pathway_exists = 0
     	for e in G.edges():
     	    if connection[0] in e and connection[1] in e:
-    	        G.edge[connection[0]][connection[1]]['weight'] += weightVal
-    	        if G.edge[connection[0]][connection[1]]['weight'] > maxVal:
-    	        	maxVal = G.edge[connection[0]][connection[1]]['weight']
+    	        G[connection[0]][connection[1]]['weight'] += weightVal
+    	        if G[connection[0]][connection[1]]['weight'] > maxVal:
+    	        	maxVal = G[connection[0]][connection[1]]['weight']
     	        pathway_exists = 1
     	if not pathway_exists:
     	    G.add_edge(connection[0],connection[1],weight=weightVal)
-    	    if G.edge[connection[0]][connection[1]]['weight'] > maxVal:
-    	    	maxVal = G.edge[connection[0]][connection[1]]['weight']
+    	    if G[connection[0]][connection[1]]['weight'] > maxVal:
+    	    	maxVal = G[connection[0]][connection[1]]['weight']
 
     connects = nx.connected_components(G)
     ###FILTER GRAPH TO ONLY NETWORKS > THRESHOLD

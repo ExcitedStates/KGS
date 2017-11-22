@@ -9,6 +9,54 @@ import matplotlib as mpl
 mpl.use('Agg')
 from combineKGSPath_steps import extractPath
 
+def plotConstraintViolation(xData,meanY,maxY,saveFileName=None):
+    import matplotlib.pyplot as plt
+    fig, ax1 = plt.subplots()
+    ax1.plot(xData,meanY,'b-')
+    ax1.set_xlabel('path length in # of samples')
+    ax1.set_ylabel('mean absolute distance violation in %', color='b')
+    for tl in ax1.get_yticklabels():
+        tl.set_color('b')
+    ax2 = ax1.twinx()
+    ax2.plot(xData,maxY,'r-')
+    ax2.set_ylabel('max absolute distance violation in %', color='r')
+    for tl in ax2.get_yticklabels():
+        tl.set_color('r')
+    if saveFileName:
+        plt.savefig(saveFileName)
+    else:
+        plt.show()
+        
+def plotHistogram(binData,bins,saveFileName=None):
+    import matplotlib.pyplot as plt
+    import math
+    histArray=np.histogram(binData,bins)
+    yData=histArray[0]
+    #yData.append(yData[-1])
+    numBins=len(bins)
+    xVals=np.arange(len(bins)-1)
+    print xVals
+    print histArray[0]
+    fig, ax1 = plt.subplots()
+    ax1.step(xVals,yData,where='post')
+    i=0
+    majorTicks = np.arange(numBins)
+    majorTickLabels = bins
+    print majorTickLabels
+    #print maxLength/1000
+    #print len(samples),len(distances),maxLength
+    #print majorTicks
+    #print majorTickLabels
+    ax1.set_xticks(majorTicks)
+    ax1.set_xticklabels(majorTickLabels)
+    ax1.set_xlabel('maximum distance violation in %')
+    ax1.set_ylabel('number of bonds')
+    if saveFileName:
+        plt.savefig(saveFileName)
+    else:
+        plt.show()
+        
+
 if len(sys.argv)==1:
     print "Usage: ", sys.argv[0]," <path.pdb file>"
 
@@ -44,7 +92,8 @@ pathLength = len(path_ids)
 reverse_pathLength = len(reverse_path_ids)
 
 #Get the number of hbonds
-fwdHbonds=True
+fwdHbonds=False
+revHbonds = False
 numHBonds=0
 targetNumHBonds=0
 with open(outputFile) as log_file:
@@ -53,14 +102,14 @@ with open(outputFile) as log_file:
             fwdHbonds=True
             continue
         if "Target has:" in line:
-            fwdHbonds=False
+            revHbonds=True
             continue
-        if "constraints" in line:
+        if "hydrogen bonds" in line:
             tokens = line.split(' ')
             if fwdHbonds == True:
                 numHBonds = int(tokens[1])
-                print "Number of hbonds: ",numHBonds
-            else:
+                print "Number of init hbonds: ",numHBonds
+            if revHbonds == True:
                 targetNumHBonds = int(tokens[1])
                 print "Number of target hbonds: ",targetNumHBonds               
                 break
@@ -233,9 +282,9 @@ if not os.path.exists(d):
     os.makedirs(d)
 os.chdir("constraintPlots")
 
-print" Path: ",pathLengths
-print" Means: ",meanStrains
-print "Maxs: ",maxStrains
+# print" Path: ",pathLengths
+# print" Means: ",meanStrains
+# print "Maxs: ",maxStrains
 
 if len(pathLengths) == len(meanStrains):
     plotConstraintViolation(pathLengths,meanStrains,maxStrains,saveFileName="forwardPath_meanMaxViolation.png")
@@ -249,50 +298,3 @@ if len(reverse_pathLengths) != 0:
 
 
 os.chdir(currentPath)
-
-def plotConstraintViolation(xData,meanY,maxY,saveFileName=None):
-    import matplotlib.pyplot as plt
-    fig, ax1 = plt.subplots()
-    ax1.plot(xData,meanY,'b-')
-    ax1.set_xlabel('path length in # of samples')
-    ax1.set_ylabel('mean absolute distance violation in %', color='b')
-    for tl in ax1.get_yticklabels():
-        tl.set_color('b')
-    ax2 = ax1.twinx()
-    ax2.plot(xData,maxY,'r-')
-    ax2.set_ylabel('max absolute distance violation in %', color='r')
-    for tl in ax2.get_yticklabels():
-        tl.set_color('r')
-    if saveFileName:
-        plt.savefig(saveFileName)
-    else:
-        plt.show()
-        
-def plotHistogram(binData,bins,saveFileName=None):
-    import matplotlib.pyplot as plt
-    import math
-    histArray=np.histogram(binData,bins)
-    yData=histArray[0]
-    #yData.append(yData[-1])
-    numBins=len(bins)
-    xVals=np.arange(len(bins)-1)
-    print xVals
-    print histArray[0]
-    fig, ax1 = plt.subplots()
-    ax1.step(xVals,yData,where='post')
-    i=0
-    majorTicks = np.arange(numBins)
-    majorTickLabels = bins
-    print majorTickLabels
-    #print maxLength/1000
-    #print len(samples),len(distances),maxLength
-    #print majorTicks
-    #print majorTickLabels
-    ax1.set_xticks(majorTicks)
-    ax1.set_xticklabels(majorTickLabels)
-    ax1.set_xlabel('maximum distance violation in %')
-    ax1.set_ylabel('number of bonds')
-    if saveFileName:
-        plt.savefig(saveFileName)
-    else:
-        plt.show()
