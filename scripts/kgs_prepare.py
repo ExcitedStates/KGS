@@ -69,8 +69,7 @@ vdwRadii = {
 
 #Todo: implement ionic radii based on the coordination number
 ionRadii = {
-    "C"
-}
+    "C" : 1 }
 
 verbose = False
 writePml = False
