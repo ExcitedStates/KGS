@@ -117,7 +117,7 @@ class Molecule {
   void writeRigidbodyIDToBFactor();
 
   const std::vector<Rigidbody*> getRigidbodies() const;
-  void buildRigidBodies (Selection& movingResidues);
+  void buildRigidBodies (Selection& movingResidues, int collapseLevel = 1);
   void initializeTree(Selection& movingResidues,double collisionFactor = 1.0, const std::vector<int> &roots = {},Molecule* target = nullptr);
 
  private:

@@ -478,7 +478,7 @@ void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, 
 }
 
 
-void Molecule::buildRigidBodies(Selection& movingResidues) {
+void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //Create disjoint set
   DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
@@ -494,7 +494,6 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
       log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying bond " << atom->getId() << " - ";
       log("debug") << neighbor->getId() << " as they're not in residueNetwork" << endl;
     }
-
   }
   //for(auto const& chain: chains) {
   //  Atom* lastAtom = nullptr;
@@ -540,12 +539,15 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
   log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" covalent bonds."<<endl;
   count=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
-  for (auto const& bond: getHBonds()){
-    if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
-      count++;
-      ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
-      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->m_atom1->getId() << " - " << bond->m_atom2->getId() << endl;
-      continue;
+  if(collapseLevel == 2) {
+    for( auto const &bond: getHBonds()) {
+      if( bond->Bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
+        count++;
+        ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+        log("debug") << "IO::readRigidbody[" << __LINE__ << "] - Joining " << bond->m_atom1->getId() << " - "
+                     << bond->m_atom2->getId() << endl;
+        continue;
+      }
     }
   }
   log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
@@ -1519,35 +1521,35 @@ Molecule* Molecule::deepClone() const{
   return ret;
 }
 
-Molecule* Molecule::collapseRigidBonds(int collapseLevel){
-  assert(collapseLevel==1 || collapseLevel==2);
+Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
+  assert(collapseLevel == 1 || collapseLevel == 2);
 
   m_conf->rigidityAnalysis();//identifies rigidified bonds necessary for collapsing
 
-  Molecule* ret = deepClone();
+  Molecule *ret=deepClone();
 
   int i=0; //indexing for hBonds
   //To collapse molecule, we turn rigid h-bonds into covalent bonds
-//  if(collapseLevel==2) {
-    for (auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges) {
+  if(collapseLevel==2) {
+    for( auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges ) {
 
-      KinEdge *edge = edge_nca_pair.first;
-      KinVertex *common_ancestor = edge_nca_pair.second;
+      KinEdge *edge=edge_nca_pair.first;
 
       //Get corresponding rigidity information
-      if (m_conf->getNullspace()->isHBondRigid(i++)) {
+      if( m_conf->getNullspace()->isHBondRigid(i++)) {
         //If its a rigid hbond convert it to a rigid covalent bond
-        if (edge->getBond()->isHBond()) {
-          Atom *a1_new = ret->getAtom(edge->getBond()->m_atom1->getId());
-          Atom *a2_new = ret->getAtom(edge->getBond()->m_atom2->getId());
-          Bond *newBond = ret->addCovBond(a1_new, a2_new);
-          if (newBond) {
-            newBond->rigidified = true;
+        if( edge->getBond()->isHBond()) {
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified=true;
 //          log("debug")<<"Molecule.cpp:"<<__LINE__<<" covalently connecting "<<a1_new<<"-"<<a2_new<<" with rigid bond"<<endl;
           }
         }
       }//end if
     }
+  }
 
   //Recreate roots vector. For edge leaving the root, descend until a rigid body is found and then pick the first atom
   vector<int> roots;
@@ -1560,7 +1562,7 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel){
   }
 
   Selection movingResidues("all");
-  ret->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+  ret->buildRigidBodies(movingResidues, collapseLevel); //Necessary to do before building spanning tree
   ret->buildSpanningTree(roots); //Necessary before conformations are defined
   ret->setConfiguration(new Configuration(ret));
   ret->setCollisionFactor(m_collisionFactor); //Sets the initial collisions
