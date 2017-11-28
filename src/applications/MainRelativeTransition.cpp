@@ -136,8 +136,8 @@ int main( int argc, char* argv[] ) {
   std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
       IO::readRelativeDistances(options.relativeDistances, protein);
 
-  Direction* d1 = new RelativeMSDDirection(goal_distances);
-//  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
+//  Direction* d1 = new RelativeMSDDirection(goal_distances);
+  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
   Direction* d2 = new RandomDirection(resNetwork,options.maxRotation);
 
 
