@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include "HBond.h"
 #include "core/Atom.h"
 #include "math/MathUtility.h"
@@ -40,19 +42,18 @@ Hbond::Hbond(Atom* hatom, Atom* acceptor, Atom* donor, Atom* aa, double energy) 
 	AA = aa;
 
 	// super-class attributes
-	Atom1 = hatom;
-	Atom2 = acceptor;
-	BondType = "HB";
+	m_atom1 = hatom;
+	m_atom2 = acceptor;
+	m_bondType = "HB";
 	Bars = 5;
 	rigidified = false;
-	m_iniDist_H_A = VectorLength(Atom1->m_position,Atom2->m_position);
+	m_iniDist_H_A = VectorLength(m_atom1->m_position,m_atom2->m_position);
 	m_iniAngle_D_H_A = getAngle_D_H_A();
 	m_iniAngle_H_A_AA = getAngle_H_A_AA();
 
   identifyHybridization();
 
-//  m_iniEnergy = energy;
-//  if(energy == DEFAULT_HBOND_ENERGY)
+  m_iniEnergy = DEFAULT_HBOND_ENERGY;
   m_iniEnergy = computeEnergy();
 }
 
@@ -64,9 +65,9 @@ Hbond::Hbond(Hbond & hbond) {
 	m_iniEnergy = hbond.m_iniEnergy;
 
 	// super-class attributes
-	Atom1 = hbond.Atom1;
-	Atom2 = hbond.Atom2;
-	BondType = hbond.BondType;
+	m_atom1 = hbond.m_atom1;
+	m_atom2 = hbond.m_atom2;
+	m_bondType = hbond.m_bondType;
 	Bars = hbond.Bars;
 	rigidified = hbond.rigidified;
 	m_iniDist_H_A = hbond.m_iniDist_H_A;
@@ -79,7 +80,6 @@ Hbond::Hbond(Hbond & hbond) {
 //	idealA = hbond.idealA;
 //	idealH = hbond.idealH;
 }
-
 
 bool Hbond::isSame (Hbond * b2) {
 	if ( Hatom->getName() == b2->Hatom->getName() &&
@@ -222,20 +222,17 @@ double Hbond::computeEnergy() {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp3 A_sp3"<<endl;
     psi = getAngle_H_A_AA();
     energy = energyDist * angularEnergy * cos(psi - psi0) * cos(psi - psi0);
-    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
   }
     /// Case 2: donor sp3 and acceptor sp2
   else if (m_donorHybridization == 3 && m_acceptorHybridization == 2 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp3 A_sp2"<<endl;
     psi = getAngle_H_A_AA();
     energy = energyDist * angularEnergy * cos(psi) * cos(psi);
-    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
   }
     /// Case 3: donor sp2 and acceptor sp3
   else if (m_donorHybridization == 2 && m_acceptorHybridization == 3 ) {
     log("report") << "Hbond " << Hatom->getId() << ", " << Acceptor->getId() << ": Using case D_sp2 A_sp3"<<endl;
     energy = energyDist * angularEnergy * angularEnergy;
-    log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
   }
     /// Case 4: donor sp2 and acceptor sp2
   else if (m_donorHybridization == 2 && m_acceptorHybridization == 2 ) {
@@ -244,6 +241,11 @@ double Hbond::computeEnergy() {
     psi = getAngle_H_A_AA();
     psi = max(psi, phi);
     energy = energyDist * angularEnergy * cos(psi) * cos(psi);
+  }
+  if(m_iniEnergy == DEFAULT_HBOND_ENERGY){
+    log("report")<<"Energy: "<<energy<<", initial energy: "<<energy<<endl;
+  }
+  else{
     log("report")<<"Energy: "<<energy<<", initial energy: "<<m_iniEnergy<<endl;
   }
 

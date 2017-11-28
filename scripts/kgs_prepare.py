@@ -67,10 +67,19 @@ vdwRadii = {
         "C" : 1.700, "N" : 1.625, "O" : 1.490, "S" : 1.782, "H" : 1.000, "P" : 1.871, 
         "F" : 1.560, "Cl": 1.735,"CL": 1.735,"Br": 1.978,"BR": 1.978, "I" : 2.094, "?" : 2.000 }
 
+#Todo: implement ionic radii based on the coordination number
+ionRadii = {
+    "C" : 1 }
+
 verbose = False
 writePml = False
+writeIMOD = False
 waters = True
 ligands = True
+altloc= "A"
+cutoff=-1.0
+chainID="all"
+model = -1
 
 class Atom:
     """ Container class for PDB atoms """
@@ -85,9 +94,24 @@ class Atom:
         self.pos = [ float(atom_string[30:38]), float(atom_string[38:46]), float(atom_string[46:54]) ]
         self.occ = float(atom_string[54:60])
         self.tempFactor = float(atom_string[60:66])
-        if len(atom_string)>=78:
+        if (self.name[0] == "D"):#case of Deuterium
+            self.name = "H"+self.name[1:]
+        if len(atom_string.strip())>=78:
             self.elem = atom_string[76:78].strip()
+            if self.isIon():
+                self.elem=self.name
+            else:
+                self.elem = self.elem[0]
+                # if self.elem == "D":
+                #     self.elem = "H"
+        else: #element column not provided in input
+            name_nodigits = filter(lambda x: x.isalpha(), self.name)
+            self.elem=name_nodigits
+            if ~self.isIon():
+                self.elem = name_nodigits[0]
+       
         self.neighbors = []
+        self.hBondNeighbors = []
         self.rings = 0
         self.atomType = ""
         self.hetatm = atom_string.startswith("HETATM")
@@ -110,7 +134,9 @@ class Atom:
             return covRadii[self.elem.upper()]
         except AttributeError:
             pass
-        raise RuntimeError("Unknown element for atom: "+str(self));
+        except KeyError:
+            RuntimeError("Unknown element for atom: "+str(self),self.name,self.atomType);
+        raise RuntimeError("Unknown element for atom: "+str(self),self.name,self.elem);
 
     def getSP(self):
         if self.atomType in ["C3","N3+","N3","O3","S3+","S3","P3+"]:
@@ -129,8 +155,12 @@ class Atom:
         return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2)
 
     def getPDBline(self):
-        line = "%-6s%5d %-4s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
+        if len(self.name)<=3: #Takes care of four-letter atom name alignment
+            line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
                 self.pos[0], self.pos[1], self.pos[2], self.occ, self.tempFactor, self.elem)
+        else:         
+            line = "%-6s%5d %-4s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
+                    self.pos[0], self.pos[1], self.pos[2], self.occ, self.tempFactor, self.elem)
 
         return line
     
@@ -150,6 +180,11 @@ class Atom:
             line += '\n' #new line
         return line
     
+    def isIon(self):
+        if self.elem in ["MG","ZN","K","FE"]: #Todo: increase list for ions of interest
+            return True
+        return False
+    
 class PDBFile:
     """ A representation of a single-model PDB-file """
 
@@ -158,6 +193,7 @@ class PDBFile:
         self.atoms  = [a for a in self.atoms if not (a.resn=="HOH" and len(a.neighbors)==0)]
         if dehydro_hoh:
             print("%s: removed %d waters with no hydrogens"%(self.name, len(dehydro_hoh)))
+
 
     def getNearby(self, v, radius):
         irad = int(math.ceil(radius))
@@ -195,11 +231,19 @@ class PDBFile:
                 if atom1.id<=atom2.id: continue
                 dist = atom1.distance(atom2)
                 covsum = atom1.covRadius()+atom2.covRadius()
-
                 if dist<=covsum+0.4:
                     if (atom1.hetatm * atom2.hetatm): #Only covalent bonds between atom pairs or hetatm pairs
                         atom1.neighbors.append(atom2)
-                        atom2.neighbors.append(atom1)         
+                        atom2.neighbors.append(atom1)
+                        
+    def buildHbondNeighbors(self):
+        #Resetting neighbor information
+        for atom in self.atoms:
+            atom.hBondNeighbors=[]
+            
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
+            a.hBondNeighbors.append(h)
+            h.hBondNeighbors.append(a)
 
     def buildRingCounts(self):
         """Construct spanning tree to determine rings"""
@@ -297,7 +341,19 @@ class PDBFile:
                     for n in npls:
                         n.atomType = "Ng+"
 
-
+    #Check metal ions (e.g. magnesium)
+    def ionCoordination(self):
+        for atom in self.atoms:
+            if atom.isIon():
+                for neighbor in atom.neighbors:
+                    if neighbor.resn in ["A","G","C","U","T"]: #RNA/DNA
+                        #......... TODO ................
+                        # 1) identify neighbors for the ion
+                        # 2) suitable distance constraints for ion interactions
+                        # 3) Identify coordination for metal ions
+                        pass
+                    else:
+                        print "MG ion close to protein:",atom.name,atom.id, neighbor.name,neighbor.id
 
 
     def __init__(self, name, atom_records):
@@ -306,21 +362,41 @@ class PDBFile:
         self.name = name
         self.atoms = atom_records
         self.constraints = []
+        self.iModBonds = []
+        
+        self.checkHydrogens() #check if hydrogens are present
+        self.checkAltConformations() #check and remove alt locs
 
+        #Neighbor computations based on grid
         self.grid = defaultdict(list)
         for atom in self.atoms:
             self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
 
-        self.buildCovBonds()
-        self.cleanDehydroHOH()
+        self.buildCovBonds() #Neighbors necessary to know which waters are present
+        self.cleanDehydroHOH()  # check and potentially remove waters
+ 
+        # #Redo grid after waters have been removed
+        # self.grid = defaultdict(list)
+        # for atom in self.atoms:
+        #     self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
+            
+        #Now we have all atoms in the model that we want --> no removal afterwards
+        self.checkAtomIDs() #renumber atoms
+        self.checkResidueSequence() #check residue sequence, identify odd numbering / gaps
+        
+        # self.rebuildCovBonds()
         self.buildRingCounts()
         self.buildIDATM()
+        
+        #Check ion neighborhood and coordination
+        self.ionCoordination()
 
 
     def hydrogenBondEnergy(self,aa, acceptor, hydrogen, donor):
         """Computes hydrogen bond energy following the terms described in
-        [TODO: Paper authors and title]. If a hydrogen bond is not feasible,
-        the value 1000 is returned.
+        "Dahiyat, Gordon and Mayo. Automated design of the surface positions of protein helices.
+        Protein Science, 1997."
+        If a hydrogen bond is not feasible, the value 1000 is returned.
 
         Args:
             aa (Atom): acceptor base
@@ -339,7 +415,7 @@ class PDBFile:
         theta = angle(donor.pos, hydrogen.pos, acceptor.pos)
         psi   = angle(hydrogen.pos, acceptor.pos, aa.pos)
 
-        if R<2.6 or R>3.2: 
+        if R<2.5 or R>3.9: #R>3.2: #R>3.9
             return 1000
         if theta<(3.141592/2): 
             return 1000
@@ -385,25 +461,28 @@ class PDBFile:
         it if the energy is below the threshold.
 
         Args:
-            threshold (float): Energy threshold used to prune hydrogen bonds
+            threshold (float): Energy threshold used to prune hydrogen bonds, default = -1.0
 
         Returns:
             list: Each element is a 5-tuple containing acceptor base (Atom), acceptor (Atom), 
             hydrogen (Atom), donor (Atom), and energy (float)
         """
         bonds = []
+        print "Identifying hbonds at energy cutoff ",threshold
         for acceptor in self.atoms:
             if not acceptor.isAcceptor(): continue
             #for donor in self.atoms: # All-pairs
-            for donor in self.getNearby(acceptor.pos, 3.2):
+            for donor in self.getNearby(acceptor.pos, 3.9): #3.2
                 if not donor.isDonor(): continue
                 if acceptor==donor: continue
                 if len(acceptor.neighbors)==0: continue
                 aa = acceptor.neighbors[0]
                 for hydrogen in donor.neighbors:
                     if not hydrogen.elem=="H": continue
+                    if hydrogen.distance(acceptor) > 2.5: continue
                     try:
                         energy = self.hydrogenBondEnergy(aa, acceptor, hydrogen, donor)
+                        # print "Angle: "+str(angle(donor.pos,hydrogen.pos,acceptor.pos)*180/math.pi)+", energy: "+str(energy)
                         if energy<threshold:
                             bonds.append( (aa,acceptor,hydrogen,donor, energy) )
                     except:
@@ -423,11 +502,14 @@ class PDBFile:
     def checkHydrogens(self):
         hydrogens = [a for a in self.atoms if a.elem=="H"]
         if not hydrogens:
-            raise RuntimeError("No hydrogens present in "+self.name+". Consider running `reduce` first.")
+            print ("Warning: No hydrogens present in "+self.name+". Consider running `reduce` first.")
+            # raise RuntimeError("No hydrogens present in "+self.name+". Consider running `reduce` first.")
 
     def checkAltConformations(self):
-        alt_confs =  [a for a in self.atoms if not (a.alt in [" ", "A"])]
-        self.atoms = [a for a in self.atoms if      a.alt in [" ", "A"] ]
+        if altloc=="all":
+            return
+        alt_confs =  [a for a in self.atoms if not (a.alt in [" ", altloc])]
+        self.atoms = [a for a in self.atoms if      a.alt in [" ", altloc] ]
         for a in self.atoms:
             a.alt=" " #remove alternate conformation indicator
         if alt_confs:
@@ -452,17 +534,66 @@ class PDBFile:
     def checkResidueSequence(self):
         currentResId = self.atoms[0].resi
         currentChain = self.atoms[0].chain
+        resOffset = 0
+        resList=[] #temporarily stores atoms of one residue
+        inconsistencyFlag = 0
         for atom in self.atoms:
             if atom.hetatm: #Only need continuous sequence for residues
                 continue
-            if atom.chain != currentChain: #Reached a chain border
+            if atom.chain != currentChain: #Reached a chain border, don't need to check for continous IDs
                 currentChain = atom.chain #Set to new chain
                 currentResId = atom.resi #Set to new first resi
-            if atom.resi != currentResId: #Not in curr resi
-                currentResId+=1
-                if atom.resi != currentResId:
-                    print "Chain "+str(currentChain)+": residue gap between "+str(currentResId-1)+" and "+str(atom.resi)
-                    currentResId = atom.resi
+                resList=[] #clear list
+                resList.append((atom.name, atom.alt))
+                if atom.alt != " ":  
+                    resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                if atom.alt == " ":
+                    resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
+                continue
+            if atom.resi != currentResId or ((atom.name, atom.alt) in resList) : #New residue or wrong numbering
+                # print atom.resi, atom.alt
+                if atom.resi == currentResId + 1: #desired ID in contiguous sequence, go on
+                    currentResId = atom.resi #move current residue one up
+                    resList=[]
+                    resList.append((atom.name, atom.alt))
+                    if atom.alt != " ":  
+                        resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                    if atom.alt == " ":
+                        resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
+                    continue
+                if atom.resi > currentResId + 1: #This is a gap
+                    print "Chain "+str(currentChain)+": residue gap between "+str(currentResId)+" and "+str(atom.resi)
+                    currentResId = atom.resi #move current residue across gap (user has to ensure correct sequence)
+                    resList=[]
+                    resList.append((atom.name, atom.alt))
+                    if atom.alt != " ":  
+                        resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                    if atom.alt == " ":
+                        resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
+                    continue
+                else: #weird numbering (e.g. 52 and 52A)
+                    if ( (atom.name, atom.alt) in resList): #New residue (even if same wrong number, or same name)
+                        if inconsistencyFlag == 0:
+                            print "Inconsistent residue name at "+str(atom.resi)+atom.resn+" in chain "+str(currentChain)
+                            inconsistencyFlag = 1
+                        currentResId += 1
+                        atom.resi = currentResId
+                        resList=[]
+                        resList.append((atom.name, atom.alt))
+                        if atom.alt != " ":  
+                            resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                        if atom.alt == " ":
+                            resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
+                    else: #wrong numbering, in same residue
+                        atom.resi = currentResId #adopt current ID
+                        resList.append((atom.name, atom.alt))
+                        if atom.alt != " ":  
+                            resList.append((atom.name, " ")) #Fill list also with the "default" to correctly identify new residues
+                        if atom.alt == " ":
+                            resList.append((atom.name, "A")) #Fill list also with the "default" to correctly identify new residues
+            else:      
+                #Everything regular, just add name to list
+                resList.append(atom.name) #keep track of atom names (each atom only once)
         
     def checkCollisions(self):
         serious_collisions = []
@@ -511,8 +642,13 @@ class PDBFile:
 
 
     def checkHydrogenBonds(self):
-        for aa,a,h,d,energy in self.getHydrogenBonds(-1):
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             self.constraints.append( "RevoluteConstraint %d %d %s %s"%(a.id, h.id, str(a), str(h)) )
+            if writeIMOD:   #save h-bonds as stiff springs between donor and acceptor for usage in iMod
+                firstNeighbor = d.neighbors[0]
+                self.iModBonds.append( "%d %d %d"%(a.id,firstNeighbor.id, 10) )
+                self.iModBonds.append( "%d %d %d"%(a.id, d.id, 10) )
+                self.iModBonds.append( "%d %d %d"%(aa.id, d.id, 10) )
 
     def writePDB(self,fname):
         f = open(fname,'w')
@@ -529,9 +665,8 @@ class PDBFile:
         f.close()
     
     def writePML(self,fname):
-        """ Write hydrogen bonds to pml file that can be loaded in pymol """
         f = open(fname,'w')
-        for aa,a,h,d,energy in self.getHydrogenBonds(0):
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             if energy > -1.0:
                 f.write( "distance hbonds_weak = id %s, id %s\n"%(a.id, h.id) )
             if energy <= -1.0 and energy > -3.0:
@@ -542,16 +677,30 @@ class PDBFile:
         f.write( "color yellow, hbonds_medium\n")
         f.write( "color red, hbonds_strong\n")
         f.write("hide labels\n")
+        f.write("show cartoon\n")
+        f.write("bg_color white\n")
+        f.write("zoom\n")
         f.close()
 
     def getAtom(self, resi, name):
         ret = [a for a in self.atoms if a.resi==resi and a.name==name]
         if ret: return ret[0]
         return None
-
+    
+    def writeIMOD(self,fname):
+        f = open(fname,'w')       
+        for entry in self.iModBonds:
+            f.write( "%s\n"%(entry) )
+            
+    def meanCoordination(self):
+        self.buildHbondNeighbors()
+        meanCoordination = 0.0
+        for atom in self.atoms:
+            meanCoordination += len(atom.neighbors)+len(atom.hBondNeighbors)
+        return meanCoordination/len(self.atoms)
 
 class MultiModel:
-    def __init__(self, pdb_file):
+    def __init__(self, pdb_file,modelNum):
         """ Initialize a multi-model object using a PDB file name. """
 
         if pdb_file.endswith(".gz"): 
@@ -562,29 +711,39 @@ class MultiModel:
 
         models = []
         atoms = []
+        remarks = []
+        modelCount = 0;
         for line in f.readlines():
             if line[0:5]=="MODEL":
                 if atoms: raise RuntimeError("A MODEL was not stopped (ENDMDL) before a new one started")
             elif line[0:6]=="ENDMDL":
                 if not atoms: raise RuntimeError("Reached ENDMDL without reading any atoms")
-                models.append(atoms)
+                if (modelNum == -1): # -1 for all models, modelIndex for specific model only
+                    models.append(atoms)
+                if (modelCount == modelNum):
+                    models.append(atoms)
+                    break; #Only keeping this model
+                modelCount += 1;
                 atoms = []
             elif line[0:4] == "ATOM":
                 atom = Atom(line)
-                atoms.append(atom)
+                if chainID=="all" or (atom.chain==chainID): #only keep atom if in specified chains
+                    atoms.append(atom)
             elif line[0:6] == "HETATM":
                 atom = Atom(line)
-                if ligands and atom.resn != "HOH":
-                    atoms.append(atom)
-                if waters and atom.resn == "HOH":
-                    atoms.append(atom)
+                if chainID=="all" or (atom.chain==chainID): #only keep atom if in specified chains
+                    if ligands and atom.resn != "HOH": #only add ligands if specified
+                        atoms.append(atom)
+                    if waters and atom.resn == "HOH": #only add waters if specified
+                        atoms.append(atom)
+            # elif line[0:6]=="REMARK":
+            #     
 
         if atoms:
             models.append(atoms)
 
         f.close()
-
-        base_name = pdb_file[0:pdb_file.find(".pdb")]
+        base_name = pdb_file[0:pdb_file.rfind(".")] #finds last ".", either .pdb or .ent
         if len(models)==1:
             self.pdbs = [PDBFile(base_name, models[0])]
         else:
@@ -620,20 +779,35 @@ class MultiModel:
     def checkHydrogenBonds(self):
         for m in self.pdbs: m.checkHydrogenBonds()
 
-    def writePDBs(self, prefix):
-        for i,m in enumerate(self.pdbs): 
-            m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
+    def writePDBs(self, prefix):        
+        for i,m in enumerate(self.pdbs):
+            if len(self.pdbs)==1:
+                m_prefix = "%s"%(prefix) if prefix else m.name
+            else:
+                m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
             fname = m_prefix+".kgs.pdb"
             print("Writing "+m.name+" to "+fname)
             m.writePDB(fname)
 
     def writePMLs(self, prefix):
         for i,m in enumerate(self.pdbs): 
-            m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
+            if len(self.pdbs)==1:
+                m_prefix = "%s"%(prefix) if prefix else m.name
+            else:
+                m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
             fname = m_prefix+".kgs.pml"
             print("Writing constraints to "+fname)
             m.writePML(fname)
-    
+ 
+    def writeIMODs(self, prefix):
+       for i,m in enumerate(self.pdbs): 
+           if len(self.pdbs)==1:
+               m_prefix = "%s"%(prefix) if prefix else m.name
+           else:
+               m_prefix = "%s_%d"%(prefix,i) if prefix else m.name
+           fname = m_prefix+"_imod_ff.txt"
+           print("Writing h-bond springs to "+fname)
+           m.writeIMOD(fname)   
 
 def printUsage(argv):
     print("Reads a PDB-file, prepares it for execution in KGS and stores the result")
@@ -643,11 +817,15 @@ def printUsage(argv):
     print("")
     print("usage: %s [options] <input>.pdb"%(argv[0]))
     print("where [options] can be either of the following")
-    print("  -v          : verbose stdout")
+    print("  -v            : verbose stdout")
     print("  -pre <string> : output-file prefix. Default is '<input>' ")
-    print("  -pymol      : output a .pml file that displays constraints")
-    print("  -noWaters    : remove all waters ")
+    print("  -pymol        : output a .pml file that displays constraints")
+    print("  -noWaters     : remove all waters ")
     print("  -noLigands    : remove all ligands")
+    print("  -alt          : keeping specified alt loc (and empty alt loc) ")
+    print("  -chain        : keeping only specified chain")
+    print("  -energy       : energy cutoff for hydrogen bonds")
+    print("  -imod         : save donor-acceptor connections for use as springs in iMod")
     sys.exit(-1)
 
 if __name__ == "__main__":
@@ -686,23 +864,55 @@ if __name__ == "__main__":
         waters = False
         argv.remove("-noWaters")
         print "Removing all waters"
+        
+    if "-alt" in argv:
+        altloc = sys.argv[sys.argv.index("-alt")+1]
+        argv.remove("-alt")
+        argv.remove(altloc)
+        print "Keeping alternate location "+altloc
+
+    if "-chain" in argv:
+        chainID = sys.argv[sys.argv.index("-chain")+1]
+        argv.remove("-chain")
+        argv.remove(chainID)
+        print "Keeping only chain "+chainID
+        
+    if "-energy" in argv:
+        cutoff = sys.argv[sys.argv.index("-energy")+1]
+        argv.remove("-energy")
+        argv.remove(cutoff)
+        print "Minimum h-bond energy "+cutoff
+        cutoff = float(cutoff)
+        
+    if "-imod" in argv:
+        writeIMOD = True
+        argv.remove("-imod")
+        
+    if "-model" in argv:
+        model = sys.argv[sys.argv.index("-model")+1]
+        argv.remove("-model")
+        argv.remove(model)
+        print "Keeping only model",model
+        model = int(model)
 
     #Only thing left of argv should be the program name and input file
     if not len(argv)==2:
         printUsage(argv)
     input_file = argv[1]
 
-    models = MultiModel(input_file)
-    models.checkHydrogens()
-    models.checkAltConformations()
-    models.checkAtomIDs()
-    models.checkResidueSequences()
+    models = MultiModel(input_file,model)
     models.checkCollisions()
     models.checkCovalentBonds()
     models.checkDisulphideBonds()
     models.checkHydrogenBonds()
     models.writePDBs(prefix)
+    # models.pdbs[0].writePDB("init.kgs.pdb")
     if writePml:
         models.writePMLs(prefix)
+    if writeIMOD:
+        models.writeIMODs(prefix)
+    
 
-
+    # testVals= np.arange(-6,0,0.25)
+    # for cutoff in testVals:
+    #     print "Mean coordination of first model",models.pdbs[0].meanCoordination(),"cutoff",cutoff

@@ -1,14 +1,15 @@
 
 #include "gsl_helpers.h"
 
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_vector_double.h>
+#include <assert.h>
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <cmath>
-#include <gsl/gsl_blas.h>
-#include <assert.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_vector_double.h>
 
 #include "Logger.h"
 #include "MathUtility.h"
@@ -17,12 +18,13 @@ using namespace std;
 
 void gsl_matrix_cout (const gsl_matrix *m) {
   for (int i=0; i<m->size1; ++i) {
-    for (int j=0; j<m->size2; ++j){
-      log() << gsl_matrix_get(m,i,j);
-      if(j == (m->size2-1))
-        log() << endl;
-      else
-        log() << ",\t";
+    for (int j=0; j<m->size2; ++j) {
+      cout << gsl_matrix_get(m, i, j);
+      if (j == (m->size2 - 1)) {
+        cout << endl;
+      } else {
+      cout << "\t";
+      }
     }
   }
 }
@@ -44,6 +46,12 @@ void gsl_matrix_outtofile (const gsl_matrix *m, const string& filename) {
     }
   }
   output.close();
+}
+
+void gsl_vector_out (const gsl_vector *v, ostream& os) {
+  for (int i=0; i<v->size; ++i)
+    os << gsl_vector_get(v,i) << "\t";
+  os << endl;
 }
 
 void gsl_vector_cout (const gsl_vector *v) {

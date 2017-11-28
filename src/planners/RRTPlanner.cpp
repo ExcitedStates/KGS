@@ -1,9 +1,10 @@
 /*
-KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-Yao et al, Proteins. 2012 Jan;80(1):25-43
-e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -23,8 +24,9 @@ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
-
 */
+
+
 #include "RRTPlanner.h"
 
 #include <iomanip>
@@ -70,18 +72,14 @@ RRTPlanner::RRTPlanner(
     m_scaleToRadius(scaleToRadius)
 //m_maxDistance(ExploreOptions::getOptions()->explorationRadius)
 {
-  m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//Edges.size();
+  m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//m_edges.size();
   Configuration *pSmp = new Configuration(m_molecule);
   //pSmp->updateMolecule();
   //pSmp->computeCycleJacobianAndNullSpace();
   m_molecule->m_conf = pSmp;
-  m_target = nullptr;
   m_samples.push_back(pSmp);
   pSmp->m_vdwEnergy = 99999;
   pSmp->m_id = 0; // m_root
-
-  m_deform_mag = 0.25;
-  m_rand_radius = 2;
 
   m_numBuckets = NUM_BINS;
   m_bucketSize =
@@ -131,19 +129,20 @@ void RRTPlanner::generateSamples() {
     double start_time = timer.getTimeNow();
 
 //    if (ExploreOptions::getOptions()->sampleRandom || pNewSmp == nullptr || createNewTarget) {
-      log("dominik") << "Generating new target, getting new seed" << endl;
+//      log("planner") << "Generating new target, getting new seed" << endl;
       createNewTarget = false;
       pTarget = GenerateRandConf();//used in selection ONLY if no target molecule is specified
       pClosestSmp = SelectNodeFromBuckets(pTarget);
-      log("dominik") << " .. picked sample " << pClosestSmp->m_id << endl;
-      //pClosestSmp = SelectNodeFromBuckets(pTarget,nBatch);
+//      log("planner") << " .. picked sample " << pClosestSmp->m_id << endl;
+      //pClosestSmp = SelectClosestNode(pTarget,nBatch);
       double end_time = timer.getTimeNow();
       selectNodeTime += end_time - start_time;
 //    } else {
-//      log("dominik") << "Using latest sample as seed" << endl;
+//      log("planner") << "Using latest sample as seed" << endl;
 //      pClosestSmp = m_samples.back();
 //    }
 
+    ///Todo: what is this
     if (m_gradientSelection == 1)
       direction->gradient(pClosestSmp, pTarget, gradient);
     else
@@ -155,7 +154,6 @@ void RRTPlanner::generateSamples() {
     //cout<<endl;
     gsl_vector_scale(gradient, m_stepSize);
     gsl_vector_scale_max_component(gradient, m_maxRotation);
-
     pNewSmp = m_move->move(pClosestSmp, gradient);
 
     if (pNewSmp != nullptr) {
@@ -247,7 +245,7 @@ Configuration *RRTPlanner::SelectNodeFromBuckets(Configuration *pTarget) {
     do {
       selected_bucket_id = rand() % (m_numBuckets - 1);
     } while (distance_buckets[selected_bucket_id].empty());
-    log("dominik") << "Seed from bucket: " << selected_bucket_id << endl;
+//    log("planner") << "Seed from bucket: " << selected_bucket_id << endl;
     for (list<Configuration *>::iterator iter = distance_buckets[selected_bucket_id].begin();
          iter != distance_buckets[selected_bucket_id].end(); ++iter) {
       pSmp = *iter;

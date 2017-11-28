@@ -110,64 +110,82 @@ def main():
     Function to call if called from the command line.
     """
 
-    from helper import cmdline
-
-    # Parse command line
-    cmdline.initializeParser(__description__,__date__)
-    cmdline.addOption(short_flag="a",
-                      long_flag="align-out",
-                      action="store_true",
-                      default=False,
-                      help="write out residue alignment file.")
-    cmdline.addOption(short_flag="s",
-                      long_flag="start-res",
-                      action="store",
-                      type=int,
-                      default=None,
-                      help="Make the first residue in the file have s")
-    cmdline.addOption(short_flag="r",
-                      long_flag="renumber-het",
-                      action="store_true",
-                      default=True,
-                      help="include hetatm entries in the renumbering.")
-    cmdline.addOption(short_flag="g",
-                      long_flag="remove-gaps",
-                      action="store_true",
-                      default=False,
-                      help="make the sequence numbering continuous (remove gaps)")
-    cmdline.addOption(short_flag="c",
-                      long_flag="chain",
-                      action="store",
-                      type=str,
-                      default=None,
-                      help="only renumber this chain")
-
+    # from helper import cmdline
+    # 
+    # # Parse command line
+    # cmdline.initializeParser(__description__,__date__)
+    # cmdline.addOption(short_flag="a",
+    #                   long_flag="align-out",
+    #                   action="store_true",
+    #                   default=False,
+    #                   help="write out residue alignment file.")
+    # cmdline.addOption(short_flag="s",
+    #                   long_flag="start-res",
+    #                   action="store",
+    #                   type=int,
+    #                   default=None,
+    #                   help="Make the first residue in the file have s")
+    # cmdline.addOption(short_flag="r",
+    #                   long_flag="renumber-het",
+    #                   action="store_true",
+    #                   default=True,
+    #                   help="include hetatm entries in the renumbering.")
+    # cmdline.addOption(short_flag="g",
+    #                   long_flag="remove-gaps",
+    #                   action="store_true",
+    #                   default=False,
+    #                   help="make the sequence numbering continuous (remove gaps)")
+    # cmdline.addOption(short_flag="c",
+    #                   long_flag="chain",
+    #                   action="store",
+    #                   type=str,
+    #                   default=None,
+    #                   help="only renumber this chain")
+    # 
+    # 
+    # file_list, options = cmdline.parseCommandLine()
     
-    file_list, options = cmdline.parseCommandLine()
+    if len(sys.argv)<3:
+        print "Usage: "+sys.argv[0]+" <start_res> <pdb-files>"#, <reverse pdb file>, <forward pdb file> "
+        sys.exit(1)
 
-    for pdb_file in file_list:
-        
+    for file_name in sys.argv[2:]:
+        pdb_file = str(file_name)
         f = open(pdb_file,'r')
         pdb = f.readlines()
         f.close()
 
-        pdb_out, alignment = pdbResidueRenumber(pdb,options.start_res,
-                                                options.renumber_het,
-                                                options.remove_gaps,
-                                                options.chain)
+        pdb_out, alignment = pdbResidueRenumber(pdb,int(sys.argv[1]))
 
-        short_pdb = os.path.split(pdb_file)[-1][:-4]
-        g = open("%s_res-renum.pdb" % short_pdb,"w")
+        short_pdb = pdb_file[0:pdb_file.rfind(".pdb")]
+        # g = open("%s_res-renum.pdb" % short_pdb,"w")
+        g = open(pdb_file,"w")
         g.writelines(pdb_out)
         g.close()
 
-        if options.align_out:
-            print "Residue alignment written out."
-
-            alignment.insert(0,"#%s" % pdb_out[0])
-            g = open("%s_res-algn.out" % short_pdb,'w')
-            g.writelines(alignment)
-            g.close()
+    # for pdb_file in file_list:
+    #     
+    #     f = open(pdb_file,'r')
+    #     pdb = f.readlines()
+    #     f.close()
+    # 
+    #     pdb_out, alignment = pdbResidueRenumber(pdb,options.start_res,
+    #                                             options.renumber_het,
+    #                                             options.remove_gaps,
+    #                                             options.chain)
+    # 
+    #     short_pdb = os.path.split(pdb_file)[-1][:-4]
+    #     g = open("%s_res-renum.pdb" % short_pdb,"w")
+    #     g.writelines(pdb_out)
+    #     g.close()
+    # 
+    #     if options.align_out:
+    #         print "Residue alignment written out."
+    # 
+    #         alignment.insert(0,"#%s" % pdb_out[0])
+    #         g = open("%s_res-algn.out" % short_pdb,'w')
+    #         g.writelines(alignment)
+    #         g.close()
 
 if __name__ == "__main__":
     main()

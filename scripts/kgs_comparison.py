@@ -9,6 +9,7 @@ Strong overlap if less than one, dissimilar if greater than one
 
 from pdb_structure import *
 import itertools
+import sys
 
 
 def getMinRMSD(kgs_model, md_ensemble):
@@ -22,7 +23,7 @@ def getMinRMSD(kgs_model, md_ensemble):
 
 
 def getAvgMinRMSD(kgs_ensemble, md_ensemble):
-    """Returns average RMSD between each kgs member and closest md member."""
+    """Returns average RMSD between each kgs member and closest MD member."""
     rmsd_vals = []
     for kgs_member in kgs_ensemble.models:
         rmsd = getMinRMSD(kgs_member, md_ensemble)
@@ -40,9 +41,16 @@ def getMaxRMSD(md_ensemble):
             max_rmsd = rmsd
     return max_rmsd
 
+if not len(sys.argv) == 3:
+    print("usage: " + sys.arv[0] + " <input1>.pdb <input2>.pdb")
+    print("where input1 and input2 are ensembles to be compared")
+    sys.exit(-1)
 
-kgs_ensemble = PDBFile("KGS_Results.pdb")
-md_ensemble = PDBFile("MD_Results.pdb")
+kgs_file = sys.argv[1]
+md_file = sys.argv[2]
+
+kgs_ensemble = PDBFile(kgs_file)
+md_ensemble = PDBFile(md_file)
 min_kgs = getAvgMinRMSD(kgs_ensemble, md_ensemble)
 max_md = getMaxRMSD(md_ensemble)
-print("Score : " + str(max_md/min_kgs))
+print("Score: " + str(max_md/min_kgs))

@@ -1,3 +1,32 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+
 
 #include <iostream>
 #include <fstream>
@@ -18,17 +47,15 @@ Molecule * readProtein(char* path){
 	if(tmp==nullptr){ cerr<<path<<" is not a valid PDB-file"<<endl; exit(-1); }
 
 	Selection movingResidues("all");
-	Molecule* protein = IO::readPdb(
-      path,
-			movingResidues
-	);
+	Molecule* protein = IO::readPdb(path);
+	protein->initializeTree(movingResidues,1.0);
 	return protein;
 }
 
 double torsion(Bond * bond){
 	Atom *a1,*a2,*a3,*a4;
-	a2 = bond->Atom1;
-	a3 = bond->Atom2;
+	a2 = bond->m_atom1;
+	a3 = bond->m_atom2;
 	//Find min neighbor of a2 (not a3)
 	a1 = a2->Cov_neighbor_list[0]; if(a1==a3) a1 = a2->Cov_neighbor_list[1];
 	for(int i=1;i<a2->Cov_neighbor_list.size();i++) if( a2->Cov_neighbor_list[i]!=a3 && a2->Cov_neighbor_list[i]->getName()<a1->getName() ) a1 = a2->Cov_neighbor_list[i];
@@ -47,14 +74,14 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		//Configuration* conf = new Configuration(native->m_spanningTree->getNumDOFs());
 
     /*
-		for(auto vit = struc->m_spanningTree->Vertex_map.begin(); vit != struc->m_spanningTree->Vertex_map.end(); vit++){
+		for(auto vit = struc->m_spanningTree->m_vertices.begin(); vit != struc->m_spanningTree->m_vertices.end(); vit++){
 			KinVertex* vertex = vit->second;
 			if(vertex->isRibose) {
 				SugarVertex* v = reinterpret_cast<SugarVertex*>(vertex);
 				double strucTorsion = v->initTorsion;
 				double nativeTorsion = 1000;
 
-				for(auto nvit = native->m_spanningTree->Vertex_map.begin(); nvit != native->m_spanningTree->Vertex_map.end(); nvit++){
+				for(auto nvit = native->m_spanningTree->m_vertices.begin(); nvit != native->m_spanningTree->m_vertices.end(); nvit++){
 					KinVertex* nvertex = nvit->second;
 					if(nvertex->isRibose) {
 						SugarVertex* nv = reinterpret_cast<SugarVertex*>(nvertex);
@@ -80,13 +107,13 @@ void collectConfigurations(Molecule * native, int arrSz, char* fileList[], vecto
 		}
      */
 
-		for(vector<KinEdge*>::iterator eit=struc->m_spanningTree->Edges.begin(); eit!=struc->m_spanningTree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit=struc->m_spanningTree->m_edges.begin(); eit!=struc->m_spanningTree->m_edges.end(); ++eit){
 			KinEdge* e = *eit;
 
 			double strucTorsion = torsion(e->getBond());
 			double nativeTorsion = 1000;
 
-			for(vector<KinEdge*>::iterator neit=native->m_spanningTree->Edges.begin(); neit!=native->m_spanningTree->Edges.end(); ++neit){
+			for(vector<KinEdge*>::iterator neit=native->m_spanningTree->m_edges.begin(); neit!=native->m_spanningTree->m_edges.end(); ++neit){
 				KinEdge* ne = *neit;
 				if(ne->getDOF()->getIndex()==e->getDOF()->getIndex()){
 					nativeTorsion = torsion(ne->getBond());
@@ -191,20 +218,20 @@ int main(int argc, char* argv[]){
 		gsl_vector_view evec_i = gsl_matrix_column (evec, component);
 		double eval_i = gsl_vector_get(eval, component);
 		
-		for(vector<KinEdge*>::iterator eit = native->m_spanningTree->Edges.begin(); eit != native->m_spanningTree->Edges.end(); ++eit){
+		for(vector<KinEdge*>::iterator eit = native->m_spanningTree->m_edges.begin(); eit != native->m_spanningTree->m_edges.end(); ++eit){
 			KinEdge* e = *eit;
 			int dof = e->getDOF()->getIndex();
 			double evec_component = gsl_vector_get(&(evec_i.vector), dof);
 			evec_component = fabs(evec_component)*eval_i*eval_i*100.0;
-			int id1 = e->getBond()->Atom1->getId();
-			int id2 = e->getBond()->Atom2->getId();
+			int id1 = e->getBond()->m_atom1->getId();
+			int id2 = e->getBond()->m_atom2->getId();
 			atom_def[id1]+=evec_component;
 			atom_def[id2]+=evec_component;
 //			cout<<e<<" "<<evec_component<<endl;
 		}
 
     /*
-		for (auto vit=native->m_spanningTree->Vertex_map.begin(); vit!=native->m_spanningTree->Vertex_map.end(); vit++){
+		for (auto vit=native->m_spanningTree->m_vertices.begin(); vit!=native->m_spanningTree->m_vertices.end(); vit++){
 			if( (*vit).second->isRibose ){
 				SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 				int dof = v->getDOF()->getIndex();

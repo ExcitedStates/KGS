@@ -1,3 +1,32 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+
 #include <string>
 #include <vector>
 #include <ctime>
@@ -49,7 +78,8 @@ int main( int argc, char* argv[] ) {
 
 void testIncDOFs(){
   Selection sel("all");
-  Molecule* mol = IO::readPdb("/Users/rfonseca/helix.pdb", sel );
+  Molecule* mol = IO::readPdb("/Users/rfonseca/helix.pdb");
+  mol->initializeTree(sel);
   int n = mol->m_spanningTree->getNumDOFs();
 
   Configuration* finalconf = new Configuration(mol);
@@ -92,7 +122,8 @@ void testSelection(){
     enableLogger("debug");
     Selection moving("all");
     std::vector<std::string> extraCovBonds;
-    Molecule* mol = IO::readPdb("/Users/rfonseca/2kmj_1.pdb", moving, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/2kmj_1.pdb",extraCovBonds);
+    mol->initializeTree(moving);
     Selection sel("resi 17 and id 4+7");
     for(auto a: sel.getSelectedAtoms(mol)){
       std::cout<<a<<endl;
@@ -107,7 +138,8 @@ void testGlobalGradient(){
     enableLogger("debug");
     std::vector<std::string> extraCovBonds;
     Selection sel("all");
-    Molecule* mol = IO::readPdb("/Users/rfonseca/Y.pdb", sel, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/Y.pdb",extraCovBonds);
+    mol->initializeTree(sel);
 
     Configuration* conf = new Configuration(mol);
     cout<<"DOFS: "<<conf->getNumDOFs()<<endl;
@@ -115,7 +147,7 @@ void testGlobalGradient(){
     int dof = 8;
     Coordinate pos = conf->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"Old OH pos: "<<pos<<endl;
-    Math3D::Vector3 der = mol->m_spanningTree->Edges.at(dof)->getDOF()->getDerivative(pos);
+    Math3D::Vector3 der = mol->m_spanningTree->m_edges.at(dof)->getDOF()->getDerivative(pos);
     der = der*0.01;
     cout<<der<<endl;
     Configuration* conf2 = new Configuration(conf);
@@ -123,10 +155,10 @@ void testGlobalGradient(){
     Coordinate pos2 = conf2->updatedMolecule()->getAtom("A", 29, "OH")->m_position;
     cout<<"New OH pos: "<<pos2<<endl;
     cout<<"Expected:   "<<(pos+der)<<endl;
-    if(mol->m_spanningTree->Edges.at(dof)->getBond()==nullptr) {
+    if(mol->m_spanningTree->m_edges.at(dof)->getBond()==nullptr) {
       cout << "Global DOF" << endl;
     }else {
-      cout << "DOF bond:   " << (*mol->m_spanningTree->Edges.at(dof)->getBond()) << endl;
+      cout << "DOF bond:   " << (*mol->m_spanningTree->m_edges.at(dof)->getBond()) << endl;
     }
 
   } catch (const std::string& ex) {
@@ -139,7 +171,8 @@ void testGetTorsion(){
   try {
     Selection all("all");
     std::vector<std::string> extraCovBonds;
-    Molecule* mol = IO::readPdb("/Users/rfonseca/1crn.pdb", all, extraCovBonds);
+    Molecule* mol = IO::readPdb("/Users/rfonseca/1crn.pdb",extraCovBonds);
+    mol->initializeTree(all);
     Selection sel("backbone");
     for (auto const &b: sel.getSelectedBonds(mol)) {
       cout << b << " " << b->getTorsion() <<endl;

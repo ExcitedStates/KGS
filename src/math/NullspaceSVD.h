@@ -25,8 +25,7 @@ class NullspaceSVD: public Nullspace {
 
   void writeMatricesToFiles(
       const std::string& jac_file,
-      const std::string& null_file,
-      const std::string& sval_file) const;
+      const std::string& null_file) const;
 
   static void setSingularValueTolerance(double val);
 

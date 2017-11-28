@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include <iostream>
 
 #include "Atom.h"
@@ -35,9 +37,10 @@
 
 using namespace std;
 
-Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* residue):
-    Name(name),
-    Id(id),
+Atom::Atom (const bool& hetatm, const string& name, const int& id, const Coordinate& pos, Residue* residue):
+    m_hetatm(hetatm),
+    m_name(name),
+    m_id(id),
     m_position(pos),
     m_referencePosition(pos),
     m_parentResidue(residue),
@@ -48,21 +51,21 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
 //  On_sidechain = true;
 
   // Assign Element
-  string::size_type char_start = Name.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  string::size_type char_start = m_name.find_first_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
   if ( char_start == string::npos ) {
-    cerr << "Error: Empty atom name of atom " << Id << endl;
+    cerr << "Error: Empty atom name of atom " << m_id << endl;
     exit(1);
   }
 
-//  if ( Name.find_first_of("H")!=string::npos ) { // H atom
+//  if ( m_name.find_first_of("H")!=string::npos ) { // H atom
 //    Element = atomH;
 //  }
-//  else if ( Name.find("SE")!=string::npos ) { // SE atom
-  if ( Name.find("SE")!=string::npos ) { // SE atom
+//  else if ( m_name.find("SE")!=string::npos ) { // SE atom
+  if ( m_name.find("SE")!=string::npos ) { // SE atom
     m_element = atomSE;
   }
   else {
-    char first_char = Name[char_start];
+    char first_char = m_name[char_start];
     switch (first_char) {
       case 'C':
         m_element = atomC;
@@ -87,11 +90,11 @@ Atom::Atom (const string& name, const int& id, const Coordinate& pos, Residue* r
 }
 
 const string& Atom::getName () const {
-  return Name;
+  return m_name;
 }
 
 int Atom::getId () const {
-  return Id;
+  return m_id;
 }
 
 double Atom::getMass () const {
@@ -144,7 +147,7 @@ const std::string Atom::getElement() const{
 
 
 void Atom::printSummaryInfo() const {
-  cout << "Atom " << Id << " " << Name << " ";
+  cout << "Atom " << m_id << " " << m_name << " ";
   switch (m_element) {
     case atomC: cout << "C"; break;
     case atomH: cout << "H"; break;
@@ -172,16 +175,33 @@ void Atom::printSummaryInfo() const {
   cout << endl;
   cout << "  " << Second_cov_neighbor_list.size() << " 2nd immediate covalent neighbor atom IDs:";
   for (vector<Atom*>::const_iterator it=Second_cov_neighbor_list.begin(); it!=Second_cov_neighbor_list.end(); ++it)
-    cout << " " << (*it)->Id;
+    cout << " " << (*it)->m_id;
   cout << endl;
   //cout << "occ: " << occ << " u_iso " << u_iso << endl;
 }
 
 Atom* Atom::getBondNeighbor (Bond * bond) const {
-  if ( bond->Atom1 == this ) {
-    return bond->Atom2;
+  if ( bond->m_atom1 == this ) {
+    return bond->m_atom2;
   }
-  return bond->Atom1;
+  return bond->m_atom1;
+}
+
+Bond* Atom::getBond(Atom *other) const {
+  for (vector<Bond*>::const_iterator bit=Cov_bond_list.begin(); bit!=Cov_bond_list.end(); ++bit) {
+    Bond* bond = *bit;
+    if ( bond->m_atom1 == this){
+      if( bond->m_atom2 == other){
+        return bond;
+      }
+    }
+    else{
+      if( bond->m_atom1 == other){
+        return bond;
+      }
+    }
+  }
+  return nullptr;
 }
 
 Residue* Atom::getResidue () const{
@@ -201,7 +221,7 @@ void Atom::addHbond (Hbond * hbond) {
 void Atom::removeHbond (Hbond * hbond) {
   Atom* neighbor = getBondNeighbor(hbond);
   for (vector<Atom*>::iterator ait=Hbond_neighbor_list.begin(); ait!=Hbond_neighbor_list.end(); ++ait) {
-    if ( (*ait)->Id == neighbor->Id ) {
+    if ( (*ait)->m_id == neighbor->m_id ) {
       Hbond_neighbor_list.erase(ait);
       break;
     }
@@ -232,10 +252,14 @@ bool Atom::isWithinDistanceFrom (Atom* center, double dist) const {
 
 Atom* Atom::getIthCovNeighbor (int i) const {
   if (Cov_neighbor_list.size()<i+1) {
-    cerr << "Atom " << Id <<"("<<this<<")"<< " has " << i << " covalent neighbors. "<<Name << endl;
+    cerr << "Atom " << m_id <<"("<<this<<")"<< " has " << i << " covalent neighbors. "<<m_name << endl;
     exit(1);
   }
   return Cov_neighbor_list.at(i);
+}
+
+bool Atom::isHetatm() const {
+  return m_hetatm;
 }
 
 bool Atom::isSidechainAtom () const {
@@ -294,7 +318,7 @@ Atom* Atom::getFirstCovNeighbor () const {
 }
 
 bool Atom::compare (Atom* atom1, Atom* atom2) {
-  return (atom1->Id < atom2->Id);
+  return (atom1->m_id < atom2->m_id);
 }
 
 bool Atom::compareName (string name) const {
@@ -338,9 +362,9 @@ float Atom::getOccupancy() {
 
 bool Atom::inSameRigidbody (Atom* another) const {
   if(getRigidbody()==another->getRigidbody()) return true;
-  for(auto const& bond: getRigidbody()->Bonds){
-    if(bond->Atom1==another) return true;
-    if(bond->Atom2==another) return true;
+  for(auto const& bond: getRigidbody()->m_bonds){
+    if(bond->m_atom1==another) return true;
+    if(bond->m_atom2==another) return true;
   }
   return false;
 
@@ -398,7 +422,7 @@ std::vector<Atom*> Atom::heavyAtomNeighbors() const{
 /* Output operator overloading for easy printing. */
 
 ostream& operator<<(ostream& os, const Atom& a) {
-  //os<<"Atom["<<a.Id<<","<<a.m_parentResidue->Name<<"_"<<a.m_parentResidue->Id<<"_"<<a.Name<<"]";
+  //os<<"Atom["<<a.m_id<<","<<a.m_parentResidue->m_name<<"_"<<a.m_parentResidue->m_id<<"_"<<a.m_name<<"]";
   os<<a.getResidue()->getName()<<"_"<<a.getResidue()->getId()<<"_"<<a.getName();
   return os;
 }

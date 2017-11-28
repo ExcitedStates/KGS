@@ -31,7 +31,8 @@ References:
     Molecular Topology and Atomic Hybridization States from Heavy Atom Coordinates. 
     JCC. 1991". 
 
-    The hydrogen bond energy is computed using [TODO]
+    The hydrogen bond energy is computed using the energy funtion in "Dahiyat, Gordon and Mayo.
+    Automated design of the surface positions of protein helices. Protein Science, 1997."
 """
 
 import math
@@ -73,7 +74,7 @@ covRadii = {"AC":1.88,"AG":1.59,"AL":1.35,"AM":1.51,"AS":1.21,"AU":1.50,"B":0.83
             "SR":1.12,"TA":1.43,"TB":1.76,"TC":1.35,"TE":1.47,"TH":1.79,"TI":1.47,"TL":1.55,
             "TM":6.72,"U":1.58 ,"V":1.33 ,"W":1.37 ,"Y":1.78 ,"YB":1.94,"ZN":1.45,"ZR":1.56 }
 
-
+cutoff=-1.0
 
 class Atom:
     """ Container class for PDB atoms """
@@ -310,8 +311,9 @@ class PDBFile:
 
     def hydrogenBondEnergy(self,aa, acceptor, hydrogen, donor):
         """Computes hydrogen bond energy following the terms described in
-        [TODO: Paper authors and title]. If a hydrogen bond is not feasible,
-        the value 1000 is returned.
+        "Dahiyat, Gordon and Mayo. Automated design of the surface positions of protein helices.
+        Protein Science, 1997."
+        If a hydrogen bond is not feasible, the value 1000 is returned.
 
         Args:
             aa (Atom): acceptor base
@@ -330,7 +332,7 @@ class PDBFile:
         theta = angle(donor.pos, hydrogen.pos, acceptor.pos)
         psi   = angle(hydrogen.pos, acceptor.pos, aa.pos)
 
-        if R<2.6 or R>3.2: 
+        if R<2.6 or R>3.9: #R>3.2: #R>3.9
             return 1000
         if theta<(3.141592/2): 
             return 1000
@@ -376,7 +378,7 @@ class PDBFile:
         it if the energy is below the threshold.
 
         Args:
-            threshold (float): Energy threshold used to prune hydrogen bonds
+            threshold (float): Energy threshold used to prune hydrogen bonds, default = -1.0
 
         Returns:
             list: Each element is a 5-tuple containing acceptor base (Atom), acceptor (Atom), 
@@ -386,19 +388,21 @@ class PDBFile:
         for acceptor in self.atoms:
             if not acceptor.isAcceptor(): continue
             #for donor in self.atoms: # All-pairs
-            for donor in self.getNearby(acceptor.pos, 3.2):
+            for donor in self.getNearby(acceptor.pos, 3.9): #3.2
                 if not donor.isDonor(): continue
                 if acceptor==donor: continue
                 if len(acceptor.neighbors)==0: continue
                 aa = acceptor.neighbors[0]
                 for hydrogen in donor.neighbors:
                     if not hydrogen.elem=="H": continue
+                    if hydrogen.distance(acceptor) > 2.5: continue
                     try:
                         energy = self.hydrogenBondEnergy(aa, acceptor, hydrogen, donor)
                         if energy<threshold:
                             bonds.append( (aa,acceptor,hydrogen,donor, energy) )
                     except:
                         pass
+        sorted(bonds, key = lambda x : min(x[1].id,x[2].id) )
         return bonds
 
 
@@ -415,11 +419,21 @@ class PDBFile:
 
 if __name__ == "__main__":
     import sys
-    for f in sys.argv[1:]:
+    
+    argv = sys.argv
+    
+    if "-energy" in argv:
+        cutoff = sys.argv[sys.argv.index("-energy")+1]
+        argv.remove("-energy")
+        argv.remove(cutoff)
+        print "Minimum h-bond energy "+cutoff
+        cutoff = float(cutoff)
+        
+    for f in argv[1:]:
         print(f)
         pdb = PDBFile(f)
 
-        for aa,a,h,d,energy in pdb.getHydrogenBonds():
-            print(str(a.id)+" "+str(h.id)+" "+str(energy)) #KGS output
-            #print("distance hbonds, ID "+str(a.id)+", ID "+str(h.id)) #Pymol output
-
+        for aa,a,h,d,energy in pdb.getHydrogenBonds(cutoff):
+            # print(str(a.id)+" "+str(h.id)+" "+str(energy)) #KGS output
+            print("distance hbonds, ID "+str(a.id)+", ID "+str(h.id)) #Pymol output
+            #print(str(a.chain)+"/"+str(a.resi)+"/"+str(a.name)+" "+str(h.chain)+"/"+str(h.resi)+"/"+str(h.name)+" "+str(energy)) #KGS output

@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include <string>
 #include <fstream>
 #include <iomanip>
@@ -151,6 +153,9 @@ Configuration::~Configuration(){
 
   if( m_parent!=nullptr )
     m_parent->m_children.remove(this);
+
+  for( auto &child: m_children )
+    child->m_parent = nullptr;
 }
 
 void Configuration::computeCycleJacobianAndNullSpace() {
@@ -206,7 +211,7 @@ void Configuration::rigidityAnalysis() {
     if (nullspace->isHBondRigid(i++)) {
       Bond* bond = edge->getBond();
       //If its a rigid hbond convert it to a rigid covalent bond
-      if (bond->isHbond()) {
+      if (bond->isHBond()) {
         bond->rigidified = true;
       }
     }//end if
@@ -250,6 +255,13 @@ void Configuration::rigidityAnalysis() {
   rigidityTime += new_time - old_time;
 }
 
+void Configuration::deleteNullspace(){
+  if(nullspace) {
+    delete nullspace;
+    nullspace = nullptr;
+  }
+}
+
 //void Configuration::identifyBiggerRigidBodies(){
 //
 //  /// Now, all dihedrals and hBonds that are fixed have the set flag constrained = true!
@@ -279,7 +291,7 @@ void Configuration::rigidityAnalysis() {
 ////		cout<<"Bigger rb with ID "<<it->first<<" contains atoms with IDs: "<<endl;
 //    auto ait = it->second->Atoms.begin();
 //    while( ait != it->second->Atoms.end() ){
-//      //cout<<(*ait)->Id<<endl;
+//      //cout<<(*ait)->m_id<<endl;
 //      ait++;
 //      num++;
 //    }
@@ -326,14 +338,14 @@ void Configuration::rigidityAnalysis() {
 //  for (auto const& bond: m_molecule->getCovBonds()){
 //    //First, simply check if bond is rigidified
 //    if( bond->rigidified || bond->Bars == 6){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //    }
 //  }
 //
 //  //Also, do the same thing for the hydrogen bonds insert the h-bonds at the correct place
 //  for(auto const& bond: m_molecule->getHBonds()){
 //    if( bond->rigidified ){
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //    }
 //  }
 //
@@ -375,7 +387,7 @@ void Configuration::rigidityAnalysis() {
 
 //------------------------------------------------------
 void Configuration::writeQToBfactor(){
-  for (auto const& edge: m_molecule->m_spanningTree->Edges) {
+  for (auto const& edge: m_molecule->m_spanningTree->m_edges) {
     if(edge->EndVertex->m_rigidbody == NULL)
       continue; //global dofs
     float value = m_dofs[edge->getDOF()->getIndex() ];
@@ -395,7 +407,7 @@ void Configuration::updateGlobalTorsions(){
   for(int i=0; i<getNumDOFs(); ++i){
     m_dofs_global[i] = m_molecule->m_spanningTree->getDOF(i)->getGlobalValue();
   }
-  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->Edges.begin(); itr!= m_molecule->m_spanningTree->Edges.end(); ++itr) {
+  //for (vector<KinEdge*>::iterator itr= m_molecule->m_spanningTree->m_edges.begin(); itr!= m_molecule->m_spanningTree->m_edges.end(); ++itr) {
   //  KinEdge* pEdge = (*itr);
   //  int dof_id = pEdge->DOF_id;
   //  if (dof_id==-1)
@@ -456,6 +468,7 @@ void Configuration::Print () {
 
 
 void Configuration::computeJacobians() {
+//  log("debug")<<"computeJacobians"<<endl;
   if(CycleJacobianOwner==this) return;
   CycleJacobianOwner = this;
 
@@ -467,8 +480,19 @@ void Configuration::computeJacobians() {
     return;
   }
 
-  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
-  int row_num = hBond_row_num*5; // 5 times the number of cycles, non-redundant description
+  int hBond_row_num = 0;
+  int row_num = 0;
+  for(auto const& edge: m_molecule->m_spanningTree->m_cycleAnchorEdges){
+    if(edge.first->getBond()->isDBond()) {
+      row_num += 3;
+    }else{
+      row_num += 5;
+      hBond_row_num += 1;
+    }
+  }
+
+//  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
+//  int row_num = hBond_row_num * 5; // 5 times the number of cycles, non-redundant description
   int col_num = m_molecule->m_spanningTree->getNumCycleDOFs(); // number of DOFs in cycles
 
   if(CycleJacobian==nullptr){
@@ -478,6 +502,7 @@ void Configuration::computeJacobians() {
     gsl_matrix_set_zero(CycleJacobian);
   }else{
     gsl_matrix_free(CycleJacobian);
+    delete JacobianSVD;
     CycleJacobian = gsl_matrix_calloc(row_num,col_num);
     JacobianSVD = SVD::createSVD(CycleJacobian);//new SVDMKL(CycleJacobian);
   }
@@ -496,18 +521,21 @@ void Configuration::computeJacobians() {
 
   // for each cycle, fill in the Jacobian entries
   int i=0;
+  int hbidx=0;
   for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanningTree->m_cycleAnchorEdges)
   {
     // get end-effectors
     KinEdge* edge_ptr = edge_vertex_pair.first;
     KinVertex* common_ancestor = edge_vertex_pair.second;
     Bond * bond_ptr = edge_ptr->getBond();
+//    int bondIndex = bond_ptr
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = bond_ptr->Atom1;
-    Atom* atom2 = bond_ptr->Atom2;
+    Atom* atom1 = bond_ptr->m_atom1;
+    Atom* atom2 = bond_ptr->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
+    log("debug")<<"Jacobian row "<<i<<", atom 1: "<<atom1->getId()<<", atom 2: "<<atom2->getId()<<endl;
 
     KinVertex* vertex1 = edge_ptr->StartVertex;
     KinVertex* vertex2 = edge_ptr->EndVertex;
@@ -526,7 +554,7 @@ void Configuration::computeJacobians() {
         if(a!=atom2 && a->getName()<atom1_prev->getName())
           atom1_prev = a;
     }
-    //Make sure a4 is the covalent neighbor of Atom2 with lexicographically smallest name
+    //Make sure a4 is the covalent neighbor of m_atom2 with lexicographically smallest name
     for(vector<Atom*>::iterator ait = atom2->Cov_neighbor_list.begin(); ait!=atom2->Cov_neighbor_list.end(); ait++){
         Atom* a = *ait;
         if(a!=atom1 && a->getName()<atom2_prev->getName())
@@ -554,20 +582,23 @@ void Configuration::computeJacobians() {
 
         Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
         Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
-        Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
 
         Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
-        double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
-        double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
-        gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
-        gsl_matrix_set(CycleJacobian,i*5+3,dof_id,jacobianEntryRot1);
-        gsl_matrix_set(CycleJacobian,i*5+4,dof_id,jacobianEntryRot2);
+        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
+        if(bond_ptr->isHBond()) {
+          Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
+          double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
+          double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
+          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
 
-        ///Matrix to check hBond Rotation
-        double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
-        gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
+          ///Matrix to check hBond Rotation
+          double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
+          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+        }
+
       }
       vertex1 = parent;
     }
@@ -583,7 +614,7 @@ void Configuration::computeJacobians() {
         //	cout<<"KinEdge "<<p_edge<<endl;
         /*
         Atom* ea1 = p_edge->getBond()->Atom1;
-        Atom* ea2 = p_edge->getBond()->Atom2;
+        Atom* ea2 = p_edge->getBond()->m_atom2;
 
         // Jacobian_entry is the derivative of the vertices of the hydrogen bond
         // Now, we also have to calculate the derivatives of the other neighboring atoms!
@@ -597,22 +628,29 @@ void Configuration::computeJacobians() {
         Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
 
         Math3D::Vector3 jacobianEntryTrans= -0.5*(derivativeP1 + derivativeP2);
-        double jacobianEntryRot1 = dot((p1 - p1_prev),(derivativeP2-derivativeP1));
-        double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
 //				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
-        gsl_matrix_set(CycleJacobian,i*5+0,dof_id,jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i*5+1,dof_id,jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i*5+2,dof_id,jacobianEntryTrans.z);
-        gsl_matrix_set(CycleJacobian,i*5+3,dof_id,jacobianEntryRot1);
-        gsl_matrix_set(CycleJacobian,i*5+4,dof_id,jacobianEntryRot2);
+        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
+        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
+        if(bond_ptr->isHBond()) {
+          double jacobianEntryRot1 = dot((p1 - p1_prev), (derivativeP2 - derivativeP1));
+          double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
+          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
 
-        ///Matrix to check hBond Rotation
-        double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
-        gsl_matrix_set(HBondJacobian,i,dof_id,hBondEntry);
+          ///Matrix to check hBond Rotation
+          double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
+          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+        }
       }
       vertex2 = parent;
     }
-    ++i;
+//    ++i;
+    if(bond_ptr->isHBond()){
+      i+=5;
+      hbidx++;
+    }
+    else if(bond_ptr->isDBond()) i+=3;
   }
 
 }
@@ -683,8 +721,8 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
   //Convert the cycle Jacobian to a full Jacobian
   //Columns correspond to cycle_dof_ids
   if(projectConstraints){
-//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanningTree->Edges.begin(); eit!=m_molecule->m_spanningTree->Edges.end(); ++eit) {
-    for (auto const& edge: m_molecule->m_spanningTree->Edges){
+//		for (vector<KinEdge*>::iterator eit=m_molecule->m_spanningTree->m_edges.begin(); eit!=m_molecule->m_spanningTree->m_edges.end(); ++eit) {
+    for (auto const& edge: m_molecule->m_spanningTree->m_edges){
       int dof_id = edge->getDOF()->getIndex();
       int cycle_dof_id = edge->getDOF()->getCycleIndex();
       if ( cycle_dof_id!=-1 ) {
@@ -708,7 +746,7 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 //		consCounter++;
     Atom* atom1 = mit->first.first;
     Atom* atom2 = mit->first.second;
-    log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
+    log("planner") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
@@ -729,12 +767,12 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 
-//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->Atom2->m_position,p1);
+//				Math3D::Vector3 derivativeP1 = ComputeJacobianEntry(p_edge->getBond()->Atom1->m_position,p_edge->getBond()->m_atom2->m_position,p1);
         Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
         double jacobianEntryClash = dot(clashNormal, derivativeP1);
 
         gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//				log("dominik")<<"Setting clash entry on left branch at "<<dof_id<<endl;
+//				log("planner")<<"Setting clash entry on left branch at "<<dof_id<<endl;
       }
 
       //Quick trick for plotting the clash cycles (don't use in real sampling)
@@ -755,13 +793,13 @@ void Configuration::computeClashAvoidingJacobian (std::map< std::pair<Atom*,Atom
 
 //				Math3D::Vector3 derivativeP2 = ComputeJacobianEntry(
 //            p_edge->getBond()->Atom1->m_position,
-//            p_edge->getBond()->Atom2->m_position,
+//            p_edge->getBond()->m_atom2->m_position,
 //            p2); //b
         Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
         double jacobianEntryClash = - dot(clashNormal, derivativeP2);
 
         gsl_matrix_set(ClashAvoidingJacobian,i,dof_id,jacobianEntryClash); //set: Matrix, row, column, what to set
-//				log("dominik")<<"Setting clash entry on right branch at "<<dof_id<<endl;
+//				log("planner")<<"Setting clash entry on right branch at "<<dof_id<<endl;
       }
 
 //			//Quick trick for plotting the clash cycles (don't use in real sampling)
@@ -782,7 +820,7 @@ void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector
 
   Molecule* M = getMolecule();
 
-  for (auto const& edge: M->m_spanningTree->Edges){
+  for (auto const& edge: M->m_spanningTree->m_edges){
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -792,6 +830,25 @@ void Configuration::convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector
 
 }
 
+void Configuration::convertCycleDofsToAllDofs( gsl_vector *allDofsAfter, gsl_vector *cycleDofs, gsl_vector *allDofsBefore){
+
+  Molecule* M = getMolecule();
+
+  // Convert back to full length DOFs vector
+  for( auto const& edge: M->m_spanningTree->m_edges){
+    int dof_id = edge->getDOF()->getIndex();
+    int cycle_dof_id = edge->getDOF()->getCycleIndex();
+    if ( cycle_dof_id!=-1 ) {
+      gsl_vector_set(allDofsAfter,dof_id,gsl_vector_get(cycleDofs,cycle_dof_id));
+    }
+    else if ( dof_id!=-1 ) {
+      if (allDofsBefore == nullptr)
+        gsl_vector_set(allDofsAfter,dof_id,0);
+      else
+        gsl_vector_set(allDofsAfter,dof_id,gsl_vector_get(allDofsBefore,dof_id));
+    }
+  }
+}
 
 void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project) {
   Nullspace* N = getNullspace();
@@ -821,16 +878,8 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
       gsl_vector_scale(after_proj_short, normBefore/normAfter);
 
     // Convert back to full length DOFs vector
-    for( auto const& edge: M->m_spanningTree->Edges){
-      int dof_id = edge->getDOF()->getIndex();
-      int cycle_dof_id = edge->getDOF()->getCycleIndex();
-      if ( cycle_dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(after_proj_short,cycle_dof_id));
-      }
-      else if ( dof_id!=-1 ) {
-        gsl_vector_set(after_project,dof_id,gsl_vector_get(to_project,dof_id));
-      }
-    }
+    convertCycleDofsToAllDofs(after_project,after_proj_short,to_project);
+
     gsl_vector_free(to_proj_short);
     gsl_vector_free(after_proj_short);
   }

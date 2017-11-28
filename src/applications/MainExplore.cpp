@@ -1,3 +1,32 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+
 
 #include <string>
 #include <iostream>
@@ -25,6 +54,7 @@
 #include <planners/PoissonPlanner2.h>
 #include <applications/options/ExploreOptions.h>
 #include <math/NullspaceSVD.h>
+#include <planners/MCMCPlanner.h>
 
 using namespace std;
 
@@ -38,36 +68,42 @@ void randomSampling(ExploreOptions& options) {
   Selection movingResidues(options.residueNetwork);
   Molecule *protein = IO::readPdb(
       options.initialStructureFile,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
-  protein->setCollisionFactor(options.collisionFactor);
+  protein->initializeTree(movingResidues,options.collisionFactor,options.roots);
+//  protein->setCollisionFactor(options.collisionFactor);
 
   if (options.collapseRigid > 0) {
+    log("samplingStatus") << "Before collapsing edges:" << endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
+    log("samplingStatus") << "> " << protein->m_spanningTree->m_vertices.size()  <<  " rigid bodies"  <<  endl;
     protein = protein->collapseRigidBonds(options.collapseRigid);
   }
 //  if(!options.annotationFile.empty())
 //    IO::readAnnotations(protein, options.annotationFile);
 
   for(auto const& coll: protein->getAllCollisions()){
-    log("dominik")<<"Ini coll: "<<coll.first->getId()<<" "<<coll.first->getName()<<" "<<coll.second->getId()<<coll.second->getName()<<endl;
+    log("planner") << "Ini coll: " << coll.first->getId() << " " << coll.first->getName() << " " << coll.second->getId() << coll.second->getName() << endl;
   }
 
-  log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
-  log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" constraints"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs" << endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->Vertex_map.size() << " rigid bodies" << endl;
+  log("samplingStatus") << "Molecule has:" << endl;
+  log("samplingStatus") << "> " << protein->getAtoms().size()  <<  " atoms"  <<  endl;
+  log("samplingStatus") << "> " << protein->getInitialCollisions().size() << " initial collisions" << endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->m_cycleAnchorEdges.size() << " constraints" << endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs()  <<  " DOFs of which "  <<  protein->m_spanningTree->getNumCycleDOFs()  <<  " are cycle-DOFs"  <<  endl;
+  log("samplingStatus") << "> " << protein->m_spanningTree->m_vertices.size()  <<  " rigid bodies"  <<  endl;
 
   if(protein->m_spanningTree->m_cycleAnchorEdges.size()==0){
     log("samplingStatus")<<"Warning: There are no constraints"<<endl;
 //    log("samplingStatus")<<"Stopping because there are no hydrogen bonds"<<endl;
 //    exit(-1);
   }
+  //Compute energy
+  protein->m_conf->m_vdwEnergy = protein->vdwEnergy(options.collisionCheck);
+  log("samplingStatus")<<"> "<<protein->m_conf->m_vdwEnergy<<" kcal/mole energy"<<endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
@@ -146,7 +182,9 @@ void randomSampling(ExploreOptions& options) {
         protein,
         direction,
         options.samplesToGenerate,
-        options.explorationRadius
+        options.explorationRadius,
+        options.maxRotation,
+        options.sampleRandom
     );
   }else if(options.planner_string=="poisson"){
     log("samplingStatus")<<"Using Poisson-disk planner"<<endl;
@@ -155,7 +193,16 @@ void randomSampling(ExploreOptions& options) {
         options.samplesToGenerate,
         options.poissonMaxRejectsBeforeClose,
         options.stepSize,
-        options.gradientSelection
+        options.gradientSelection,
+        options.enableBVH
+    );
+  }else if(options.planner_string=="mcmc"){
+    log("samplingStatus")<<"Using MCMC planner"<<endl;
+    planner = new MCMCPlanner(
+        protein,
+        direction,
+        options.samplesToGenerate,
+        options.stepSize
     );
   }else{
     cerr<<"Unknown planner option specified!"<<endl;

@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include <fstream>
 #include <iostream>
 #include <math.h>
@@ -134,7 +136,7 @@ vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerI
 				for (vector<Atom*>::const_iterator atom_itr=map_itr->second->begin(); atom_itr!=map_itr->second->end(); ++atom_itr)
 //					if ( (*atom_itr) != atom && (*atom_itr)->isWithinDistanceFrom( atom, radius ) ) {
           if ( (*atom_itr) != atom && (*atom_itr)->m_position.distanceSquared(atom->m_position)<=radius*radius ) {
-					//	if (neighborWithLargerId && (*atom_itr)->Id<atom->Id)
+					//	if (neighborWithLargerId && (*atom_itr)->m_id<atom->m_id)
 					//		continue;
 						if (noCovBondNeighbor && atom->isCovNeighbor(*atom_itr))
 							continue;
@@ -157,7 +159,7 @@ vector<Atom*> Grid::getNeighboringAtomsVDW (Atom* atom, bool neighborWithLargerI
 bool Grid::inCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_collision_list, std::string collisionCheckAtoms, bool onlyCheckLargerIds) const {
 
 	vector<Atom*> neighbors = getNeighboringAtoms(atom,onlyCheckLargerIds);
-	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->Id;
+	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->m_id;
 	//cout << "   with " << neighbors.size() << " neighbors." << endl;
 	for (vector<Atom*>::const_iterator it=neighbors.begin(); it!=neighbors.end(); ++it) {
 		if ( atom->isCovNeighbor(*it) || atom->isSecondCovNeighbor(*it) || atom->isHbondNeighbor(*it) || !(atom->isCollisionCheckAtom(collisionCheckAtoms))) {
@@ -186,7 +188,7 @@ bool Grid::inCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_coll
  */
 double Grid::minFactorWithoutCollision (Atom* atom, set< pair<Atom*,Atom*> > const &initial_collision_list, std::string collisionCheckAtoms,bool onlyCheckLargerIds) const {
 	vector<Atom*> neighbors = getNeighboringAtoms(atom,onlyCheckLargerIds);
-	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->Id;
+	//cout << "\t ------------------- Checking collisions for atom ... " << atom->getResidue()->getId() << " " <<  atom->getName() << " " <<  atom->m_id;
 	//cout << "   with " << neighbors.size() << " neighbors." << endl;
 	double minFactorWithoutCollision = 999;
 	for (vector<Atom*>::const_iterator it=neighbors.begin(); it!=neighbors.end(); ++it) {
@@ -238,8 +240,8 @@ vector<Atom*> Grid::getAllCollisions (
       auto mit = initial_collision_list.find(collision_pair);
 			if ( mit!=initial_collision_list.end() ) continue;
 
-			//cout << "Collision: atom1: " << atom->getResidue()->getId() << " " << atom->Name << " " << atom->Id << 
-			//	      " \t atom2: " << (*it)->getResidue()->getId() << " " << (*it)->Name << " " << (*it)->Id << " , dist=" << dist << " , threshold=" << threshold << endl;
+			//cout << "Collision: atom1: " << atom->getResidue()->getId() << " " << atom->m_name << " " << atom->m_id <<
+			//	      " \t atom2: " << (*it)->getResidue()->getId() << " " << (*it)->m_name << " " << (*it)->m_id << " , dist=" << dist << " , threshold=" << threshold << endl;
 			collisions.push_back(*it);
 		}
 	}

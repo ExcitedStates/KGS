@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include "LSNrelativeDirection.h"
 
 #include <cassert>
@@ -53,14 +55,14 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
 {
   Molecule* protein = conf->getMolecule();
 
-  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
+//  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
   //current_q->ComputeCycleJacobianAndNullSpace();
   gsl_matrix* N = conf->getNullspace()->getBasis();
   int dof=protein->totalDofNum();
   gsl_matrix* fullN = gsl_matrix_calloc(dof,N->size2+dof-N->size1);
   gsl_matrix_set_zero(fullN);
   int fulldof=0;
-  for (auto const& edge: protein->m_spanningTree->Edges) {
+  for (auto const& edge: protein->m_spanningTree->m_edges) {
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -131,7 +133,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
     gsl_vector_set(u,1,atom1->m_position.y - atom2->m_position.y);
     gsl_vector_set(u,2,atom1->m_position.z - atom2->m_position.z);
     double d = gsl_vector_length(u);
-    cout<<"Distance: "<<d<<" "<<dist_goal<<endl;
+    //cout<<"Distance: "<<d<<" "<<dist_goal<<endl;
     gsl_matrix_set(targetPosition,2*i*3+0,0, (gsl_vector_get(u,0)/d)*(dist_goal-d)/2);
     //cout<<"Direction : "<<(gsl_vector_get(u,0)/d)*(goal_distances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+1,0, (gsl_vector_get(u,1)/d)*(dist_goal-d)/2);
@@ -155,7 +157,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 //        Atom* ea1 = p_edge->getBond()->Atom1;
-//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Atom* ea2 = p_edge->getBond()->m_atom2;
 //        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(atom1->m_position);
 
@@ -172,7 +174,7 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 //        Atom* ea1 = p_edge->getBond()->Atom1;
-//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Atom* ea2 = p_edge->getBond()->m_atom2;
 //        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(atom2->m_position);
 
@@ -208,11 +210,10 @@ gsl_matrix* LSNrelativeDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
   gsl_matrix *Tbis = gsl_matrix_mul(Ut, TargetDirection);
   gsl_matrix_free(Ut);
   //cout<<V->size1<<" "<<U->size1<<endl;
-  gsl_matrix *moveb = gsl_matrix_calloc(V->size1,
-                                        1); //TODO: Was S->size2. Make sure its correct. Amelie S->size2 is V->size1 now I guess
+  gsl_matrix *moveb = gsl_matrix_calloc(V->size1, 1);
   gsl_matrix_set_zero(moveb);
-  for (int i = 0; i < V->size1; i++) { //TODO: Same here Amelie S->size2 is V->size1 now I guess
-    if (i < U->size1) { //TODO: Same here Amelie S->size1 is U->size1 now I guess
+  for (int i = 0; i < V->size1; i++) {
+    if (i < U->size1) {
       if (gsl_vector_get(S, i) * gsl_vector_get(S, i) > 0.0000000000001) {
         //cout<<gsl_vector_get(S, i)<<endl;
         gsl_matrix_set(moveb, i, 0, gsl_matrix_get(Tbis, i, 0) / gsl_vector_get(S, i));

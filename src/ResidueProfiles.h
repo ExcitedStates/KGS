@@ -1,3 +1,30 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
 //This is a port of the bond-information in the residue profile file 
 //fflevitt.rtp used in the original KGS. The following disclaimer was in 
 //the head of fflevitt.rtp:
@@ -85,8 +112,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ALA","C","OT"},
     {"ALA","C","OT1"},
     {"ALA","C","OT2"},
+    {"ALA","C","OXT"},
     {"ALA","C","O1"},
     {"ALA","C","O2"},
+    {"ALA","C","HXT"},
     {"ALA","-C","N"},
     {"GLY","N","H"},
     {"GLY","N","HN"},
@@ -108,6 +137,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLY","C","OXT"},
     {"GLY","C","O1"},
     {"GLY","C","O2"},
+    {"GLY","C","HXT"},
     {"GLY","-C","N"},
     {"SER","N","H"},
     {"SER","N","HN"},
@@ -134,6 +164,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"SER","C","OXT"},
     {"SER","C","O1"},
     {"SER","C","O2"},
+    {"SER","C","HXT"},
     {"SER","-C","N"},
     {"THR","N","HT1"},
     {"THR","N","HT2"},
@@ -161,6 +192,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"THR","C","O1"},
     {"THR","C","O2"},
     {"THR","C","OXT"}, //added for 1ldl
+    {"THR","C","HXT"},
     {"THR","-C","N"},
     {"LEU","N","H"},
     {"LEU","N","HN"},
@@ -194,6 +226,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"LEU","C","OXT"}, //added for 8atc
     {"LEU","C","O1"},
     {"LEU","C","O2"},
+    {"LEU","C","HXT"},
     {"LEU","-C","N"},
     {"ILE","N","H"},
     {"ILE","N","HN"},
@@ -228,8 +261,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ILE","C","OT"},
     {"ILE","C","OT1"},
     {"ILE","C","OT2"},
+    {"ILE","C","OXT"},
     {"ILE","C","O1"},
     {"ILE","C","O2"},
+    {"ILE","C","HXT"},
     {"ILE","-C","N"},
     {"VAL","N","H"},
     {"VAL","N","HN"},
@@ -259,6 +294,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"VAL","C","OXT"},
     {"VAL","C","O1"},
     {"VAL","C","O2"},
+    {"VAL","C","HXT"},
     {"VAL","-C","N"},
     {"ASN","N","H"},
     {"ASN","N","HN"},
@@ -280,6 +316,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASN","CG","ND2"},
     {"ASN","ND2","HD21"},
     {"ASN","ND2","HD22"},
+    {"ASN","ND2","HD2"},
     {"ASN","C","O"},
     {"ASN","C","OT"},
     {"ASN","C","OT1"},
@@ -287,6 +324,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASN","C","OXT"}, //added for 8atc
     {"ASN","C","O1"},
     {"ASN","C","O2"},
+    {"ASN","C","HXT"},
     {"ASN","-C","N"},
     {"GLN","N","H"},
     {"GLN","N","HN"},
@@ -319,6 +357,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLN","C","OXT"},
     {"GLN","C","O1"},
     {"GLN","C","O2"},
+    {"GLN","C","HXT"},
     {"GLN","-C","N"},
     {"ARG","N","H"},
     {"ARG","N","HN"},
@@ -359,6 +398,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ARG","C","OXT"}, //added for 2hhb
     {"ARG","C","O1"},
     {"ARG","C","O2"},
+    {"ARG","C","HXT"},
     {"ARG","-C","N"},
     {"HIS","N","H"},
     {"HIS","N","HN"},
@@ -392,6 +432,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HIS","C","OXT"},
     {"HIS","C","O1"},
     {"HIS","C","O2"},
+    {"HIS","C","HXT"},
     {"HIS","-C","N"},
     {"HIE","N","H"},
     {"HIE","N","HN"},
@@ -420,8 +461,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HIE","C","OT"},
     {"HIE","C","OT1"},
     {"HIE","C","OT2"},
+    {"HIE","C","OXT"},
     {"HIE","C","O1"},
     {"HIE","C","O2"},
+    {"HIE","C","HXT"},
     {"HIE","-C","N"},
     {"HIP","N","H"},
     {"HIP","N","HN"},
@@ -451,8 +494,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HIP","C","OT"},
     {"HIP","C","OT1"},
     {"HIP","C","OT2"},
+    {"HIP","C","OXT"},
     {"HIP","C","O1"},
     {"HIP","C","O2"},
+    {"HIP","C","HXT"},
     {"HIP","-C","N"},
     {"HSD","N","H"},
     {"HSD","N","HN"},
@@ -481,8 +526,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HSD","C","OT"},
     {"HSD","C","OT1"},
     {"HSD","C","OT2"},
+    {"HSD","C","OXT"},
     {"HSD","C","O1"},
     {"HSD","C","O2"},
+    {"HSD","C","HXT"},
     {"HSD","-C","N"},
     {"HSE","N","H"},
     {"HSE","N","HN"},
@@ -512,8 +559,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HSE","C","OT"},
     {"HSE","C","OT1"},
     {"HSE","C","OT2"},
+    {"HSE","C","OXT"},
     {"HSE","C","O1"},
     {"HSE","C","O2"},
+    {"HSE","C","HXT"},
     {"HSE","-C","N"},
     {"HSP","N","H"},
     {"HSP","N","HN"},
@@ -542,8 +591,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"HSP","C","OT"},
     {"HSP","C","OT1"},
     {"HSP","C","OT2"},
+    {"HSP","C","OXT"},
     {"HSP","C","O1"},
     {"HSP","C","O2"},
+    {"HSP","C","HXT"},
     {"HSP","-C","N"},
     {"TRP","N","H"},
     {"TRP","N","HN"},
@@ -581,8 +632,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"TRP","C","OT"},
     {"TRP","C","OT1"},
     {"TRP","C","OT2"},
+    {"TRP","C","OXT"},
     {"TRP","C","O1"},
     {"TRP","C","O2"},
+    {"TRP","C","HXT"},
     {"TRP","-C","N"},
     {"PHE","N","H"},
     {"PHE","N","HN"},
@@ -598,7 +651,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"PHE","CA","C"},
     {"PHE","CB","HB1"},
     {"PHE","CB","HB2"},
-    {"PHE","CB","HB3"}, //added for 3msw
+    {"PHE","CB","HB3"},
     {"PHE","CB","CG"},
     {"PHE","CG","CD1"},
     {"PHE","CG","CD2"},
@@ -615,9 +668,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"PHE","C","OT"},
     {"PHE","C","OT1"},
     {"PHE","C","OT2"},
-    {"PHE","C","OXT"}, //added for 1hhp
+    {"PHE","C","OXT"},
     {"PHE","C","O1"},
     {"PHE","C","O2"},
+    {"PHE","C","HXT"},
     {"PHE","-C","N"},
     {"TYR","N","H"},
     {"TYR","N","HN"},
@@ -654,6 +708,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"TYR","C","OXT"},
     {"TYR","C","O1"},
     {"TYR","C","O2"},
+    {"TYR","C","HXT"},
     {"TYR","-C","N"},
     {"GLU","N","H"},
     {"GLU","N","HN"},
@@ -669,11 +724,11 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLU","CA","C"},
     {"GLU","CB","HB1"},
     {"GLU","CB","HB2"},
-    {"GLU","CB","HB3"}, //added for 3msw
+    {"GLU","CB","HB3"},
     {"GLU","CB","CG"},
     {"GLU","CG","HG1"},
     {"GLU","CG","HG2"},
-    {"GLU","CG","HG3"}, //added for 3msw
+    {"GLU","CG","HG3"},
     {"GLU","CG","CD"},
     {"GLU","CD","OE1"},
     {"GLU","CD","OE2"},
@@ -683,9 +738,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLU","C","OT"},
     {"GLU","C","OT1"},
     {"GLU","C","OT2"},
-    {"GLU","C","OXT"}, //added for 1igd
+    {"GLU","C","OXT"},
     {"GLU","C","O1"},
     {"GLU","C","O2"},
+    {"GLU","C","HXT"},
     {"GLU","-C","N"},
     {"ASP","N","H"},
     {"ASP","N","HN"},
@@ -701,7 +757,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASP","CA","C"},
     {"ASP","CB","HB1"},
     {"ASP","CB","HB2"},
-    {"ASP","CB","HB3"}, //added for 3msw
+    {"ASP","CB","HB3"},
     {"ASP","CB","CG"},
     {"ASP","CG","OD1"},
     {"ASP","CG","OD2"},
@@ -711,9 +767,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASP","C","OT"},
     {"ASP","C","OT1"},
     {"ASP","C","OT2"},
-    {"ASP","C","OXT"}, //added for 2lao
+    {"ASP","C","OXT"},
     {"ASP","C","O1"},
     {"ASP","C","O2"},
+    {"ASP","C","HXT"},
     {"ASP","-C","N"},
     {"LYS","N","H"},
     {"LYS","N","HN"},
@@ -729,19 +786,19 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"LYS","CA","C"},
     {"LYS","CB","HB1"},
     {"LYS","CB","HB2"},
-    {"LYS","CB","HB3"}, //added for 3msw
+    {"LYS","CB","HB3"},
     {"LYS","CB","CG"},
     {"LYS","CG","HG1"},
     {"LYS","CG","HG2"},
-    {"LYS","CG","HG3"}, //added for 3msw
+    {"LYS","CG","HG3"},
     {"LYS","CG","CD"},
     {"LYS","CD","HD1"},
     {"LYS","CD","HD2"},
-    {"LYS","CD","HD3"}, //added for 3msw
+    {"LYS","CD","HD3"},
     {"LYS","CD","CE"},
     {"LYS","CE","HE1"},
     {"LYS","CE","HE2"},
-    {"LYS","CE","HE3"}, //added for 3msw
+    {"LYS","CE","HE3"},
     {"LYS","CE","NZ"},
     {"LYS","NZ","HZ1"},
     {"LYS","NZ","HZ2"},
@@ -753,6 +810,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"LYS","C","OXT"},
     {"LYS","C","O1"},
     {"LYS","C","O2"},
+    {"LYS","C","HXT"},
     {"LYS","-C","N"},
     {"ORN","N","H"},
     {"ORN","N","HN"},
@@ -782,8 +840,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ORN","C","OT"},
     {"ORN","C","OT1"},
     {"ORN","C","OT2"},
+    {"ORN","C","OXT"},
     {"ORN","C","O1"},
     {"ORN","C","O2"},
+    {"ORN","C","HXT"},
     {"ORN","-C","N"},
     {"DAB","N","H"},
     {"DAB","N","HN"},
@@ -810,8 +870,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"DAB","C","OT"},
     {"DAB","C","OT1"},
     {"DAB","C","OT2"},
+    {"DAB","C","OXT"},
     {"DAB","C","O1"},
     {"DAB","C","O2"},
+    {"DAB","C","HXT"},
     {"DAB","-C","N"},
     {"LYN","N","H"},
     {"LYN","N","HN"},
@@ -843,24 +905,26 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"LYN","C","OT"},
     {"LYN","C","OT1"},
     {"LYN","C","OT2"},
+    {"LYN","C","OXT"},
     {"LYN","C","O1"},
     {"LYN","C","O2"},
+    {"LYN","C","HXT"},
     {"LYN","-C","N"},
     {"PRO","N","CD"},
     {"PRO","N","CA"},
-    {"PRO","N","H2"}, //added for 1hhp
-    {"PRO","N","H3"}, //added for 1hhp
+    {"PRO","N","H2"},
+    {"PRO","N","H3"},
     {"PRO","CD","HD1"},
     {"PRO","CD","HD2"},
-    {"PRO","CD","HD3"}, //added for 3msw
+    {"PRO","CD","HD3"},
     {"PRO","CD","CG"},
     {"PRO","CG","HG1"},
     {"PRO","CG","HG2"},
-    {"PRO","CG","HG3"}, //added for 3msw
+    {"PRO","CG","HG3"},
     {"PRO","CG","CB"},
     {"PRO","CB","HB1"},
     {"PRO","CB","HB2"},
-    {"PRO","CB","HB3"}, //added for 3msw
+    {"PRO","CB","HB3"},
     {"PRO","CB","CA"},
     {"PRO","CA","HA1"},
     {"PRO","CA","HA"},
@@ -872,6 +936,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"PRO","C","OXT"},
     {"PRO","C","O1"},
     {"PRO","C","O2"},
+    {"PRO","C","HXT"},
     {"PRO","-C","N"},
     {"CYS","N","H"},
     {"CYS","N","HN"},
@@ -887,7 +952,7 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CYS","CA","C"},
     {"CYS","CB","HB1"},
     {"CYS","CB","HB2"},
-    {"CYS","CB","HB3"}, //added for 3msw
+    {"CYS","CB","HB3"},
     {"CYS","CB","SG"},
     {"CYS","SG","HG"},
     {"CYS","SG","HG1"},
@@ -895,9 +960,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CYS","C","OT"},
     {"CYS","C","OT1"},
     {"CYS","C","OT2"},
+    {"CYS","C","OXT"},
     {"CYS","C","O1"},
     {"CYS","C","O2"},
-    {"CYS","C","OXT"}, //added for 1pdc
+    {"CYS","C","HXT"},
     {"CYS","-C","N"},
     {"CYX","N","H"},
     {"CYX","N","HN"},
@@ -918,8 +984,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CYX","C","OT"},
     {"CYX","C","OT1"},
     {"CYX","C","OT2"},
+    {"CYX","C","OXT"},
     {"CYX","C","O1"},
     {"CYX","C","O2"},
+    {"CYX","C","HXT"},
     {"CYX","-C","N"},
     {"CYS2","N","H"},
     {"CYS2","N","NH"},
@@ -940,8 +1008,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CYS2","C","TO"},
     {"CYS2","C","T1O"},
     {"CYS2","C","T2O"},
+    {"CYS2","C","OXT"},
     {"CYS2","C","1O"},
     {"CYS2","C","2O"},
+    {"CYS2","C","HXT"},
     {"CYS2","-C","N"},
     {"MET","N","H"},
     {"MET","N","HN"},
@@ -973,8 +1043,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"MET","C","OT"},
     {"MET","C","OT1"},
     {"MET","C","OT2"},
+    {"MET","C","OXT"},
     {"MET","C","O1"},
     {"MET","C","O2"},
+    {"MET","C","HXT"},
     {"MET","-C","N"},
     {"ASH","N","H"},
     {"ASH","N","HN"},
@@ -998,8 +1070,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"ASH","C","OT"},
     {"ASH","C","OT1"},
     {"ASH","C","OT2"},
+    {"ASH","C","OXT"},
     {"ASH","C","O1"},
     {"ASH","C","O2"},
+    {"ASH","C","HXT"},
     {"ASH","-C","N"},
     {"GLH","N","H"},
     {"GLH","N","HN"},
@@ -1026,8 +1100,10 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"GLH","C","OT"},
     {"GLH","C","OT1"},
     {"GLH","C","OT2"},
+    {"GLH","C","OXT"},
     {"GLH","C","O1"},
     {"GLH","C","O2"},
+    {"GLH","C","HXT"},
     {"GLH","-C","N"},
     {"G","P","-O3'"},
     {"G","P","OP1"},
@@ -1339,6 +1415,12 @@ const char* const COV_BOND_PROFILES [][3] = {
     {"CSO","OD","HD"},
     {"CSO","C","O"},
     {"CSO","-C","N"},
+
+    //Extension to waters
+    {"HOH","O","H"},
+    {"HOH","O","H1"},
+    {"HOH","O","H2"},
+    
     {"END", "",""}//Must always be LAST
 };
 

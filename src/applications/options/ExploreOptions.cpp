@@ -1,4 +1,33 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
 #include "ExploreOptions.h"
+
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -14,11 +43,14 @@
 
 using namespace std;
 
-ExploreOptions::ExploreOptions(){
+ExploreOptions::ExploreOptions():
+    ApplicationOptions()
+{
   initializeVariables();
 }
 
-ExploreOptions::ExploreOptions(int argc, char* argv[])
+ExploreOptions::ExploreOptions(int argc, char* argv[]):
+    ApplicationOptions(argc, argv)
 {
   initializeVariables();
 
@@ -70,9 +102,11 @@ ExploreOptions::ExploreOptions(int argc, char* argv[])
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--projectConstraints"){            projectConstraints = Util::stob(argv[++i]);         continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
-    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                   continue; }
+    if(arg=="--enableBVH"){                     enableBVH = Util::stob(argv[++i]);                  continue; }
 //    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
+    if(arg=="--logger"){                        ++i;                                                continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -133,33 +167,34 @@ ExploreOptions::ExploreOptions(int argc, char* argv[])
 //    }
 //  }
 
-  //Check initial structure
+  // Check initial structure
   if(initialStructureFile.empty()) {
     enableLogger("so");
-    cerr<<"Initial structure file must be supplied"<<endl<<endl;
+    cerr << "Initial structure file must be supplied" << endl << endl;
     exit(-1);
   }
 
-  //Check for valid metric
+  // Check for valid metric
   std::transform(metric_string.begin(), metric_string.end(), metric_string.begin(), ::tolower);
-  if(metric_string!="dihedral" && metric_string!="rmsd" && metric_string!="rmsdnosuper"){
-    cerr<<"Invalid --metric option: "<<metric_string<<". Must be either 'dihedral', 'RMSD', or 'RMSDnosuper."<<endl;
+  if (metric_string != "dihedral" && metric_string != "rmsd" && metric_string != "rmsdnosuper") {
+    cerr << "Invalid --metric option: " << metric_string << ". Must be either 'dihedral', 'RMSD', or 'RMSDnosuper." << endl;
     exit(-1);
   }
 
-  //Check for valid planner
+  // Check for valid planner
   std::transform(planner_string.begin(), planner_string.end(), planner_string.begin(), ::tolower);
-  if( planner_string!="dihedralrrt" &&
-      planner_string!="binnedrrt" &&
-      planner_string!="dccrrt" &&
-      planner_string!="poisson2" &&
-      planner_string!="poisson"){
-    cerr<<"Invalid --planner option: "<<planner_string<<endl;
+  if (planner_string != "dihedralrrt" &&
+      planner_string != "binnedrrt" &&
+      planner_string != "dccrrt" &&
+      planner_string != "mcmc" &&
+      planner_string != "poisson2" &&
+      planner_string != "poisson") {
+    cerr << "Invalid --planner option: " << planner_string << endl;
     exit(-1);
   }
 
   //Ensure that decreaseSteps>0 if preventClashes set
-  if(preventClashes && decreaseSteps==0)
+  if (preventClashes && decreaseSteps==0)
     decreaseSteps=5;
 
   //Set workingDirectory and moleculeName using the initialStructureFile.
@@ -239,11 +274,9 @@ void ExploreOptions::initializeVariables(){
   roots                     = {1}; //Choose the first atom
   projectConstraints        = true;
   collisionCheck            = "all";
-//  frontSize                 = 50;
-//  switchAfter               = 20000;
   svdCutoff                 = 1.0e-12;
   collapseRigid             = false;
-//  relativeDistances         = "";
+  enableBVH                 = true;
 }
 
 void ExploreOptions::print(){
@@ -287,6 +320,7 @@ void ExploreOptions::print(){
   log("so")<<"\t--preventClashes "<<preventClashes<<endl;
   log("so")<<"\t--alignSelection "<<alignSelection<<endl;
   log("so")<<"\t--gradientSelection "<<gradientSelection<<endl;
+  log("so")<<"\t--residueNetwork "<<residueNetwork<<endl;
   log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"\t--projectConstraints "<<projectConstraints<<endl;
   log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
@@ -301,102 +335,59 @@ void ExploreOptions::printUsage(char* pname){
   log("so")<<"Performs random conformational exploration around the initial file"<<endl;
   log("so")<<endl;
   log("so")<<"Options:"<<endl;
-
-  log("so")<<"\t--initial <pdb-file> \t: Specifies the initial structure."<<endl;
-
-  log("so")<<"\t--annotation <file-path> \t: Annotations can specify secondary structures or other things ";
-  log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
-
+  log("so")<<"  --initial <pdb-file> \t: Initial structure."<<endl;
+  //log("so")<<"  --annotation <file-path> \t: Annotations can specify secondary structures or other things ";
+  //log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
 //  log("so")<<"\t--hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
 //  log("so")<<"how to generate a hbondFile are printed."<<endl;
-
 //  log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
 //  log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
-  log("so")<<"\t--extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
-
-  log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
-
+  log("so")<<"  --extraCovBonds <atomid1>-<atomid2>[,...] \t: m_bonds over which forward kinematics can be propagated. Can override an h-bond."<<endl;
+  log("so")<<"  --workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
   //log("so")<<"\t--rigidbodiesFromFIRST    \t: Indicates that FIRST should be used to identify rigid bodies. If not specified ";
   //log("so")<<"rigid bodies are identified using builtin definitions of partial double-bonds (works for RNA/DNA/proteins)"<<endl;
-
-  log("so")<<"\t--samples, -s <whole number> \t: Indicates the number of samples to generate. Default is 10."<<endl;
-
-  log("so")<<"\t--radius, -r <real number> \t: The exploration radius around the center structure. The default is 2Å."<<endl;
-
-  log("so")<<"\t--sampleRandom  true/false>\t: if true, seed configurations are chosen at random. Default true."<<endl;
-
-  log("so")<<"\t--scaleToRadius true/false>\t: if true, the random target configuration is scaled to inside the exploration radius. Default false."<<endl;
-
-  log("so")<<"\t--gradient, -s <0|1|2|3|4> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending. Default is 0."<<endl;
-
-  log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
+  log("so")<<"  --samples, -s <whole number> \t: Number of samples to generate. Default is 10."<<endl;
+  log("so")<<"  --radius, -r <real number> \t: Exploration radius around the center structure. The default is 2Å."<<endl;
+  log("so")<<"  --sampleRandom <true/false>\t: if true, seed configurations are chosen at random. Default true."<<endl;
+  log("so")<<"  --scaleToRadius <true/false>\t: if true, the random target configuration is scaled to inside the exploration radius. Default false."<<endl;
+  log("so")<<"  --gradient <0|1|2|3|4> \t: Indicates method to calculate a new perturbation or gradient. 0 = random; 1 = torsion, no blending; 2 = torsion, low pass blending; 3 = msd, no blending; 4 = msd, low pass blending. Default is 0."<<endl;
+  log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
   log("so")<<"checking for collisions. The default is 0.75."<<endl;
-
-  //log("so")<<"\t--decreaseSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
+  //log("so")<<"  --decreaseSteps <whole number> \t: If a non-colliding structure can not be found, try this many times to ";
   //log("so")<<"decrease the stepsize. Default is 1."<<endl;
-
-  //log("so")<<"\t--decreaseFactor <real number> \t: If a non-colliding structure can not be found, decrease the stepsize ";
+  //log("so")<<"  --decreaseFactor <real number> \t: If a non-colliding structure can not be found, decrease the stepsize ";
   //log("so")<<"by this factor. Default is 0.5."<<endl;
+  log("so")<<"  --stepSize <real number> \t: Initial step size to next sample as the norm of dihedral perturbation. Default 1."<<endl;
+  log("so")<<"  --maxRotation <real number> \t: The largest allowable change in torsion angle. The default is 10°."<<endl;
+  log("so")<<"  --rejectsBeforeClose <integer> \t: For poisson sampling: Number of perturbations attempted before closing. The default is 10°."<<endl;
+  log("so")<<"  --metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
+  log("so")<<"  --metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
+  log("so")<<"  --planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
 
-  log("so")<<"\t--stepSize <real number> \t: Initial step size to next sample as the norm of dihedral perturbation. Default 1."<<endl;
-
-  log("so")<<"\t--maxRotation <real number> \t: The largest allowable change in torsion angle. The default is 10°."<<endl;
-
-  log("so")<<"\t--rejectsBeforeClose <integer> \t: For poisson sampling: Number of perturbations attempted before closing. The default is 10°."<<endl;
-
-  log("so")<<"\t--metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
-
-  log("so")<<"\t--metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
-
-  log("so")<<"\t--planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
-
-//  log("so")<<"\t--rebuildLength <whole number>\t: The length of fragments that are rebuilt. Standard is 0."<<endl;
-//
-//  log("so")<<"\t--rebuildFrequency <real number> \t: The frequency that rebuild perturbations will occur. The default is 0."<<endl;
-//
-//  log("so")<<"\t--rebuildInitial <whole number>\t: The number of structures added to the initial pool by rebuilding free loops. The default is 0."<<endl;
-//
-//  log("so")<<"\t--rebuildAggression <0|1|2>\t: The aggression level of rebuilding. 0: Only sugars are resampled, backbone used for reclosing. ";
-//
+//  log("so")<<"  --rebuildLength <whole number>\t: The length of fragments that are rebuilt. Standard is 0."<<endl;
+//  log("so")<<"  --rebuildFrequency <real number> \t: The frequency that rebuild perturbations will occur. The default is 0."<<endl;
+//  log("so")<<"  --rebuildInitial <whole number>\t: The number of structures added to the initial pool by rebuilding free loops. The default is 0."<<endl;
+//  log("so")<<"  --rebuildAggression <0|1|2>\t: The aggression level of rebuilding. 0: Only sugars are resampled, backbone used for reclosing. ";
 //  log("so")<<"1: Sugars and side-chains are resampled, backbone used for reclosing. 2: Everything resampled, backbone used for reclosing."<<endl;
-
-//  log("so")<<"\t--flexibleRibose <0|1>\t: Indicate if ribose rings should be flexible (Standard: 1)"<<endl;
-
-  log("so")<<"\t--seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
-
-//  log("so")<<"\t--biasToTarget, -bias <real number> \t: Percentage of using target as 'random seed configuration'. Default 0.1."<<endl;
-//
-//  log("so")<<"\t--convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
-//
-  log("so")<<"\t--saveData <0|1|2>\t: Indicate whether files shall be saved! 0=none, 1=pdb and q, 2=all. Default: 1"<<endl;
-
-//  log("so")<<"\t--sampleReverse <true/false>\t: If true, iterative sampling from ini to goal and reverse"<<endl;
-//
-  log("so")<<"\t--alignIni "<<(alignIni?"true":"false: Align initial and target configuration in the beginning. Default false.")<<endl;
-
-   log("so")<<"\t--preventClashes <true|false>\t: Use clashing atoms to define additional constraints and prevent clash. Default true."<<endl;
-
-  log("so")<<"\t--alignSelection \t: A pymol-like pattern that indicates which subset of atoms are used during alignment (if specified). Default is 'heavy'."<<endl;
-
-  log("so")<<"\t--gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is 'heavy'."<<endl;
-
-  log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
-
-  log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
-
-  log("so")<<"\t--projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
-
-  log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
-
-//  log("so")<<"\t--frontSize <integer>\t: Size of the propagating front of samples in directed sampling."<<endl;
-//
-//  log("so")<<"\t--switchAfter <integer>\t: Max number of steps before switching search directions (if bidirectional is active)."<<endl;
-//
-  log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
-
-  log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
-
-//  log("so")<<"\t --relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
+//  log("so")<<"  --flexibleRibose <0|1>\t: Indicate if ribose rings should be flexible (Standard: 1)"<<endl;
+  log("so")<<"  --seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
+//  log("so")<<"  --biasToTarget, -bias <real number> \t: Percentage of using target as 'random seed configuration'. Default 0.1."<<endl;
+//  log("so")<<"  --convergeDistance <real number> \t: The distance under which the goal conformation is considered reached. Default is 0.1 for RMSD and 1e-8 for Dihedral metric."<<endl;
+//  log("so")<<"  --saveData <0|1|2>\t: Indicate whether files shall be saved! 0=none, 1=pdb and q, 2=all. Default: 1"<<endl;
+//  log("so")<<"  --sampleReverse <true/false>\t: If true, iterative sampling from ini to goal and reverse"<<endl;
+  log("so")<<"  --alignIni "<<(alignIni?"true":"false: Align initial and target configuration in the beginning. Default false.")<<endl;
+  log("so")<<"  --preventClashes <true|false>\t: Use clashing atoms to define additional constraints and prevent clash. Default true."<<endl;
+  log("so")<<"  --alignSelection \t: A pymol-like pattern that indicates which subset of atoms are used during alignment (if specified). Default is 'heavy'."<<endl;
+  log("so")<<"  --gradientSelection <selection-pattern>\t: A pymol-like pattern that specifies atoms that are used to determine the gradient. Default is 'heavy'."<<endl;
+  log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies deformable residues during sampling. Default is 'all'."<<endl;
+  log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs for chain roots. Defaults to first atom of each chain"<<endl;
+  log("so")<<"  --projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
+  log("so")<<"  --collisionCheck <string>\t: Atoms used for collision detection: all (default), heavy, backbone"<<endl;
+//  log("so")<<"  --frontSize <integer>\t: Size of the propagating front of samples in directed sampling."<<endl;
+//  log("so")<<"  --switchAfter <integer>\t: Max number of steps before switching search directions (if bidirectional is active)."<<endl;
+  log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
+  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;
+//  log("so")<<"  --relativeDistances <list of double> \t: has to begin by 'double ' followed by doubles seprated by '+' .It corresponds of the desired distance between atoms of residueNetwork option. "<<endl;
 
 }
 

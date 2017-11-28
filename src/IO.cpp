@@ -1,30 +1,33 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
+
 #include "string.h"
 #include <fstream>
 #include <iostream>
@@ -40,6 +43,7 @@
 #include <sys/types.h>
 #include <metrics/RMSD.h>
 #include <math/NullspaceSVD.h>
+#include <math/gsl_helpers.h>
 
 
 #include "CTKTimer.h"
@@ -48,6 +52,7 @@
 #include "core/Chain.h"
 #include "core/Bond.h"
 #include "core/HBond.h"
+#include "core/DBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"
@@ -81,9 +86,7 @@ ResidueProfile IO::readResidueProfile () {
 
 Molecule* IO::readPdb (
     const string& pdb_file,
-    Selection movingResidues,
     const vector<string>& extraCovBonds,
-    const vector<int>& roots,
     const string& hbondMethod,
     const string& hbondFile,
     const Molecule* reference
@@ -107,6 +110,9 @@ Molecule* IO::readPdb (
   string line, temp;
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
+  vector< pair<int,int> > distanceConstraints;
+
+  int atomCount=0;
 
   //Read lines of PDB-file.
   while( !pdb.eof()) {
@@ -136,37 +142,51 @@ Molecule* IO::readPdb (
 
       continue;
     }
+    if( line.substr(0,29)=="REMARK 555 DistanceConstraint"){
+      std::istringstream iss(line.substr(29));
+      int id1, id2;
+      //TODO: Fail gracefully
+      iss>>id1>>id2;
+      distanceConstraints.push_back( make_pair(id1,id2) );
+
+      continue;
+    }
 
     //Parse ATOM/HETATM records and add them to molecule
     if( line.substr(0, 4) == "ATOM" || line.substr(0, 6) == "HETATM" ) {
+      ++atomCount;
+      int offset = 0;
+      if (atomCount >99999) //quick and dirty adaption for molecules with > 100000 atoms
+        offset = 1;
       // chain info
-      string chain_name = line.substr(21, 1); // line[22]
+      string chain_name = line.substr(21+offset, 1); // line[22]
       // residue info
-      int res_id = atoi(line.substr(22, 4).c_str()); // line[23:26]
-      string res_name = Util::trim(line.substr(17, 3)); // line[18:20]
+      int res_id = atoi(line.substr(22+offset, 4).c_str()); // line[23:26]
+      string res_name = Util::trim(line.substr(17+offset, 3)); // line[18:20]
       // atom info
-      int atom_id = atoi(line.substr(6, 5).c_str()); // line[7:11]s
-      string atom_name = Util::trim(line.substr(12, 5)); // line[13:17]
+      int atom_id = atoi(line.substr(6+offset, 5).c_str()); // line[7:11]s
+      string atom_name = Util::trim(line.substr(12+offset, 5)); // line[13:17]
       if (atom_name == "OP3") continue;
       if (atom_name.at(0) >= 49 && atom_name.at(0) <= 57) { // if the first char is 1-9
         string temp_name(atom_name.substr(1, 3));
         temp_name += atom_name.substr(0, 1);
         atom_name = temp_name;
       }
+      bool hetatm = line.substr(0,6) == "HETATM";
 
-      double x = atof(line.substr(30, 8).c_str()); // line[31:38]
-      double y = atof(line.substr(38, 8).c_str()); // line[39:46]
-      double z = atof(line.substr(46, 8).c_str()); // line[47:54]
+      double x = atof(line.substr(30+offset, 8).c_str()); // line[31:38]
+      double y = atof(line.substr(38+offset, 8).c_str()); // line[39:46]
+      double z = atof(line.substr(46+offset, 8).c_str()); // line[47:54]
 
       Coordinate pos(x, y, z);
-      Atom* atom = molecule->addAtom(chain_name, res_name, res_id, atom_name, atom_id, pos);
+      Atom* atom = molecule->addAtom(hetatm, chain_name, res_name, res_id, atom_name, atom_id, pos);
 
       float occupancy = 0.0;
-      if(line.length()>=59) occupancy = atof(line.substr(56,4).c_str());
+      if(line.length()>=59) occupancy = atof(line.substr(56+offset,4).c_str());
       atom->setOccupancy(occupancy);
 
       float bfactor = 0.0;
-      if(line.length()>=65) bfactor = atof(line.substr(60,6).c_str());
+      if(line.length()>=65) bfactor = atof(line.substr(60+offset,6).c_str());
       atom->setBFactor(bfactor);
 
       continue;
@@ -193,7 +213,7 @@ Molecule* IO::readPdb (
 
   //Create covalent bonds from residue profiles
   ResidueProfile residue_profile=readResidueProfile();
-  for( auto const &cur_chain: molecule->chains ) {
+  for( auto const &cur_chain: molecule->m_chains ) {
     for( auto const &cur_res: cur_chain->getResidues()) {
       string res_name=cur_res->getName();
       map<string, vector<CovBond> >::iterator profile_it=residue_profile.find(res_name);
@@ -257,7 +277,7 @@ Molecule* IO::readPdb (
 //      makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //      molecule->addCovBond(a1->getResidue(), a2->getResidue(),a1->getName(), a2->getName());
       molecule->addCovBond(a1,a2);
-      log("dominik") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+      log("planner") << "Creating bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
     }
   }
   else {
@@ -401,8 +421,8 @@ Molecule* IO::readPdb (
   // No need to work on H-bonds because we assume all of them have 5 bars.
   for (auto const& bond: molecule->getCovBonds()) {
 
-    Atom* a1 = bond->Atom1;
-    Atom* a2 = bond->Atom2;
+    Atom* a1 = bond->m_atom1;
+    Atom* a2 = bond->m_atom2;
     //If the residue containing a1 (R1) precedes the one containing a2 (R2) there are four patterns in
     //FIXED_BOND_PROFILES that can match: R1_a1_+a2, R1_+a2_a1, R2_-a1_a2 and R2_a2_-a1. Since atom names
     //were ordered in the previous loop, however, we only have to check R1_+a2_a1 and R2_-a1_a2.
@@ -489,16 +509,23 @@ Molecule* IO::readPdb (
     molecule->addHbond(new_hb);
   }
 
+  for(const pair<int,int>& constraint: distanceConstraints) {
+    Atom* a1 = molecule->getAtom(constraint.first);
+    Atom* a2 = molecule->getAtom(constraint.second);
+    DBond *new_db = new DBond(a1, a2);
+    molecule->addDBond(new_db);
+  }
+
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
   if(!hbondFile.empty()){
     readHbonds(hbondMethod, hbondFile, molecule);
   }
-
-  molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
-  molecule->buildSpanningTree(roots); //Necessary before conformations are defined
-  molecule->setConfiguration(new Configuration(molecule));
-  molecule->setCollisionFactor(1.0); //Sets the initial collisions
-
+/// moved to molecule initializeTree()
+//  molecule->sortHbonds();
+//  molecule->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+//  molecule->buildSpanningTree(roots); //Necessary before conformations are defined
+//  molecule->setConfiguration(new Configuration(molecule));
+//  molecule->setCollisionFactor(1.0); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
   return molecule;
 }
 
@@ -651,7 +678,7 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //
 //    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
 //      //cout<<"IO::readRigidBody - Bars=6"<<endl;
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      continue;
 //    }
 //
@@ -734,14 +761,14 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //  for (auto const& bond: molecule->getCovBonds()){
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
 //  for (auto const& bond: molecule->getHBonds()){
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -810,8 +837,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //
 //    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
 //      //cout<<"IO::readRigidBody - Bars=6"<<endl;
-//      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-//      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+//      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
+//      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->m_atom2->getId() << endl;
 //      continue;
 //    }
 //
@@ -896,10 +923,10 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 ////  for (list<Bond *>::iterator bit=molecule->m_covBonds.begin(); bit != molecule->m_covBonds.end(); ++bit) {
 //  for (auto const& bond: molecule->getCovBonds()){
 ////    Bond* bond = *bit;
-//    //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->Atom2->getId()<<endl;
+//    //    cout<<"IO::readRigidbody() - "<<bond->Atom1->getId()<<" "<<bond->m_atom2->getId()<<endl;
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -907,7 +934,7 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //  for (auto const& bond: molecule->getHBonds()) {
 //    int setId1 = ds.FindSet(bond->Atom1->getId());
 //    molecule->m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-//    int setId2 = ds.FindSet(bond->Atom2->getId());
+//    int setId2 = ds.FindSet(bond->m_atom2->getId());
 //    if(setId1!=setId2)
 //      molecule->m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
 //  }
@@ -921,12 +948,14 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
       mkdir(output_file_name.substr(0,i).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
   }
+
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {
     //cerr<<"Cannot write to "<<output_file_name<<". You might need to create output directory first"<<endl;
     cerr<<"Cannot write to "<<output_file_name<<endl;
     exit(-1);
   }
+
   if(molecule->m_conf!=nullptr){
     Configuration* c = molecule->m_conf;
     output << "REMARK\tID = " << c->m_id << endl;
@@ -954,7 +983,10 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
     Residue* res = atom->getResidue();
     char buffer[100];
 //    int bigRBId = atom->getBiggerRigidbody()==nullptr?0:atom->getBiggerRigidbody()->id();
-    sprintf(buffer,"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
+    string head = "ATOM  ";
+    if (atom->isHetatm()) head = "HETATM";
+    sprintf(buffer,"%s%5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %2s  ",
+            head.c_str(),
             atom->getId(),atom->getName().c_str(),
             res->getName().c_str(),res->getChain()->getName().c_str(),res->getId(),
             atom->m_position.x,atom->m_position.y,atom->m_position.z,
@@ -968,7 +1000,9 @@ void IO::writePdb (Molecule * molecule, string output_file_name) {
 }
 
 void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_file_name) {
-
+  ///Bug fix for asking rigidity information later
+  protein->m_conf->rigidityAnalysis();
+  ///
   string myfile_s = output_file_name.substr(0,output_file_name.length()-4) + ".txt";
   ofstream myfile(myfile_s.c_str());
   if(!myfile.is_open()) {
@@ -976,19 +1010,20 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
     exit(-1);
   }
   if(protein->m_conf->getNumDOFs() != referenceConf->getNumDOFs()){
-    log("dominik")<<"Configurations don't have same dof number, not writing a q file."<<endl;
+    log("planner")<<"Configurations don't have same dof number, not writing a q file."<<endl;
     return;
   }
 
   //Keep track of changes (in magnitude)
-  for (auto const& edge: protein->m_spanningTree->Edges){
+  for (auto const& edge: protein->m_spanningTree->m_edges){
     if(edge->getBond()==nullptr) continue;
 
     int dof_id = edge->getDOF()->getIndex();
-    int resId = edge->getBond()->Atom1->getResidue()->getId();
+    int resId = edge->getBond()->m_atom1->getResidue()->getId();
     int cycleDOF_id = edge->getDOF()->getCycleIndex();
+    double val = edge->getDOF()->getValue();
     bool onBackbone=false;
-    if( edge->getBond()->Atom1->isBackboneAtom() && edge->getBond()->Atom2->isBackboneAtom())
+    if( edge->getBond()->m_atom1->isBackboneAtom() && edge->getBond()->m_atom2->isBackboneAtom())
       onBackbone = true;
     int second = 1;
     if(cycleDOF_id == -1)
@@ -997,9 +1032,7 @@ void IO::writeQ (Molecule *protein, Configuration* referenceConf, string output_
       second = 2;
     double absChangeI = formatRangeRadian(protein->m_conf->getGlobalTorsion(dof_id) -
                                               referenceConf->getGlobalTorsion(dof_id));
-    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI <<" ";
-    //myfile <<protein->m_conf->m_sumProjSteps[dof_id];
-    myfile<<" "<<onBackbone<<endl;
+    myfile << dof_id <<" "<<resId <<" "<<second<<" "<<absChangeI<<" " <<val<<" "<<onBackbone<<endl;
   }
   myfile.close();
 }
@@ -1010,17 +1043,17 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
 //  for (list<Bond*>::iterator bond_itr=molecule->m_covBonds.begin(); bond_itr!=molecule->m_covBonds.end(); ++bond_itr) {
   for (auto const& bond: molecule->getCovBonds()){
 //    Bond* bond = (*bond_itr);
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output << bondVec.norm() << endl;
   }
   output.close();
 
   string edgeFile = output_file_name + "_allEdges.txt";
   ofstream output1(edgeFile.c_str());
-  for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanningTree->Edges.begin(); edge_itr!=molecule->m_spanningTree->Edges.end(); ++edge_itr) {
+  for (vector<KinEdge*>::iterator edge_itr=molecule->m_spanningTree->m_edges.begin(); edge_itr!=molecule->m_spanningTree->m_edges.end(); ++edge_itr) {
     Bond* bond = (*edge_itr)->getBond();
     if(bond==nullptr) continue;
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output1 << bondVec.norm() << endl;
   }
   output1.close();
@@ -1029,7 +1062,7 @@ void IO::writeBondLengthsAndAngles (Molecule *molecule, string output_file_name)
   ofstream output2(anchorEdgeFile.c_str());
   for (vector< pair<KinEdge*,KinVertex*> >::iterator edge_itr=molecule->m_spanningTree->m_cycleAnchorEdges.begin(); edge_itr!=molecule->m_spanningTree->m_cycleAnchorEdges.end(); ++edge_itr) {
     Bond* bond = edge_itr->first->getBond();
-    Math3D::Vector3 bondVec = bond->Atom1->m_position - bond->Atom2->m_position;
+    Math3D::Vector3 bondVec = bond->m_atom1->m_position - bond->m_atom2->m_position;
     output2 << bondVec.norm() << endl;
   }
   output2.close();
@@ -1040,8 +1073,8 @@ void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
 //  for (list<Bond *>::iterator bond_itr=molecule->m_covBonds.begin(); bond_itr != molecule->m_covBonds.end(); ++bond_itr) {
   for (auto const& bond: molecule->getCovBonds()){
-    output << right << setw(8) << bond->Atom1->getId();
-    output << right << setw(8) << bond->Atom2->getId();
+    output << right << setw(8) << bond->m_atom1->getId();
+    output << right << setw(8) << bond->m_atom2->getId();
     output << right << setw(8) << bond->Bars << endl;
   }
   output.close();
@@ -1100,25 +1133,40 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   int count=0;
 
   //Header line
+  output << "H-bond_ID ";
+  output << "H-chain ";
+  output << "H-resi ";
+  output << "H-resn ";
+  output << "H-atomn ";
   output << "H-ID ";
+  output << "Acc-chain ";
+  output << "Acc-resi ";
+  output << "Acc-resn ";
+  output << "Acc-atomn ";
   output << "Acc-ID ";
   output << "energy ";
   output << "#bars ";
   output << "length ";
   output << "angle_D_H_A ";
-  output << "angle_H_A_AA ";
-  output << "H-bond_ID" <<endl;
+  output << "angle_H_A_AA"<<endl;
 
   for (auto const& bond: molecule->getHBonds()){
+    output << ++count<<" ";
+    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+    output << bond->Hatom->getResidue()->getId()<<" ";
+    output << bond->Hatom->getResidue()->getName()<<" ";
+    output << bond->Hatom->getName()<<" ";
     output << bond->Hatom->getId()<<" ";
+    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+    output << bond->Acceptor->getResidue()->getId()<<" ";
+    output << bond->Acceptor->getResidue()->getName()<<" ";
+    output << bond->Acceptor->getName()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << bond->getIniEnergy()<<" ";
-    int numBars = bond->Bars;
-    output << numBars<<" ";
+    output << bond->Bars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
-    output << bond->getAngle_H_A_AA() <<" ";
-    output << ++count<<endl;
+    output << bond->getAngle_H_A_AA()<<endl;
   }
   output.close();
 }
@@ -1210,7 +1258,7 @@ void IO::readAnnotations (Molecule *molecule, string annotation_file_name){
   ifstream input(annotation_file_name.c_str());
   if(!input.is_open()) return;
 
-  Chain* chain = (molecule->chains[0]);
+  Chain* chain = (molecule->m_chains[0]);
   int residues = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
   molecule->residueAnnotations = new int[residues];
   for(int i=0;i<residues;i++)
@@ -1244,7 +1292,7 @@ void IO::readHbonds_dssr(Molecule * molecule, string dssrFile){
 void IO::readHbonds_rnaview(Molecule * molecule, string file, bool fillAnnotations){
   int residues=0;
   if(fillAnnotations){
-    for(auto const& chain: molecule->chains){
+    for(auto const& chain: molecule->m_chains){
       int lastRes = chain->getResidues()[chain->getResidues().size()-1]->getId()+1;//Index of last residue + 1
       if(lastRes>residues) residues = lastRes;
     }
@@ -1414,35 +1462,39 @@ void IO::readHbonds_hbPlus(Molecule *protein, string hbond_file_name) {
       continue;
     }
     std::istringstream input(line);
-    input >> donorString;
-    input >> donorType;
-    input >> acceptorString;
-    input >> acceptorType;
-    input >> rest;
-    input >> hybridState;
-    for (int i = 0; i < 3; i++) {
-      input >> rest;
-    }
-    input >> distanceHAString;
-    double distanceHA = atof(distanceHAString.c_str());
+//    input >> donorString;
+//    input >> donorType;
+//    input >> acceptorString;
+//    input >> acceptorType;
+//    input >> rest;
+//    input >> hybridState;
+//    for (int i = 0; i < 3; i++) {
+//      input >> rest;
+//    }
+//    input >> distanceHAString;
 
+//    double distanceHA = atof(distanceHAString.c_str());
+    double distanceHA = atof(line.substr(52,4).c_str());
+    cout<<distanceHA<<endl;
     //Identify donor
-    string donorChain = donorString.substr(0, 1);
+    string donorChain = line.substr(0, 1);
     if (donorChain == "-") //Default from hb2, if chain is empty
 //      donorChain = protein->chains[0]->getName();
       donorChain = " ";
 
-    int donorResId = atoi( (donorString.substr(1,4)).c_str() );
+    int donorResId = atoi( (line.substr(1,4)).c_str() );
+    donorType = line.substr(9,4);
     donor = protein->getAtom(donorChain, donorResId,donorType );
     if(donor==NULL){ cerr<<"IO::readHbonds - Invalid donor specified: "<<donorString<<" "<<donorType<<endl; exit(-1); }
 
     //Identify acceptor
-    string acceptorChain = acceptorString.substr(0,1);
+    string acceptorChain = line.substr(14,1);
+    acceptorType = line.substr(23,4);
     if (acceptorChain == "-") //Default from hb2, if chain is empty
 //      acceptorChain = protein->chains[0]->getName();
       acceptorChain = " ";
 
-    int acceptorResId = atoi( (acceptorString.substr(1,4)).c_str() );
+    int acceptorResId = atoi( (line.substr(15,4)).c_str() );
     acceptor = protein->getAtom(acceptorChain, acceptorResId,acceptorType );
     if(acceptor==NULL){ cerr<<"IO::readHbonds - Invalid acceptor specified: "<<acceptorString<<" "<<acceptorType<<endl; exit(-1); }
 
@@ -1548,25 +1600,15 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   // For each rigid cluster, calculate a unique color, and have pymol
   // assign that color to those atoms.
   // Also, we save each cluster's color in a map for use again later
-//  map< unsigned int, string > mapClusterIDtoColor;
-  //map<unsigned int,Rigidbody*>::iterator rbit = molecule->m_conf->m_biggerRBMap.begin();
-  //vector< pair< int, unsigned int> >::iterator sit = molecule->m_conf->m_sortedRBs.begin();
   Color::next_rcd_color_as_name(true);
 
-//  while(sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( sit->first >= MIN_CLUSTER_SIZE ){
   for(auto const& rb : rigidified->getRigidbodies()){
     if(rb->Atoms.size()>MIN_CLUSTER_SIZE){
 
       string color = Color::next_rcd_color_as_name();
-      //mapClusterIDtoColor[sit->second] = color;
-      //pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
-      //             << " and b < " << float(sit->second+0.01) << ")" << endl;
-//      mapClusterIDtoColor[rb->id()] = color;
-      pymol_script << "color " << color << ", ( b > " << float(rb->id()-0.01)
-                   << " and b < " << float(rb->id()+0.01) << ")" << endl;
+      pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
+                   << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
     }
-//    sit++;
   }
 
   // Python commands to draw hbonds
@@ -1581,8 +1623,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
 
-      site_1 = eit->first->getBond()->Atom1->getId();
-      site_2 = eit->first->getBond()->Atom2->getId();
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
       pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
 
     }
@@ -1592,13 +1634,13 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 
   for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
 
-    site_1 = eit->first->getBond()->Atom1->getId();
-    site_2 = eit->first->getBond()->Atom2->getId();
-    pymol_script << "distance rotatableHbonds = id " << site_1 << " , id " << site_2 << endl;
+    site_1 = eit->first->getBond()->m_atom1->getId();
+    site_2 = eit->first->getBond()->m_atom2->getId();
+    pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
 
   }
-  pymol_script << "color yellow, rotatableHbonds" << endl;
-  pymol_script << "hide labels, rotatableHbonds" << endl;
+  pymol_script << "color yellow, hbondConstraints" << endl;
+  pymol_script << "hide labels, hbondConstraints" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1624,7 +1666,7 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 //    sit++;
 //  }
 
-//  for(auto const& it : molecule->m_spanningTree->Vertex_map) {
+//  for(auto const& it : molecule->m_spanningTree->m_vertices) {
 //    Rigidbody *rb = it.second->m_rigidbody;
 //    if (rb != nullptr && rb->Atoms.size() > MIN_CLUSTER_SIZE) {
 //      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
@@ -1637,9 +1679,11 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 //    }
 //  }
 
-  //Create biggest cluster as separate object
-  pymol_script << "create biggestCluster, b < 0.99" << endl;
-
+  //Create biggest cluster as separate object, color blue for simple identification
+  pymol_script << "create biggestCluster, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
+  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
 
   // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
@@ -1665,7 +1709,7 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
   }
   if(protein->m_conf!=nullptr){
     Configuration* c = protein->m_conf;
-    for(auto const& it: c->getMolecule()->m_spanningTree->Vertex_map){
+    for(auto const& it: c->getMolecule()->m_spanningTree->m_vertices){
       Rigidbody* rb = it.second->m_rigidbody;
       if(rb==nullptr) continue;
       for(auto const& atom: rb->Atoms){
@@ -1707,7 +1751,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     //int sum = m_molecule->m_conf->CycleNullSpace->getNullspace()Size + diff;
 
     output << "************* Statistics on the molecular structure *************" << endl;
-    output << "Number of chains: " << protein->chains.size() << endl;
+    output << "Number of chains: " << protein->m_chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
     output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;
@@ -1736,7 +1780,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
 
 }
 
-void IO::writeTrajectory (Molecule*molecule, string output_file_name, string output_mdl, Molecule* target) {
+void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target) {
 
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {
@@ -1810,7 +1854,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //			}
 
       //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = molecule->m_spanningTree->Edges.begin(); eit != molecule->m_spanningTree->Edges.end(); eit++){
+      //			for( eit = molecule->m_spanningTree->m_edges.begin(); eit != molecule->m_spanningTree->m_edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
       //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
@@ -1822,12 +1866,12 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //					num=2;
       //				else
       //					num=3;
-      //				if( resiColorMap.find(res->Id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->Id)->second)
-      //						resiColorMap.insert( make_pair(res->Id, num) );
+      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
+      //					if( num < resiColorMap.find(res->m_id)->second)
+      //						resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //				else{
-      //					resiColorMap.insert( make_pair(res->Id, num) );
+      //					resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //			}
 
@@ -1898,7 +1942,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 
 //    //Random permutation of all rigidbody ids for use in coloring
 //    vector<int> rbidPerm;
-//    for(size_t i=0;i<molecule->m_spanningTree->Vertex_map.size();i++)
+//    for(size_t i=0;i<molecule->m_spanningTree->m_vertices.size();i++)
 //      rbidPerm.push_back(i);
 //    std::random_shuffle ( rbidPerm.begin(), rbidPerm.end() );
 
@@ -1930,7 +1974,7 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //				test++;
       //			}
       //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = target->m_spanningTree->Edges.begin(); eit != target->m_spanningTree->Edges.end(); eit++){
+      //			for( eit = target->m_spanningTree->m_edges.begin(); eit != target->m_spanningTree->m_edges.end(); eit++){
       //				KinEdge* e = (*eit);
       //				int dofId = e->DOF_id;
       //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
@@ -1942,12 +1986,12 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
       //					num=2;
       //				else
       //					num=3;
-      //				if( resiColorMap.find(res->Id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->Id)->second)
-      //						resiColorMap.insert( make_pair(res->Id, num) );
+      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
+      //					if( num < resiColorMap.find(res->m_id)->second)
+      //						resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //				else{
-      //					resiColorMap.insert( make_pair(res->Id, num) );
+      //					resiColorMap.insert( make_pair(res->m_id, num) );
       //				}
       //			}
 
@@ -2054,8 +2098,8 @@ void IO::writeTrajectory (Molecule*molecule, string output_file_name, string out
 
   for (auto  const& eit: molecule->m_spanningTree->m_cycleAnchorEdges){
 
-    site_1 = eit.first->getBond()->Atom1->getId();
-    site_2 = eit.first->getBond()->Atom2->getId();
+    site_1 = eit.first->getBond()->m_atom1->getId();
+    site_2 = eit.first->getBond()->m_atom2->getId();
     pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
 
   }
@@ -2237,11 +2281,11 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
     //gsl_vector_outtofile(conf->CycleNullSpace->singularValues,outSing);
 
     if (NullspaceSVD *derived = dynamic_cast<NullspaceSVD *>(conf->getNullspace())) {
-      derived->writeMatricesToFiles(outJac, outNull, outSing);
+      gsl_vector_outtofile(derived->getSVD()->S, outSing);
+      derived->writeMatricesToFiles(outJac, outNull);
     }
     IO::writeRBs(protein, rbFile);
     IO::writeStats(protein, statFile);
 
   }
-
 }

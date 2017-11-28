@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include "LSNullspaceDirection.h"
 
 #include <map>
@@ -66,7 +68,7 @@ void LSNullspaceDirection::computeGradient(Configuration* conf, Configuration* t
   gsl_matrix* fullN = gsl_matrix_calloc(dof,N->size2+dof-N->size1);
   gsl_matrix_set_zero(fullN);
   int fulldof=0;
-  for (auto const& edge: protein->m_spanningTree->Edges) {
+  for (auto const& edge: protein->m_spanningTree->m_edges) {
     int dof_id = edge->getDOF()->getIndex();
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     if ( cycle_dof_id!=-1 ) {
@@ -144,7 +146,7 @@ void LSNullspaceDirection::fillmatrices(Configuration* current_q,
       int dof_id = p_edge->getDOF()->getIndex();
       if (dof_id!=-1) { // this edge is a DOF
 //        Atom* ea1 = p_edge->getBond()->Atom1;
-//        Atom* ea2 = p_edge->getBond()->Atom2;
+//        Atom* ea2 = p_edge->getBond()->m_atom2;
 //        Math3D::Vector3 derivativeP = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p);
         Math3D::Vector3 derivativeP = p_edge->getDOF()->getDerivative(p);
 
@@ -202,7 +204,7 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
 //
 //if(m_TargetJacobian->size2!= N->size1){
 //      map<unsigned int, RigidbodyGraphVertex*>::iterator vit;
-//for (vit=protein->m_spanningTree->Vertex_map.begin(); vit!=protein->m_spanningTree->Vertex_map.end(); vit++){
+//for (vit=protein->m_spanningTree->m_vertices.begin(); vit!=protein->m_spanningTree->m_vertices.end(); vit++){
 //  if( (*vit).second->isRibose ){
 //    SugarVertex* v = reinterpret_cast<SugarVertex*>((*vit).second);
 //    int dof_id = v->DOF_id;
@@ -214,7 +216,7 @@ gsl_matrix* LSNullspaceDirection::determineBestMove(gsl_matrix* N, gsl_matrix* t
 //    }
 //  }
 //}
-//for (vector<Edge*>::iterator eit=protein->m_spanningTree->Edges.begin(); eit!=protein->m_spanningTree->Edges.end(); ++eit) {
+//for (vector<Edge*>::iterator eit=protein->m_spanningTree->m_edges.begin(); eit!=protein->m_spanningTree->m_edges.end(); ++eit) {
 //  int dof_id = (*eit)->DOF_id;
 //  int cycle_dof_id = (*eit)->Cycle_DOF_id;
 //  if ( cycle_dof_id!=-1 ) {

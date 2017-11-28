@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include "Rigidbody.h"
 
 using namespace std;
@@ -53,7 +55,7 @@ void Rigidbody::addAtom (Atom* atom) {
 }
 
 void Rigidbody::addBond (Bond * bond) {
-	Bonds.push_back(bond);
+	m_bonds.push_back(bond);
 }
 
 void Rigidbody::setVertex (KinVertex* vertex) {
@@ -77,9 +79,9 @@ KinVertex* Rigidbody::getVertex (){
 //		//	(*ait)->removeBiggerRigidbody(rb);
 //		//}
 //	}
-//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-//		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHbond() ){
-//			Bonds.push_back((*bit));
+//	for(vector<Bond *>::iterator bit = rb->m_bonds.begin(); bit != rb->m_bonds.end(); bit++){
+//		if( (*bit)->Atom1->getId() != bond->Atom1->getId() && !(*bit)->isHBond() ){
+//			m_bonds.push_back((*bit));
 //		}
 //	}
 //}
@@ -99,8 +101,8 @@ KinVertex* Rigidbody::getVertex (){
 //		//}
 //	}
 //
-//	for(vector<Bond *>::iterator bit = rb->Bonds.begin(); bit != rb->Bonds.end(); bit++){
-//			Bonds.push_back((*bit));
+//	for(vector<Bond *>::iterator bit = rb->m_bonds.begin(); bit != rb->m_bonds.end(); bit++){
+//			m_bonds.push_back((*bit));
 //	}
 //}
 
@@ -132,12 +134,12 @@ int Rigidbody::size () const {
 //	for (vector<Atom*>::const_iterator it=Atoms.begin(); it!=Atoms.end(); ++it)
 //		cout << "\t\t Atom: " << (*it)->getResidue()->getId() << " " << (*it)->getId() << " " << (*it)->getName() << endl;
 //
-//	cout << "\t\t numBonds = " << Bonds.size() << endl;
-//	for (vector<Bond *>::const_iterator it=Bonds.begin(); it != Bonds.end(); ++it) {
+//	cout << "\t\t numBonds = " << m_bonds.size() << endl;
+//	for (vector<Bond *>::const_iterator it=m_bonds.begin(); it != m_bonds.end(); ++it) {
 //        	cout << "\t\t Bond: " << (*it)->Atom1->getResidue()->getId() << " " << (*it)->Atom1->getId() << " " << (*it)->Atom1->getName() <<
 //					    "\t ---------> \t"
-//				   << (*it)->Atom2->getResidue()->getId() << " " << (*it)->Atom2->getId() << " " << (*it)->Atom2->getName();
-//		cout << "\t\t Type: " << ((*it)->BondType=="HB"?"HB":"CV") << endl;
+//				   << (*it)->m_atom2->getResidue()->getId() << " " << (*it)->m_atom2->getId() << " " << (*it)->m_atom2->getName();
+//		cout << "\t\t Type: " << ((*it)->m_bondType=="HB"?"HB":"CV") << endl;
 //	}
 //}
 
@@ -234,7 +236,7 @@ Atom* Rigidbody::getAtom(string name){
 	return nullptr;
 }
 
-///Compare sizes of rigid bodies given a Rigidbody-ID-Map
+///Compare sizes of rigid bodies given a Rigidbody-ID-Map, used to sort rigid bodies by size
 bool Rigidbody::compareSize(pair<int, unsigned int> firstEntry, pair<int, unsigned int> secondEntry) {
 	if( firstEntry.first > secondEntry.first )
 		return true;

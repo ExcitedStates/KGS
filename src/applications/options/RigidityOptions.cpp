@@ -1,3 +1,31 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
 //
 // Created by Dominik Budday on 19.12.16.
 //
@@ -105,23 +133,23 @@ void RigidityOptions::initializeVariables(){
 
 void RigidityOptions::print(){
   log("so")<<"Sampling options:"<<std::endl;
-  log("so")<<"\t--initial "<<initialStructureFile<<endl;
+  log("so")<<"  --initial "<<initialStructureFile<<endl;
 //  log("so")<<"\t--target "<<targetStructureFile<<endl;
-  log("so")<<"\t--annotation "<<annotationFile<<endl;
+  log("so")<<"  --annotation "<<annotationFile<<endl;
   if(!hydrogenbondFile.empty()) {
-    log("so")<<"\t--hbondMethod "<<hydrogenbondMethod<<endl;
-    log("so")<<"\t--hbondFile "<<hydrogenbondFile<<endl;
+    log("so")<<"  --hbondMethod "<<hydrogenbondMethod<<endl;
+    log("so")<<"  --hbondFile "<<hydrogenbondFile<<endl;
   }
-  log("so")<<"\t--extraCovBonds "; for(unsigned int i=0;i<extraCovBonds.size();i++) log("so")<<extraCovBonds[i]<<","; log("so")<<endl;
-  log("so")<<"\t--workingDirectory "<<workingDirectory<<endl;
-  log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
-  log("so")<<"\t--seed "<<seed<<endl;
-  log("so")<<"\t--saveData "<<saveData<<endl;
-  log("so")<<"\t--preventClashes "<<preventClashes<<endl;
-  log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
-  log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
-  log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
-  log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --extraCovBonds "; for(unsigned int i=0;i<extraCovBonds.size();i++) log("so")<<extraCovBonds[i]<<","; log("so")<<endl;
+  log("so")<<"  --workingDirectory "<<workingDirectory<<endl;
+  log("so")<<"  --collisionFactor "<<collisionFactor<<endl;
+  log("so")<<"  --seed "<<seed<<endl;
+  log("so")<<"  --saveData "<<saveData<<endl;
+  log("so")<<"  --preventClashes "<<preventClashes<<endl;
+  log("so")<<"  --root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
+  log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
+  log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
+  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
 }
 
 void RigidityOptions::printUsage(char* pname){
@@ -130,38 +158,25 @@ void RigidityOptions::printUsage(char* pname){
   log("so")<<endl;
   log("so")<<"Options:"<<endl;
 
-  log("so")<<"\t--initial <pdb-file> \t: Specifies the initial structure."<<endl;
-
-  log("so")<<"\t--annotation <file-path> \t: Annotations can specify secondary structures or other things ";
-  log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
-
-//  log("so")<<"\t--hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
+  log("so")<<"  --initial <pdb-file> \t: Specifies the initial structure."<<endl;
+//log("so")<<"  --annotation <file-path> \t: Annotations can specify secondary structures or other things ";
+//log("so")<<"relevant to the sampling strategy. For RNA, standard WC will indicate non-free residues that wont be rebuilt"<<endl;
+//  log("so")<<"  --hbondMethod <user|dssr|rnaview|first|kinari|hbplus|vadar|identify> \t: Format of the --hbondFile. If no --hbondFile argument is provided, instructions ";
 //  log("so")<<"how to generate a hbondFile are printed."<<endl;
-
-//  log("so")<<"\t--hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
+//  log("so")<<"  --hbondFile <path to hydrogen bond file> \t: Hydrogen bond definition file. The format is specified by the choice ";
 //  log("so")<<"of --hbondMethod. Leave this field blank for instructions how to generate the hbond file."<<endl;
-  log("so")<<"\t--extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
-
-  log("so")<<"\t--workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
-
-  log("so")<<"\t--collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
+  log("so")<<"  --extraCovBonds <resi1>/<name1>-<resi2>/<name2>[,...] \t: Extra covalent bonds. Can override an h-bond."<<endl;
+  log("so")<<"  --workingDirectory <directory> \t: Working directory. Output is stored here."<<endl;
+  log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
   log("so")<<"checking for collisions. The default is 0.75."<<endl;
-
-  log("so")<<"\t--seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
-
-  log("so")<<"\t--saveData <0|1|2>\t: Indicate whether files shall be saved! 0=none, 1=pdb and q, 2=all. Default: 1"<<endl;
-
-  log("so")<<"\t--preventClashes <true|false>\t: Use clashing atoms to define additional constraints and prevent clash. Default false (currently not enabled for rigidity)."<<endl;
-
-  log("so")<<"\t--residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues in rigidity analysis. Default is 'all', other options currently not enabled."<<endl;
-
-  log("so")<<"\t--roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
-
-  log("so")<<"\t--collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
-//
-  log("so")<<"\t--svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
-
-  log("so")<<"\t--collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2. (other options currently not enabled)."<<endl;
+  log("so")<<"  --seed <integer>\t: The seed used for random number generation (Standard: 418)"<<endl;
+  log("so")<<"  --saveData <0|1|2>\t: Indicate whether files shall be saved! 0=none, 1=pdb and q, 2=all. Default: 1"<<endl;
+  log("so")<<"  --preventClashes <true|false>\t: Use clashing atoms to define additional constraints and prevent clash. Default false (currently not enabled for rigidity)."<<endl;
+  log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues in rigidity analysis. Default is 'all', other options currently not enabled."<<endl;
+  log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
+  log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
+  log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
+  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2. (other options currently not enabled)."<<endl;
 }
 
 

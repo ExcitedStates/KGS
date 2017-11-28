@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include "Bond.h"
 #include "Atom.h"
 #include "math/MathUtility.h"
@@ -36,30 +38,30 @@ using namespace std;
 
 Bond::Bond(Atom* atom1, Atom* atom2, std::string bond_type) {
 	if (atom1->getId()<=atom2->getId()) {
-		Atom1 = atom1;
-		Atom2 = atom2;
+		m_atom1 = atom1;
+		m_atom2 = atom2;
 	}
 	else {
-		Atom1 = atom2;
-		Atom2 = atom1;
+		m_atom1 = atom2;
+		m_atom2 = atom1;
 	}
-	BondType = bond_type;
+	m_bondType = bond_type;
 	Bars = 5; // default. Cannot compute the exact number of bars when the bond is just created because it doesn't know the number of covalent neighbors yet.
 	rigidified = false; ///only true if the bond is locked due to constraints (like hbonds)
 }
 
 Bond::Bond(Bond & bond) {
-	Atom1 = bond.Atom1;
-	Atom2 = bond.Atom2;
-	BondType = bond.BondType;
+	m_atom1 = bond.m_atom1;
+	m_atom2 = bond.m_atom2;
+	m_bondType = bond.m_bondType;
 	Bars = bond.Bars;
 	rigidified = bond.rigidified;
 }
 
 Bond::Bond() {
-	Atom1 = 0;
-	Atom2 = 0;
-	BondType = "UNDEFINED";
+	m_atom1 = 0;
+	m_atom2 = 0;
+	m_bondType = "UNDEFINED";
 	Bars = 0;
 	rigidified=false;
 }
@@ -67,17 +69,17 @@ Bond::Bond() {
 Bond::~Bond() {}
 
 void Bond::print () {
-//	cout << "Bond(" << Atom1->getId() << "," << Atom2->getId() << "," << BondType << "," << Bars << ")";
-	cout << "Bond(" << Atom1 << "," << Atom2 << "," << BondType << "," << Bars << ")";
+//	cout << "Bond(" << Atom1->getId() << "," << m_atom2->getId() << "," << m_bondType << "," << Bars << ")";
+	cout << "Bond(" << m_atom1 << "," << m_atom2 << "," << m_bondType << "," << Bars << ")";
 }
 
 bool Bond::isLocked() const{
 	bool result = false;
-	if ( Atom1->m_element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
+	if ( m_atom1->m_element==atomC && m_atom1->Cov_neighbor_list.size()<=3 && m_atom2->m_element==atomC && m_atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
-	else if ( Atom1->m_element==atomC && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomN && Atom2->Cov_neighbor_list.size()<=3 )
+	else if ( m_atom1->m_element==atomC && m_atom1->Cov_neighbor_list.size()<=3 && m_atom2->m_element==atomN && m_atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
-	else if ( Atom1->m_element==atomN && Atom1->Cov_neighbor_list.size()<=3 && Atom2->m_element==atomC && Atom2->Cov_neighbor_list.size()<=3 )
+	else if ( m_atom1->m_element==atomN && m_atom1->Cov_neighbor_list.size()<=3 && m_atom2->m_element==atomC && m_atom2->Cov_neighbor_list.size()<=3 )
 		result = true;
 	if(rigidified)
 		result = true;
@@ -86,28 +88,31 @@ bool Bond::isLocked() const{
 }
 
 bool Bond::isPeptideBond() const {
-	if ( (Atom1->getName()=="C" && Atom2->getName()=="N") || (Atom1->getName()=="N" && Atom2->getName()=="C") )
+	if ( (m_atom1->getName()=="C" && m_atom2->getName()=="N") || (m_atom1->getName()=="N" && m_atom2->getName()=="C") )
 		return true;
 	return false;
 }
 
-bool Bond::isHbond() const{
-	return BondType=="HB";
+bool Bond::isHBond() const{
+	return m_bondType=="HB";
+}
+bool Bond::isDBond() const{
+	return m_bondType=="DB";
 }
 
 double Bond::getTorsion() {
     
-	int atom_id1 = Atom1->getId(); // due to the assertion of Bond, atom_id1 must be smaller than atom_id2
-	int atom_id2 = Atom2->getId();
+	int atom_id1 = m_atom1->getId(); // due to the assertion of Bond, atom_id1 must be smaller than atom_id2
+	int atom_id2 = m_atom2->getId();
 	Atom* atom3 = nullptr;
-	for (vector<Atom*>::iterator aitr=Atom1->Cov_neighbor_list.begin(); aitr!=Atom1->Cov_neighbor_list.end(); ++aitr) {
+	for (vector<Atom*>::iterator aitr=m_atom1->Cov_neighbor_list.begin(); aitr!=m_atom1->Cov_neighbor_list.end(); ++aitr) {
 		if ( (*aitr)->getId()==atom_id2 ) continue;
 		if ( atom3==nullptr || (*aitr)->getId()<atom3->getId() ) {
 			atom3 = *aitr;
 		}
 	}
 	Atom* atom4 = nullptr;
-	for (vector<Atom*>::iterator aitr=Atom2->Cov_neighbor_list.begin(); aitr!=Atom2->Cov_neighbor_list.end(); ++aitr) {
+	for (vector<Atom*>::iterator aitr=m_atom2->Cov_neighbor_list.begin(); aitr!=m_atom2->Cov_neighbor_list.end(); ++aitr) {
 		if ( (*aitr)->getId()==atom_id1 ) continue;
 		if ( atom4==nullptr || (*aitr)->getId()<atom4->getId() ) {
 			atom4 = *aitr;
@@ -116,18 +121,45 @@ double Bond::getTorsion() {
 
 	double ret = 0.0;
 	if(atom3 != nullptr && atom4 != nullptr){//only measure it if four covalently bonded atoms exist
-		ret = TorsionalAngle(atom3->m_position,Atom1->m_position,Atom2->m_position,atom4->m_position); // in radians
+		ret = TorsionalAngle(atom3->m_position,m_atom1->m_position,m_atom2->m_position,atom4->m_position); // in radians
 		ret = formatRangeRadian(ret);
 	}
 	else{
-//		log("dominik")<<"Setting global torsion to zero at bond between atom "<<Atom1->getId()<<" and "<<Atom2->getId()<<endl;
+//		log("planner")<<"Setting global torsion to zero at bond between atom "<<Atom1->getId()<<" and "<<m_atom2->getId()<<endl;
 	}
 	return ret;
     
 }
 
+///Compare IDs of two bonds, used to sort them, lowest ID goes first
+bool Bond::compareIDs(Bond *bond1, Bond *bond2) {
+	//Determine min/max IDs in case bonds were not from min to max ID (happens for hbonds)
+	int minID1, maxID1, minID2, maxID2;
+	minID1 = bond1->m_atom1->getId();
+	if (bond1->m_atom2->getId() < minID1 ){
+		maxID1 = minID1;
+		minID1 = bond1->m_atom2->getId();
+	}
+	else
+		maxID1 = bond1->m_atom2->getId();
+
+	minID2 = bond2->m_atom1->getId();
+	if (bond2->m_atom2->getId() < minID2 ){
+		maxID2 = minID2;
+		minID2 = bond2->m_atom2->getId();
+	}
+	else
+		maxID2 = bond2->m_atom2->getId();
+	//Sort
+	if(minID1 < minID2 )
+		return true;
+	if(minID1 > minID2)
+		return false;
+	return maxID1 < maxID2;
+}
+
 ostream& operator<<(ostream& os, const Bond & b) {
-	return os<<"Bond["<<b.Atom1<<"-"<<b.Atom2<<"]";
+	return os<<"Bond["<<b.m_atom1<<"-"<<b.m_atom2<<"]";
 }
 
 ostream& operator<<(ostream& os, const Bond * b) {

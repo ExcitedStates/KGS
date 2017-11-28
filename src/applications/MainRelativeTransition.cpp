@@ -1,8 +1,42 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+#include <gsl/gsl_vector.h>
+
 #include <stdexcept>
 #include <string>
 #include <iostream>
 #include <list>
 #include <regex>
+
+#include "math/gsl_helpers.h"
+#include "math/NullspaceSVD.h"
+#include "directions/RelativeMSDDirection.h"
 
 #include "core/Configuration.h"
 #include "core/Molecule.h"
@@ -25,18 +59,14 @@ extern double rigidityTime;
 extern double selectNodeTime;
 
 void scale_gradient(gsl_vector* gradient, Molecule* mol, double maxRotation);
-double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances);
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > &goal_distances);
+void printStrain(const Molecule& mol, const RelativeTransitionOptions& options);
 
 int main( int argc, char* argv[] ) {
   enableLogger("default");
   enableLogger("samplingStatus");
-//  enableLogger("dominik");
 
-
-  //RelativeTransitionOptions options(argc,argv);
-  RelativeTransitionOptions::createOptions(argc, argv);
-
-  RelativeTransitionOptions &options = *(RelativeTransitionOptions::getOptions());
+  RelativeTransitionOptions options(argc, argv);
 
   if (loggerEnabled("samplingStatus")) {
     enableLogger("so");//RelativeTransitionOptions
@@ -46,28 +76,42 @@ int main( int argc, char* argv[] ) {
   // Set seed
   srand(options.seed);
 
+  NullspaceSVD::setSingularValueTolerance(options.svdCutoff);
+
   string pdb_file = options.initialStructureFile;
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       pdb_file,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
+  protein->initializeTree(movingResidues,options.collisionFactor,options.roots);
   log() << "Molecule has " << protein->getAtoms().size() << " atoms\n";
 
-  protein->setCollisionFactor(options.collisionFactor);
 
-  if(options.collapseRigid>0)
+  if(options.collapseRigid>0) {
+    log("samplingStatus")<<"Before collapsing"<<endl;
+    log("samplingStatus")<<"Molecule has:"<<endl;
+    log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
+    log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+    log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+    gsl_matrix_outtofile(protein->m_conf->getCycleJacobian(), "nonCollapsedCycleJacobian.txt");
+    gsl_matrix_outtofile(protein->m_conf->getNullspace()->getBasis(),"nonCollapsedNullspace.txt");
+
     protein = protein->collapseRigidBonds(options.collapseRigid);
+  }
 
   log("samplingStatus")<<"Molecule has:"<<endl;
   log("samplingStatus")<<"> "<<protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
   log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
   log("samplingStatus")<<"> "<<protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+
+  if(options.predictStrain){
+    printStrain(*protein, options);
+  }
 
   //Initialize move
   Move* move;
@@ -92,7 +136,8 @@ int main( int argc, char* argv[] ) {
   std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
       IO::readRelativeDistances(options.relativeDistances, protein);
 
-  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
+  Direction* d1 = new RelativeMSDDirection(goal_distances);
+//  Direction* d1 = new LSNrelativeDirection(resNetwork, goal_distances);
   Direction* d2 = new RandomDirection(resNetwork,options.maxRotation);
 
 
@@ -104,7 +149,8 @@ int main( int argc, char* argv[] ) {
                       protein->m_conf->getNullspace()->getNumRigidDihedrals()) << " coordinated dihedrals" <<endl;
   log()<< protein->m_conf->getNullspace()->getNumRigidHBonds()<<" rigid out of "<<protein->getHBonds().size()<<" hydrogen bonds!"<<endl<<endl;
 
-
+    
+  log("samplingStatus")<<"Initial distance to objective: "<<dist_to_objective(goal_distances)<<endl;
   log("samplingStatus")<<"Sampling ...\n";
   CTKTimer timer;
   timer.Reset();
@@ -124,9 +170,11 @@ int main( int argc, char* argv[] ) {
 //    cout<<"Iteration "<<i<<endl;
 
     Configuration* seed = samples.back();
-    d1->gradient(seed, seed, tmp1); //directed move
-    d2->gradient(seed, seed, tmp2); //random move
+    d1->gradient(seed, nullptr, tmp1); //directed move
+    d2->gradient(seed, nullptr, tmp2); //random move
     scale_gradient(tmp2, protein, options.maxRotation);
+    gsl_vector_out(tmp1, log("directedGradient"));
+
     double max_val1 = 0;
     double max_val2 = 0;
     for (int j=0;j<protein->m_spanningTree->getNumDOFs();j++){ //looking for the maximal rotation
@@ -160,6 +208,7 @@ int main( int argc, char* argv[] ) {
     samples.push_back(new_conf);
 
     log("samplingStatus")<<"> New structure: conf_"+std::to_string((long long)i)+".pdb"<<endl;
+    log("samplingStatus")<<"Distance to objective: "<<dist_to_objective(goal_distances)<<endl;
     string fname = "output/conf_"+std::to_string((long long)i)+".pdb";
     IO::writePdb(new_conf->updatedMolecule(), fname);
   }
@@ -194,7 +243,7 @@ void scale_gradient(gsl_vector* gradient, Molecule* mol,double maxRotation)
 }
 
 
-double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances)
+double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > &goal_distances)
 {
   double d=0;
   for (int i=0; i< goal_distances.size();i++){
@@ -204,4 +253,10 @@ double dist_to_objective(std::vector< std::tuple<Atom*, Atom*, double> > goal_di
     d=d+fabs((sqrt((c1.x-c2.x)*(c1.x-c2.x)+(c1.y-c2.y)*(c1.y-c2.y)+(c1.z-c2.z)*(c1.z-c2.z))-get<2>(goal_distances[i])));
   }
   return d;
+}
+
+
+void printStrain(const Molecule& mol, const RelativeTransitionOptions& options)
+{
+
 }

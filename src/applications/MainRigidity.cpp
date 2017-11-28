@@ -1,8 +1,40 @@
+/*
+
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
+
+Copyright (C) 2009-2017 Stanford University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+*/
+
+
 #include <string>
 #include <iostream>
 #include <list>
 
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector_double.h>
+#include <gsl/gsl_vector.h>
+#include <math/gsl_helpers.h>
 #include <math/NullspaceSVD.h>
 
 #include "core/Molecule.h"
@@ -35,12 +67,11 @@ int main( int argc, char* argv[] ){
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
-      movingResidues,
       options.extraCovBonds,
-      options.roots,
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
+  protein->initializeTree(movingResidues,1.0,options.roots);
   string name = protein->getName();
 
   log("rigidity")<<"Molecule has:"<<endl;
@@ -50,10 +81,31 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
+  NullspaceSVD ns = *(dynamic_cast<NullspaceSVD*>(conf->getNullspace()));
+  int numCols = ns.getMatrix()->size2;
+  int nullspaceCols = ns.getNullspaceSize();
+  int sampleCount = 0;
+  gsl_vector* singValVector = gsl_vector_copy(ns.getSVD()->S);
 
-  log("rigidity")<<"Dimension of Jacobian: " << conf->getNullspace()->getMatrix()->size1 << " rows, ";
-  log("rigidity")<< conf->getNullspace()->getMatrix()->size2<<" columns"<<endl;
-  log("rigidity")<<"Dimension of kernel "<< conf->getNullspace()->getNullspaceSize()<<endl;
+  log("rigidity") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
+  log("rigidity") << numCols << " columns" << endl;
+  log("rigidity") << "Dimension of kernel " << nullspaceCols << endl;
+
+//  if (5*ns.getMatrix()->size1 < numCols){//less constraints than cycle-dofs
+//    //Write the complete J*V product out to file
+//    gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
+//    gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
+//    if(options.saveData > 1) {
+//      string outProd = "fullProduct_JV.txt";
+//      gsl_matrix_outtofile(fullProduct, outProd);
+//      gsl_matrix_free(fullProduct);
+//
+//      string outMat = "Vmatrix.txt";
+//      gsl_matrix_outtofile(baseNullspaceV, outMat);
+//    }
+//  }
+
+
 
   Molecule* rigidified = protein->collapseRigidBonds(2);
 
@@ -76,12 +128,18 @@ int main( int argc, char* argv[] ){
   string statFile = out_path + "output/" + name + "_stats_" +
                     std::to_string((long long) sample_id)
                     + ".txt";
-
   ///Write statistics
   IO::writeStats(protein, statFile, rigidified); //original protein with all bonds etc, rigidified one for cluster info
 
   ///Write pyMol script
   IO::writePyMolScript(rigidified, out_file, pyMol, protein);
+
+  ///save singular values
+  NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
+  if (derived) {
+    string outSing = out_path + "output/singVals.txt";
+    gsl_vector_outtofile(derived->getSVD()->S, outSing);
+  }
 
   if(options.saveData <= 1) return 0;
 
@@ -92,26 +150,19 @@ int main( int argc, char* argv[] ){
   string outNull=out_path + "output/" +  name + "_nullSpace_" +
                  std::to_string((long long)sample_id)
                  + ".txt";
-  ///save singular values
-  string outSing=out_path + "output/" +  name + "_singVals_" +
-                 std::to_string((long long)sample_id)
-                 + ".txt";
+
+  if (derived) {
+    derived->writeMatricesToFiles(outJac, outNull);
+  }
+
+  if(options.saveData <= 2) return 0;
+
   string rbFile=out_path + "output/" +  name + "_RBs_" +
                 std::to_string((long long)sample_id)
                 + ".txt";
   string covFile=out_path + "output/" +  name + "_covBonds_" +
                  std::to_string((long long)sample_id)
                  + ".txt";
-
-  ///Write Jacobian
-  //gsl_matrix_outtofile(m_molecule->m_conf->CycleJacobian, outJac);
-  /////Write Null Space matrix
-  //gsl_matrix_outtofile(conf->CycleNullSpace->m_nullspaceBasis,outNull);
-  /////Write Singular values
-  //gsl_vector_outtofile(NullSpaceRet::singularValues,outSing);
-  if (NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace())) {
-    derived->writeMatricesToFiles(outJac, outNull, outSing);
-  }
 
   ///Write covalent bonds
   IO::writeCovBonds(protein,covFile);

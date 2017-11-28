@@ -70,7 +70,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian)
 
   log("constraints")<<"There are "<<numRigidDihedrals << " rigidified and " << numCoordinatedDihedrals << " coordinated dihedrals" << endl;
 
-  // Now, check the hydrogen Bonds for rigidity
+  // Now, check the hydrogen m_bonds for rigidity
   int numHBonds = HBondJacobian->size1;
   gsl_matrix* hBondNullspace = gsl_matrix_alloc(numHBonds, std::max(m_nullspaceSize,1));
   gsl_vector* currentHBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));

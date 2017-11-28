@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 
 #include "FastClashAvoidingMove.h"
 
@@ -59,14 +61,14 @@ FastClashAvoidingMove::FastClashAvoidingMove(
 Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_vector* gradient) {
 //  enableLogger("clashBug");
   double currNorm = gsl_vector_length(gradient);
-  log("dominik") << "Norm of gradient: " << currNorm << endl;
+//  log("planner") << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
   gsl_vector *projected_gradient = gsl_vector_calloc(current->getNumDOFs());
   current->projectOnCycleNullSpace(gradient, projected_gradient);
 
   double currProjNorm = gsl_vector_length(projected_gradient);
-  log("dominik") << "Norm of projected gradient: " << currProjNorm << endl;
+//  log("planner") << "Norm of projected gradient: " << currProjNorm << endl;
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
@@ -102,7 +104,7 @@ Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_ve
 
     // The new configuration is valid only if it is collision-free
     if (new_q->updatedMolecule()->inCollision()) {
-      log("dominik") << "Rejected!" << endl;
+      log("planner") << "Rejected!" << endl;
 
       previousCollisions = allCollisions;
       if(trialStep==m_trialSteps-1){
@@ -114,7 +116,7 @@ Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_ve
       delete new_q;
 
     } else {//collision free
-      log("dominik") << "Accepted!" << endl;
+      log("planner") << "Accepted!" << endl;
       m_movesAccepted++;
 
       return new_q;
@@ -130,7 +132,7 @@ map<int,int> FastClashAvoidingMove::collectConstrainedDofMap(Configuration* conf
   map<int,int> ret;
 
   //First add all cycle-DOFs
-  for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
+  for(auto const& edge: conf->getMolecule()->m_spanningTree->m_edges){
     int cycle_dof_id = edge->getDOF()->getCycleIndex();
     int dof_id = edge->getDOF()->getIndex();
     if(cycle_dof_id>=0 && ret.count(dof_id)==0)
@@ -220,7 +222,7 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   double currProjNorm = gsl_vector_length(projected_gradient);
 
   Configuration* new_q = new Configuration(conf);
-//  log("dominik")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
+//  log("planner")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
     new_q->m_dofs[i] = formatRangeRadian( conf->m_dofs[i] + gsl_vector_get(projected_gradient, i) );
   gsl_vector_free(projected_gradient);
@@ -268,7 +270,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
 //  if(m_projectConstraints){
 //    map<unsigned int, KinVertex*>::iterator vit;
 //
-//    for(auto const& edge: conf->getMolecule()->m_spanningTree->Edges){
+//    for(auto const& edge: conf->getMolecule()->m_spanningTree->m_edges){
 //      int dof_id = edge->getDOF()->getIndex();
 //      int cycle_dof_id = edge->getDOF()->getCycleIndex();
 //      if ( cycle_dof_id!=-1 ) {
@@ -285,7 +287,7 @@ gsl_matrix* FastClashAvoidingMove::computeClashAvoidingJacobian(
   for(auto const& coll: collisions){
     Atom* atom1 = coll.first;
     Atom* atom2 = coll.second;
-    log("dominik") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
+    log("planner") << "Using clash constraint for atoms: "<<atom1->getId() << " " << atom2->getId() << endl;
 
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2

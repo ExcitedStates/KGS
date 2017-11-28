@@ -3,6 +3,7 @@
 *.lo
 *.o
 *.obj
+*.pyc
 
 # Precompiled Headers
 *.gch
@@ -27,3 +28,9 @@
 *.exe
 *.out
 *.app
+
+*.idea/
+debug
+release
+build
+cmake-build-debug

@@ -2,9 +2,9 @@ cmake_minimum_required (VERSION 2.8.8)
 
 project(KGS)
 
-set(KGS_MAJOR_VERSION 0)
-set(KGS_MINOR_VERSION 5)
-set(KGS_PATCH_VERSION 1)
+set(KGS_MAJOR_VERSION 1)
+set(KGS_MINOR_VERSION 1)
+set(KGS_PATCH_VERSION 0)
 set(KGS_VERSION ${KGS_MAJOR_VERSION}.${KGS_MINOR_VERSION}.${KGS_PATCH_VERSION})
 
 
@@ -24,62 +24,68 @@ endif()
 	message (STATUS "${CMAKE_CXX_COMPILER} ${CMAKE_CXX_FLAGS}")
 add_library( libKGS
 
-        core/Atom.h
-        core/Chain.h
-        core/Configuration.h
-        core/Coordinate.h
-        Color.h
-        CTKTimer.h
-        DisjointSets.h
-        core/Grid.h
-        HbondIdentifier.h
-        IO.h
-        Logger.h
-        core/Molecule.h
-        core/Bond.h
-        core/HBond.h
-        core/Residue.h
-        ResidueProfiles.h
-        core/Rigidbody.h
-        core/graph/KinGraph.h
-        applications/options/ExploreOptions.h
-        applications/options/TransitionOptions.h
-        applications/options/RelativeTransitionOptions.h
- 	applications/options/RigidityOptions.h
-        planners/SamplingPlanner.h
-        planners/DihedralRRT.h
-        planners/RRTPlanner.h
-        planners/PoissonPlanner.h
-        planners/PoissonPlanner2.h
-        planners/BidirectionalMovingFront.h
-        Selection.h
-        SiteID.h
-        Util.h
-        KGSExceptions.h
-        freeMKL.h
-        moves/Move.h
-        moves/RawMove.h
-#        moves/CompositeMove.h
-        moves/NullspaceMove.h
-        moves/RebuildMove.h
-        moves/FastClashAvoidingMove.h
-        moves/ClashAvoidingMove.h
-        moves/DecreaseStepMove.h
-        directions/Direction.h
-        directions/BlendedDirection.h
-        directions/RandomDirection.h
-        directions/DihedralDirection.h
-        directions/MSDDirection.h
-        directions/LSNullspaceDirection.h
-        directions/VDWDirection.h
-        math/MathUtility.h
-        math/SVD.h
-        math/infnan.h
-        math/math.h
-        math3d/primitives.h
-        metrics/Metric.h
-        metrics/RMSD.h
-        metrics/RMSDnosuper.h
+		core/Atom.h
+		core/Chain.h
+		core/Configuration.h
+		core/Coordinate.h
+		Color.h
+		CTKTimer.h
+		DisjointSets.h
+		core/Grid.h
+		HbondIdentifier.h
+		IO.h
+		Logger.h
+		core/Molecule.h
+		core/Bond.h
+		core/HBond.h
+		core/DBond.h
+		core/Residue.h
+		ResidueProfiles.h
+		core/Rigidbody.h
+		core/graph/KinGraph.h
+		applications/options/ApplicationOptions.h
+		applications/options/ExploreOptions.h
+		applications/options/TransitionOptions.h
+		applications/options/RelativeTransitionOptions.h
+		applications/options/RigidityOptions.h
+		applications/options/AlignOptions.h
+		applications/options/HierarchyOptions.h
+		planners/SamplingPlanner.h
+		planners/DihedralRRT.h
+		planners/RRTPlanner.h
+		planners/MCMCPlanner.h
+		planners/PoissonPlanner.h
+		planners/PoissonPlanner2.h
+		planners/BidirectionalMovingFront.h
+		Selection.h
+		SiteID.h
+		Util.h
+		KGSExceptions.h
+		freeMKL.h
+		moves/Move.h
+		moves/RawMove.h
+		#        moves/CompositeMove.h
+		moves/NullspaceMove.h
+		moves/RebuildMove.h
+		moves/FastClashAvoidingMove.h
+		moves/ClashAvoidingMove.h
+		moves/DecreaseStepMove.h
+		directions/Direction.h
+		directions/BlendedDirection.h
+		directions/RandomDirection.h
+		directions/DihedralDirection.h
+		directions/RelativeMSDDirection.h
+		directions/MSDDirection.h
+		directions/LSNullspaceDirection.h
+		directions/VDWDirection.h
+		math/MathUtility.h
+		math/SVD.h
+		math/infnan.h
+		math/math.h
+		math3d/primitives.h
+		metrics/Metric.h
+		metrics/RMSD.h
+		metrics/RMSDnosuper.h
 
         core/Atom.cpp
         core/Chain.cpp
@@ -97,17 +103,22 @@ add_library( libKGS
         core/Molecule.cpp
         core/Bond.cpp
         core/HBond.cpp
+        core/DBond.cpp
         core/Residue.cpp
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
         math/SVD.cpp
-        applications/options/ExploreOptions.cpp
-        applications/options/TransitionOptions.cpp
-        applications/options/RelativeTransitionOptions.cpp
-	applications/options/RigidityOptions.cpp 
+        applications/options/ApplicationOptions.cpp
+		applications/options/ExploreOptions.cpp
+		applications/options/TransitionOptions.cpp
+		applications/options/RelativeTransitionOptions.cpp
+		applications/options/RigidityOptions.cpp
+		applications/options/AlignOptions.cpp
+		applications/options/HierarchyOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
+		planners/MCMCPlanner.cpp
         planners/PoissonPlanner.cpp
         planners/PoissonPlanner2.cpp
         planners/BidirectionalMovingFront.cpp
@@ -128,7 +139,8 @@ add_library( libKGS
         directions/BlendedDirection.cpp
         directions/RandomDirection.cpp
         directions/DihedralDirection.cpp
-        directions/MSDDirection.cpp
+        directions/RelativeMSDDirection.cpp
+		directions/MSDDirection.cpp
         directions/LSNullspaceDirection.cpp
         directions/VDWDirection.cpp
         metrics/Dihedral.cpp
@@ -229,6 +241,7 @@ add_executable( kgs_rigidity        applications/MainRigidity.cpp )
 #add_executable( kgs_print_torsions  applications/MainTorsionPrinter.cpp )
 add_executable( kgs_ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( kgs_rmsd            applications/MainRmsd.cpp )
+add_executable( kgs_align            applications/MainAlign.cpp )
 add_executable( kgs_transition      applications/MainTransition.cpp )
 add_executable( kgs_loopexplore     applications/MainLoopExplore.cpp )
 add_executable( kgs_hierarchy       applications/MainHierarchy.cpp )
@@ -241,6 +254,7 @@ target_link_libraries( kgs_rigidity         libKGS ${GSL_LIBRARIES} )
 #target_link_libraries( kgs_print_torsions   libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_rmsd             libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_align             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_transition       libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_hierarchy        libKGS ${GSL_LIBRARIES} )

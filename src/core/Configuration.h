@@ -1,30 +1,31 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
@@ -88,6 +89,7 @@ class Configuration
   void projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector *after_project);
 
   void convertAllDofsToCycleDofs( gsl_vector *cycleDofs, gsl_vector *allDofs);
+  void convertCycleDofsToAllDofs( gsl_vector *allDofsAfter, gsl_vector *cycleDofs, gsl_vector *allDofsBefore = nullptr);
 
 //  static bool compareSize(std::pair<int, unsigned int> firstEntry, std::pair<int, unsigned int> secondEntry);//TODO: What is this?
 
@@ -124,6 +126,7 @@ class Configuration
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
 
   void rigidityAnalysis();
+  void deleteNullspace(); ///if not needed anymore, save memory
 
   Configuration* getParent();   ///< Access configuration that spawned this one
   std::list<Configuration*>& getChildren(); ///< Access child configurations
@@ -134,8 +137,8 @@ class Configuration
   void updateGlobalTorsions();           ///< Update the global DOF-values (m_dofs_global field)
   double *m_dofs_global;                 ///< DOF-values in a global system (not relative to Atom::reference_position)
   Molecule * const m_molecule;           ///< The molecule related to the configuration
-  Configuration * const m_parent;        ///< The parent-configuration this configuration was generated from
-  std::list<Configuration*> m_children;          ///< List of child-configurations
+  Configuration * m_parent;              ///< The parent-configuration this configuration was generated from
+  std::list<Configuration*> m_children;  ///< List of child-configurations
 
   void computeCycleJacobianAndNullSpace();
   void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian

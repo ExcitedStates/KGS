@@ -1,30 +1,32 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
+
 #include <iostream>
 #include <fstream>
 #include <list>
@@ -81,7 +83,7 @@ Molecule::~Molecule() {
   }
 
   // delete all chains
-  for (auto const &chain: chains) {
+  for (auto const &chain: m_chains) {
     delete chain;
   }
 
@@ -103,6 +105,9 @@ Molecule::~Molecule() {
   for (list<Hbond *>::iterator it=m_hBonds.begin(); it != m_hBonds.end(); ++it) {
     delete (*it);
   }
+  for (list<DBond *>::iterator it=m_dBonds.begin(); it != m_dBonds.end(); ++it) {
+    delete (*it);
+  }
 
   // delete m_spanningTree
   if (m_spanningTree!=nullptr)
@@ -119,6 +124,7 @@ string Molecule::getName () const {
 }
 
 Atom* Molecule::addAtom(
+    const bool& hetatm,
     const std::string& chainName,
     const std::string& resName,
     const int& resId,
@@ -130,7 +136,7 @@ Atom* Molecule::addAtom(
   if (chain==nullptr)  // this is a new chain
     chain = addChain(chainName);
 
-  Atom* ret = chain->addAtom(resName,resId, atomName, atomId, position);
+  Atom* ret = chain->addAtom(hetatm, resName,resId, atomName, atomId, position);
   m_atoms.push_back(ret);
 
   return ret;
@@ -162,7 +168,7 @@ Bond* Molecule::addCovBond (Atom* atom1, Atom* atom2) {
 }
 
 Chain*Molecule::getChain (const string& chain_name) const{
-  for(auto const& chain: chains)
+  for(auto const& chain: m_chains)
     if(chain->getName()==chain_name) return chain;
 
   return nullptr;
@@ -176,7 +182,7 @@ Chain*Molecule::addChain (const string& chainName) {
   }
 
   Chain* chain = new Chain(chainName, this);
-  chains.push_back(chain);
+  m_chains.push_back(chain);
   return chain;
 }
 
@@ -241,8 +247,16 @@ const std::list<Hbond*>& Molecule::getHBonds() const {
   return m_hBonds;
 }
 
+const std::list<DBond*>& Molecule::getDBonds() const {
+  return m_dBonds;
+}
+
 std::list<Hbond*>& Molecule::getHBonds(){
   return m_hBonds;
+}
+
+std::list<DBond*>& Molecule::getDBonds(){
+  return m_dBonds;
 }
 
 int Molecule::size() const {
@@ -278,7 +292,7 @@ void Molecule::setCollisionFactor(double collisionFactor)
 {
   m_collisionFactor = collisionFactor;
 
-  m_grid->setCollisionFactor(collisionFactor);
+  getGrid()->setCollisionFactor(collisionFactor);
 
   //Recompute initial collisions
   m_initialCollisions.clear();
@@ -303,20 +317,23 @@ void Molecule::setCollisionFactor(double collisionFactor)
 //}
 
 
-bool Molecule::inCollision (string collisionCheckAtoms ) const {
+bool Molecule::inCollision (string collisionCheckAtoms ) {
+
+  Grid* grid = getGrid();
 
   for (vector<Atom*>::const_iterator itr= m_atoms.begin(); itr != m_atoms.end(); ++itr)
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) )
-    if ( m_grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
+    if ( grid->inCollision(*itr, m_initialCollisions, collisionCheckAtoms)  )
       return true;
   return false;
 }
 
-double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
+double Molecule::minCollisionFactor (string collisionCheckAtoms) {
   double minCollFactor = 10000;
+  Grid* grid = getGrid();
   for (vector<Atom*>::const_iterator itr=m_atoms.begin(); itr!=m_atoms.end(); ++itr){
     if( (*itr)->isCollisionCheckAtom(collisionCheckAtoms ) ){
-      double factor = m_grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
+      double factor = grid->minFactorWithoutCollision(*itr, m_initialCollisions, collisionCheckAtoms);
       if(factor < minCollFactor){
         minCollFactor = factor;
       }
@@ -329,16 +346,18 @@ double Molecule::minCollisionFactor (string collisionCheckAtoms) const {
 /*
  * Get a list of colliding atoms in the current protein configuration.
  */
-std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionCheckAtoms ) const{
+std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionCheckAtoms ){
   if(m_conf==nullptr) {
     cerr << "Molecule::getAllCollisions - No configuration set" << endl;
     throw "Molecule::getAllCollisions - No configuration set";
   }
 
+  Grid* grid = getGrid();
+
   set< pair<Atom*,Atom*>> collisions;
   for (auto const& atom: m_atoms) {
     if( atom->isCollisionCheckAtom( collisionCheckAtoms ) ) {
-      vector<Atom *> colliding_atoms = m_grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
+      vector<Atom *> colliding_atoms = grid->getAllCollisions(atom, m_initialCollisions, collisionCheckAtoms);
       for (auto const& colliding_atom : colliding_atoms) {
         pair<Atom *, Atom *> collision_pair = make_pair(atom, colliding_atom);
         collisions.insert(collision_pair);
@@ -349,7 +368,7 @@ std::set< pair<Atom*,Atom*> > Molecule::getAllCollisions (std::string collisionC
 }
 //---------------------------------------------------------
 
-void Molecule::printAllCollisions () const {
+void Molecule::printAllCollisions () {
   for (auto const& atom_pair: getAllCollisions()){
     log() << atom_pair.first->getId() << " " << atom_pair.second->getId() << endl;
   }
@@ -358,95 +377,143 @@ void Molecule::printAllCollisions () const {
 void Molecule::addCovBond (Bond * bond) {
   //log()<<"Molecule::addCovBond("<<bond<<")"<<endl;
   m_covBonds.push_back(bond);
-  bond->Atom1->addCovBond(bond);
-  bond->Atom2->addCovBond(bond);
+  bond->m_atom1->addCovBond(bond);
+  bond->m_atom2->addCovBond(bond);
 }
 
 void Molecule::addHbond (Hbond * hb) {
   m_hBonds.push_back(hb);
-  hb->Atom1->addHbond(hb);
-  hb->Atom2->addHbond(hb);
+  hb->m_atom1->addHbond(hb);
+  hb->m_atom2->addHbond(hb);
+}
+void Molecule::addDBond (DBond * db) {
+  m_dBonds.push_back(db);
+//  db->m_atom1->addDBond(db);
+//  db->m_atom2->addDBond(db);
 }
 
-unsigned int Molecule::findBestRigidBodyMatch(int rootRBId, Molecule * target){
+std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, Molecule * target){
 
-  unsigned int bestId = 0;
-  unsigned int maxId = m_rigidBodyMap.size();
-  if(rootRBId >= 0){//user-specified, or standard choice of rb id == 0
-    if(rootRBId > maxId){
-      cout<<"User-specified m_root id "<<bestId<<" out of bounds. Choosing standard Id."<<endl;
-      return bestId;
-    }
-    cout<<"Choosing user-specified rigid body id "<<rootRBId<<" as m_root."<<endl;
-    return (unsigned int)rootRBId;
-  }
-  else {
-    if( target == nullptr ){
-      cout<<"No target to determine best m_root, choosing standard m_root id 0"<<endl;
-      return bestId;
-    }
-    //Check the rmsd between individual vertices and choose the closest pair as m_root
-    double bestSum = 9999;
-    for (map<unsigned int,Rigidbody*>::iterator rbit=m_rigidBodyMap.begin(); rbit!=m_rigidBodyMap.end(); ++rbit) {
-      vector<Atom*> *atomsRMSD = &(rbit->second->Atoms);
-      double sum=0;
-      bool allAtoms = true;
-      Coordinate c1, c2;
-      for (vector<Atom*>::iterator ait=atomsRMSD->begin(); ait!=atomsRMSD->end(); ++ait) {
-        string name = (*ait)->getName();
-        string chainName = (*ait)->getResidue()->getChain()->getName();
-        int resId = (*ait)->getResidue()->getId();
-        Atom* a1=this->getAtom(chainName,resId, name);
-        Atom* a2=target->getAtom(chainName,resId, name);
-        if(a1 && a2){
-          c1 = a1->m_position;
-          c2 = a2->m_position;
-          sum += c1.distanceSquared(c2);
-        } else{//only allow the rb's where all atoms are available in both proteins
-          allAtoms = false;
-        }
+  int standardId = 1; //standard choice for root rigid body
+  int maxId = m_atoms.size();
+  int chainCount = 0;
+  int rootId = 1;
+
+  std::vector<int> bestRootIDs;
+  for (const auto chain: this->getChains() ){
+    rootId = chainRoots[chainCount];
+    if (rootId >= 1) {//user-specified, or standard choice of atom id == 0
+      if (rootId > maxId) {
+        log("samplingStatus") << "User-specified root id " << rootId << " for chain " << chainCount <<" out of bounds. Choosing standard id "<<standardId << endl;
+        bestRootIDs.push_back(standardId);
       }
-      if(allAtoms){
-        sum = sqrt(sum/(atomsRMSD->size()));
-        if(sum<=bestSum){
-          bestSum=sum;
-          bestId=rbit->first;
-        }
+      else {
+        log("samplingStatus") << "Choosing user-specified atom id " << rootId << " as root for chain " << chainCount << endl;
+        bestRootIDs.push_back(rootId);
       }
     }
-    cout<<"Choosing rigid body id "<<bestId<<" as m_root. Root RB rmsd: "<<bestSum<<endl;
-    return bestId;
+    else { // root specified as <=0 --> therefore align and pick best rigid body
+      if (target == nullptr) {
+        log("samplingStatus") << "No target to determine best root, choosing standard root id "<<standardId << endl;
+        bestRootIDs.push_back(standardId);
+      }
+      //Check the rmsd between individual vertices and choose the closest pair as m_root
+      double bestSum = 9999;
+      int bestId = 1;
+      for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
+           rbit != m_rigidBodyMap.end(); ++rbit) {
+
+        vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
+        if (atomsRMSD->front()->getResidue()->getChain() != chain) {
+          continue;//skip if not this chain
+        }
+        double sum = 0;
+        bool allAtoms = true;
+        Coordinate c1, c2;
+        Atom* rootAtom = nullptr;
+
+        //loop through the rigid body atoms
+        for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
+          Atom* atom = (*ait);
+          string name = atom->getName();
+          string chainName = atom->getResidue()->getChain()->getName();
+          int resId = atom->getResidue()->getId();
+          if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom() ){
+            rootAtom = atom; //choose first heavy backbone atom as root
+          }
+          Atom *a2 = target->getAtom(chainName, resId, name);
+          if (atom && a2) {
+            c1 = atom->m_position;
+            c2 = a2->m_position;
+            sum += c1.distanceSquared(c2);
+          } else {//only allow the rb's where all atoms are available in both proteins
+            allAtoms = false;
+          }
+        }
+
+        if (allAtoms && rootAtom ) {
+          sum = sqrt(sum / (atomsRMSD->size()));
+          if (sum <= bestSum) {
+            bestSum = sum;
+            bestId = rootAtom->getId();
+          }
+        }
+      }
+      log("samplingStatus") << this->getName()<<": Choosing atom id " << bestId << " as root. Root RB rmsd: " << bestSum << endl;
+      bestRootIDs.push_back(bestId);
+    }
+    chainCount++;
   }
+  return bestRootIDs;
+}
+
+void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, const std::vector<int>& roots,Molecule* target) {
+  this->sortHbonds();
+  this->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+  ///adapted to multi-chain root choices based on input structures
+  vector<int> bestRoots = this->findBestRigidBodyMatch(roots,target);
+  this->buildSpanningTree(bestRoots); //Necessary before conformations are defined
+  this->setConfiguration(new Configuration(this));
+  this->setCollisionFactor(collisionFactor); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
 }
 
 
-
-void Molecule::buildRigidBodies(Selection& movingResidues) {
+void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //Create disjoint set
   DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
-  //For each atom not in a residue in movingResidues call Union (rigidifies everything not in movingResidues)
-  for(auto const& chain: chains) {
-    Atom* lastAtom = nullptr;
-    for (auto const& res: chain->getResidues()) {
-//      if(std::find(movingResidues.begin(), movingResidues.end(), res->getId())!=movingResidues.end())
-      if(movingResidues.inSelection(res)) {
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
-        continue; //Skip residue if its in movingResidues
-      }else {
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
-      }
+  //For all pairs of atoms in residues not in movingResidues call Union (rigidifies everything not in movingResidues)
+  for(auto const& atom: m_atoms) {
+    if(movingResidues.inSelection(atom)) continue;
 
-      for (Atom *const &res_atom: res->getAtoms()){
-        if(lastAtom==nullptr) {
-          lastAtom = res_atom;
-          continue;
-        }
-        ds.Union(lastAtom->getId(), res_atom->getId());
-        log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
-      }
+    for(auto const& neighbor: atom->Cov_neighbor_list){
+      if(movingResidues.inSelection(neighbor)) continue;
+
+      //Both atom and neighbor are outside movingResidues .. rigidify them
+      ds.Union(atom->getId(), neighbor->getId());
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying bond " << atom->getId() << " - ";
+      log("debug") << neighbor->getId() << " as they're not in residueNetwork" << endl;
     }
   }
+  //for(auto const& chain: chains) {
+  //  Atom* lastAtom = nullptr;
+  //  for (auto const& res: chain->getResidues()) {
+  //    if(movingResidues.inSelection(res)) {
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Not rigidifying residue " << res->getId() << endl;
+  //      continue; //Skip residue if its in movingResidues
+  //    }else {
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Rigidifying residue " << res->getId() << endl;
+  //    }
+
+  //    for (Atom *const &res_atom: res->getAtoms()){
+  //      if(lastAtom==nullptr) {
+  //        lastAtom = res_atom;
+  //        continue;
+  //      }
+  //      ds.Union(lastAtom->getId(), res_atom->getId());
+  //      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << lastAtom->getId() << " - " << res_atom->getId() << endl;
+  //    }
+  //  }
 
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<size();i++){
@@ -464,23 +531,26 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
   for (auto const& bond: getCovBonds()){
     if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
       count++;
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
+      ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+      log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->m_atom1->getId() << " - " << bond->m_atom2->getId() << endl;
       continue;
     }
   }
-  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" covalent bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" covalent bonds."<<endl;
   count=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
-  for (auto const& bond: getHBonds()){
-    if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
-      count++;
-      ds.Union(bond->Atom1->getId(), bond->Atom2->getId());
-      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->Atom2->getId() << endl;
-      continue;
+  if(collapseLevel == 2) {
+    for( auto const &bond: getHBonds()) {
+      if( bond->Bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
+        count++;
+        ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+        log("debug") << "IO::readRigidbody[" << __LINE__ << "] - Joining " << bond->m_atom1->getId() << " - "
+                     << bond->m_atom2->getId() << endl;
+        continue;
+      }
     }
   }
-  log("debug")<<"IO::buildRigidBodies[\"<< __LINE__<<\"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
 
   int c=0;
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
@@ -531,16 +601,23 @@ void Molecule::buildRigidBodies(Selection& movingResidues) {
 
   //Store bonds in rigid bodies
   for (auto const& bond: getCovBonds()){
-    int setId1 = ds.FindSet(bond->Atom1->getId());
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
     m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-    int setId2 = ds.FindSet(bond->Atom2->getId());
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
     if(setId1!=setId2)
       m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
   }
   for (auto const& bond: getHBonds()) {
-    int setId1 = ds.FindSet(bond->Atom1->getId());
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
     m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
-    int setId2 = ds.FindSet(bond->Atom2->getId());
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
+    if(setId1!=setId2)
+      m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
+  }
+  for (auto const& bond: getDBonds()) {
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
+    m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
     if(setId1!=setId2)
       m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
   }
@@ -561,14 +638,15 @@ void Molecule::buildSpanningTree(const vector<int>& rootIds) {
   m_spanningTree = new KinTree(rigidBodies, roots);
 }
 
-void Molecule::alignReferencePositionsTo(Molecule * base){
+double Molecule::alignReferencePositionsTo(Molecule * base, Selection &sel){
   this->restoreAtomPos();
-  Selection allSel;
-  metrics::RMSD rmsd(allSel);
-  rmsd.align(this,base);
+  metrics::RMSD rmsd(sel);
+  double rmsdVal = rmsd.align(this,base);
 
   for (auto const& atom: m_atoms)
     atom->m_referencePosition = atom->m_position;
+
+  return rmsdVal;
 }
 
 void Molecule::translateReferencePositionsToRoot(Molecule * base)
@@ -619,7 +697,7 @@ void Molecule::setConfiguration(Configuration *q){
   _SetConfiguration(q);
 
 //  if(q->getGlobalTorsions() == nullptr){
-//    log("dominik")<<"Now updating global torsions"<<endl;
+//    log("planner")<<"Now updating global torsions"<<endl;
 //    q->updateGlobalTorsions();
 //  }
 }
@@ -637,7 +715,8 @@ void Molecule::_SetConfiguration(Configuration *q ){
   KinVertex *root = m_spanningTree->m_root;
   root->forwardPropagate();
 
-  indexAtoms();
+//  indexAtoms();
+  m_grid = nullptr;
 }
 
 
@@ -661,7 +740,7 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
     KinVertex* node = queue.front();
     queue.pop_front();
 
-    //map<unsigned int,KinEdge*> m_children = node->Edges;
+    //map<unsigned int,KinEdge*> m_children = node->m_edges;
 
     //for (map<unsigned int,KinEdge*>::iterator edge_itr=m_children.begin(); edge_itr != m_children.end(); ++edge_itr){
     for (auto const& pEdge: node->m_edges){
@@ -675,7 +754,8 @@ void Molecule::_SetConfiguration(Configuration *q, KinVertex* root, vector<KinVe
     }
   }
 
-  indexAtoms();
+//  indexAtoms();
+  m_grid = nullptr;
 }
 
 int Molecule::totalDofNum () const {
@@ -702,7 +782,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = getGrid()->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 
@@ -717,7 +797,7 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
         continue;
 
       d_12 = atom1->distanceTo(atom2);
-      vdw_d12 = vdw_r1 + atom2->getRadius(); // from CHARMM: Todo: do we need the arithmetic mean or the sum?
+      vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
       double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
@@ -751,7 +831,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
     }
     vdw_r1 = atom1->getRadius();
     epsilon1 = atom1->getEpsilon();
-    vector<Atom*> neighbors = m_grid->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
+    vector<Atom*> neighbors = getGrid()->getNeighboringAtomsVDW(atom1,true,true,true,true,VDW_R_MAX);
     for (vector<Atom*>::const_iterator ait2=neighbors.begin(); ait2!=neighbors.end(); ++ait2) {
       Atom* atom2 = *ait2;
 
@@ -766,7 +846,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
         continue;
 
       d_12 = atom1->distanceTo(atom2);
-      vdw_d12 = vdw_r1 + atom2->getRadius(); // from CHARMM: Todo: do we need the arithmetic mean or the sum?
+      vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
       double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
@@ -778,46 +858,75 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   return energy;
 }
 
-///Create a set of common hbonds from the hbond list of another protein
+/////Create a set of common hbonds from the hbond list of another protein
 void Molecule::setToHbondIntersection (Molecule * p2) {
-  Hbond * hBond;
-  Atom *hatom, *acceptor, *donor, *AAatom;
-  list<Hbond *> intersection;
-  int count1=0, count2=0;
-  for (list<Hbond *>::iterator itr2=p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
-    hBond= (*itr2);
 
-    hatom = this->getAtom(hBond->Hatom->getResidue()->getChain()->getName(),hBond->Hatom->getResidue()->getId(), hBond->Hatom->getName());
-    acceptor = this->getAtom(hBond->Acceptor->getResidue()->getChain()->getName(),hBond->Acceptor->getResidue()->getId(), hBond->Acceptor->getName());
-    donor = this->getAtom(hBond->Donor->getResidue()->getChain()->getName(),hBond->Donor->getResidue()->getId(), hBond->Donor->getName());
-    AAatom = this->getAtom(hBond->AA->getResidue()->getChain()->getName(),hBond->AA->getResidue()->getId(), hBond->AA->getName());
+  Hbond *ownHbond, *otherHbond;
+  Atom *ownH, *ownA, *otherH, *otherA;
+  list<Hbond *> ownIntersection, otherIntersection;
+  list<Hbond *> deleteOwn, deleteOther;
+  bool found = false;
 
-    if( hatom && acceptor){
-      Hbond * new_hb = new Hbond(hatom, acceptor, donor, AAatom);
-      this->addHbond(new_hb);
-      intersection.push_back(hBond);
-      count1++;
+  for (list<Hbond *>::iterator itr1=this->m_hBonds.begin(); itr1 != this->m_hBonds.end(); ++itr1) {
+    found=false;
+    ownHbond = (*itr1);
+    ownH = ownHbond->Hatom;
+    ownA = ownHbond->Acceptor;
+
+    for (list<Hbond *>::iterator itr2 = p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
+
+      otherHbond = (*itr2);
+      otherH = otherHbond->Hatom;
+      otherA = otherHbond->Acceptor;
+
+      if (ownH->getName() == otherH->getName() &&
+          ownA->getName() == otherA->getName() &&
+          ownH->getResidue()->getId() == otherH->getResidue()->getId() &&
+          ownA->getResidue()->getId() == otherA->getResidue()->getId() &&
+          ownH->getResidue()->getChain()->getName() == otherH->getResidue()->getChain()->getName() &&
+          ownA->getResidue()->getChain()->getName() == otherA->getResidue()->getChain()->getName()) {
+        found = true;
+        break;
+      }
     }
-    else{
-      cout<<"Could not find specified hbond atoms in other protein: ";
-      cout<<hBond->Hatom->getResidue()->getId()<<" "<<hBond->Hatom->getName()<<", "<<hBond->Acceptor->getResidue()->getId()<<" "<<hBond->Acceptor->getName();
-      cout<<" Deleting to make hbond sets match!"<<endl;
-      Atom* hAtom = hBond->Hatom;
-      Atom* acceptor = hBond->Acceptor;
-      hAtom->removeHbond(hBond);
-      acceptor->removeHbond(hBond);
-//			p2->m_hBonds.erase(itr2);
-      count2++;
+    if (found) {
+      ownIntersection.push_back(ownHbond);
+      otherIntersection.push_back(otherHbond);
     }
   }
-  p2->m_hBonds=intersection;
+  ///Delete hbonds non-existing in both molecules
+  for (list<Hbond *>::iterator itr1=this->m_hBonds.begin(); itr1 != this->m_hBonds.end(); ++itr1) {
+    ownHbond = (*itr1);
+    if(find(ownIntersection.begin(),ownIntersection.end(),ownHbond) == ownIntersection.end()) {
+      ownHbond->Hatom->removeHbond(ownHbond); //moved to destructor
+      ownHbond->Acceptor->removeHbond(ownHbond); //moved to destructor
+      delete ownHbond;
+      ownHbond = nullptr;
+    }
+  }
+  for (list<Hbond *>::iterator itr2=p2->m_hBonds.begin(); itr2 != p2->m_hBonds.end(); ++itr2) {
+    otherHbond = (*itr2);
+    if (find(otherIntersection.begin(), otherIntersection.end(), otherHbond) == otherIntersection.end()) {
+      otherHbond->Hatom->removeHbond(otherHbond); //moved to destructor
+      otherHbond->Acceptor->removeHbond(otherHbond); //moved to destructor
+      delete otherHbond;
+      otherHbond = nullptr;
+    }
+  }
+  //Reset the intersection pointers
+  this->m_hBonds = ownIntersection;
+  p2->m_hBonds = otherIntersection;
+}
+
+void Molecule::sortHbonds() {
+  m_hBonds.sort(Bond::compareIDs);
 }
 
 int Molecule::countOriginalDofs () const {
   int num = 0;
   for (list<Bond *>::const_iterator it=m_covBonds.begin(); it != m_covBonds.end(); ++it) {
-    Atom* a1 = (*it)->Atom1;
-    Atom* a2 = (*it)->Atom2;
+    Atom* a1 = (*it)->m_atom1;
+    Atom* a2 = (*it)->m_atom2;
     if ( a1->Cov_neighbor_list.size()==1 || a2->Cov_neighbor_list.size()==1 )
       continue;
     ++num;
@@ -852,7 +961,7 @@ double Molecule::checkCycleClosure(Configuration *q){
   setConfiguration(q);
   //Todo: Use intervals for hydrogen bond angles and lengths
   vector< pair<KinEdge*,KinVertex*> >::iterator pair_it;
-  KinEdge *hBondEdge;
+  KinEdge *cycleEdge;
   int id=1;
   double maxViolation = 0.0;
   double normOfViolation = 0.0;
@@ -862,21 +971,29 @@ double Molecule::checkCycleClosure(Configuration *q){
   for (pair_it=m_spanningTree->m_cycleAnchorEdges.begin(); pair_it!=m_spanningTree->m_cycleAnchorEdges.end(); ++pair_it) {
 
     // get end-effectors
-    hBondEdge = pair_it->first;
+    cycleEdge = pair_it->first;
+    if( !cycleEdge->getBond()->isHBond()) continue; // for now have to check for hbonds
+    //Todo: Make this more general using a torsional constraint class which is the cycle edges
+
     KinVertex* common_ancestor = pair_it->second;
-    Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
+    Hbond * hBond = reinterpret_cast<Hbond *>(cycleEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = hBond->Atom1;
-    Atom* atom2 = hBond->Atom2;
+    Atom* atom1 = hBond->m_atom1;
+    Atom* atom2 = hBond->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
 
-    KinVertex* vertex1 = hBondEdge->StartVertex;
-    KinVertex* vertex2 = hBondEdge->EndVertex;
+    if(hBond->AA== nullptr || hBond->Donor == nullptr){
+      cerr<<"Not enough neighbors for h-bond between "<<atom1->getId()<<" and "<<atom2->getId()<<endl;
+      exit(-1);
+    }
+
+    KinVertex* vertex1 = cycleEdge->StartVertex;
+    KinVertex* vertex2 = cycleEdge->EndVertex;
     if(find(vertex1->m_rigidbody->Atoms.begin(),vertex1->m_rigidbody->Atoms.end(),atom1) == vertex1->m_rigidbody->Atoms.end()){
-      vertex1=hBondEdge->EndVertex;
-      vertex2=hBondEdge->StartVertex;
+      vertex1=cycleEdge->EndVertex;
+      vertex2=cycleEdge->StartVertex;
     }
 
 
@@ -950,8 +1067,8 @@ void Molecule::computeCycleViolation(Configuration *q, gsl_vector* currentViolat
     Hbond * hBond = reinterpret_cast<Hbond *>(hBondEdge->getBond());
 
     //End-effectors and their positions, corresponds to a and b
-    Atom* atom1 = hBond->Atom1;
-    Atom* atom2 = hBond->Atom2;
+    Atom* atom1 = hBond->m_atom1;
+    Atom* atom2 = hBond->m_atom2;
     Coordinate p1 = atom1->m_position; //end-effector, position 1
     Coordinate p2 = atom2->m_position; //end-effector, position 2
 
@@ -990,11 +1107,11 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
   vector<int> resetDOFs;
   vector<double> resetValues;
   vector<int> recloseDOFs;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
-    int res1 = e->getBond()->Atom1->getResidue()->getId();
-    int res2 = e->getBond()->Atom2->getResidue()->getId();
-    if( res1==(startRes-1) && res2==(startRes-1) && e->getBond()->Atom1->getName()=="C3'" && e->getBond()->Atom2->getName()=="O3'" ){
+    int res1 = e->getBond()->m_atom1->getResidue()->getId();
+    int res2 = e->getBond()->m_atom2->getResidue()->getId();
+    if( res1==(startRes-1) && res2==(startRes-1) && e->getBond()->m_atom1->getName()=="C3'" && e->getBond()->m_atom2->getName()=="O3'" ){
       recloseDOFs.push_back(e->getDOF()->getIndex());
       if(aggression>=2){
         resetDOFs.push_back(e->getDOF()->getIndex());
@@ -1002,8 +1119,8 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
       }
     }
     if( res1==endRes && res2==endRes && (
-        e->getBond()->Atom1->getName()=="P" ||
-        e->getBond()->Atom1->getName()=="O5'"
+        e->getBond()->m_atom1->getName()=="P" ||
+        e->getBond()->m_atom1->getName()=="O5'"
     ) ){
       recloseDOFs.push_back(e->getDOF()->getIndex());
       if(aggression>=2){
@@ -1012,20 +1129,20 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
       }
     }
     if( (res1>=startRes && res1<endRes) || (res2>=startRes && res2<endRes) ){
-      if(	e->getBond()->Atom1->getName()=="P" || e->getBond()->Atom2->getName()=="P" ||
-           e->getBond()->Atom1->getName()=="C5'" || e->getBond()->Atom2->getName()=="C5'" ||
-           e->getBond()->Atom1->getName()=="C4'" || e->getBond()->Atom2->getName()=="C4'" ||
-           e->getBond()->Atom1->getName()=="C3'" || e->getBond()->Atom2->getName()=="C3'" ||
-           e->getBond()->Atom1->getName()=="O3'" || e->getBond()->Atom2->getName()=="O3'" ||
-           e->getBond()->Atom1->getName()=="O5'" || e->getBond()->Atom2->getName()=="O5'" ){
+      if(	e->getBond()->m_atom1->getName()=="P" || e->getBond()->m_atom2->getName()=="P" ||
+           e->getBond()->m_atom1->getName()=="C5'" || e->getBond()->m_atom2->getName()=="C5'" ||
+           e->getBond()->m_atom1->getName()=="C4'" || e->getBond()->m_atom2->getName()=="C4'" ||
+           e->getBond()->m_atom1->getName()=="C3'" || e->getBond()->m_atom2->getName()=="C3'" ||
+           e->getBond()->m_atom1->getName()=="O3'" || e->getBond()->m_atom2->getName()=="O3'" ||
+           e->getBond()->m_atom1->getName()=="O5'" || e->getBond()->m_atom2->getName()=="O5'" ){
         recloseDOFs.push_back(e->getDOF()->getIndex());
         if(aggression>=2){
           resetDOFs.push_back(e->getDOF()->getIndex());
           resetValues.push_back(RandomAngleUniform(3.1415));
         }
       }else if(
-          e->getBond()->Atom1->getName()=="C2'" || e->getBond()->Atom2->getName()=="C2'" ||
-          e->getBond()->Atom1->getName()=="C1'" || e->getBond()->Atom2->getName()=="C1'" ){
+          e->getBond()->m_atom1->getName()=="C2'" || e->getBond()->m_atom2->getName()=="C2'" ||
+          e->getBond()->m_atom1->getName()=="C1'" || e->getBond()->m_atom2->getName()=="C1'" ){
         if(aggression>=1){
           resetDOFs.push_back(e->getDOF()->getIndex());
           resetValues.push_back(RandomAngleUniform(3.1415));
@@ -1051,7 +1168,7 @@ Configuration*Molecule::resampleSugars(int startRes, int endRes, Configuration* 
  * a connected subgraph the behavior of this method is unspecified.
  * Returns the configuration and leaves the m_molecule with that configuration set.
  */
-Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& resetValues, vector<int>& recloseDOFs, vector<int>& ignoreDOFs, Configuration* cur){
+Configuration* Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& resetValues, vector<int>& recloseDOFs, vector<int>& ignoreDOFs, Configuration* cur){
   //enableLogger("debugRebuild");
 
   double start_time, end_time, total_time;
@@ -1072,7 +1189,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   vector<KinVertex*> subVerts;
   vector<KinEdge*> subEdges;
   KinEdge* entry = nullptr;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
     if(	find(resetDOFs.begin(), 	resetDOFs.end(), 	e->getDOF()->getIndex())!=resetDOFs.end() ||
          find(recloseDOFs.begin(), 	recloseDOFs.end(), 	e->getDOF()->getIndex())!=recloseDOFs.end() ||
@@ -1093,7 +1210,7 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
 
   //Collect m_edges with endpoints in subgraph and choose the covalent edge nearest to the m_root
   vector<KinEdge*> boundary;
-  for(vector<KinEdge*>::iterator eit = m_spanningTree->Edges.begin(); eit!=m_spanningTree->Edges.end(); eit++){
+  for(vector<KinEdge*>::iterator eit = m_spanningTree->m_edges.begin(); eit!=m_spanningTree->m_edges.end(); eit++){
     KinEdge* e = *eit;
     bool firstInSub = find(subVerts.begin(), subVerts.end(), e->StartVertex)!=subVerts.end();
     bool lastInSub = find(subVerts.begin(), subVerts.end(), e->EndVertex)!=subVerts.end();
@@ -1122,10 +1239,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     KinEdge* e = *eit;
     if(e->getBond()!=nullptr) {
-      storedPositions.push_back(e->getBond()->Atom1->m_position);
-      storedPositions.push_back(e->getBond()->Atom2->m_position);
+      storedPositions.push_back(e->getBond()->m_atom1->m_position);
+      storedPositions.push_back(e->getBond()->m_atom2->m_position);
       //log("debugRas")<<"Cylinder["<<e->getBond()->Atom1->m_position[0]<<", "<<e->getBond()->Atom1->m_position[1]<<", "<<e->getBond()->Atom1->m_position[2]<<", ";
-      //log("debugRas")<<e->getBond()->Atom2->m_position[0]<<", "<<e->getBond()->Atom2->m_position[1]<<", "<<e->getBond()->Atom2->m_position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
+      //log("debugRas")<<e->getBond()->m_atom2->m_position[0]<<", "<<e->getBond()->m_atom2->m_position[1]<<", "<<e->getBond()->m_atom2->m_position[2]<<", 0.1, 0.9,0.9,0.2]"<<endl;
 
       //log("debugRebuild")<<"1: storedTorsion["<<storedTorsions.size()<<"] .. ";
       storedTorsions.push_back(e->getBond()->getTorsion());
@@ -1141,14 +1258,14 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
   }
   for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
     //(*eit)->getBond()->Atom1->m_bPositionModified = false;
-    //(*eit)->getBond()->Atom2->m_bPositionModified = false;
-    (*eit)->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-    (*eit)->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+    //(*eit)->getBond()->m_atom2->m_bPositionModified = false;
+    (*eit)->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+    (*eit)->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
   }
   //entry->getBond()->Atom1->m_bPositionModified = false;
-  //entry->getBond()->Atom2->m_bPositionModified = false;
-  entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-  entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+  //entry->getBond()->m_atom2->m_bPositionModified = false;
+  entry->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+  entry->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
   //TODO: Also sugars
 
   //Change DOFs in resetDOFs to values indicated in resetValues
@@ -1172,8 +1289,8 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
     int c = 0;
     for(vector<KinEdge*>::iterator bit = boundary.begin(); bit!=boundary.end(); bit++){
       KinEdge* eBoundary = *bit;
-      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->Atom1->m_position);
-      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->Atom2->m_position);
+      Math3D::Vector3 v1 = (storedPositions[c*2+0])-(eBoundary->getBond()->m_atom1->m_position);
+      Math3D::Vector3 v2 = (storedPositions[c*2+1])-(eBoundary->getBond()->m_atom2->m_position);
       //log("debugRas")<<"Stored["<<c*2+0<<"]"
       gsl_vector_set(e, c*6+0, v1[0]*e_scaling);
       gsl_vector_set(e, c*6+1, v1[1]*e_scaling);
@@ -1226,10 +1343,10 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
         int dof = find(recloseDOFs.begin(), recloseDOFs.end(), e->getDOF()->getIndex())-recloseDOFs.begin();
         //log("debugRas")<<"DOF: "<<dof<<endl;
         if(dof<recloseDOFs.size()){ // Continue if the edge is not in the recloseDOFs
-          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom1->m_position);
-          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->Atom2->m_position, eBoundary->getBond()->Atom2->m_position);
-          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom1->m_position);
-          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->Atom2->m_position);
+          //Math3D::Vector3 v1 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->m_atom2->m_position, eBoundary->getBond()->Atom1->m_position);
+          //Math3D::Vector3 v2 = ComputeJacobianEntry(e->getBond()->Atom1->m_position, e->getBond()->m_atom2->m_position, eBoundary->getBond()->m_atom2->m_position);
+          Math3D::Vector3 v1 = e->getDOF()->getDerivative(eBoundary->getBond()->m_atom1->m_position);
+          Math3D::Vector3 v2 = e->getDOF()->getDerivative(eBoundary->getBond()->m_atom2->m_position);
           gsl_matrix_set(J, c*6+0, dof, v1[0]);
           gsl_matrix_set(J, c*6+1, dof, v1[1]);
           gsl_matrix_set(J, c*6+2, dof, v1[2]);
@@ -1284,11 +1401,11 @@ Configuration*Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& res
       }
     }
     for(vector<KinEdge*>::iterator eit = boundary.begin(); eit!=boundary.end(); eit++){
-      (*eit)->getBond()->Atom1->m_position = (*eit)->getBond()->Atom1->m_referencePosition;
-      (*eit)->getBond()->Atom2->m_position = (*eit)->getBond()->Atom2->m_referencePosition;
+      (*eit)->getBond()->m_atom1->m_position = (*eit)->getBond()->m_atom1->m_referencePosition;
+      (*eit)->getBond()->m_atom2->m_position = (*eit)->getBond()->m_atom2->m_referencePosition;
     }
-    entry->getBond()->Atom1->m_position = entry->getBond()->Atom1->m_referencePosition;
-    entry->getBond()->Atom2->m_position = entry->getBond()->Atom2->m_referencePosition;
+    entry->getBond()->m_atom1->m_position = entry->getBond()->m_atom1->m_referencePosition;
+    entry->getBond()->m_atom2->m_position = entry->getBond()->m_atom2->m_referencePosition;
 
     //Move according to J_dag·e
     _SetConfiguration(ret, entry->StartVertex, subVerts);//, false);
@@ -1333,7 +1450,8 @@ Molecule* Molecule::deepClone() const{
 
   //Clone atoms
   for(auto const& atom: getAtoms()){
-    Atom* newAtom = ret->addAtom(
+    ret->addAtom(
+        atom->isHetatm(),
         atom->getResidue()->getChain()->getName(),
         atom->getResidue()->getName(),
         atom->getResidue()->getId(),
@@ -1348,8 +1466,8 @@ Molecule* Molecule::deepClone() const{
 
   //Clone covalent bonds
   for(auto const& covBond: getCovBonds()){
-    Atom* a1_new = ret->getAtom( covBond->Atom1->getId() );
-    Atom* a2_new = ret->getAtom( covBond->Atom2->getId() );
+    Atom* a1_new = ret->getAtom( covBond->m_atom1->getId() );
+    Atom* a2_new = ret->getAtom( covBond->m_atom2->getId() );
 //    Bond* newBond = ret->addCovBond( a1_new->getResidue(), a2_new->getResidue(), a1_new->getName(), a2_new->getName() );
     Bond* newBond = ret->addCovBond( a1_new, a2_new );
     if(newBond){
@@ -1368,6 +1486,15 @@ Molecule* Molecule::deepClone() const{
     new_hb->Bars = hbond->Bars;
     new_hb->rigidified = hbond->rigidified;
     ret->addHbond(new_hb);
+  }
+
+  //Clone dbonds
+  for(auto const& dbond: getDBonds()) {
+    Atom *a1 = ret->getAtom(dbond->m_atom1->getId());
+    Atom *a2 = ret->getAtom(dbond->m_atom2->getId());
+    DBond *new_db = new DBond(a1, a2);
+    new_db->Bars = dbond->Bars;
+    ret->addDBond(new_db);
   }
 
   // Fill in the second_cov_neighbor_list
@@ -1394,35 +1521,35 @@ Molecule* Molecule::deepClone() const{
   return ret;
 }
 
-Molecule* Molecule::collapseRigidBonds(int collapseLevel){
-  assert(collapseLevel==1 || collapseLevel==2);
+Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
+  assert(collapseLevel == 1 || collapseLevel == 2);
 
   m_conf->rigidityAnalysis();//identifies rigidified bonds necessary for collapsing
 
-  Molecule* ret = deepClone();
+  Molecule *ret=deepClone();
 
   int i=0; //indexing for hBonds
   //To collapse molecule, we turn rigid h-bonds into covalent bonds
-//  if(collapseLevel==2) {
-    for (auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges) {
+  if(collapseLevel==2) {
+    for( auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges ) {
 
-      KinEdge *edge = edge_nca_pair.first;
-      KinVertex *common_ancestor = edge_nca_pair.second;
+      KinEdge *edge=edge_nca_pair.first;
 
       //Get corresponding rigidity information
-      if (m_conf->getNullspace()->isHBondRigid(i++)) {
+      if( m_conf->getNullspace()->isHBondRigid(i++)) {
         //If its a rigid hbond convert it to a rigid covalent bond
-        if (edge->getBond()->isHbond()) {
-          Atom *a1_new = ret->getAtom(edge->getBond()->Atom1->getId());
-          Atom *a2_new = ret->getAtom(edge->getBond()->Atom2->getId());
-          Bond *newBond = ret->addCovBond(a1_new, a2_new);
-          if (newBond) {
-            newBond->rigidified = true;
+        if( edge->getBond()->isHBond()) {
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified=true;
 //          log("debug")<<"Molecule.cpp:"<<__LINE__<<" covalently connecting "<<a1_new<<"-"<<a2_new<<" with rigid bond"<<endl;
           }
         }
       }//end if
     }
+  }
 
   //Recreate roots vector. For edge leaving the root, descend until a rigid body is found and then pick the first atom
   vector<int> roots;
@@ -1435,7 +1562,7 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel){
   }
 
   Selection movingResidues("all");
-  ret->buildRigidBodies(movingResidues); //Necessary to do before building spanning tree
+  ret->buildRigidBodies(movingResidues, collapseLevel); //Necessary to do before building spanning tree
   ret->buildSpanningTree(roots); //Necessary before conformations are defined
   ret->setConfiguration(new Configuration(ret));
   ret->setCollisionFactor(m_collisionFactor); //Sets the initial collisions
@@ -1469,9 +1596,10 @@ void Molecule::writeRigidbodyIDToBFactor()
   for(auto const& idPair : sortedRBs){
     ///get rb id sorted by size, access rb in protein, color all atoms to id
     Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
-//    cout<<"Rigidbody ID: "<<currentRB->id()<<", size: "<<currentRB->size()<<", output ID: "<<outputID<<endl;
+//    log("debug")<<"WriteRBID: sorted number "<<outputID<<" rigid body ID "<<currentRB->id()<<" size "<<currentRB->size()<<endl;
     for(auto const& atom: currentRB->Atoms){
-      atom->setBFactor(outputID);
+//      atom->setBFactor(float(outputID)/100);
+      atom->setBFactor(float(currentRB->id())/100);
     }
     outputID++;
   }

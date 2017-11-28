@@ -1,30 +1,31 @@
 /*
-    KGSX: Biomolecular Kino-geometric Sampling and Fitting of Experimental Data
-    Yao et al, Proteins. 2012 Jan;80(1):25-43
-    e-mail: latombe@cs.stanford.edu, vdbedem@slac.stanford.edu, julie.bernauer@inria.fr
 
-        Copyright (C) 2011-2013 Stanford University
+Excited States software: KGS
+Contributors: See CONTRIBUTORS.txt
+Contact: kgs-contact@simtk.org
 
-        Permission is hereby granted, free of charge, to any person obtaining a copy of
-        this software and associated documentation files (the "Software"), to deal in
-        the Software without restriction, including without limitation the rights to
-        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-        of the Software, and to permit persons to whom the Software is furnished to do
-        so, subject to the following conditions:
+Copyright (C) 2009-2017 Stanford University
 
-        This entire text, including the above copyright notice and this permission notice
-        shall be included in all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-        IN THE SOFTWARE.
+This entire text, including the above copyright notice and this permission notice
+shall be included in all copies or substantial portions of the Software.
 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS, CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 */
+
 #ifndef PROTEIN_H
 #define PROTEIN_H
 
@@ -38,6 +39,7 @@
 #include "Rigidbody.h"
 #include "core/graph/KinGraph.h"
 #include "core/Configuration.h"
+#include "DBond.h"
 
 class Chain;
 class Grid;
@@ -51,7 +53,7 @@ class Molecule {
   KinTree *m_spanningTree; ///< Topology of rigid bodies
   Configuration *m_conf;   ///< Currently set configuration
   int* residueAnnotations;
-  std::vector<Chain*> chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
+  std::vector<Chain*> m_chains; ///< Chains in the molecule. Each chain contains residues which in turn contains atoms
 
   Molecule();
   ~Molecule();
@@ -59,6 +61,7 @@ class Molecule {
   void setName(const std::string& name);
   std::string getName() const;
   Chain* getChain (const std::string& chainName) const;
+  const std::vector<Chain*>  getChains () const { return m_chains;};
   Atom* getAtom (int atom_id) const;
   Atom* getAtom(const std::string& chainName, const int& resNum, const std::string& name) const;
   const std::vector<Atom*>& getAtoms() const;
@@ -66,17 +69,19 @@ class Molecule {
   const std::list<Bond*>& getCovBonds() const;
   std::list<Bond*>& getCovBonds();
   const std::list<Hbond*>& getHBonds() const;
+  const std::list<DBond*>& getDBonds() const;
   std::list<Hbond*>& getHBonds();
+  std::list<DBond*>& getDBonds();
 
   int getMinResidueNumber();
   int getMaxResidueNumber();
   int size() const;
   int totalDofNum () const;
-  bool inCollision (std::string collisionCheckAtoms = "all" ) const;
-  std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" ) const;
-  double minCollisionFactor (std::string collisionCheckAtoms = "all" ) const;
-  void printAllCollisions () const;
-  void alignReferencePositionsTo(Molecule * base);
+  bool inCollision (std::string collisionCheckAtoms = "all" );
+  std::set< std::pair<Atom*,Atom*> > getAllCollisions (std::string collisionCheckAtoms = "all" );
+  double minCollisionFactor (std::string collisionCheckAtoms = "all" );
+  void printAllCollisions () ;
+  double alignReferencePositionsTo(Molecule * base,Selection &sel);
   void translateReferencePositionsToRoot(Molecule * base);
   Grid* getGrid();
   void setCollisionFactor(double collisionFactor);
@@ -91,8 +96,9 @@ class Molecule {
 
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
+  void addDBond (DBond * db);
   void setToHbondIntersection (Molecule * p2);
-  unsigned int findBestRigidBodyMatch(int rootRBId, Molecule * target = nullptr);
+  std::vector<int> findBestRigidBodyMatch(std::vector<int> rootID, Molecule * target = nullptr);
 
 
   std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
@@ -111,7 +117,8 @@ class Molecule {
   void writeRigidbodyIDToBFactor();
 
   const std::vector<Rigidbody*> getRigidbodies() const;
-  void buildRigidBodies (Selection& movingResidues);
+  void buildRigidBodies (Selection& movingResidues, int collapseLevel = 1);
+  void initializeTree(Selection& movingResidues,double collisionFactor = 1.0, const std::vector<int> &roots = {},Molecule* target = nullptr);
 
  private:
   std::string m_name;
@@ -119,6 +126,7 @@ class Molecule {
   Grid *m_grid;
   std::list<Bond *> m_covBonds;
   std::list<Hbond *> m_hBonds;
+  std::list<DBond *> m_dBonds;
   std::vector<Atom*> m_atoms;
   std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
   double m_collisionFactor;
@@ -127,20 +135,25 @@ class Molecule {
   void _SetConfiguration(Configuration *q, KinVertex* root, std::vector<KinVertex*>& subVerts);
 
   Chain* addChain (const std::string& chainName);
-  Atom* addAtom(const std::string& chain_name,
-                const std::string& res_name,
-                const int& res_id,
-                const std::string& atomName,
-                const int& atomId,
-                const Coordinate& position );
+  Atom* addAtom(
+      const bool& hetatm,
+      const std::string& chain_name,
+      const std::string& res_name,
+      const int& res_id,
+      const std::string& atomName,
+      const int& atomId,
+      const Coordinate& position
+  );
   Bond* addCovBond(Atom* atom1, Atom* atom2);
+
+  void sortHbonds();
 
   void restoreAtomPos();
   void indexAtoms();
 
   void buildSpanningTree(const std::vector<int>& rootIds);
 
-  friend class IO; //The IO::readPdb function uses the addAtom function
+  friend class IO; //The IO::readPdb function uses the addAtom function and sort hBonds function
 
 };
 
