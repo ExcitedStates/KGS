@@ -9,7 +9,6 @@ engine:
 * [kgs_explore](https://github.com/ExcitedStates/KGS/wiki/kgs_explore/): Generating conformational ensemble from a seed structure
 * [kgs_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_transition/): Directed sampling from initial structure to target structure
 * [kgs_rigidity](https://github.com/ExcitedStates/KGS/wiki/kgs_rigidity/): Rigidity analysis of structure file
-* kgs_deerprep: In progress
 * [kgs_relative_transition](https://github.com/ExcitedStates/KGS/wiki/kgs_relative_transition/): Driving conformations.
 
 
