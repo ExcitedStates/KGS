@@ -401,6 +401,11 @@ std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, M
 
   std::vector<int> bestRootIDs;
   for (const auto chain: this->getChains() ){
+    if (chainRoots.size() <= chainCount) {
+      bestRootIDs.push_back(standardId);
+      chainCount++;
+      continue;
+    }
     rootId = chainRoots[chainCount];
     if (rootId >= 1) {//user-specified, or standard choice of atom id == 0
       if (rootId > maxId) {
@@ -477,10 +482,9 @@ void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, 
   this->setCollisionFactor(collisionFactor); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
 }
 
-
 void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //Create disjoint set
-  DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+  DisjointSets ds(this->getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
   //For all pairs of atoms in residues not in movingResidues call Union (rigidifies everything not in movingResidues)
   for(auto const& atom: m_atoms) {

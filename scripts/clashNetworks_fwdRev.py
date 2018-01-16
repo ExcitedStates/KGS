@@ -53,7 +53,7 @@ def main():
 	"""
 
 	if len(sys.argv)<4:
-		print "Usage: "+sys.argv[0]+"<minClashNumber>, <output.txt> <path.pdb files in a row> "#, <reverse pdb file>, <forward pdb file> "
+		print "Usage: "+sys.argv[0]+"<minClashNumber> <output.txt> <path.pdb files in a row> "#, <reverse pdb file>, <forward pdb file> "
 		print "Start this from the base directory of all experiments"
 		sys.exit(1)
 	
@@ -61,7 +61,10 @@ def main():
 		
 	pdbFile = ""
 	pdbFileRev = ""
-	with open(sys.argv[2]) as outputFile:
+	pdbFileIn = sys.argv[2]
+	pathFileSepIdx = pdbFileIn.find("/output.txt")
+	pdbFileFolder = pdbFileIn[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
+	with open(pdbFileIn) as outputFile:
 		for line in outputFile:
 			if "--initial " in line:
 				pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
@@ -70,18 +73,6 @@ def main():
 				pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
 				break;
 	
-	# pdbPath=sys.argv[3]
-	# if( len(sys.argv) > 4):
-	# 	pdbFile=sys.argv[-1]
-	# 	modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
-	# 	pdbFileRev = sys.argv[-2]
-	# else:
-	# 	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
-	# 	pdbFile = "../"+modelName+".pdb"
-	# 	
-	# print modelName
-
-
 	fwdClashes = []
 	revClashes = []
 
@@ -92,9 +83,9 @@ def main():
 	# for pFile in range(len(sys.argv)-4):
 	# pdbPath=sys.argv[pFile+2]
 	for pdbPath in sys.argv[3:]:
-	
 		pathFileSepIdx = pdbPath.find("/output")
 		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
+		print expDir
 		pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
 	
 		print "Changing to "+str(expDir)
@@ -103,7 +94,10 @@ def main():
 		# pathList, reversePathList = extractPath(pdbPath)
 		# allClashes = getClashes(pdbPath,pathList, reversePathList)
 	
-		print "Now in "+str(os.getcwd())
+		if not os.path.isfile(pathFileToOpen):
+			print "Skipping",pathFileToOpen
+			os.chdir(currDir)
+			continue #skipping non-existing path file
 		pathList, reversePathList = extractPath(pathFileToOpen)
 		# allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
 		forwardClashes, reverseClashes = getClashes(pathFileToOpen,pathList, reversePathList)
@@ -112,7 +106,7 @@ def main():
 		sumRuns += 1
 		os.chdir(currDir)
 	# End of multi-path loop
-
+	os.chdir(pdbFileFolder)
 	fwdAtomResidueList = getAtomResidueList(pdbFile)
 	revAtomResidueList = getAtomResidueList(pdbFileRev)
 
@@ -126,7 +120,7 @@ def main():
 	clashResidues,numSets = convertClashesToResidueNetworks(sorted_collection,minClashNumber,sumRuns)
 
 	out = pdbAlterBFactor(pdbFile,clashResidues)
-	
+	os.chdir(currDir)
 	print "Number of sets: "+str(numSets)
 	d="comboAnalysis"
 	if not os.path.exists(d):

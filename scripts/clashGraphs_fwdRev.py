@@ -16,6 +16,7 @@ from clashFunctions import convertAtomClashesToResidueClashes
 from clashFunctions import convertClashesToResidueNetworks
 from clashFunctions import pdbAlterBFactor
 from clashFunctions import convertResidueClashesToLinks
+from PDB import PDBFile
 from math import log
 import csv
 from matplotlib.ticker import MultipleLocator, LinearLocator, FormatStrFormatter
@@ -102,8 +103,10 @@ def main():
         
     pdbFile = ""
     pdbFileRev = ""
-    outputTxtFile = sys.argv[2]
-    with open(outputTxtFile) as outputFile:
+    pdbFileIn = sys.argv[2]
+    pathFileSepIdx = pdbFileIn.find("/output.txt")
+    pdbFileFolder = pdbFileIn[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
+    with open(pdbFileIn) as outputFile:
         for line in outputFile:
             if "--initial " in line:
                 pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]
@@ -111,21 +114,6 @@ def main():
             if "--target " in line:
                 pdbFileRev = line[line.find("--target")+9:line.rfind(".pdb")+4]
                 break;
-            
-
-    # outputPDBDir = outputTxtFile[0:outputTxtFile.rfind("/")]
-
-	# pdbPath=sys.argv[3]
-	# if( len(sys.argv) > 4):
-	# 	pdbFile=sys.argv[-1]
-	# 	modelName = str(pdbFile[pdbFile.rfind("/")+1:pdbFile.rfind(".pdb")])
-	# 	pdbFileRev = sys.argv[-2]
-	# else:
-	# 	modelName = str(pdbPath[pdbPath.rfind("/")+1:pdbPath.rfind("_path")])
-	# 	pdbFile = "../"+modelName+".pdb"
-	# 	
-	# print modelName
-
 
     fwdClashes = []
     revClashes = []
@@ -142,6 +130,10 @@ def main():
         pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
     
         os.chdir(expDir)
+        if not os.path.isfile(pathFileToOpen):
+            print "Skipping",pathFileToOpen
+            os.chdir(currDir)
+            continue #skipping non-existing path file
         #Id's on the configurations on the path, separate for forward and reverse
         pathList, reversePathList = extractPath(pathFileToOpen)
         # allClashes.extend( getAllClashes(pathFileToOpen,pathList, reversePathList) )
@@ -152,7 +144,7 @@ def main():
         os.chdir(currDir)
     
     #END of multi-path loop
-    # os.chdir(outputPDBDir)
+    os.chdir(pdbFileFolder)
     fwdAtomResidueList = getAtomResidueList(pdbFile)
     revAtomResidueList = getAtomResidueList(pdbFileRev)
 
@@ -167,6 +159,12 @@ def main():
     clashCollection = collectResidueClashes(clashCollection,revClashes,revAtomResidueList)
     sorted_collection = sorted(clashCollection.items(), key=operator.itemgetter(1))
     sorted_collection.reverse()
+    
+    #-----------------------QUICK TEST TO LIMIT TO HIGH-CLASHING residues
+    # os.chdir(currDir)
+    # pdbFile = PDBFile(sys.argv[-1])
+    # residueLinks = convertResidueClashesToLinks(clashCollection,minClashNumber,sumRuns,pdbFile)
+    #-----------------------
     
     residueLinks = convertResidueClashesToLinks(clashCollection,minClashNumber,sumRuns)
     print residueLinks
@@ -225,7 +223,7 @@ def main():
             print "color %s, resi %s" %(colorVals[i],"+".join(resis))
             print "create %s_sec, resi %s" %(colorVals[i],"+".join(resis))
             print "show surface, %s_sec" %(colorVals[i])
-            plt.savefig("%s_%s.png" %(colorVals[i],rounds),dpi=600)
+            plt.savefig("%s_%s_density_%s.png" %(colorVals[i],minClashNumber,rounds),dpi=600)
             plt.clf()    
             i+=1
             if i > 8:
