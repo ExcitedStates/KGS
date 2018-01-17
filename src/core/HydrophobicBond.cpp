@@ -27,7 +27,7 @@ IN THE SOFTWARE.
 */
 
 
-#include "DBond.h"
+#include "HydrophobicBond.h"
 #include "core/Atom.h"
 #include "math/MathUtility.h"
 #include "Logger.h"
@@ -35,15 +35,13 @@ IN THE SOFTWARE.
 using namespace Math3D;
 using namespace std;
 
-DBond::DBond(Atom* a1, Atom* a2): Bond(a1, a2, "DB")
+HydrophobicBond::HydrophobicBond(Atom* a1, Atom* a2): Bond(a1, a2, "HYB")
 {
-	m_iniDist = getLength();
-  m_bars=3;
+  m_iniDist = getLength();
+  m_bars = 1;
 }
 
-double DBond::getLength() {
+double HydrophobicBond::getLength() {
   double length = m_atom1->m_position.distanceTo(m_atom2->m_position);
   return length;
 }
-
-

@@ -53,6 +53,7 @@ IN THE SOFTWARE.
 #include "core/Bond.h"
 #include "core/HBond.h"
 #include "core/DBond.h"
+#include "core/HydrophobicBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"
@@ -111,6 +112,7 @@ Molecule* IO::readPdb (
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
   vector< pair<int,int> > distanceConstraints;
+  vector< pair<int,int> > hydrophobicConstraints;
 
   int atomCount=0;
 
@@ -149,6 +151,14 @@ Molecule* IO::readPdb (
       iss>>id1>>id2;
       distanceConstraints.push_back( make_pair(id1,id2) );
 
+      continue;
+    }
+    if( line.substr(0,32)=="REMARK 555 HydrophobicConstraint"){
+      std::istringstream iss(line.substr(32));
+      int id1, id2;
+      //TODO: Fail gracefully
+      iss>>id1>>id2;
+      hydrophobicConstraints.push_back( make_pair(id1,id2) );
       continue;
     }
 
@@ -209,7 +219,6 @@ Molecule* IO::readPdb (
     }
   }
   if(!foundHydro) cerr<<"IO::readPdb - Warning: No hydrogens found in file. Consider running `reduce`"<<endl;
-
 
   //Create covalent bonds from residue profiles
   ResidueProfile residue_profile=readResidueProfile();
@@ -444,7 +453,7 @@ Molecule* IO::readPdb (
 
     // Set the number of bars to six for all these bonds!
     if(fixedBonds.find(query1)!=fixedBonds.end() || fixedBonds.find(query2)!=fixedBonds.end()){
-      bond->Bars = 6;
+      bond->m_bars = 6;
     }
 
   }
@@ -482,7 +491,6 @@ Molecule* IO::readPdb (
 //      atom->setAsSidechainAtom();
 //  }
 
-
   //Create H-bonds from REMARK records
   for(const pair<int,int>& constraint: torsionConstraints) {
     Atom* hatom = molecule->getAtom(constraint.second);
@@ -514,6 +522,17 @@ Molecule* IO::readPdb (
     Atom* a2 = molecule->getAtom(constraint.second);
     DBond *new_db = new DBond(a1, a2);
     molecule->addDBond(new_db);
+  }
+
+  cout<<line<<endl;
+  for(const pair<int,int>& constraint: hydrophobicConstraints) {
+    cout<<constraint.first<<","<<constraint.second<<endl;
+    Atom* a1 = molecule->getAtom(constraint.first);
+    Atom* a2 = molecule->getAtom(constraint.second);
+    cout<<"Creating Hydrophobic Constraint" <<endl;fflush(stdout);
+    HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
+    molecule->addHydrophobicBond(new_hyb);
+    cout<<"Added Hydrophobic Constraint" <<endl;fflush(stdout);
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
@@ -676,8 +695,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      continue;
 //    }
@@ -835,8 +854,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->m_atom2->getId() << endl;
 //      continue;
@@ -1075,7 +1094,7 @@ void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   for (auto const& bond: molecule->getCovBonds()){
     output << right << setw(8) << bond->m_atom1->getId();
     output << right << setw(8) << bond->m_atom2->getId();
-    output << right << setw(8) << bond->Bars << endl;
+    output << right << setw(8) << bond->m_bars << endl;
   }
   output.close();
 }
@@ -1163,7 +1182,7 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
     output << bond->Acceptor->getName()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << bond->getIniEnergy()<<" ";
-    output << bond->Bars<<" ";
+    output << bond->m_bars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
     output << bond->getAngle_H_A_AA()<<endl;
@@ -1195,7 +1214,7 @@ void IO::writeHbondsChange (Configuration *conf, string output_file_name) {
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << energy<<" ";
-    int numBars = bond->Bars;
+    int numBars = bond->m_bars;
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";

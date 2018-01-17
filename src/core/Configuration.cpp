@@ -42,10 +42,6 @@ IN THE SOFTWARE.
 #include "Configuration.h"
 #include "Molecule.h"
 #include "CTKTimer.h"
-#include "core/Bond.h"
-#include "HBond.h"
-#include "ResidueProfiles.h"
-#include "DisjointSets.h"
 #include "Logger.h"
 
 using namespace std;
@@ -337,7 +333,7 @@ void Configuration::deleteNullspace(){
 //  //For each fixed or rigidified bond (a1,a2) call Union(a1,a2)
 //  for (auto const& bond: m_molecule->getCovBonds()){
 //    //First, simply check if bond is rigidified
-//    if( bond->rigidified || bond->Bars == 6){
+//    if( bond->rigidified || bond->m_bars == 6){
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //    }
 //  }
@@ -479,20 +475,25 @@ void Configuration::computeJacobians() {
     CycleJacobian = nullptr; //TODO: Memory leak
     return;
   }
-
-  int hBond_row_num = 0;
+  //ToDo: update this for rigidity analysis with D-bonds and hydrophobic bonds
+  // ToDo: either separate matrices (DBoncJacobian), or new number of rows
+  int constraint_row_num = 0;
   int row_num = 0;
   for(auto const& edge: m_molecule->m_spanningTree->m_cycleAnchorEdges){
     if(edge.first->getBond()->isDBond()) {
       row_num += 3;
-    }else{
+//      constraint_row_num += 3;
+    }
+    if(edge.first->getBond()->isHydrophobicBond()) {
+      row_num += 1;
+//      constraint_row_num += 5;
+    }
+    else{
       row_num += 5;
-      hBond_row_num += 1;
+      constraint_row_num += 1;
     }
   }
 
-//  int hBond_row_num = (m_molecule->m_spanningTree->m_cycleAnchorEdges).size();
-//  int row_num = hBond_row_num * 5; // 5 times the number of cycles, non-redundant description
   int col_num = m_molecule->m_spanningTree->getNumCycleDOFs(); // number of DOFs in cycles
 
   if(CycleJacobian==nullptr){
@@ -509,14 +510,14 @@ void Configuration::computeJacobians() {
 
   ///HBond Jacobian
   if(HBondJacobian==nullptr){
-      HBondJacobian = gsl_matrix_calloc(hBond_row_num,col_num);
+      HBondJacobian = gsl_matrix_calloc(constraint_row_num,col_num);
 
-  }else if(HBondJacobian->size1==hBond_row_num && HBondJacobian->size2==col_num){
+  }else if(HBondJacobian->size1==constraint_row_num && HBondJacobian->size2==col_num){
       gsl_matrix_set_zero(HBondJacobian);
 
   }	else{
       gsl_matrix_free(HBondJacobian);
-      HBondJacobian = gsl_matrix_calloc(hBond_row_num,col_num);
+      HBondJacobian = gsl_matrix_calloc(constraint_row_num,col_num);
   }
 
   // for each cycle, fill in the Jacobian entries
@@ -570,6 +571,9 @@ void Configuration::computeJacobians() {
     Coordinate p2_prev = atom2_prev->m_position;
     //Now we have all atoms we need --> Calculate Jacobian
 
+    //Normal between atoms, used for hydrophobic constraint
+    Math3D::Vector3 constraintNormal = p2-p1;
+    constraintNormal.getNormalized(constraintNormal);
 
     // trace back until the common ancestor from vertex1
     while ( vertex1 != common_ancestor ) {
@@ -581,22 +585,33 @@ void Configuration::computeJacobians() {
       if (dof_id!=-1) { // this edge is a DOF
 
         Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
-        Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
+        //separate entries for Hydrophobic bonds; see clash avoiding Jacobian
+        if(bond_ptr->isHydrophobicBond()){
+          double jacobianEntry1D = dot(constraintNormal, derivativeP1);
+          gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntry1D); //set: Matrix, row, column, what to set
+        }
+        else {
+          Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
+          Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
 
-        Math3D::Vector3 jacobianEntryTrans=0.5*(derivativeP1 + derivativeP2);
-        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
-        if(bond_ptr->isHBond()) {
-          Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
-          double jacobianEntryRot1 = dot((p2 - p1),(derivativeP1-derivativeP1_prev));
-          double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
-          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
-          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
+          /// These three constraints are equal for distance and hydrogen bond
+          gsl_matrix_set(CycleJacobian, i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+          gsl_matrix_set(CycleJacobian, i + 1, dof_id, jacobianEntryTrans.y);
+          gsl_matrix_set(CycleJacobian, i + 2, dof_id, jacobianEntryTrans.z);
+          if (bond_ptr->isHBond()) {
+            // the last two are only for hydrogen bonds
+            Math3D::Vector3 derivativeP1_prev = p_edge->getDOF()->getDerivative(p1_prev);
+            double jacobianEntryRot1 = dot((p2 - p1), (derivativeP1 - derivativeP1_prev));
+            double jacobianEntryRot2 = dot((p2 - p2_prev), (derivativeP1 - derivativeP2));
+            gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+            gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
 
-          ///Matrix to check hBond Rotation
-          double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
-          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+            ///Matrix to check hBond Rotation
+            double hBondEntry = dot((p1_prev - p2_prev), (derivativeP1_prev));
+            gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+
+            // ToDo: update this for DBonds and hydrophobic bonds as well
+          }
         }
 
       }
@@ -604,12 +619,12 @@ void Configuration::computeJacobians() {
     }
     // trace back until the common ancestor from vertex2
     while ( vertex2 != common_ancestor ) {
-      KinVertex* parent = vertex2->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex2);
+      KinVertex *parent = vertex2->m_parent;
+      KinEdge *p_edge = parent->findEdge(vertex2);
 
 //			int dof_id = p_edge->Cycle_DOF_id;
       int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a DOF
+      if (dof_id != -1) { // this edge is a DOF
         //if(dof_id==20)
         //	cout<<"KinEdge "<<p_edge<<endl;
         /*
@@ -623,34 +638,51 @@ void Configuration::computeJacobians() {
         //Math3D::Vector3 derivativeP1_prev = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p1_prev);
         Math3D::Vector3 derivativeP2_prev = ComputeJacobianEntry(ea1->m_position,ea2->m_position,p2_prev);
          */
-        Math3D::Vector3 derivativeP1      = p_edge->getDOF()->getDerivative(p1);
-        Math3D::Vector3 derivativeP2      = p_edge->getDOF()->getDerivative(p2);
-        Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
+        Math3D::Vector3 derivativeP1 = p_edge->getDOF()->getDerivative(p1);
 
-        Math3D::Vector3 jacobianEntryTrans= -0.5*(derivativeP1 + derivativeP2);
-//				cout<<"Jac at i="<<dof_id<<", Trans: "<<jacobianEntryTrans<<", Rot1: "<<jacobianEntryRot1<<", Rot2: "<<jacobianEntryRot2<<endl;
-        gsl_matrix_set(CycleJacobian,i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
-        gsl_matrix_set(CycleJacobian,i + 1, dof_id, jacobianEntryTrans.y);
-        gsl_matrix_set(CycleJacobian,i + 2, dof_id, jacobianEntryTrans.z);
-        if(bond_ptr->isHBond()) {
-          double jacobianEntryRot1 = dot((p1 - p1_prev), (derivativeP2 - derivativeP1));
-          double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
-          gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
-          gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
+        //separate entries for Hydrophobic bonds; see clash avoiding Jacobian
+        if (bond_ptr->isHydrophobicBond()) {
+          double jacobianEntry1D = -dot(constraintNormal, derivativeP1); //opposite sign to other branch
+          gsl_matrix_set(CycleJacobian, i + 0, dof_id, jacobianEntry1D); //set: Matrix, row, column, what to set
+        } else {//DBond or HBond
+          Math3D::Vector3 derivativeP2 = p_edge->getDOF()->getDerivative(p2);
+          Math3D::Vector3 jacobianEntryTrans = -0.5 * (derivativeP1 + derivativeP2);
 
-          ///Matrix to check hBond Rotation
-          double hBondEntry = dot((p1_prev - p2_prev), (- derivativeP2_prev));
-          gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+          /// These three constraints are equal for distance and hydrogen bond
+          gsl_matrix_set(CycleJacobian, i + 0, dof_id, jacobianEntryTrans.x); //set: Matrix, row, column, what to set
+          gsl_matrix_set(CycleJacobian, i + 1, dof_id, jacobianEntryTrans.y);
+          gsl_matrix_set(CycleJacobian, i + 2, dof_id, jacobianEntryTrans.z);
+          if (bond_ptr->isHBond()) {
+            //the last two constraints only for five-valued hydrogen bond constraints
+            Math3D::Vector3 derivativeP2_prev = p_edge->getDOF()->getDerivative(p2_prev);
+            double jacobianEntryRot1 = dot((p1 - p1_prev), (derivativeP2 - derivativeP1));
+            double jacobianEntryRot2 = dot((p1 - p2), (derivativeP2 - derivativeP2_prev));
+
+            gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
+            gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
+
+            ///Matrix to check hBond Rotation
+            double hBondEntry = dot((p1_prev - p2_prev), (-derivativeP2_prev));
+            gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
+
+            // ToDo: update this for DBonds and hydrophobic bonds as well
+          }
         }
       }
       vertex2 = parent;
     }
-//    ++i;
     if(bond_ptr->isHBond()){
       i+=5;
       hbidx++;
     }
-    else if(bond_ptr->isDBond()) i+=3;
+    else if(bond_ptr->isDBond()){
+      i+=3;
+//      hbidx+=3;
+    }
+    else{//hydrophobic bond
+      i += 1;
+//      hbidx+=5;
+    }
   }
 
 }

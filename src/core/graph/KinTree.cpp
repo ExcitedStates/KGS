@@ -160,6 +160,10 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
           log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from d-bond " << edge << endl;
+        } else if (bond->isHydrophobicBond()) {
+          KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
+          cycleEdges.push_back(edge);
+          log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from hydrophobic-bond " << edge << endl;
         } else {
           if (visitedVertices.count(bonded_vertex) > 0) {
             KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);

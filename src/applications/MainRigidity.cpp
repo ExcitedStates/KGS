@@ -64,6 +64,20 @@ int main( int argc, char* argv[] ){
   string out_path = options.workingDirectory;
   //string pdb_file = path + protein_name + ".pdb";
 
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Einfluss von Hydrophobics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  // ToDo
+  // 1. Code-Ablauf der Rigidity Analysis nachvollziehen
+  // 2. Quasi-identische Implementierung für Neue Klasse HydrophobicBonds (vgl. mit HBonds, bereits angefangen)
+  // 3. Anpassung der Jacobi-Matrix zum Handling mehrerer Constraint-Typen (vgl. mit DBonds, bereits angefangen)
+  // 4. Anpassung der Matrix, die freie Bewegungen der Constraint-Typen überprüft (HBondJacobian)
+  // 5. Evtl extrahieren der Berechnung der Ableitung in eigene Constraint-Klasse
+  // 6. Berechnung des Nullraums
+  // 7. Identifikation starrer dihedrals und hydrophobic bonds (vgl. bisher HBonds)
+
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Einfluss von Hydrophobics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
@@ -71,13 +85,14 @@ int main( int argc, char* argv[] ){
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
+  cout<<"Here 1"<<endl;
   protein->initializeTree(movingResidues,1.0,options.roots);
   string name = protein->getName();
 
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" bond constraints"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
@@ -169,6 +184,21 @@ int main( int argc, char* argv[] ){
 
   ///Write rigid bodies
   IO::writeRBs(rigidified, rbFile);
+
+
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% EVALUATE ROUCHE-CAPELLI-THEOREM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  // ToDo
+  // 1. Target Protein Struktur einlesen; dazu die "RigidityOptions" erweitern um Target-Struktur
+  // 2. gleiches Set an H-bonds (Constraints) für Protein und Target erstellen
+  // 3. Konfiguration auf Target erzeugen
+  // 4. berechne Rotationswinkel q_init und q_target, berechne Delta_q, "siehe global torsions"
+  // 5. Evaluiere Rouche-Capelli Theorem
+  // 6. Berechne Störung P einzelner H-bonds mittels S = J * Delta_q
+  // 7. Identifiziere Constraints mit großem S
+  // 8. Identisches Vorgehen für Delta_p anstelle Delta_q (Wiederholung ab 4.)
+
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% EVALUATE ROUCHE-CAPELLI-THEOREM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   return 0;
 }

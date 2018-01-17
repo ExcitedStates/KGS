@@ -39,6 +39,7 @@ add_library( libKGS
 		core/Bond.h
 		core/HBond.h
 		core/DBond.h
+		core/HydrophobicBond.h
 		core/Residue.h
 		ResidueProfiles.h
 		core/Rigidbody.h
@@ -103,7 +104,8 @@ add_library( libKGS
         core/Molecule.cpp
         core/Bond.cpp
         core/HBond.cpp
-        core/DBond.cpp
+	core/DBond.cpp
+	core/HydrophobicBond.cpp 
         core/Residue.cpp
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
@@ -118,7 +120,7 @@ add_library( libKGS
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
-		planners/MCMCPlanner.cpp
+	planners/MCMCPlanner.cpp
         planners/PoissonPlanner.cpp
         planners/PoissonPlanner2.cpp
         planners/BidirectionalMovingFront.cpp
@@ -140,7 +142,7 @@ add_library( libKGS
         directions/RandomDirection.cpp
         directions/DihedralDirection.cpp
         directions/RelativeMSDDirection.cpp
-		directions/MSDDirection.cpp
+	directions/MSDDirection.cpp
         directions/LSNullspaceDirection.cpp
         directions/VDWDirection.cpp
         metrics/Dihedral.cpp
@@ -179,12 +181,9 @@ add_library( libKGS
         core/graph/KinVertex.h
         core/graph/KinTree.cpp
         core/graph/KinTree.h
-		directions/LSNrelativeDirection.cpp
+	directions/LSNrelativeDirection.cpp
         directions/LSNrelativeDirection.h
-        core/graph/Constraint.cpp
-        core/graph/Constraint.h
-        core/ConstraintSet.cpp
-        core/ConstraintSet.h )
+	)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
