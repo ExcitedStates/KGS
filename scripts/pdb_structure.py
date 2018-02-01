@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python
 # coding: utf-8
 """
 Classes for representing and manipulating pdb-structures.
@@ -143,7 +143,7 @@ class Atom:
     def is_acceptor(self):
         return self.elem == "O" or (self.elem == "N" and len(self.neighbors) <= 2)
 
-    def pdb_str(self):
+    def get_pdb_line(self):
         if len(self.name) <= 3:  # Takes care of four-letter atom name alignment
             line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % \
                    ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi,
@@ -638,23 +638,17 @@ class PDBModel:
 
         return odd_atoms
 
-    def pdb_str(self):
-        """ Return a string representing this PDB model """
-        ret = ""
-        for atom in self.atoms:
-            ret += atom.pdb_str()
-
-        # Write CONECT records based on bond profile
-        for atom in self.atoms:
-            ret += atom.get_conect()
-
-        return ret
-      
-
     def write_pdb(self, fname):
         """ Write the model to a PDB file """
         f = open(fname, 'w')
-        f.write(self.pdb_str())
+
+        for atom in self.atoms:
+            f.write(atom.get_pdb_line())
+        
+        # Write CONECT records based on bond profile
+        for atom in self.atoms:
+            f.write(atom.get_conect())
+            
         f.close()
     
     def get_atom(self, chain, resi, name):

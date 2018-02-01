@@ -454,7 +454,7 @@ def convertAtomClashesToResidueClashes(clashCollection,atomResidueList,minClashN
 
 	return residueLinks
 
-def convertResidueClashesToLinks(clashCollection,minClashNumber=1,numRuns=1):
+def convertResidueClashesToLinks(clashCollection,minClashNumber=1,numRuns=1,pdbFile=None):
 	# This function filters residue-based clashes by a minimum occurence per run on average 
 	residueLinks={}
 
@@ -467,6 +467,10 @@ def convertResidueClashesToLinks(clashCollection,minClashNumber=1,numRuns=1):
 			continue
 		if val >= minClashNumber:
 			residueLinks[entries]=val
+		# atom1 = pdbFile.getAtom("A",resId1,"CA")
+		# atom2 = pdbFile.getAtom("A",resId2,"CA")
+		# if val >= minClashNumber and (atom1.tempFactor > 1587.5 and atom2.tempFactor > 1587.5):
+		# 	residueLinks[entries]=val
 
 	# print residueLinks
 
