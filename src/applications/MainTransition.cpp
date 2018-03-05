@@ -62,21 +62,25 @@ using namespace std;
 
 void targetedSampling(TransitionOptions& options){
 
-  string pdb_file = options.initialStructureFile;
   Selection resNetwork(options.residueNetwork);
-  Molecule* protein = IO::readPdb( pdb_file, options.extraCovBonds );
+  Molecule* protein = IO::readPdb(
+      options.initialStructureFile,
+      options.extraCovBonds,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
 //  protein->setCollisionFactor(options.collisionFactor);
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(protein, options.annotationFile);
 
   // Do the same for the target
-  string target_file = options.targetStructureFile;
-  if (target_file == ""){
-    cerr<<"Please specify target protein for targeted sampling"<<endl;
-    exit(-1);
-  }
-  Molecule* target = IO::readPdb( target_file, options.extraCovBonds );
+  Molecule* target = IO::readPdb(
+      options.targetStructureFile,
+      options.extraCovBonds,
+      options.hydrogenbondMethod,
+      options.hydrogenbondFile
+  );
 
   ///Deletes undesired hydrogen bonds if necessary
   if(TransitionOptions::getOptions()->hbondIntersect){

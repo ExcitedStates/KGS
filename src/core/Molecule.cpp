@@ -434,53 +434,55 @@ std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, M
     }
     else { // root specified as <=0 --> therefore align and pick best rigid body
       if (target == nullptr) {
-        log("samplingStatus") << "No target to determine best root, choosing standard root id "<<standardId << endl;
+        log("samplingStatus") << "No target to determine best root, choosing standard root id " << standardId << endl;
         bestRootIDs.push_back(standardId);
+      } else {
+        //Check the rmsd between individual vertices and choose the closest pair as m_root
+        double bestSum = 9999;
+        int bestId = 1;
+        for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
+             rbit != m_rigidBodyMap.end(); ++rbit) {
+
+          vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
+          if (atomsRMSD->front()->getResidue()->getChain() != chain) {
+            continue;//skip if not this chain
+          }
+          double sum = 0;
+          bool allAtoms = true;
+          Coordinate c1, c2;
+          Atom *rootAtom = nullptr;
+
+          //loop through the rigid body atoms
+          for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
+            Atom *atom = (*ait);
+            string name = atom->getName();
+            string chainName = atom->getResidue()->getChain()->getName();
+            int resId = atom->getResidue()->getId();
+            if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom()) {
+              rootAtom = atom; //choose first heavy backbone atom as root
+            }
+            Atom *a2 = target->getAtom(chainName, resId, name);
+            if (atom && a2) {
+              c1 = atom->m_position;
+              c2 = a2->m_position;
+              sum += c1.distanceSquared(c2);
+            } else {//only allow the rb's where all atoms are available in both proteins
+              allAtoms = false;
+            }
+          }
+
+          if (allAtoms && rootAtom) {
+            sum = sqrt(sum / (atomsRMSD->size()));
+            if (sum <= bestSum) {
+              bestSum = sum;
+              bestId = rootAtom->getId();
+            }
+          }
+        }
+        log("samplingStatus") << this->getName() << ": Choosing atom id " << bestId << " as root. Root RB rmsd: "
+                              << bestSum << endl;
+        bestRootIDs.push_back(bestId);
       }
-      //Check the rmsd between individual vertices and choose the closest pair as m_root
-      double bestSum = 9999;
-      int bestId = 1;
-      for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
-           rbit != m_rigidBodyMap.end(); ++rbit) {
-
-        vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
-        if (atomsRMSD->front()->getResidue()->getChain() != chain) {
-          continue;//skip if not this chain
-        }
-        double sum = 0;
-        bool allAtoms = true;
-        Coordinate c1, c2;
-        Atom* rootAtom = nullptr;
-
-        //loop through the rigid body atoms
-        for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
-          Atom* atom = (*ait);
-          string name = atom->getName();
-          string chainName = atom->getResidue()->getChain()->getName();
-          int resId = atom->getResidue()->getId();
-          if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom() ){
-            rootAtom = atom; //choose first heavy backbone atom as root
-          }
-          Atom *a2 = target->getAtom(chainName, resId, name);
-          if (atom && a2) {
-            c1 = atom->m_position;
-            c2 = a2->m_position;
-            sum += c1.distanceSquared(c2);
-          } else {//only allow the rb's where all atoms are available in both proteins
-            allAtoms = false;
-          }
-        }
-
-        if (allAtoms && rootAtom ) {
-          sum = sqrt(sum / (atomsRMSD->size()));
-          if (sum <= bestSum) {
-            bestSum = sum;
-            bestId = rootAtom->getId();
-          }
-        }
-      }
-      log("samplingStatus") << this->getName()<<": Choosing atom id " << bestId << " as root. Root RB rmsd: " << bestSum << endl;
-      bestRootIDs.push_back(bestId);
     }
     chainCount++;
   }

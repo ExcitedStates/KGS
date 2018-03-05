@@ -524,7 +524,6 @@ Molecule* IO::readPdb (
     molecule->addDBond(new_db);
   }
 
-  cout<<line<<endl;
   for(const pair<int,int>& constraint: hydrophobicConstraints) {
     cout<<constraint.first<<","<<constraint.second<<endl;
     Atom* a1 = molecule->getAtom(constraint.first);

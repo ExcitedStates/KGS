@@ -440,6 +440,7 @@ void Hbond::identifyHybridization() {
 bool Hbond::evaluateGeometry() {
 
   /// Todo: Implement geometric criteria for boundaries of Mayo energy function
+  /// Currently done outside KGS in kgs_prepare.py when identifying Hbonds
   return true;
 
 }
