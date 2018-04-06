@@ -67,7 +67,7 @@ Configuration::Configuration(Molecule * mol):
   assert(m_molecule!=nullptr);
 
   m_id 										 = 0;
-  m_vdwEnergy 						 = 0;
+  m_vdwEnergy 						 = 99999;
   m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
   m_paretoFrontDistance 	 = 99999;
@@ -102,7 +102,7 @@ Configuration::Configuration(Configuration* parent_):
     std::cerr<<"Configuration(..) - molecule is NULL"<<std::endl;
   }
   m_id                     = -1;//Setting id to -1 by default is important. Check out PoissonSampler2.cpp for example
-  m_vdwEnergy              = 0;
+  m_vdwEnergy              = 99999;
   m_deltaH                 = 0;
   m_distanceToTarget       = 99999;
   m_paretoFrontDistance    = 99999;

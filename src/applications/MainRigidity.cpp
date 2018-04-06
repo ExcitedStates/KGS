@@ -132,6 +132,7 @@ int main( int argc, char* argv[] ){
                     + ".pdb";
 
   rigidified->writeRigidbodyIDToBFactor();
+  rigidified->m_conf->m_vdwEnergy = protein->vdwEnergy();
   IO::writePdb(rigidified, out_file);
 
   if(options.saveData <= 0) return 0;

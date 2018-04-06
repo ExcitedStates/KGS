@@ -105,8 +105,8 @@ class Molecule {
   std::vector<int> findBestRigidBodyMatch(std::vector<int> rootID, Molecule * target = nullptr);
 
 
-  std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
-  double vdwEnergy (std::string collisionCheck);//compute vdw energy
+  std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck="all");
+  double vdwEnergy (std::string collisionCheck="all");//compute vdw energy
 
   std::set< std::pair<Atom*,Atom*> >& getInitialCollisions(); ///< Colliding atom-pairs in the initial conformation
 

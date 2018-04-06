@@ -828,7 +828,8 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
       vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
-      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
+//      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6)); ///WRONG, no factor of 2 in this formulation
+      double atomContribution = 4 * epsilon_12 * (pow(ratio,12) - pow(ratio,6));
 
       //Full enthalpy including atoms in clash constraints
       energy += atomContribution;
@@ -850,7 +851,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   double energy=0, d_12, ratio, vdw_r1, vdw_d12, epsilon1, epsilon_12;
   set< pair<Atom*,Atom*> >::iterator mit;
   // for each atom, look for it's neighbors.
-  //For each such neighbor, compute U(R_ab)=epsilon_ij*(vdw_r12/r_12)^12-2*(VDW_R0/r_12)^6) and sum up everything.
+  //For each such neighbor, compute U(R_ab)= 4 * epsilon_ij*(vdw_r12/r_12)^12 - (VDW_R0/r_12)^6) and sum up everything.
   // CHARMM: http://www.charmmtutorial.org/index.php/The_Energy_Function#Energy_calculation
   for (vector<Atom*>::const_iterator ait=m_atoms.begin(); ait!=m_atoms.end(); ++ait) {
     Atom* atom1 = *ait;
@@ -877,7 +878,8 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
       vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
-      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
+//      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));///WRONG, no factor of 2 in this formulation
+      double atomContribution = 4 * epsilon_12 * (pow(ratio,12) - pow(ratio,6));
 
       //Full enthalpy including atoms in clash constraints
       energy += atomContribution;
