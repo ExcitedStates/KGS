@@ -1,5 +1,5 @@
 KGS = ../../../build/kgs_transition
-KGSARGS = --initial ../init.pdb --target ../target_aligned.pdb --hbondMethod user --hbondFile ../hBonds.txt --collisionFactor 0.75 --seed 418 --saveData 2 --sampleRandom false --gradient 3 --maxRotation 0.05 --stepSize 0.1 --decreaseSteps 2 --workingDirectory ./ --root -1 --preventClashes true --metric rmsd --planner dccrrt --samples 1000
+KGSARGS = --initial ../init.pdb --target ../target_aligned.pdb --hbondMethod user --hbondFile ../hBonds.txt --collisionFactor 0.75 --seed 418 --saveData 2 --sampleRandom false --gradient 3 --maxRotation 0.05 --stepSize 0.1 --decreaseSteps 2 --workingDirectory ./ --root -1 --alignIni true --preventClashes true --metric rmsd --planner dccrrt --samples 1000 --biasToTarget 0.4 --sampleReverse true
 
 all: output.txt
 

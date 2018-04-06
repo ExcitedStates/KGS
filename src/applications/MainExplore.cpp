@@ -214,6 +214,10 @@ void randomSampling(ExploreOptions& options) {
       << ", Max accessible DOFs: " << protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs() +
       protein->m_conf->getNullspace()->getNullspaceSize() << endl;fflush(stdout);
 
+  log() << "Dimension of kernel: " << protein->m_conf->getNullspace()->getNullspaceSize() << endl;
+  double initialHbondEnergy = HbondIdentifier::computeHbondEnergy(protein->m_conf);
+  log() << "Initial hbond energy: " << initialHbondEnergy << endl << endl;
+
   if(options.saveData > 1){
     string out = options.workingDirectory + "output/" + protein->getName() + "_q_0.txt";
     IO::writeQ(protein, protein->m_conf, out);
@@ -262,7 +266,7 @@ int main( int argc, char* argv[] ) {
 
   ofstream plannerStream;
   plannerStream.open("kgs_planner.log");
-  enableLogger("dominik", plannerStream);
+  enableLogger("planner", plannerStream);
 
   ofstream debugStream;
   debugStream.open("kgs_debug.log");
