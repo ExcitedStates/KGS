@@ -228,7 +228,9 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   gsl_vector_free(projected_gradient);
 
   new_q->m_usedClashPrevention = true;
-  new_q->m_clashFreeDofs = new_q->getNumDOFs() - constrainedDofMap.size() + clashNullSpace->getNullspaceSize();
+  //      Changed this, clashAvoidingNullspace now based on all dofs
+  //  new_q->m_clashFreeDofs = new_q->getNumDOFs() - constrainedDofMap.size() + clashNullSpace->getNullspaceSize();
+  new_q->m_clashFreeDofs = clashNullSpace->getNullspaceSize();
 
   //Clean up
   delete clashNullSpace;
