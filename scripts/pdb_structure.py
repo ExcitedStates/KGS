@@ -70,7 +70,7 @@ class PDBFile:
             os.remove(to_write)
         except ftplib.error_perm:
             os.remove(to_write)
-            print "ERROR! %s could not be retrieved from PDB!" % to_get
+            print("ERROR! %s could not be retrieved from PDB!" % to_get)
             ftp.quit()
             return None
 
@@ -205,7 +205,7 @@ class PDBFile:
         crds2 = pdbFile.coordMatrix(model2, names=names)
         assert(crds1.shape[1] == 3)
         if crds1.shape[0]!=crds2.shape[0]:
-            print "Structure 1 size does not match structure 2 (",crds1.shape[0],"vs",crds2.shape[0],")" 
+            print("Structure 1 size does not match structure 2 (",crds1.shape[0],"vs",crds2.shape[0],")")
             assert(crds1.shape == crds2.shape)
         n = np.shape(crds1)[0]
 
@@ -259,7 +259,7 @@ class PDBFile:
         assert(crds1.shape[1] == 3)
 
         if crds1.shape[0]!=crds2.shape[0]:
-            print "Structure 1 size does not match structure 2 (",crds1.shape[0],"vs",crds2.shape[0],")" 
+            print("Structure 1 size does not match structure 2 (",crds1.shape[0],"vs",crds2.shape[0],")")
             #assert(crds1.shape == crds2.shape)
         n = np.shape(crds1)[0]
 
