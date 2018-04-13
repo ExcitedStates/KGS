@@ -4,7 +4,7 @@ import numpy as np
 class Atom:
     def __init__(self, atom_string):
         self.id = int(atom_string[6:11])
-        self.name = atom_string[11:17].strip()
+        self.name = atom_string[11:16].strip()
         self.resn = atom_string[17:20].strip()
         self.chain = atom_string[21]
         self.resi = int(atom_string[22:26])
@@ -90,9 +90,14 @@ class PDBFile:
         if len(pdb)==4: 
             self.file_name = self.pdbDownload(pdb)
 
-        f = open(self.file_name,'r')
+        if self.file_name.endswith(".gz"):
+            import gzip
+            f = gzip.open(self.file_name, "r")
+            lines = map(lambda l: l.decode('ascii'), f.readlines())
+        else:
+            f = open(self.file_name,'r')
+            lines = f.readlines()
 
-        lines = f.readlines()
         for line in lines:
             if line[0:4] == "ATOM":
                     if cur_model==None: cur_model = []
@@ -148,6 +153,12 @@ class PDBFile:
         for atom in self.models[model_number]:
             ret.add((atom.resi,atom.resn))
         return sorted(list(ret))
+
+    def getChains(self, model_number = 0):
+        '''
+        Return a set of unique chain identifiers
+        '''
+        return set(map(lambda a: a.chain, self.models[model_number]))
     
     def getSequence(self, model_number = 0):
         '''
