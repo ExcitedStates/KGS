@@ -686,6 +686,11 @@ class PDBFile:
         ret = [a for a in self.atoms if a.resi==resi and a.name==name]
         if ret: return ret[0]
         return None
+
+    def getAtom(self, atomId):
+        ret = [a for a in self.atoms if a.id==atomId]
+        if ret: return ret[0]
+        return None
     
     def writeIMOD(self,fname):
         f = open(fname,'w')       
