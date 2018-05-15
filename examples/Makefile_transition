@@ -1,19 +1,20 @@
 KGS = ../../../build/kgs_transition
+SCRIPTS = ../../../scripts/
 
-PLOTBASICS  = python ../../../scripts/plotBasics.py
-PLOTLENGTHS  = python ../../../scripts/plotBondLengths.py
-PLOTCONSTRAINTS  = python ../../../scripts/plotConstraints.py
-PLOTPATHSTEPS = python ../../../scripts/combineKGSPath_steps.py
-PATHPLOTS = python ../../../scripts/pathPlots.py
-#ENERGYFIT = python ../../../scripts/fit_energy_deltas.py
-TORSIONTUBE1 = python ../../../scripts/computeAbsoluteSteps.py
-TORSIONTUBE2 = python ../../../scripts/colorByTorsionRMSF.py
-PAIRWISETREE = python ../../../scripts/pairwiseTreeDistances.py
-CLASHNETWORKS = python ../../../scripts/clashNetworks.py 
-CLASHGRAPHS = python ../../../scripts/clashGraphs.py
-CLASHDENSITIES = python ../../../scripts/clashDensities.py
+PLOTBASICS  = python $(SCRIPTS)/plotBasics.py
+PLOTLENGTHS  = python $(SCRIPTS)/plotBondLengths.py
+PLOTCONSTRAINTS  = python $(SCRIPTS)/plotConstraints.py
+PLOTPATHSTEPS = python $(SCRIPTS)/combineKGSPath_steps.py
+PATHPLOTS = python $(SCRIPTS)/pathPlots.py
+#ENERGYFIT = python $(SCRIPTS)/fit_energy_deltas.py
+TORSIONTUBE1 = python $(SCRIPTS)/computeAbsoluteSteps.py
+TORSIONTUBE2 = python $(SCRIPTS)/colorByTorsionRMSF.py
+PAIRWISETREE = python $(SCRIPTS)/pairwiseTreeDistances.py
+CLASHNETWORKS = python $(SCRIPTS)/clashNetworks_fwdRev.py 
+CLASHGRAPHS = python $(SCRIPTS)/clashGraphs_fwdRev.py
+CLASHDENSITIES = python $(SCRIPTS)/clashDensities_fwdRev.py
 
-all: output.txt distancePlots/pairedRMSD_twoTrees.png constraintPlots/forwardPath_meanMaxViolation.png constraintPlots/covBondLengths.png comboAnalysis/*path*.pdb comboAnalysis/combined_qFile.txt comboAnalysis/init_torsionRMSF_all.pdb comboAnalysis/pairedRMSD_twoTrees.png comboAnalysis/init_clashNetworks_10.pdb comboAnalysis/*clashDensities.pdb energyPlots/energy_deltas_complete.csv 
+all: output.txt distancePlots/pairedRMSD_twoTrees.png constraintPlots/covBondLengths.png comboAnalysis/*path*.pdb comboAnalysis/combined_qFile.txt comboAnalysis/pairedRMSD_twoTrees.png comboAnalysis/init_clashNetworks_10.pdb comboAnalysis/*clashDensities.pdb energyPlots/energy_deltas_complete.csv  #constraintPlots/forwardPath_meanMaxViolation.png comboAnalysis/init_torsionRMSF_all.pdb 
 
 # Assumes that KGSARGS has been set
 output.txt:
@@ -26,8 +27,8 @@ distancePlots/pairedRMSD_twoTrees.png: output.txt
 constraintPlots/covBondLengths.png: output.txt
 	$(PLOTLENGTHS) output/*allCovBonds.txt output/*allAnchors.txt kgs_report.log
 
-constraintPlots/forwardPath_meanMaxViolation.png: output.txt
-	$(PLOTCONSTRAINTS) output/*path.pdb 
+#constraintPlots/forwardPath_meanMaxViolation.png: output.txt
+#	$(PLOTCONSTRAINTS) output/*path.pdb 
 
 comboAnalysis/*path*.pdb: output.txt
 	$(PLOTPATHSTEPS) 10 output/*path.pdb
@@ -38,19 +39,37 @@ energyPlots/energy_deltas_complete.csv: output.txt
 comboAnalysis/combined_qFile.txt: output.txt
 	$(TORSIONTUBE1) output/*path.pdb
 
-comboAnalysis/init_torsionRMSF_all.pdb: output.txt
-	$(TORSIONTUBE2) ../init.pdb comboAnalysis/combined_qFile.txt 0 output/*path.pdb
+#comboAnalysis/init_torsionRMSF_all.pdb: output.txt
+#	$(TORSIONTUBE2) comboAnalysis/combined_qFile.txt 0 output/*path.pdb
 
 comboAnalysis/pairedRMSD_twoTrees.png: output.txt
 	$(PAIRWISETREE) .
 
 comboAnalysis/init_clashNetworks_10.pdb: output.txt
-	$(CLASHNETWORKS) 10 output/*path.pdb ../init.pdb
-	$(CLASHGRAPHS) 10 output/*path.pdb ../init.pdb
+	$(CLASHNETWORKS) 10 output.txt output/*path.pdb 
+	$(CLASHGRAPHS) 10 output.txt output/*path.pdb
 
 comboAnalysis/*clashDensities.pdb: output.txt
-	$(CLASHDENSITIES) output/*path.pdb ../init.pdb
+	$(CLASHDENSITIES) output.txt output/*path.pdb
+
+
+memcheck:
+	mkdir -p output
+	rm -f valgrindOutput.txt
+	valgrind --tool=memcheck --dsymutil=yes --leak-check=no --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --log-file=valgrindOutput.txt $(KGS) $(KGSARGS)
+	@echo "!! View valgrindOutput.txt to see output of memory check.!!"
+	@echo "!! If you cant see line numbers copy the hex-code and paste !!"
+	@echo "!! it in gdb. E.g.: break *0x1000AC502!!"
+
+leakcheck:
+	mkdir -p output
+	rm -f valgrindOutput.txt
+	valgrind --tool=memcheck --leak-check=yes --dsymutil=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes --log-file=valgrindOutput.txt $(KGS) $(KGSARGS)
+	@echo "!! View valgrindOutput.txt to see output of memory check !!"
+	@echo "!! If you cant see line numbers copy the hex-code and paste !!"
+	@echo "!! it in gdb. E.g.: break *0x1000AC502 !!"
 
 clean:
 	rm -rf output output.txt kgs_planner.log kgs_report.log *.pdb
 	rm -rf constraintPlots distancePlots energyPlots comboAnalysis
+

@@ -61,10 +61,10 @@ def main():
 		
 	pdbFile = ""
 	pdbFileRev = ""
-	pdbFileIn = sys.argv[2]
-	pathFileSepIdx = pdbFileIn.find("/output.txt")
-	pdbFileFolder = pdbFileIn[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
-	with open(pdbFileIn) as outputFile:
+	textFileIn = sys.argv[2]
+	textFileInSepIdx = textFileIn.find("/output.txt")
+	pdbFileFolder = textFileIn[0:textFileInSepIdx] if textFileInSepIdx!=-1 else "."
+	with open(textFileIn) as outputFile:
 		for line in outputFile:
 			if "--initial " in line:
 				pdbFile = line[line.find("--init")+10:line.rfind(".pdb")+4]

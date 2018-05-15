@@ -26,6 +26,7 @@ Example:
 
 import math
 import numpy as np
+import random
 from collections import defaultdict
 
 def dot(v1, v2):
@@ -642,6 +643,21 @@ class PDBFile:
 
 
     def checkHydrogenBonds(self):
+        
+        #Evaluate random h-bond set
+        # maxID = max([atom.id for atom in self.atoms])
+        # minID = min([atom.id for atom in self.atoms])
+        # random.seed(418)
+        # print maxID,minID
+        # 
+        # for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
+        #     aID = random.randrange(minID,maxID)
+        #     hID = random.randrange(minID,maxID)
+        #     a = self.getAtom(aID)
+        #     h = self.getAtom(hID)
+        #     self.constraints.append( "RevoluteConstraint %d %d %s %s"%(a.id, h.id, str(a), str(h)) )
+                
+        # REAL VERSION
         for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             self.constraints.append( "RevoluteConstraint %d %d %s %s"%(a.id, h.id, str(a), str(h)) )
             if writeIMOD:   #save h-bonds as stiff springs between donor and acceptor for usage in iMod
