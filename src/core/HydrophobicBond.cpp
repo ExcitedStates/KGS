@@ -35,10 +35,40 @@ IN THE SOFTWARE.
 using namespace Math3D;
 using namespace std;
 
-HydrophobicBond::HydrophobicBond(Atom* a1, Atom* a2): Bond(a1, a2, "HYB")
+HydrophobicBond::HydrophobicBond(Atom* c, Atom* s/*, double energy*/): Bond(c, s, "HYB")
 {
+
+  m_atom1=c;
+  m_atom2=s;
   m_iniDist = getLength();
   m_bars = 1;
+
+  rigidified=false;
+
+  }
+HydrophobicBond::HydrophobicBond(HydrophobicBond & hydrophobicBond) {
+
+c=hydrophobicBond.c;
+s=hydrophobicBond.s;
+
+
+    m_atom1 = hydrophobicBond.m_atom1;
+    m_atom2 = hydrophobicBond.m_atom2;
+    m_bondType = hydrophobicBond.m_bondType;
+    m_bars = hydrophobicBond.m_bars;
+    rigidified = hydrophobicBond.rigidified;
+
+
+}
+
+bool HydrophobicBond::isSame (HydrophobicBond * b2) {
+    if ( c->getName() == b2->c->getName() &&
+         c->getResidue()->getId() == b2->c->getResidue()->getId() &&
+         s->getName()==b2->s->getName() &&
+         s->getResidue()->getId() == b2->s->getResidue()->getId()){
+        return true;
+    }
+    return false;
 }
 
 double HydrophobicBond::getLength() {

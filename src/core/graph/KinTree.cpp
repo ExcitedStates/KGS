@@ -189,7 +189,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
   //This is important for the hydrogen-bond hierarchy analysis!
   cycleEdges.sort(KinEdge::compareIDs);
 
-  // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
+  // For each hbond, dbond, and hydrophobicBond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
   // end-points to the LCA into m_spanningTree->m_cycleDOFs.
   for (auto const &h_edge : cycleEdges) {
     KinVertex *lca = findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);

@@ -43,6 +43,7 @@ IN THE SOFTWARE.
 #include "IO.h"
 #include "Logger.h"
 #include "applications/options/RigidityOptions.h"
+#include "../core/Configuration.h"
 
 extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
@@ -92,19 +93,27 @@ int main( int argc, char* argv[] ){
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" bond constraints"<<endl;
+  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
+    log("rigidity")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
+    log("rigidity")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
   NullspaceSVD ns = *(dynamic_cast<NullspaceSVD*>(conf->getNullspace()));
+  int numRows = ns.getMatrix()->size1;
   int numCols = ns.getMatrix()->size2;
   int nullspaceCols = ns.getNullspaceSize();
   int sampleCount = 0;
+  int rankJacobian=numCols-nullspaceCols;
+  int numredundant=numRows-rankJacobian;
   gsl_vector* singValVector = gsl_vector_copy(ns.getSVD()->S);
 
-  log("rigidity") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
+  log("rigidity") << "Dimension of Jacobian: " << numRows << " rows, ";
   log("rigidity") << numCols << " columns" << endl;
-  log("rigidity") << "Dimension of kernel " << nullspaceCols << endl;
+  log("rigidity") << "Dimension of kernel: " << nullspaceCols << endl;
+  log("rigidity") << "Rank of the Jocobian: " <<rankJacobian << endl;
+  log("rigidity") << "Number of redundant constraints:" <<numredundant << endl;
+
 
 //  if (5*ns.getMatrix()->size1 < numCols){//less constraints than cycle-dofs
 //    //Write the complete J*V product out to file
@@ -165,11 +174,20 @@ int main( int argc, char* argv[] ){
   string outNull=out_path + "output/" +  name + "_nullSpace_" +
                  std::to_string((long long)sample_id)
                  + ".txt";
-
+  string outHpJacobian=out_path + "output/" +  name + "_HydrophobicBondJacobian_" +
+                       std::to_string((long long)sample_id)
+                       + ".txt";
+  string outHydrogenJacobian=out_path + "output/" +  name + "_HBondJacobian_" +
+                         std::to_string((long long)sample_id)
+                         + ".txt";
   if (derived) {
     derived->writeMatricesToFiles(outJac, outNull);
+///   conf->produceHydrophobicJacobian(outHpJacobian);
   }
-
+  if (conf->getNullspace()){
+      conf->produceHydrophobicJacobian(outHpJacobian);
+      conf->produceHydrogenJacobian(outHydrogenJacobian);
+  }
   if(options.saveData <= 2) return 0;
 
   string rbFile=out_path + "output/" +  name + "_RBs_" +

@@ -434,55 +434,53 @@ std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, M
     }
     else { // root specified as <=0 --> therefore align and pick best rigid body
       if (target == nullptr) {
-        log("samplingStatus") << "No target to determine best root, choosing standard root id " << standardId << endl;
+        log("samplingStatus") << "No target to determine best root, choosing standard root id "<<standardId << endl;
         bestRootIDs.push_back(standardId);
-      } else {
-        //Check the rmsd between individual vertices and choose the closest pair as m_root
-        double bestSum = 9999;
-        int bestId = 1;
-        for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
-             rbit != m_rigidBodyMap.end(); ++rbit) {
+      }
+      //Check the rmsd between individual vertices and choose the closest pair as m_root
+      double bestSum = 9999;
+      int bestId = 1;
+      for (map<unsigned int, Rigidbody *>::iterator rbit = m_rigidBodyMap.begin();
+           rbit != m_rigidBodyMap.end(); ++rbit) {
 
-          vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
-          if (atomsRMSD->front()->getResidue()->getChain() != chain) {
-            continue;//skip if not this chain
+        vector<Atom *> *atomsRMSD = &(rbit->second->Atoms);
+        if (atomsRMSD->front()->getResidue()->getChain() != chain) {
+          continue;//skip if not this chain
+        }
+        double sum = 0;
+        bool allAtoms = true;
+        Coordinate c1, c2;
+        Atom* rootAtom = nullptr;
+
+        //loop through the rigid body atoms
+        for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
+          Atom* atom = (*ait);
+          string name = atom->getName();
+          string chainName = atom->getResidue()->getChain()->getName();
+          int resId = atom->getResidue()->getId();
+          if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom() ){
+            rootAtom = atom; //choose first heavy backbone atom as root
           }
-          double sum = 0;
-          bool allAtoms = true;
-          Coordinate c1, c2;
-          Atom *rootAtom = nullptr;
-
-          //loop through the rigid body atoms
-          for (vector<Atom *>::iterator ait = atomsRMSD->begin(); ait != atomsRMSD->end(); ++ait) {
-            Atom *atom = (*ait);
-            string name = atom->getName();
-            string chainName = atom->getResidue()->getChain()->getName();
-            int resId = atom->getResidue()->getId();
-            if (!rootAtom && atom->isHeavyAtom() && atom->isBackboneAtom()) {
-              rootAtom = atom; //choose first heavy backbone atom as root
-            }
-            Atom *a2 = target->getAtom(chainName, resId, name);
-            if (atom && a2) {
-              c1 = atom->m_position;
-              c2 = a2->m_position;
-              sum += c1.distanceSquared(c2);
-            } else {//only allow the rb's where all atoms are available in both proteins
-              allAtoms = false;
-            }
-          }
-
-          if (allAtoms && rootAtom) {
-            sum = sqrt(sum / (atomsRMSD->size()));
-            if (sum <= bestSum) {
-              bestSum = sum;
-              bestId = rootAtom->getId();
-            }
+          Atom *a2 = target->getAtom(chainName, resId, name);
+          if (atom && a2) {
+            c1 = atom->m_position;
+            c2 = a2->m_position;
+            sum += c1.distanceSquared(c2);
+          } else {//only allow the rb's where all atoms are available in both proteins
+            allAtoms = false;
           }
         }
-        log("samplingStatus") << this->getName() << ": Choosing atom id " << bestId << " as root. Root RB rmsd: "
-                              << bestSum << endl;
-        bestRootIDs.push_back(bestId);
+
+        if (allAtoms && rootAtom ) {
+          sum = sqrt(sum / (atomsRMSD->size()));
+          if (sum <= bestSum) {
+            bestSum = sum;
+            bestId = rootAtom->getId();
+          }
+        }
       }
+      log("samplingStatus") << this->getName()<<": Choosing atom id " << bestId << " as root. Root RB rmsd: " << bestSum << endl;
+      bestRootIDs.push_back(bestId);
     }
     chainCount++;
   }
@@ -539,7 +537,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<size();i++){
     Atom* atom = getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0 && atom->HydrophobicBond_Neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
@@ -548,6 +546,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
 
 
   int count=0;
+    int countHydro=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
   for (auto const& bond: getCovBonds()){
     if( bond->m_bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
@@ -570,8 +569,19 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
         continue;
       }
     }
+
+      for( auto const &bond: getHydrophobicBonds()) {
+          if( bond->m_bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
+              countHydro++;
+              ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+              log("debug") << "IO::readRigidbody[" << __LINE__ << "] - Joining " << bond->m_atom1->getId() << " - "
+                           << bond->m_atom2->getId() << endl;
+              continue;
+          }
+      }
   }
   log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<countHydro<<" hydrophobic bonds."<<endl;
 
   int c=0;
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
@@ -1565,26 +1575,34 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
 
   Molecule *ret=deepClone();
 
-  int i=0; //indexing for hBonds
+  int hIdx=0; //indexing for hBonds
+  int hydroIdx=0; //indexing for hydrophobics
   //To collapse molecule, we turn rigid h-bonds into covalent bonds
   if(collapseLevel==2) {
     for( auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges ) {
 
       KinEdge *edge=edge_nca_pair.first;
-
-      //Get corresponding rigidity information
-      if( m_conf->getNullspace()->isHBondRigid(i++)) {
-        //If its a rigid hbond convert it to a rigid covalent bond
-        if( edge->getBond()->isHBond()) {
+      Bond* bond = edge->getBond();
+      if( bond->isHBond() ){
+        if( m_conf->getNullspace()->isHBondRigid(hIdx++) ){
           Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
           Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
           Bond *newBond=ret->addCovBond(a1_new, a2_new);
           if( newBond ) {
-            newBond->rigidified=true;
-//          log("debug")<<"Molecule.cpp:"<<__LINE__<<" covalently connecting "<<a1_new<<"-"<<a2_new<<" with rigid bond"<<endl;
+            newBond->rigidified = true;
           }
         }
-      }//end if
+      }
+      if( bond->isHydrophobicBond() ){
+        if( m_conf->getNullspace()->isHydrophobicBondRigid(hydroIdx++) ){
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified = true;
+          }
+        }
+      }
     }
   }
 

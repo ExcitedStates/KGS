@@ -59,6 +59,7 @@ IN THE SOFTWARE.
 #include "Selection.h"
 #include "Color.h"
 #include "HbondIdentifier.h"
+#include "core/graph/KinTree.h"
 
 
 using namespace std;
@@ -92,9 +93,9 @@ Molecule* IO::readPdb (
     const string& hbondFile,
     const Molecule* reference
 )
-{
+ {
   Molecule* molecule = new Molecule();
-
+   int hydrophobicCount=0;
   //Read molecule name
   int nameSplit=pdb_file.find_last_of("/\\");
   string moleculeName=pdb_file.substr(nameSplit + 1);
@@ -115,6 +116,7 @@ Molecule* IO::readPdb (
   vector< pair<int,int> > hydrophobicConstraints;
 
   int atomCount=0;
+
 
   //Read lines of PDB-file.
   while( !pdb.eof()) {
@@ -524,6 +526,7 @@ Molecule* IO::readPdb (
     molecule->addDBond(new_db);
   }
 
+  cout<<line<<endl;
   for(const pair<int,int>& constraint: hydrophobicConstraints) {
     cout<<constraint.first<<","<<constraint.second<<endl;
     Atom* a1 = molecule->getAtom(constraint.first);
@@ -532,6 +535,7 @@ Molecule* IO::readPdb (
     HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
     molecule->addHydrophobicBond(new_hyb);
     cout<<"Added Hydrophobic Constraint" <<endl;fflush(stdout);
+    hydrophobicCount++;
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
@@ -1636,27 +1640,52 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
 
   int site_1, site_2;
   vector< pair<KinEdge*,KinVertex*> >::iterator eit;
+    vector< pair<KinEdge*,KinVertex*> >::iterator eit2;
 
   if(iniMolecule) {
+
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-
-      site_1 = eit->first->getBond()->m_atom1->getId();
-      site_2 = eit->first->getBond()->m_atom2->getId();
-      pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
-
+        if(eit->first->getBond()->isHBond()){
+        site_1 = eit->first->getBond()->m_atom1->getId();
+        site_2 = eit->first->getBond()->m_atom2->getId();
+        pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
+    }
     }
     pymol_script << "color red, allHbonds" << endl;
     pymol_script << "hide labels, allHbonds" << endl;
   }
 
-  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin();
+       eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+    if(eit->first->getBond()->isHBond()) {
 
-    site_1 = eit->first->getBond()->m_atom1->getId();
-    site_2 = eit->first->getBond()->m_atom2->getId();
-    pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
+
+        site_1 = eit->first->getBond()->m_atom1->getId();
+        site_2 = eit->first->getBond()->m_atom2->getId();
+        pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
+    }
 
   }
+  for (eit=iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
+       eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++)
+  {  if(eit->first->getBond()->isHydrophobicBond()) {
+          site_1 = eit->first->getBond()->m_atom1->getId();
+          site_2 = eit->first->getBond()->m_atom2->getId();
+          pymol_script << "distance allhydrophobicConstraints = id " << site_1 << " , id " << site_2 << endl;
+      }
+  }
+    for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+        if(eit->first->getBond()->isHydrophobicBond()) {
+
+
+            site_1 = eit->first->getBond()->m_atom1->getId();
+            site_2 = eit->first->getBond()->m_atom2->getId();
+            pymol_script << "distance hydrophobicConstraints = id " << site_1 << " , id " << site_2 << endl;
+        }
+    }
+  pymol_script << "color cyan, hydrophobicConstraints" << endl;
+  pymol_script << "hide labels, hydrophobicConstraints" << endl;
   pymol_script << "color yellow, hbondConstraints" << endl;
   pymol_script << "hide labels, hbondConstraints" << endl;
 
@@ -1772,18 +1801,20 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Number of chains: " << protein->m_chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
-    output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;
+    output << "Number of hydrogen bonds: " << protein->getHBonds().size() << endl;
+    output << "Number of hydrophobic bonds: " <<  protein->getHydrophobicBonds().size() << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
     output << "Number of free DOFs: " << diff << endl;
     output << "Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl << endl;
     output << "************* Statistics on rigidity analysis *************" << endl;
     output << "Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize()
            << endl;
+
     output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
     output << "Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
            << endl;
     output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
-
+    output << "Number of rigidified hydrophobic bonds: " << protein->m_conf->getNullspace()->getNumRigidHydrophobicBonds() << endl;
     if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
       output << "Number of rigid clusters: " << rigidified->m_conf->m_numClusters << endl;
       output << "Size of biggest cluster: " << rigidified->m_conf->m_maxSize << endl;
@@ -2307,3 +2338,5 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
 
   }
 }
+
+

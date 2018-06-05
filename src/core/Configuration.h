@@ -119,7 +119,8 @@ class Configuration
   Molecule * updatedMolecule();  ///< Update the atom-positions to reflect this configuration and return the molecule
   Molecule * getMolecule() const;///< Return the associated molecule
   void updateMolecule();         ///< Update the atom-positions to reflect this configuration
-
+    void produceHydrophobicJacobian( const std::string& out_Hpjac) const ;
+    void produceHydrogenJacobian( const std::string& out_Hydrogenjac) const;
   /** Return the cycle jacobian. Calls computeJacobians if CycleJacobian is not up to date */
   gsl_matrix* getCycleJacobian();
 
@@ -141,15 +142,18 @@ class Configuration
   std::list<Configuration*> m_children;  ///< List of child-configurations
 
   void computeCycleJacobianAndNullSpace();
-  void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian
+  void computeJacobians();               ///< Compute non-redundant cycle jacobian and hbond-jacobian // and also HydrophobicBond-jacobian
   // Jacobian matrix of all the cycles of rigid bodies
   static gsl_matrix* CycleJacobian; // column dimension is the number of DOFs; row dimension is 5 times the number of cycles because 2 atoms on each cycle-closing edge
-  static gsl_matrix* HBondJacobian; // column dimension is the number of DOFS; row dimension is the number of cycles
+  static gsl_matrix* HBondJacobian; // column dimension is the number of DOFS; row dimension is the number of cycles\//
+  static gsl_matrix* HydrophobicBondJacobian; //column dimension is the number of DOFs; row dimension is the 5 times the number of Hydrophobic bond
   //static gsl_matrix* ClashAvoidingJacobian;
   static Configuration* CycleJacobianOwner;
 
   static SVD* JacobianSVD;
-  Nullspace* nullspace;                  ///< Nullspace of this configuration
+  Nullspace* nullspace;                  ///< Nullspace of hbond of this configuration
+
+  Nullspace* nullspaceHydro;
 };
 
 

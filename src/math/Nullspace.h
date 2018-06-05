@@ -35,7 +35,7 @@ class Nullspace {
   void projectOnNullSpace(gsl_vector *to_project, gsl_vector *after_project) const;
 
   /** Analyzes which dihedrals and hydrogen bonds are rigidified by constraints */
-  void performRigidityAnalysis(gsl_matrix *HBondJacobian);
+  void performRigidityAnalysis(gsl_matrix *HBondJacobian,gsl_matrix *HydrophobicBondJacobian);
 
   /** Update the Nullspace (and underlying SVD/QR) to reflect an updated state of the matrix */
   virtual void updateFromMatrix() = 0;
@@ -51,7 +51,7 @@ class Nullspace {
 
   /** Return number of h-bond dihedrals that were rigidified in the last call to RigidityAnalysis. */
   int getNumRigidHBonds() const { return numRigidHBonds; }
-
+  int getNumRigidHydrophobicBonds() const { return numRigidHydrophobicBonds;}
   /** Return the underlying matrix. */
   gsl_matrix* getMatrix() const{ return m_matrix; }
 
@@ -67,6 +67,7 @@ class Nullspace {
 
   bool isHBondRigid(int bond_id){ return fabs(gsl_vector_get(m_rigidHBonds, bond_id)-1.0)<0.001; }
 
+  bool isHydrophobicBondRigid(int bond_id){ return fabs(gsl_vector_get(m_rigidHydrophobicBonds,bond_id)-1.0)<0.001; }
  protected:
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)
@@ -77,11 +78,11 @@ class Nullspace {
  private:
   gsl_vector* m_rigidCovBonds; ///< Binary vector indicating which m_dofs are rigid
   gsl_vector* m_rigidHBonds;   ///< Binary vector indicating which h-bonds are rigid
-
+  gsl_vector* m_rigidHydrophobicBonds;  ///< Binary vector indicating which hydrophobic-bonds are rigid
   int numCoordinatedDihedrals; ///< Coordinated dihedrals
   int numRigidDihedrals;       ///< Rigid dihedrals
-  int numRigidHBonds;          ///< Rigid hydrogen bonds
-
+  int numRigidHBonds;///< Rigid hydrogen bonds
+  int numRigidHydrophobicBonds; ///< Rigid hydrophobic bonds
   /// These values have to be chosen according to the numerical analysis
 //  static constexpr double SINGVAL_TOL = 1.0e-12; //0.000000000001; // only generic 10^-12
   static constexpr double RIGID_TOL =   1.0e-9; //0.0000000001; //most molecules work between 1e-4 and 1e-10, exceptions only between 1e-8 and 1e-9
@@ -91,3 +92,9 @@ class Nullspace {
 
 
 #endif //KGS_nullptrSPACE_H
+
+
+
+
+
+

@@ -167,6 +167,11 @@ TransitionOptions::TransitionOptions(int argc, char* argv[])
     cerr<<"Initial structure file must be supplied"<<endl<<endl;
     exit(-1);
   }
+  //Check target structure
+  if(targetStructureFile.empty()){
+    log("so")<<"Target structure file must be supplied."<<endl<<endl;
+    exit(-1);
+  }
 
   //Check for valid metric
   std::transform(metric_string.begin(), metric_string.end(), metric_string.begin(), ::tolower);
@@ -204,8 +209,12 @@ TransitionOptions::TransitionOptions(int argc, char* argv[])
   int nameSplit = pdb_file.find_last_of("/\\");
   if(workingDirectory.empty()) {
     workingDirectory = pdb_file.substr(0, nameSplit + 1);
-    enableLogger("so");
     log("so")<<"Changing working directory to "<<workingDirectory<<" using initial"<<endl;
+  }
+
+  //Check target structure
+  if(targetStructureFile.empty()){
+    log("so")<<"No target structure file supplied, random sampling."<<endl;
   }
 
   if(collapseRigid<0 || collapseRigid>2){
