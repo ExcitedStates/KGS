@@ -25,61 +25,63 @@ Example:
 """
 
 import math
-import numpy as np
 from collections import defaultdict
+
 
 def dot(v1, v2):
     return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]
 
+
 def norm(v):
-    return math.sqrt(dot(v,v))
+    return math.sqrt(dot(v, v))
+
 
 def normalize(v):
-    l = norm(v)
-    return [v[0]/l, v[1]/l, v[2]/l]
+    length = norm(v)
+    return [v[0]/length, v[1]/length, v[2]/length]
+
 
 def sub(v1, v2):
-    return [ v1[0]-v2[0], v1[1]-v2[1], v1[2]-v2[2] ]
+    return [v1[0]-v2[0], v1[1]-v2[1], v1[2]-v2[2]]
+
 
 def angle(v1, v2, v3):
-    d21 = normalize( sub(v1,v2) )
-    d23 = normalize( sub(v3,v2) )
-    return math.acos( dot(d21, d23) )
-
-def cross(v1,v2):
-    return [ v1[1]*v2[2]-v1[2]*v2[1], v1[2]*v2[0]-v1[0]*v2[2], v1[0]*v2[1]-v1[1]*v2[0] ]
+    d21 = normalize(sub(v1, v2))
+    d23 = normalize(sub(v3, v2))
+    return math.acos(dot(d21, d23))
 
 
-covRadii = {"AC":1.88,"AG":1.59,"AL":1.35,"AM":1.51,"AS":1.21,"AU":1.50,"B" :0.83,"BA":1.34,
-            "BE":0.35,"BI":1.54,"BR":1.21,"C" :0.68,"CA":0.99,"CD":1.69,"CE":1.83,"CL":0.99,
-            "CO":1.33,"CR":1.35,"CS":1.67,"CU":1.52,"D" :0.23,"DY":1.75,"ER":1.73,"EU":1.99,
-            "F" :0.64,"FE":1.34,"GA":1.22,"GD":1.79,"GE":1.17,"H" :0.23,"HF":1.57,"HG":1.70,
-            "HO":1.74,"I" :1.40,"IN":1.63,"IR":1.32,"K" :1.33,"LA":1.87,"LI":0.68,"LU":1.72,
-            "MG":1.10,"MN":1.35,"MO":1.47,"N" :0.68,"NA":0.97,"NB":1.48,"ND":1.81,"NI":1.50,
-            "NP":1.55,"O" :0.68,"OS":1.37,"P" :1.05,"PA":1.61,"PB":1.54,"PD":1.50,"PM":1.80,
-            "PO":1.68,"PR":1.82,"PT":1.50,"PU":1.53,"RA":1.90,"RB":1.47,"RE":1.35,"RH":1.45,
-            "RU":1.40,"S" :1.02,"SB":1.46,"SC":1.44,"SE":1.22,"SI":1.20,"SM":1.80,"SN":1.46,
-            "SR":1.12,"TA":1.43,"TB":1.76,"TC":1.35,"TE":1.47,"TH":1.79,"TI":1.47,"TL":1.55,
-            "TM":6.72,"U" :1.58,"V" :1.33,"W" :1.37,"Y" :1.78,"YB":1.94,"ZN":1.45,"ZR":1.56 }
+def cross(v1, v2):
+    return [v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]]
 
-#From http://www.cgl.ucsf.edu/chimera/docs/UsersGuide/midas/vdwtables.html#allatom, except for SE and UNKNOWN
+
+covRadii = {"AC": 1.88,"AG": 1.59,"AL": 1.35,"AM": 1.51,"AS": 1.21,"AU": 1.50,"B" : 0.83,"BA": 1.34,
+            "BE": 0.35,"BI": 1.54,"BR": 1.21,"C" : 0.68,"CA": 0.99,"CD": 1.69,"CE": 1.83,"CL": 0.99,
+            "CO": 1.33,"CR": 1.35,"CS": 1.67,"CU": 1.52,"D" : 0.23,"DY": 1.75,"ER": 1.73,"EU": 1.99,
+            "F" : 0.64,"FE": 1.34,"GA": 1.22,"GD": 1.79,"GE": 1.17,"H" : 0.23,"HF": 1.57,"HG": 1.70,
+            "HO": 1.74,"I" : 1.40,"IN": 1.63,"IR": 1.32,"K" : 1.33,"LA": 1.87,"LI": 0.68,"LU": 1.72,
+            "MG": 1.10,"MN": 1.35,"MO": 1.47,"N" : 0.68,"NA": 0.97,"NB": 1.48,"ND": 1.81,"NI": 1.50,
+            "NP": 1.55,"O" : 0.68,"OS": 1.37,"P" : 1.05,"PA": 1.61,"PB": 1.54,"PD": 1.50,"PM": 1.80,
+            "PO": 1.68,"PR": 1.82,"PT": 1.50,"PU": 1.53,"RA": 1.90,"RB": 1.47,"RE": 1.35,"RH": 1.45,
+            "RU": 1.40,"S" : 1.02,"SB": 1.46,"SC": 1.44,"SE": 1.22,"SI": 1.20,"SM": 1.80,"SN": 1.46,
+            "SR": 1.12,"TA": 1.43,"TB": 1.76,"TC": 1.35,"TE": 1.47,"TH": 1.79,"TI": 1.47,"TL": 1.55,
+            "TM": 6.72,"U" : 1.58,"V" : 1.33,"W" : 1.37,"Y" : 1.78,"YB": 1.94,"ZN": 1.45,"ZR": 1.56}
+
+# From http://www.cgl.ucsf.edu/chimera/docs/UsersGuide/midas/vdwtables.html#allatom, except for SE and UNKNOWN
 vdwRadii = {
         "C" : 1.700, "N" : 1.625, "O" : 1.490, "S" : 1.782, "H" : 1.000, "P" : 1.871, 
         "F" : 1.560, "Cl": 1.735,"CL": 1.735,"Br": 1.978,"BR": 1.978, "I" : 2.094, "?" : 2.000 }
-
-#Todo: implement ionic radii based on the coordination number
-ionRadii = {
-    "C" : 1 }
 
 verbose = False
 writePml = False
 writeIMOD = False
 waters = True
 ligands = True
-altloc= "A"
-cutoff=-1.0
-chainID="all"
+altloc = "A"
+cutoff = -1.0
+chainID = "all"
 model = -1
+
 
 class Atom:
     """ Container class for PDB atoms """
@@ -87,29 +89,21 @@ class Atom:
     def __init__(self, atom_string):
         self.id = int(atom_string[6:11])
         self.name = atom_string[11:16].strip()
-        self.alt  = atom_string[16]
+        self.alt = atom_string[16]
         self.resn = atom_string[17:20].strip()
         self.chain = atom_string[21]
         self.resi = int(atom_string[22:26])
-        self.pos = [ float(atom_string[30:38]), float(atom_string[38:46]), float(atom_string[46:54]) ]
+        self.pos = [float(atom_string[30:38]), float(atom_string[38:46]), float(atom_string[46:54])]
         self.occ = float(atom_string[54:60])
         self.tempFactor = float(atom_string[60:66])
-        if (self.name[0] == "D"):#case of Deuterium
+        if self.name[0] == "D":  # case of Deuterium
             self.name = "H"+self.name[1:]
-        if len(atom_string.strip())>=78:
+        if len(atom_string.strip()) >= 78:
             self.elem = atom_string[76:78].strip()
-            if self.isIon():
-                self.elem=self.name
-            else:
-                self.elem = self.elem[0]
-                # if self.elem == "D":
-                #     self.elem = "H"
-        else: #element column not provided in input
+        else:  # element column not provided in input
             name_nodigits = filter(lambda x: x.isalpha(), self.name)
-            self.elem=name_nodigits
-            if ~self.isIon():
-                self.elem = name_nodigits[0]
-       
+            self.elem = name_nodigits[0]
+
         self.neighbors = []
         self.hBondNeighbors = []
         self.rings = 0
@@ -135,7 +129,7 @@ class Atom:
         except AttributeError:
             pass
         except KeyError:
-            RuntimeError("Unknown element for atom: "+str(self),self.name,self.atomType);
+            RuntimeError("Unknown element for atom: "+str(self),self.name,self.elem);
         raise RuntimeError("Unknown element for atom: "+str(self),self.name,self.elem);
 
     def getSP(self):
@@ -163,28 +157,31 @@ class Atom:
                     self.pos[0], self.pos[1], self.pos[2], self.occ, self.tempFactor, self.elem)
 
         return line
-    
+
     def getCONECT(self):
         line=''
         if self.hetatm:
-            line="CONECT%5d" % (self.id) # atom id, cols 7-11
-            neighborCount=1
+            line = "CONECT%5d" % self.id  # atom id, cols 7-11
+            neighbor_count = 1
             for neighbor in self.neighbors:
-                if not neighbor.hetatm: #Only covalent bonds for hetatms, other connections are revolute constraints in KGS
-                    continue;
-                if neighborCount > 4: #max. neighbors per CONECT entry (format requirement)
-                    line += "\nCONECT%5d" % (self.id) #start new entry
-                    neighborCount=1
-                line += "%5d" % (neighbor.id) #neighbor ids, each 5-cols wide
-                neighborCount += 1
-            line += '\n' #new line
+                # Only covalent bonds for hetatms, other connections are revolute constraints in KGS
+                if not neighbor.hetatm:
+                    continue
+                if neighbor_count > 4:  # max. neighbors per CONECT entry (format requirement)
+                    line += "\nCONECT%5d" % self.id  # start new entry
+                    neighbor_count = 1
+                line += "%5d" % neighbor.id  # neighbor ids, each 5-cols wide
+                neighbor_count += 1
+            line += '\n'  # new line
         return line
-    
+
+
     def isIon(self):
         if self.elem in ["MG","ZN","K","FE"]: #Todo: increase list for ions of interest
             return True
         return False
-    
+
+
 class PDBFile:
     """ A representation of a single-model PDB-file """
 
@@ -341,21 +338,6 @@ class PDBFile:
                     for n in npls:
                         n.atomType = "Ng+"
 
-    #Check metal ions (e.g. magnesium)
-    def ionCoordination(self):
-        for atom in self.atoms:
-            if atom.isIon():
-                for neighbor in atom.neighbors:
-                    if neighbor.resn in ["A","G","C","U","T"]: #RNA/DNA
-                        #......... TODO ................
-                        # 1) identify neighbors for the ion
-                        # 2) suitable distance constraints for ion interactions
-                        # 3) Identify coordination for metal ions
-                        pass
-                    else:
-                        print "MG ion close to protein:",atom.name,atom.id, neighbor.name,neighbor.id
-
-
     def __init__(self, name, atom_records):
         """ Initialize a PDBFile object using a PDB-file or PDB-id. """
 
@@ -364,35 +346,31 @@ class PDBFile:
         self.constraints = []
         self.iModBonds = []
         
-        self.checkHydrogens() #check if hydrogens are present
-        self.checkAltConformations() #check and remove alt locs
+        self.checkHydrogens()  # check if hydrogens are present
+        self.checkAltConformations()  # check and remove alt locs
 
-        #Neighbor computations based on grid
+        # Neighbor computations based on grid
         self.grid = defaultdict(list)
         for atom in self.atoms:
-            self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
+            self.grid[(int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2]))].append(atom)
 
-        self.buildCovBonds() #Neighbors necessary to know which waters are present
+        self.buildCovBonds()  # Neighbors necessary to know which waters are present
         self.cleanDehydroHOH()  # check and potentially remove waters
  
-        # #Redo grid after waters have been removed
+        # # Redo grid after waters have been removed
         # self.grid = defaultdict(list)
         # for atom in self.atoms:
         #     self.grid[ (int(atom.pos[0]), int(atom.pos[1]), int(atom.pos[2])) ].append(atom)
             
-        #Now we have all atoms in the model that we want --> no removal afterwards
-        self.checkAtomIDs() #renumber atoms
-        self.checkResidueSequence() #check residue sequence, identify odd numbering / gaps
+        # Now we have all atoms in the model that we want --> no removal afterwards
+        self.checkAtomIDs()  # renumber atoms
+        self.checkResidueSequence()  # check residue sequence, identify odd numbering / gaps
         
         # self.rebuildCovBonds()
         self.buildRingCounts()
         self.buildIDATM()
         
-        #Check ion neighborhood and coordination
-        self.ionCoordination()
-
-
-    def hydrogenBondEnergy(self,aa, acceptor, hydrogen, donor):
+    def hydrogenBondEnergy(self, aa, acceptor, hydrogen, donor):
         """Computes hydrogen bond energy following the terms described in
         "Dahiyat, Gordon and Mayo. Automated design of the surface positions of protein helices.
         Protein Science, 1997."
@@ -415,13 +393,13 @@ class PDBFile:
         theta = angle(donor.pos, hydrogen.pos, acceptor.pos)
         psi   = angle(hydrogen.pos, acceptor.pos, aa.pos)
 
-        if R<2.5 or R>3.9: #R>3.2: #R>3.9
+        if R < 2.5 or R > 3.9:  # R>3.2 # R>3.9
             return 1000
-        if theta<(3.141592/2): 
+        if theta < (3.141592/2):
             return 1000
-        if donor.getSP()==3 and acceptor.getSP()==3 and psi-psi0>(3.141592/2):
+        if donor.getSP() == 3 and acceptor.getSP() == 3 and psi-psi0 > (3.141592/2):
             return 1000
-        if donor.getSP()==3 and acceptor.getSP()==2 and psi<(3.141592/2):
+        if donor.getSP() == 3 and acceptor.getSP() == 2 and psi < (3.141592/2):
             return 1000
 
         ratio       = R0/R
@@ -434,17 +412,17 @@ class PDBFile:
         energy_dist = d0 * (5*ratio_pow12 - 6*ratio_pow10)
         energy_angl = math.cos(theta)**2
 
-        if(donor.getSP()==3 and acceptor.getSP()==3):
+        if donor.getSP()==3 and acceptor.getSP() == 3:
             return energy_dist * energy_angl * math.cos(psi-psi0)**2
-        if(donor.getSP()==3 and acceptor.getSP()==2):
+        if donor.getSP()==3 and acceptor.getSP() == 2:
             return energy_dist * energy_angl * math.cos(psi)**2
-        if(donor.getSP()==2 and acceptor.getSP()==3):
+        if donor.getSP()==2 and acceptor.getSP() == 3:
             return energy_dist * energy_angl * energy_angl
-        if(donor.getSP()==2 and acceptor.getSP()==2):
-            #compute phi
-            n_d = normalize( cross(sub(donor.neighbors[0].pos, donor.pos), sub(donor.neighbors[1].pos,donor.pos)) )
-            if( len(aa.neighbors) >=2 ):#Not necessarily the case
-                n_a = normalize( cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
+        if donor.getSP()==2 and acceptor.getSP() == 2:
+            # compute phi
+            n_d = normalize(cross(sub(donor.neighbors[0].pos, donor.pos), sub(donor.neighbors[1].pos, donor.pos)))
+            if len(aa.neighbors) >= 2:  # Not necessarily the case
+                n_a = normalize(cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
             else:
                 n_a = normalize( cross(sub(aa.pos,acceptor.pos), sub(hydrogen.pos,acceptor.pos)) )
             # n_a = normalize( cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
