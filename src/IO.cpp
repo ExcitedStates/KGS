@@ -525,13 +525,10 @@ Molecule* IO::readPdb (
   }
 
   for(const pair<int,int>& constraint: hydrophobicConstraints) {
-    cout<<constraint.first<<","<<constraint.second<<endl;
     Atom* a1 = molecule->getAtom(constraint.first);
     Atom* a2 = molecule->getAtom(constraint.second);
-    cout<<"Creating Hydrophobic Constraint" <<endl;fflush(stdout);
     HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
     molecule->addHydrophobicBond(new_hyb);
-    cout<<"Added Hydrophobic Constraint" <<endl;fflush(stdout);
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
