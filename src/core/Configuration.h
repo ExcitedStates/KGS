@@ -125,6 +125,7 @@ class Configuration
   Nullspace* getNullspace();    ///< Compute the nullspace (if it wasn't already) and return it
   gsl_matrix* getHydrophobicJacobian();
   gsl_matrix* getHydrogenJacobian();
+  gsl_matrix* getDistanceJacobian();
 
   void rigidityAnalysis();
   void deleteNullspace(); ///if not needed anymore, save memory

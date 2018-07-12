@@ -22,9 +22,10 @@ Nullspace::Nullspace(gsl_matrix* M) :
     numRigidHBonds( 0 ),
     numRigidHydrophobicBonds( 0 ),
     m_nullspaceBasis(nullptr),
-    m_rigidCovBonds(gsl_vector_alloc(n)),
-    m_rigidHBonds(gsl_vector_alloc(n)),
-    m_rigidHydrophobicBonds(gsl_vector_alloc(n))
+    m_rigidCovBonds(gsl_vector_alloc(n)),///for allocation, use maximum size of all n covalent edges
+    m_rigidHBonds(gsl_vector_alloc(m)),///for allocation, use maximum size of all m constraints
+    m_rigidDBonds(gsl_vector_alloc(m)),
+    m_rigidHydrophobicBonds(gsl_vector_alloc(m))
 {
 }
 
@@ -32,9 +33,10 @@ Nullspace::~Nullspace ()
 {
   if(m_nullspaceBasis)
     gsl_matrix_free(m_nullspaceBasis);
-  gsl_vector_free(m_rigidHydrophobicBonds);
   gsl_vector_free(m_rigidCovBonds);
   gsl_vector_free(m_rigidHBonds);
+  gsl_vector_free(m_rigidDBonds);
+  gsl_vector_free(m_rigidHydrophobicBonds);
 }
 
 
@@ -106,12 +108,13 @@ Nullspace::~Nullspace ()
 }
 */
 /** Analyzes which dihedrals and hydrogen bonds are rigidified by constraints */
-void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *HydrophobicBondJacobian)
+void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *DBondJacobian, gsl_matrix *HydrophobicBondJacobian)
 {
   // First, check the dihedral angles for rigidity
 
   gsl_vector_set_zero(m_rigidCovBonds);
   gsl_vector_set_zero(m_rigidHBonds);
+  gsl_vector_set_zero(m_rigidDBonds);
   gsl_vector_set_zero(m_rigidHydrophobicBonds);
   numCoordinatedDihedrals = 0;
   numRigidDihedrals = 0;
@@ -139,51 +142,76 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *H
 
   log("constraints")<<"There are "<<numRigidDihedrals << " rigidified and " << numCoordinatedDihedrals << " coordinated dihedrals" << endl;
 
-  // Now, check the hydrogen m_bonds for rigidity
-  // also check the rigidity of the hydrophobic bonds
-  int numHBonds = HBondJacobian->size1;
-  gsl_matrix* hBondNullspace = gsl_matrix_alloc(numHBonds, std::max(m_nullspaceSize,1));
-  gsl_vector* currentHBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
-
-  ///Calculate the "In-Nullspace" Rotation of the hBonds
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, m_nullspaceBasis, 0.0, hBondNullspace);
-  //Only for test analysis: write hBondNullspace=J_h*N to file
-//	string outNullH="KINARI_Comparison/output/hBondnullSpace.txt";
-//	gsl_matrix_outtofile(hBondNullspace, outNullH);
-
+  // Now, check all constraint bonds for their rigidity
   double maxVal;
   double minVal;
-  numRigidHBonds = 0;
-  numRigidHydrophobicBonds = 0;
-  for(int i=0; i<numHBonds; i++){
-    gsl_matrix_get_row(currentHBondRow,hBondNullspace,i);
-    gsl_vector_minmax(currentHBondRow, &minVal, &maxVal);
+  /// HYDROGEN BOND CONSTRAINTS
+  if(HBondJacobian) {/// there are hydrogen bonds
+    int numHBonds = HBondJacobian->size1;
+    gsl_matrix *hBondNullspace = gsl_matrix_alloc(numHBonds, std::max(m_nullspaceSize, 1));
+    gsl_vector *currentHBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
 
-    if (minVal > -RIGID_TOL && maxVal < RIGID_TOL){
-      gsl_vector_set(m_rigidHBonds,i,1);
-      numRigidHBonds++;
+    ///Calculate the "In-Nullspace" Rotation of the hBonds
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, m_nullspaceBasis, 0.0, hBondNullspace);
+
+    numRigidHBonds = 0;
+    numRigidHydrophobicBonds = 0;
+    for (int i = 0; i < numHBonds; i++) {
+      gsl_matrix_get_row(currentHBondRow, hBondNullspace, i);
+      gsl_vector_minmax(currentHBondRow, &minVal, &maxVal);
+
+      if (minVal > -RIGID_TOL && maxVal < RIGID_TOL) {
+        gsl_vector_set(m_rigidHBonds, i, 1);
+        numRigidHBonds++;
+      }
     }
+
+    log("constraints") << "There are " << numRigidHBonds << " rigid out of " << numHBonds << " hydrogen bonds!" << endl;
+
+    gsl_vector_free(currentHBondRow);
+    gsl_matrix_free(hBondNullspace);
   }
+    /// DISTANCE CONSTRAINTS
+  if (DBondJacobian) {//there are distance bonds
+    int numDBonds = (DBondJacobian->size1) / 3;
+    gsl_matrix *dBondNullspace = gsl_matrix_alloc(DBondJacobian->size1, std::max(m_nullspaceSize, 1));
+    gsl_vector *currentDBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
+    ///Calculate the "In-Nullspace" Rotation of the hydrophobic bonds
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, DBondJacobian, m_nullspaceBasis, 0.0, dBondNullspace);
 
-	log("constraints")<<"There are "<<numRigidHBonds<<" rigid out of "<<numHBonds<<" hydrogen bonds!"<<endl;
+    for (int i = 0; i < numDBonds; i++) {
+      double minValThreeRows = 99999;
+      double maxValThreeRows = 0;
+      for (int j = 0; j < 3; j++) {//check all 3 remaining motions of the distance bond
+        gsl_matrix_get_row(currentDBondRow, dBondNullspace, i * 3 + j);
+        gsl_vector_minmax(currentDBondRow, &minVal, &maxVal);
+        if (minVal < minValThreeRows)
+          minValThreeRows = minVal;
+        if (maxVal > maxValThreeRows)
+          maxValThreeRows = maxVal;
+      }
 
-  gsl_vector_free(currentHBondRow);
-  gsl_matrix_free(hBondNullspace);
-
-  /// NEW FOR HYDROPHOBIC BONDS
-  if (HydrophobicBondJacobian) {
+      if (minValThreeRows > -RIGID_TOL && maxValThreeRows < RIGID_TOL) {
+        gsl_vector_set(m_rigidDBonds, i, 1);
+        numRigidDBonds++;
+      }
+    }
+    log("constraints") << "There are " << numRigidDBonds << " rigid out of " << numDBonds << " distance bonds!" << endl;
+    gsl_vector_free(currentDBondRow);
+    gsl_matrix_free(dBondNullspace);
+  }
+    /// HYDROPHOBIC CONSTRAINTS
+  if (HydrophobicBondJacobian) {//there are hydrophobic bonds
     int numHydrophobicBonds = (HydrophobicBondJacobian->size1) / 5;
-    gsl_matrix *hydrophobicBondNullspace = gsl_matrix_alloc(HydrophobicBondJacobian->size1,
-                                                            std::max(m_nullspaceSize, 1));
+    gsl_matrix *hydrophobicBondNullspace = gsl_matrix_alloc(HydrophobicBondJacobian->size1,std::max(m_nullspaceSize, 1));
     gsl_vector *currentHydrophobicBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
     ///Calculate the "In-Nullspace" Rotation of the hydrophobic bonds
-    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HydrophobicBondJacobian, m_nullspaceBasis, 0.0,
-                   hydrophobicBondNullspace);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HydrophobicBondJacobian, m_nullspaceBasis, 0.0, hydrophobicBondNullspace);
 
     for (int i = 0; i < numHydrophobicBonds; i++) {
-      double minValFiveRows = 0;
+      double minValFiveRows = 99999;
       double maxValFiveRows = 0;
-      for (int j = 0; j < 5; j++) {
+      for (int j = 0; j < 5; j++) {//check all 5 remaining motions of the hydrophobic bond
         gsl_matrix_get_row(currentHydrophobicBondRow, hydrophobicBondNullspace, i * 5 + j);
         gsl_vector_minmax(currentHydrophobicBondRow, &minVal, &maxVal);
         if (minVal < minValFiveRows)
@@ -194,9 +222,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *H
 
       if (minValFiveRows > -RIGID_TOL && maxValFiveRows < RIGID_TOL) {
         gsl_vector_set(m_rigidHydrophobicBonds, i, 1);
-        numRigidHydrophobicBonds++;//when the entry is approximately equal to 0, can be considered as rigidity.
-        // And due to the mathematical process we set the reference as 1.0e-9
-        // which means all entries of this 5 rows can be considered as 0.---rigidity
+        numRigidHydrophobicBonds++;
       }
     }
     log("constraints") << "There are " << numRigidHydrophobicBonds << " rigid out of " << numHydrophobicBonds

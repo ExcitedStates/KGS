@@ -93,6 +93,7 @@ int main( int argc, char* argv[] ){
   log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
   log("rigidity")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
   log("rigidity")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
+  log("rigidity")<<"> "<<protein->getDBonds().size()<<" distance bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
@@ -100,14 +101,14 @@ int main( int argc, char* argv[] ){
   int numRows = ns.getMatrix()->size1;
   int numCols = ns.getMatrix()->size2;
   int nullspaceCols = ns.getNullspaceSize();
-  int rankJacobian=min(numCols,numRows)-nullspaceCols;
-  int numredundant=numRows-rankJacobian;
+  int rankJacobian = numCols - nullspaceCols;
+  int numRedundantCons = numRows-rankJacobian;
 
   log("rigidity") << "Dimension of Jacobian: " << numRows << " rows, ";
   log("rigidity") << numCols << " columns" << endl;
   log("rigidity") << "Dimension of kernel: " << nullspaceCols << endl;
   log("rigidity") << "Rank of Jacobian: " <<rankJacobian << endl;
-  log("rigidity") << "Number of redundant constraints:" <<numredundant << endl;
+  log("rigidity") << "Number of redundant constraints: " <<numRedundantCons << endl;
 
   /// Create larger rigid substructures for rigid cluster decomposition
   Molecule* rigidified = protein->collapseRigidBonds(2);
@@ -168,6 +169,13 @@ int main( int argc, char* argv[] ){
                            std::to_string((long long) sample_id)
                            + ".txt";
     gsl_matrix_outtofile(conf->getHydrophobicJacobian(), outHpJacobian);
+  }
+
+  if (conf->getDistanceJacobian()) {
+    string outDJacobian = out_path + "output/" + name + "_DistanceBondJacobian_" +
+                           std::to_string((long long) sample_id)
+                           + ".txt";
+    gsl_matrix_outtofile(conf->getDistanceJacobian(), outDJacobian);
   }
 
   string rbFile=out_path + "output/" +  name + "_RBs_" +

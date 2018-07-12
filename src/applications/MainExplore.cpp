@@ -209,6 +209,8 @@ void randomSampling(ExploreOptions& options) {
     exit(-1);
   }
   planner->initialize(move, metric, options.workingDirectory, options.saveData);
+  protein->m_conf->rigidityAnalysis();///for correct output on "rigidified angles"
+  protein->writeRigidbodyIDToBFactor();///if collapse == 0, this will give initial distribution of rigid bodies
 
   log() << "Total DOFs: " << protein->m_spanningTree->getNumDOFs() << ", Cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs()
       << ", Max accessible DOFs: " << protein->m_spanningTree->getNumDOFs() - protein->m_spanningTree->getNumCycleDOFs() +

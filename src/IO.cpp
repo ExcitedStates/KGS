@@ -1638,52 +1638,49 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   vector< pair<KinEdge*,KinVertex*> >::iterator eit;
     vector< pair<KinEdge*,KinVertex*> >::iterator eit2;
 
+    /// initial molecule (nothing collapsed)
   if(iniMolecule) {
-
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-        if(eit->first->getBond()->isHBond()){
-        site_1 = eit->first->getBond()->m_atom1->getId();
-        site_2 = eit->first->getBond()->m_atom2->getId();
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
+      if(eit->first->getBond()->isHBond()) {
         pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
-    }
-    }
-    pymol_script << "color red, allHbonds" << endl;
-    pymol_script << "hide labels, allHbonds" << endl;
-  }
-
-  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin();
-       eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-    if(eit->first->getBond()->isHBond()) {
-
-
-        site_1 = eit->first->getBond()->m_atom1->getId();
-        site_2 = eit->first->getBond()->m_atom2->getId();
-        pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
-    }
-
-  }
-  for (eit=iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
-       eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++)
-  {  if(eit->first->getBond()->isHydrophobicBond()) {
-          site_1 = eit->first->getBond()->m_atom1->getId();
-          site_2 = eit->first->getBond()->m_atom2->getId();
-          pymol_script << "distance allhydrophobicConstraints = id " << site_1 << " , id " << site_2 << endl;
       }
-  }
-    for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-        if(eit->first->getBond()->isHydrophobicBond()) {
-
-
-            site_1 = eit->first->getBond()->m_atom1->getId();
-            site_2 = eit->first->getBond()->m_atom2->getId();
-            pymol_script << "distance hydrophobicConstraints = id " << site_1 << " , id " << site_2 << endl;
-        }
+      else if(eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance allHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if(eit->first->getBond()->isDBond()) {
+        pymol_script << "distance allDbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
     }
-  pymol_script << "color cyan, hydrophobicConstraints" << endl;
-  pymol_script << "hide labels, hydrophobicConstraints" << endl;
-  pymol_script << "color yellow, hbondConstraints" << endl;
-  pymol_script << "hide labels, hbondConstraints" << endl;
+  }
+
+  /// collapsed molecule, remaining constraints
+  if(rigidified) {
+    for (eit = rigidified->m_spanningTree->m_cycleAnchorEdges.begin();
+         eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
+
+      if (eit->first->getBond()->isHBond()) {
+        pymol_script << "distance mobileHbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance mobileHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isDBond()) {
+        pymol_script << "distance mobileDBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+    }
+  }
+  pymol_script << "color red, allHbonds" << endl;
+  pymol_script << "color yellow, mobileHbonds" << endl;
+  pymol_script << "color deepteal, allHydrophobics" << endl;
+  pymol_script << "color cyan, mobileHydrophobics" << endl;
+  pymol_script << "color black, allDBonds" << endl;
+  pymol_script << "color gray60, mobileDBonds" << endl;
+  pymol_script << "hide labels" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1798,6 +1795,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
     output << "Number of hydrogen bonds: " << protein->getHBonds().size() << endl;
+    output << "Number of distance bonds: " << protein->getDBonds().size() << endl;
     output << "Number of hydrophobic bonds: " <<  protein->getHydrophobicBonds().size() << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
     output << "Number of free DOFs: " << diff << endl;
@@ -1807,9 +1805,10 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
            << endl;
 
     output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
-    output << "Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
+    output << "Number of rigidified DOFs (covalent bonds): " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
            << endl;
     output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
+    output << "Number of rigidified distance bonds: " << protein->m_conf->getNullspace()->getNumRigidDBonds() << endl;
     output << "Number of rigidified hydrophobic bonds: " << protein->m_conf->getNullspace()->getNumRigidHydrophobicBonds() << endl;
     if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
       output << "Number of rigid clusters: " << rigidified->m_conf->m_numClusters << endl;

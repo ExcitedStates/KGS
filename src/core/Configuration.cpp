@@ -198,11 +198,12 @@ void Configuration::rigidityAnalysis() {
   double old_time = timer.LastElapsedTime();
 
   if(CycleJacobian!=nullptr) {///identifies rigid/rotatable hbonds and bonds based on set cut-off
-    nullspace->performRigidityAnalysis(HBondJacobian,HydrophobicBondJacobian); ///ToDo: include DBondJacobian
+    nullspace->performRigidityAnalysis(HBondJacobian,DBondJacobian,HydrophobicBondJacobian); ///ToDo: include DBondJacobian
   }
 
   int hIdx=0; //indexing for hBonds
-  int hydroIdx=0;
+  int hydroIdx=0; //indexing for hydrophobic bonds
+  int dIdx=0; //indexing for dBonds
 
   //First, constrain cycle edge bonds
   for (auto const &edge_nca_pair : m_molecule->m_spanningTree->m_cycleAnchorEdges) {
@@ -210,55 +211,33 @@ void Configuration::rigidityAnalysis() {
     KinEdge *edge = edge_nca_pair.first;
     KinVertex *common_ancestor = edge_nca_pair.second;
 
-    Bond* bond = edge->getBond();
+    Bond *bond = edge->getBond();
 
     if (bond->isHBond()) {
       if (nullspace->isHBondRigid(hIdx++)) {
         bond->rigidified = true;
       }
-    }
-    else if(bond->isHydrophobicBond()) {
+    } else if (bond->isHydrophobicBond()) {
       //Get corresponding rigidity information
       if (nullspace->isHydrophobicBondRigid(hydroIdx++)) {
         bond->rigidified = true;
       }
-    }
-
-    //Now, the dihedral angles
-    KinVertex* vertex1 = edge->StartVertex;
-    KinVertex* vertex2 = edge->EndVertex;
-
-    //Trace back along dof m_edges for vertex 1
-    while ( vertex1 != common_ancestor ) {
-      KinVertex* parent = vertex1->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex1);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-        if( nullspace->isCovBondRigid(dof_id) ) {
-          Bond* bond = p_edge->getBond();
-          bond->rigidified = true;
-        }
+    } else if (bond->isDBond()) {
+      //Get corresponding rigidity information
+      if (nullspace->isDBondRigid(dIdx++)) {
+        bond->rigidified = true;
       }
-      vertex1 = parent;
-    }
-
-    //Trace back along edges from vertex 2
-    while ( vertex2 != common_ancestor ) {
-      KinVertex* parent = vertex2->m_parent;
-      KinEdge* p_edge = parent->findEdge(vertex2);
-
-      int dof_id = p_edge->getDOF()->getCycleIndex();
-      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
-        if( nullspace->isCovBondRigid(dof_id) ) {
-          Bond* bond = p_edge->getBond();
-          bond->rigidified = true;
-        }
-      }
-      vertex2 = parent;
     }
   }
-
+  //Second, constrain covalent edge bonds
+  for (auto const &edge : m_molecule->m_spanningTree->m_edges) {
+      int dof_id = edge->getDOF()->getCycleIndex();
+      if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+        if( nullspace->isCovBondRigid(dof_id) ) {
+          edge->getBond()->rigidified = true;
+        }
+      }
+  }
   double new_time = timer.ElapsedTime();
   rigidityTime += new_time - old_time;
 }
@@ -495,17 +474,21 @@ void Configuration::computeJacobians() {
   int row_num = 0; /// constraint Jacobian, contains all constraint bonds
 
   for(auto const& edge: m_molecule->m_spanningTree->m_cycleAnchorEdges){
-    if(edge.first->getBond()->isDBond()) {
+    if(edge.first->getBond()->isHBond()){
+      row_num += 5;
+      hConstraint_row_num += 1;
+    }
+    else if(edge.first->getBond()->isDBond()) {
       row_num += 3;
       dConstraint_row_num += 3;
     }
-    if(edge.first->getBond()->isHydrophobicBond()) {
+    else if(edge.first->getBond()->isHydrophobicBond()) {
       row_num += 1;
       hydroConstraint_row_num += 5;
     }
-    else{
-      row_num += 5;
-      hConstraint_row_num += 1;
+    else{//default or clobal
+      cerr<<"Unkown anchor edge type found"<<endl;
+      exit(-1);
     }
   }
 
@@ -524,15 +507,17 @@ void Configuration::computeJacobians() {
   }
 
   ///HBond Jacobian
-  if(HBondJacobian==nullptr){
-      HBondJacobian = gsl_matrix_calloc(hConstraint_row_num,col_num);
+  if(hConstraint_row_num != 0) {
+    if (HBondJacobian == nullptr) {
+      HBondJacobian = gsl_matrix_calloc(hConstraint_row_num, col_num);
 
-  }else if(HBondJacobian->size1==hConstraint_row_num && HBondJacobian->size2==col_num){
+    } else if (HBondJacobian->size1 == hConstraint_row_num && HBondJacobian->size2 == col_num) {
       gsl_matrix_set_zero(HBondJacobian);
 
-  }	else{
+    } else {
       gsl_matrix_free(HBondJacobian);
-      HBondJacobian = gsl_matrix_calloc(hConstraint_row_num,col_num);
+      HBondJacobian = gsl_matrix_calloc(hConstraint_row_num, col_num);
+    }
   }
 
   ///HydrophobicBond Jacobian
@@ -567,7 +552,7 @@ void Configuration::computeJacobians() {
   int i=0; // cycleAnchorIndices, all constraints together
   int hbidx=0; // hydrogen bond index, used for HBondJacobian
   int hydroidx=0; //hydrophobic index, used for HydrophobicJacobian
-  int didx=0;
+  int didx=0;// distance bond index, used for DBondJacobian
   for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: m_molecule->m_spanningTree->m_cycleAnchorEdges)
   {
     // get end-effectors
@@ -665,14 +650,14 @@ void Configuration::computeJacobians() {
             gsl_matrix_set(CycleJacobian, i + 1, dof_id, jacobianEntryTrans.y);
             gsl_matrix_set(CycleJacobian, i + 2, dof_id, jacobianEntryTrans.z);
 
-            if (bond_ptr->isHBond()) {
+            if (bond_ptr->isHBond()) {//Hbonds
                 gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
                 gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
 
                 ///Matrix to check hBond Rotation
                 gsl_matrix_set(HBondJacobian, hbidx, dof_id, hBondEntry);
             }
-            else{ // ToDo: update this for DBonds as well
+            else{ //DBonds
                 gsl_matrix_set(DBondJacobian, didx + 0, dof_id, jacobianEntryRot1);
                 gsl_matrix_set(DBondJacobian, didx + 1, dof_id, jacobianEntryRot2);
                 gsl_matrix_set(DBondJacobian, didx + 2, dof_id, hBondEntry);
@@ -718,7 +703,7 @@ void Configuration::computeJacobians() {
           gsl_matrix_set(CycleJacobian, i + 1, dof_id, jacobianEntryTrans.y);
           gsl_matrix_set(CycleJacobian, i + 2, dof_id, jacobianEntryTrans.z);
 
-          if (bond_ptr->isHBond()) {
+          if (bond_ptr->isHBond()) {//Hbonds
 
             gsl_matrix_set(CycleJacobian, i + 3, dof_id, jacobianEntryRot1);
             gsl_matrix_set(CycleJacobian, i + 4, dof_id, jacobianEntryRot2);
@@ -1028,6 +1013,12 @@ gsl_matrix* Configuration::getHydrogenJacobian()
 {
   computeJacobians();
   return HBondJacobian;
+}
+
+gsl_matrix* Configuration::getDistanceJacobian()
+{
+  computeJacobians();
+  return DBondJacobian;
 }
 
 Configuration* Configuration::getParent()
