@@ -56,14 +56,12 @@ int main( int argc, char* argv[] ){
 
   if(argc<2){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
-  //RigidityOptions options(argc,argv);
   RigidityOptions::createOptions(argc,argv);
   RigidityOptions& options = *(RigidityOptions::getOptions());
 
   options.print();
 
   string out_path = options.workingDirectory;
-  //string pdb_file = path + protein_name + ".pdb";
 
   //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Einfluss von Hydrophobics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,7 +84,6 @@ int main( int argc, char* argv[] ){
       options.hydrogenbondMethod,
       options.hydrogenbondFile
   );
-  cout<<"Here 1"<<endl;
   protein->initializeTree(movingResidues,1.0,options.roots);
   string name = protein->getName();
 
@@ -94,8 +91,8 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
   log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
-    log("rigidity")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
-    log("rigidity")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
+  log("rigidity")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
+  log("rigidity")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
@@ -103,34 +100,16 @@ int main( int argc, char* argv[] ){
   int numRows = ns.getMatrix()->size1;
   int numCols = ns.getMatrix()->size2;
   int nullspaceCols = ns.getNullspaceSize();
-  int sampleCount = 0;
-  int rankJacobian=numCols-nullspaceCols;
+  int rankJacobian=min(numCols,numRows)-nullspaceCols;
   int numredundant=numRows-rankJacobian;
-  gsl_vector* singValVector = gsl_vector_copy(ns.getSVD()->S);
 
   log("rigidity") << "Dimension of Jacobian: " << numRows << " rows, ";
   log("rigidity") << numCols << " columns" << endl;
   log("rigidity") << "Dimension of kernel: " << nullspaceCols << endl;
-  log("rigidity") << "Rank of the Jocobian: " <<rankJacobian << endl;
+  log("rigidity") << "Rank of Jacobian: " <<rankJacobian << endl;
   log("rigidity") << "Number of redundant constraints:" <<numredundant << endl;
 
-
-//  if (5*ns.getMatrix()->size1 < numCols){//less constraints than cycle-dofs
-//    //Write the complete J*V product out to file
-//    gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
-//    gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-//    if(options.saveData > 1) {
-//      string outProd = "fullProduct_JV.txt";
-//      gsl_matrix_outtofile(fullProduct, outProd);
-//      gsl_matrix_free(fullProduct);
-//
-//      string outMat = "Vmatrix.txt";
-//      gsl_matrix_outtofile(baseNullspaceV, outMat);
-//    }
-//  }
-
-
-
+  /// Create larger rigid substructures for rigid cluster decomposition
   Molecule* rigidified = protein->collapseRigidBonds(2);
 
   ///Write PDB File for pyMol usage
@@ -159,11 +138,9 @@ int main( int argc, char* argv[] ){
   IO::writePyMolScript(rigidified, out_file, pyMol, protein);
 
   ///save singular values
-  NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
-  if (derived) {
-    string outSing = out_path + "output/singVals.txt";
-    gsl_vector_outtofile(derived->getSVD()->S, outSing);
-  }
+  //NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
+  string outSing = out_path + "output/singVals.txt";
+  gsl_vector_outtofile(ns.getSVD()->S, outSing);
 
   if(options.saveData <= 1) return 0;
 
@@ -174,21 +151,24 @@ int main( int argc, char* argv[] ){
   string outNull=out_path + "output/" +  name + "_nullSpace_" +
                  std::to_string((long long)sample_id)
                  + ".txt";
-  string outHpJacobian=out_path + "output/" +  name + "_HydrophobicBondJacobian_" +
-                       std::to_string((long long)sample_id)
-                       + ".txt";
-  string outHydrogenJacobian=out_path + "output/" +  name + "_HBondJacobian_" +
-                         std::to_string((long long)sample_id)
-                         + ".txt";
-  if (derived) {
-    derived->writeMatricesToFiles(outJac, outNull);
-///   conf->produceHydrophobicJacobian(outHpJacobian);
-  }
-  if (conf->getNullspace()){
-      conf->produceHydrophobicJacobian(outHpJacobian);
-      conf->produceHydrogenJacobian(outHydrogenJacobian);
-  }
+
+  ns.writeMatricesToFiles(outJac, outNull);
+
   if(options.saveData <= 2) return 0;
+
+  if (conf->getHydrogenJacobian()){
+    string outHydrogenJacobian=out_path + "output/" +  name + "_HBondJacobian_" +
+                               std::to_string((long long)sample_id)
+                               + ".txt";
+    gsl_matrix_outtofile(conf->getHydrogenJacobian(), outHydrogenJacobian);
+  }
+
+  if (conf->getHydrophobicJacobian()) {
+    string outHpJacobian = out_path + "output/" + name + "_HydrophobicBondJacobian_" +
+                           std::to_string((long long) sample_id)
+                           + ".txt";
+    gsl_matrix_outtofile(conf->getHydrophobicJacobian(), outHpJacobian);
+  }
 
   string rbFile=out_path + "output/" +  name + "_RBs_" +
                 std::to_string((long long)sample_id)
@@ -202,21 +182,6 @@ int main( int argc, char* argv[] ){
 
   ///Write rigid bodies
   IO::writeRBs(rigidified, rbFile);
-
-
-  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% EVALUATE ROUCHE-CAPELLI-THEOREM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  // ToDo
-  // 1. Target Protein Struktur einlesen; dazu die "RigidityOptions" erweitern um Target-Struktur
-  // 2. gleiches Set an H-bonds (Constraints) für Protein und Target erstellen
-  // 3. Konfiguration auf Target erzeugen
-  // 4. berechne Rotationswinkel q_init und q_target, berechne Delta_q, "siehe global torsions"
-  // 5. Evaluiere Rouche-Capelli Theorem
-  // 6. Berechne Störung P einzelner H-bonds mittels S = J * Delta_q
-  // 7. Identifiziere Constraints mit großem S
-  // 8. Identisches Vorgehen für Delta_p anstelle Delta_q (Wiederholung ab 4.)
-
-  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% EVALUATE ROUCHE-CAPELLI-THEOREM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   return 0;
 }

@@ -112,6 +112,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *H
 
   gsl_vector_set_zero(m_rigidCovBonds);
   gsl_vector_set_zero(m_rigidHBonds);
+  gsl_vector_set_zero(m_rigidHydrophobicBonds);
   numCoordinatedDihedrals = 0;
   numRigidDihedrals = 0;
   gsl_matrix* N = getBasis();
@@ -169,35 +170,40 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *H
   gsl_vector_free(currentHBondRow);
   gsl_matrix_free(hBondNullspace);
 
-    /// NEW FOR HYDROPHOBIC BONDS
-    int numHydrophobicBonds = (HydrophobicBondJacobian->size1)/5;
-    gsl_matrix* hydrophobicBondNullspace = gsl_matrix_alloc(HydrophobicBondJacobian->size1, std::max(m_nullspaceSize,1));
-    gsl_vector* currentHydrophobicBondRow = gsl_vector_alloc(std::max(m_nullspaceSize,1));
+  /// NEW FOR HYDROPHOBIC BONDS
+  if (HydrophobicBondJacobian) {
+    int numHydrophobicBonds = (HydrophobicBondJacobian->size1) / 5;
+    gsl_matrix *hydrophobicBondNullspace = gsl_matrix_alloc(HydrophobicBondJacobian->size1,
+                                                            std::max(m_nullspaceSize, 1));
+    gsl_vector *currentHydrophobicBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
     ///Calculate the "In-Nullspace" Rotation of the hydrophobic bonds
-    gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, HydrophobicBondJacobian,m_nullspaceBasis, 0.0, hydrophobicBondNullspace);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HydrophobicBondJacobian, m_nullspaceBasis, 0.0,
+                   hydrophobicBondNullspace);
 
-    for(int i=0; i<numHydrophobicBonds; i++){
-        double minValFiveRows = 0;
-        double maxValFiveRows = 0;
-        for(int j=0; j < 5; j++) {
-            gsl_matrix_get_row(currentHydrophobicBondRow, hydrophobicBondNullspace, i * 5 + j);
-            gsl_vector_minmax(currentHydrophobicBondRow, &minVal, &maxVal);
-            if (minVal < minValFiveRows)
-                minValFiveRows = minVal;
-            if (maxVal > maxValFiveRows)
-                maxValFiveRows = maxVal;
-        }
+    for (int i = 0; i < numHydrophobicBonds; i++) {
+      double minValFiveRows = 0;
+      double maxValFiveRows = 0;
+      for (int j = 0; j < 5; j++) {
+        gsl_matrix_get_row(currentHydrophobicBondRow, hydrophobicBondNullspace, i * 5 + j);
+        gsl_vector_minmax(currentHydrophobicBondRow, &minVal, &maxVal);
+        if (minVal < minValFiveRows)
+          minValFiveRows = minVal;
+        if (maxVal > maxValFiveRows)
+          maxValFiveRows = maxVal;
+      }
 
-        if (minValFiveRows > -RIGID_TOL && maxValFiveRows < RIGID_TOL) {
-            gsl_vector_set(m_rigidHydrophobicBonds, i, 1);
-            numRigidHydrophobicBonds++;//when the entry is approximately equal to 0, can be considered as rigidity.
-                                       // And due to the mathematical process we set the reference as 1.0e-9
-                                       // which means all entries of this 5 rows can be considered as 0.---rigidity
-        }
+      if (minValFiveRows > -RIGID_TOL && maxValFiveRows < RIGID_TOL) {
+        gsl_vector_set(m_rigidHydrophobicBonds, i, 1);
+        numRigidHydrophobicBonds++;//when the entry is approximately equal to 0, can be considered as rigidity.
+        // And due to the mathematical process we set the reference as 1.0e-9
+        // which means all entries of this 5 rows can be considered as 0.---rigidity
+      }
     }
-    log("constraints")<<"There are "<<numRigidHydrophobicBonds<<" rigid out of "<<numHydrophobicBonds<<" hydrophobic bonds!"<<endl;
-  gsl_vector_free(currentHydrophobicBondRow);
-  gsl_matrix_free(hydrophobicBondNullspace);
+    log("constraints") << "There are " << numRigidHydrophobicBonds << " rigid out of " << numHydrophobicBonds
+                       << " hydrophobic bonds!" << endl;
+    gsl_vector_free(currentHydrophobicBondRow);
+    gsl_matrix_free(hydrophobicBondNullspace);
+  }
 }
 
 void Nullspace::projectOnNullSpace(gsl_vector *to_project, gsl_vector *after_project) const {

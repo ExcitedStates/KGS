@@ -71,13 +71,18 @@ vdwRadii = {
 ionRadii = {
     "C" : 1 }
 
+nulldistance={'C':1.908,'S':2.000}
+welldepth={'C':-0.0860,'S':-0.2500}
+
 verbose = False
 writePml = False
 writeIMOD = False
 waters = True
 ligands = True
+hydrophobics = True
 altloc= "A"
 cutoff=-1.0
+cutoffD=0.25 #Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
 chainID="all"
 model = -1
 
@@ -112,6 +117,7 @@ class Atom:
        
         self.neighbors = []
         self.hBondNeighbors = []
+        self.hydrophobicBondNeighbors=[]
         self.rings = 0
         self.atomType = ""
         self.hetatm = atom_string.startswith("HETATM")
@@ -138,6 +144,12 @@ class Atom:
             RuntimeError("Unknown element for atom: "+str(self),self.name,self.atomType);
         raise RuntimeError("Unknown element for atom: "+str(self),self.name,self.elem);
 
+    def welldepth(self):
+        return welldepth[self.elem.upper()]
+
+    def nulldistance(self):
+        return nulldistance[self.elem.upper()]
+    
     def getSP(self):
         if self.atomType in ["C3","N3+","N3","O3","S3+","S3","P3+"]:
             return 3
@@ -152,8 +164,13 @@ class Atom:
         return hasHNeighbor and (self.elem=="O" or self.elem=="N")
 
     def isAcceptor(self):
-        return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2)
+        return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) # or self.elem == "S"
 
+    def isHydrophobicAtom(self):
+        #Limit hydrophobic interactions to C,S in non-polar residue side-chains
+        return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"] and not self.name=="C" and not self.name=="CA"
+#        return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"]:
+    
     def getPDBline(self):
         if len(self.name)<=3: #Takes care of four-letter atom name alignment
             line = "%-6s%5d  %-3s%1s%3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s \n" % ("HETATM" if self.hetatm else "ATOM", self.id, self.name, self.alt, self.resn, self.chain, self.resi, 
@@ -181,9 +198,7 @@ class Atom:
         return line
     
     def isIon(self):
-        if self.elem in ["MG","ZN","K","FE"]: #Todo: increase list for ions of interest
-            return True
-        return False
+        return self.elem in ["MG","ZN","K","FE"] #Todo: increase list for ions of interest
     
 class PDBFile:
     """ A representation of a single-model PDB-file """
@@ -244,6 +259,13 @@ class PDBFile:
         for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             a.hBondNeighbors.append(h)
             h.hBondNeighbors.append(a)
+            
+    def buildHydrophobicBondNeighbors(self):
+        for atom in self.atoms:
+            atom.hydrophobicBondNeighbors=[]
+        for c,s,energy in self.gethydrophobicBonds(cutoffD):
+                c.hydrophobicBondNeighbors.append(s)  
+                s.hydrophobicBondNeighbors.append(c)
 
     def buildRingCounts(self):
         """Construct spanning tree to determine rings"""
@@ -489,6 +511,36 @@ class PDBFile:
                         pass
         sorted(bonds, key = lambda x : min(x[1].id,x[2].id) )
         return bonds
+    
+    def gethydrophobicBonds(self,cutoffD=0.25):
+        hybond=[]
+        for c in self.atoms:
+            if c.isHydrophobicAtom():
+                for s in self.getNearby(c.pos,c.vdwRadius()+2.0+cutoffD):
+                    if not s.isHydrophobicAtom(): continue;
+                    if c.id>s.id: continue
+                    if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD) and not s.resi==c.resi:
+                        energy=self.hydrophobicBondEnergy(c,s)
+                        hybond.append((c,s,energy))
+                        
+        sorted(hybond, key = lambda x : min(x[0].id, x[1].id))
+        return hybond
+    
+    def hydrophobicBondEnergy(self,c,s):
+      
+        '''Computes hydrophobic bond energy following the term described by Lennard Jones potential (as in KINARI)'''           
+        if c in self.atoms and s in self.atoms: 
+            if c.isHydrophobicAtom() and s.isHydrophobicAtom():
+                        r=c.distance(s)
+                        welldepth=math.sqrt(c.welldepth()*s.welldepth())
+                        R=s.nulldistance()+c.nulldistance()
+                        ratio=R/r
+                        ratio2=ratio*ratio
+                        ratio3=ratio2*ratio
+                        ratio6=ratio3*ratio3
+                        ratio12=ratio6*ratio6
+                        return welldepth*(ratio12-2*ratio6)
+        return 0
 
     def burial(self, atom):
         """Computes the amount of atoms within a 8Å radius"""
@@ -650,6 +702,10 @@ class PDBFile:
                 self.iModBonds.append( "%d %d %d"%(a.id, d.id, 10) )
                 self.iModBonds.append( "%d %d %d"%(aa.id, d.id, 10) )
 
+    def checkHydrophobicBonds(self):
+        for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
+            self.constraints.append( "HydrophobicConstraint %d %d %s %s"%(a1.id, a2.id, str(a1), str(a2)) )
+
     def writePDB(self,fname):
         f = open(fname,'w')
         for con in self.constraints:
@@ -666,16 +722,31 @@ class PDBFile:
     
     def writePML(self,fname):
         f = open(fname,'w')
+        weak=False;
+        medium=False;
+        strong=False;
+        hydroph=False;
         for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
             if energy > -1.0:
                 f.write( "distance hbonds_weak = id %s, id %s\n"%(a.id, h.id) )
+                weak=True
             if energy <= -1.0 and energy > -3.0:
                 f.write( "distance hbonds_medium = id %s, id %s\n"%(a.id, h.id) )
+                medium=True
             if energy <= -3.0:
                 f.write( "distance hbonds_strong = id %s, id %s\n"%(a.id, h.id) )
-        f.write( "color white, hbonds_weak\n")
-        f.write( "color yellow, hbonds_medium\n")
-        f.write( "color red, hbonds_strong\n")
+                strong=True
+        for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
+            f.write("distance hydrophobics = id %s, id %s\n"%(a1.id,a2.id))
+            hydroph=True
+        if weak:
+            f.write( "color white, hbonds_weak\n")
+        if medium:
+            f.write( "color yellow, hbonds_medium\n")
+        if strong:
+            f.write( "color red, hbonds_strong\n")
+        if hydroph:
+            f.write("color cyan, hydrophobics\n")
         f.write("hide labels\n")
         f.write("show cartoon\n")
         f.write("bg_color white\n")
@@ -694,9 +765,10 @@ class PDBFile:
             
     def meanCoordination(self):
         self.buildHbondNeighbors()
+        self.buildHydrophobicBondNeighbors()
         meanCoordination = 0.0
         for atom in self.atoms:
-            meanCoordination += len(atom.neighbors)+len(atom.hBondNeighbors)
+            meanCoordination += len(atom.neighbors)+len(atom.hBondNeighbors)+len(atom.hydrophobicBondNeighbors)
         return meanCoordination/len(self.atoms)
 
 class MultiModel:
@@ -778,6 +850,9 @@ class MultiModel:
 
     def checkHydrogenBonds(self):
         for m in self.pdbs: m.checkHydrogenBonds()
+        
+    def checkHydrophobicBonds(self):
+        for m in self.pdbs: m.checkHydrophobicBonds()
 
     def writePDBs(self, prefix):        
         for i,m in enumerate(self.pdbs):
@@ -822,10 +897,13 @@ def printUsage(argv):
     print("  -pymol        : output a .pml file that displays constraints")
     print("  -noWaters     : remove all waters ")
     print("  -noLigands    : remove all ligands")
+    print("  -noHydro      : no hydrophobic interactions")
     print("  -alt          : keeping specified alt loc (and empty alt loc) ")
     print("  -chain        : keeping only specified chain")
     print("  -energy       : energy cutoff for hydrogen bonds")
+    print("  -cutoffD      : distance cutoff for hydrophobic interactions")
     print("  -imod         : save donor-acceptor connections for use as springs in iMod")
+    print("  -model        : limit analysis to single model number in multi-model file")
     sys.exit(-1)
 
 if __name__ == "__main__":
@@ -864,6 +942,11 @@ if __name__ == "__main__":
         waters = False
         argv.remove("-noWaters")
         print "Removing all waters"
+
+    if "-noHydro" in argv:
+        hydrophobics = False
+        argv.remove("-noHydro")
+        print "No hydrophobics considered"
         
     if "-alt" in argv:
         altloc = sys.argv[sys.argv.index("-alt")+1]
@@ -883,6 +966,13 @@ if __name__ == "__main__":
         argv.remove(cutoff)
         print "Minimum h-bond energy "+cutoff
         cutoff = float(cutoff)
+        
+    if "-cutoffD" in argv:
+        cutoffD = sys.argv[sys.argv.index("-cutoffD")+1]
+        argv.remove("-cutoffD")
+        argv.remove(cutoffD)
+        print "Hydrophobic distance cutoff "+cutoffD
+        cutoffD = float(cutoffD)
         
     if "-imod" in argv:
         writeIMOD = True
@@ -905,6 +995,7 @@ if __name__ == "__main__":
     models.checkCovalentBonds()
     models.checkDisulphideBonds()
     models.checkHydrogenBonds()
+    models.checkHydrophobicBonds()
     models.writePDBs(prefix)
     # models.pdbs[0].writePDB("init.kgs.pdb")
     if writePml:
