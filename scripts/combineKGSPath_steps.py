@@ -8,6 +8,7 @@ import re
 
 def extractPath(pdbPath):
 	reversePathList=[]
+	pathStr=""
 	print "Opening "+str(pdbPath)
 	fp = open(pdbPath)
 	fwd=0
@@ -27,6 +28,7 @@ def extractPath(pdbPath):
 			break;
 	
 	fp.close()
+	print pathStr
 	pathList = re.split(' |, ',pathStr)
 	# if fwd==0:
 	# 	pathList = pathStr.split(", ")
