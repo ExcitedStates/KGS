@@ -44,6 +44,7 @@ IN THE SOFTWARE.
 #include "Logger.h"
 #include "applications/options/RigidityOptions.h"
 #include "../core/Configuration.h"
+#include "CTKTimer.h"
 
 extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
@@ -51,6 +52,10 @@ extern double rigidityTime;
 using namespace std;
 
 int main( int argc, char* argv[] ){
+
+  CTKTimer timer;
+  timer.Reset();
+  double start_time = timer.LastElapsedTime();
 
   enableLogger("rigidity");
 
@@ -112,6 +117,10 @@ int main( int argc, char* argv[] ){
 
   /// Create larger rigid substructures for rigid cluster decomposition
   Molecule* rigidified = protein->collapseRigidBonds(2);
+
+  //Print final status
+  double end_time = timer.ElapsedTime();
+  log("rigidity")<< "Took "<<(end_time-start_time)<<" seconds to perform rigidity analysis\n";
 
   ///Write PDB File for pyMol usage
   int sample_id = 1;

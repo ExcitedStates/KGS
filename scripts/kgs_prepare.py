@@ -80,7 +80,7 @@ writePml = False
 writeIMOD = False
 waters = True
 ligands = True
-hydrophobics = True
+hydrophobics = False
 altloc= "A"
 cutoff=-1.0
 cutoffD=0.25 #Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
@@ -719,8 +719,9 @@ class PDBFile:
                 self.iModBonds.append( "%d %d %d"%(aa.id, d.id, 10) )
 
     def checkHydrophobicBonds(self):
-        for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
-            self.constraints.append( "HydrophobicConstraint %d %d %s %s"%(a1.id, a2.id, str(a1), str(a2)) )
+        if hydrophobics:
+            for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
+                self.constraints.append( "HydrophobicConstraint %d %d %s %s"%(a1.id, a2.id, str(a1), str(a2)) )
 
     def writePDB(self,fname):
         f = open(fname,'w')
