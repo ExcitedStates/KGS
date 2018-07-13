@@ -38,7 +38,7 @@ using namespace std;
 DBond::DBond(Atom* a1, Atom* a2): Bond(a1, a2, "DB")
 {
 	m_iniDist = getLength();
-  m_bars=3;
+    m_bars=3;
 }
 
 double DBond::getLength() {

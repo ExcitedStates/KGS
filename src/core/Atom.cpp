@@ -218,6 +218,13 @@ void Atom::addHbond (Hbond * hbond) {
   Hbond_neighbor_list.push_back( getBondNeighbor(hbond) );
 }
 
+
+
+void Atom::addHydrophobicBond(HydrophobicBond *hydrophobicBond) {
+  HydrophobicBond_list.push_back(hydrophobicBond);
+  HydrophobicBond_Neighbor_list.push_back(getBondNeighbor(hydrophobicBond));
+
+}
 void Atom::removeHbond (Hbond * hbond) {
   Atom* neighbor = getBondNeighbor(hbond);
   for (vector<Atom*>::iterator ait=Hbond_neighbor_list.begin(); ait!=Hbond_neighbor_list.end(); ++ait) {
