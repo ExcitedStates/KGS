@@ -36,8 +36,13 @@ IN THE SOFTWARE.
 class HydrophobicBond : public Bond {
  public:
 
-  HydrophobicBond(Atom* a1, Atom* a2);
+  Atom * c;
+  Atom * s;
 
+    bool isSame (HydrophobicBond * b2);
+
+  HydrophobicBond(Atom* a1, Atom* a2);
+    HydrophobicBond(HydrophobicBond & hydrophobicBond);
   Atom* atom1(){ return Bond::m_atom1; }
   Atom* atom2(){ return Bond::m_atom2; }
 
