@@ -486,8 +486,9 @@ void Configuration::computeJacobians() {
       row_num += 1;
       hydroConstraint_row_num += 5;
     }
-    else{//default or clobal
-      cerr<<"Unkown anchor edge type found"<<endl;
+    else {  // default or clobal
+      cerr<<"Configuration::computeJacobians: Unknown anchor edge type found"<<endl;
+      cerr << "> " << edge.first << endl;
       exit(-1);
     }
   }

@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+
 class Atom:
     def __init__(self, atom_string):
         self.id = int(atom_string[6:11])
@@ -30,12 +31,11 @@ class Atom:
     def __add__(self, other):
         return np.array([self.x+other.x, self.y+other.y, self.z+other.z])
 
+    def distance(self, a):
+        return math.sqrt((self.x-a.x)**2 + (self.y-a.y)**2 + (self.z-a.z)**2)
 
-    def distance(self,a):
-        return math.sqrt( (self.x-a.x)**2 + (self.y-a.y)**2 + (self.z-a.z)**2 )
-
-    def distanceSquared(self,a):
-        return  (self.x-a.x)**2 + (self.y-a.y)**2 + (self.z-a.z)**2 
+    def distanceSquared(self, a):
+        return (self.x-a.x)**2 + (self.y-a.y)**2 + (self.z-a.z)**2
 
 
 class PDBFile:
@@ -47,8 +47,9 @@ class PDBFile:
         prefix="pdb"
         suffix=".ent.gz"
 
-        import os, sys, ftplib, shutil, gzip
-
+        import os
+        import ftplib
+        import gzip
 
         # Log into server
         #print "Downloading %s from %s ..." % (pdb_id, hostname)
@@ -215,46 +216,48 @@ class PDBFile:
         crds1 = self.coordMatrix(model1, names=names)
         crds2 = pdbFile.coordMatrix(model2, names=names)
         assert(crds1.shape[1] == 3)
-        if crds1.shape[0]!=crds2.shape[0]:
-            print("Structure 1 size does not match structure 2 (",crds1.shape[0],"vs",crds2.shape[0],")")
+        if crds1.shape[0] != crds2.shape[0]:
+            print("Structure 1 size does not match structure 2 (", crds1.shape[0], "vs", crds2.shape[0], ")")
             assert(crds1.shape == crds2.shape)
         n = np.shape(crds1)[0]
 
-
-        #Move crds1 to origo
+        # Move crds1 to origo
         avg1 = np.zeros(3)
-        for c1 in crds1: avg1 += c1
+        for c1 in crds1:
+            avg1 += c1
         avg1 /= n
-        for c1 in crds1: c1-=avg1
+        for c1 in crds1:
+            c1 -= avg1
 
-        #Move crds2 to origo
+        # Move crds2 to origo
         avg2 = np.zeros(3)
-        for c2 in crds2: avg2 += c2
+        for c2 in crds2:
+            avg2 += c2
         avg2 /= n
-        for c2 in crds2: c2-=avg2
+        for c2 in crds2:
+            c2 -= avg2
 
-
-        #Get optimal rotation
-        #From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
+        # Get optimal rotation
+        # From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
         correlation_matrix = np.dot(np.transpose(crds1), crds2)
         u, s, v_tr = np.linalg.svd(correlation_matrix)
-        r = np.dot(u,v_tr)
+        r = np.dot(u, v_tr)
         r_det = np.linalg.det(r)
-        if r_det<0:
-            #print 'WARNING: MIRRORING'
-            u[:,-1] = -u[:,-1]
-            r = np.dot(u,v_tr)
-        #is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr)) 
-        #if is_reflection:
-        #	u[:,-1] = -u[:,-1]
+        if r_det < 0:
+            # print 'WARNING: MIRRORING'
+            u[:, -1] = -u[:, -1]
+            r = np.dot(u, v_tr)
+        # is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr))
+        # if is_reflection:
+        # 	u[:,-1] = -u[:,-1]
 
-        #Apply rotation and find rmsd
+        # Apply rotation and find rmsd
         import itertools
         rms = 0.
-        for c1,c2 in itertools.izip(crds1,crds2):
+        for c1, c2 in itertools.izip(crds1, crds2):
             c2_r = np.dot(r, c2)
             tmp = c1-c2_r
-            rms+=np.dot(tmp, tmp)
+            rms += np.dot(tmp, tmp)
 
         return math.sqrt(rms/n)
 
@@ -313,7 +316,6 @@ class PDBFile:
             self.models[model1][a].z = c2_r[2]
             a+=1
 
-
     def save(self, fileName):
         f = open(fileName, "w")
         for model in range(len(self.models)):
@@ -325,9 +327,6 @@ class PDBFile:
 
             if len(self.models)>1:
                 f.write("ENDMDL\n")
-
-
-
 
     def __repr__(self):
         return "PDBFile('"+self.file_name+"')"
