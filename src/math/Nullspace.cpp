@@ -20,6 +20,7 @@ Nullspace::Nullspace(gsl_matrix* M) :
     numCoordinatedDihedrals( 0 ),
     numRigidDihedrals( 0 ),
     numRigidHBonds( 0 ),
+    numRigidDBonds( 0 ),
     numRigidHydrophobicBonds( 0 ),
     m_nullspaceBasis(nullptr),
     m_rigidCovBonds(gsl_vector_alloc(n)),///for allocation, use maximum size of all n covalent edges
@@ -146,7 +147,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *D
   double maxVal;
   double minVal;
   /// HYDROGEN BOND CONSTRAINTS
-  if(HBondJacobian) {/// there are hydrogen bonds
+  if(HBondJacobian) {/// there are hydrogen bonds / default bonds
     int numHBonds = HBondJacobian->size1;
     gsl_matrix *hBondNullspace = gsl_matrix_alloc(numHBonds, std::max(m_nullspaceSize, 1));
     gsl_vector *currentHBondRow = gsl_vector_alloc(std::max(m_nullspaceSize, 1));
@@ -155,7 +156,6 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *D
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HBondJacobian, m_nullspaceBasis, 0.0, hBondNullspace);
 
     numRigidHBonds = 0;
-    numRigidHydrophobicBonds = 0;
     for (int i = 0; i < numHBonds; i++) {
       gsl_matrix_get_row(currentHBondRow, hBondNullspace, i);
       gsl_vector_minmax(currentHBondRow, &minVal, &maxVal);
@@ -179,6 +179,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *D
     ///Calculate the "In-Nullspace" Rotation of the hydrophobic bonds
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, DBondJacobian, m_nullspaceBasis, 0.0, dBondNullspace);
 
+    numRigidDBonds=0;
     for (int i = 0; i < numDBonds; i++) {
       double minValThreeRows = 99999;
       double maxValThreeRows = 0;
@@ -208,6 +209,7 @@ void Nullspace::performRigidityAnalysis(gsl_matrix *HBondJacobian, gsl_matrix *D
     ///Calculate the "In-Nullspace" Rotation of the hydrophobic bonds
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, HydrophobicBondJacobian, m_nullspaceBasis, 0.0, hydrophobicBondNullspace);
 
+    numRigidHydrophobicBonds = 0;
     for (int i = 0; i < numHydrophobicBonds; i++) {
       double minValFiveRows = 99999;
       double maxValFiveRows = 0;

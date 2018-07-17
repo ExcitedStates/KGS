@@ -1577,24 +1577,15 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
 
   Molecule *ret=deepClone();
 
-  int hIdx=0; //indexing for hBonds
+  int hIdx=0; //indexing for hBonds (includes default bonds)
+  int dIdx=0; //indexing for dBonds
   int hydroIdx=0; //indexing for hydrophobics
-  //To collapse molecule, we turn rigid h-bonds into covalent bonds
+  //To collapse molecule, we turn rigid constraints into covalent bonds
   if(collapseLevel==2) {
     for( auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges ) {
 
       KinEdge *edge=edge_nca_pair.first;
       Bond* bond = edge->getBond();
-      if( bond->isHBond() ){
-        if( m_conf->getNullspace()->isHBondRigid(hIdx++) ){
-          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
-          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
-          Bond *newBond=ret->addCovBond(a1_new, a2_new);
-          if( newBond ) {
-            newBond->rigidified = true;
-          }
-        }
-      }
       if( bond->isHydrophobicBond() ){
         if( m_conf->getNullspace()->isHydrophobicBondRigid(hydroIdx++) ){
           Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
@@ -1605,6 +1596,27 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
           }
         }
       }
+      else if( bond->isDBond() ){ /// D-bonds
+        if( m_conf->getNullspace()->isDBondRigid(dIdx++) ){
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified = true;
+          }
+        }
+      }
+      else { //H-bonds and default bonds; if( bond->isHBond() )
+        if( m_conf->getNullspace()->isHBondRigid(hIdx++) ){
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified = true;
+          }
+        }
+      }
+
     }
   }
 

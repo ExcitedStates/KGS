@@ -339,7 +339,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //        molecule->addCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
         molecule->addCovBond(a1, a2);
-//        cout << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+        log("debug") << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
       }
     }
   }
@@ -377,7 +377,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
 //        molecule->addCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
         molecule->addCovBond(a3, a4);
-        cout << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
+        log("debug") << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
              << endl;
       }
     }
@@ -1633,10 +1633,9 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   pymol_script << "set dash_gap, 0.1" << endl;
 
   int site_1, site_2;
-  vector< pair<KinEdge*,KinVertex*> >::iterator eit;
-    vector< pair<KinEdge*,KinVertex*> >::iterator eit2;
+  std::vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
-    /// initial molecule (nothing collapsed)
+  /// initial molecule (nothing collapsed)
   if(iniMolecule) {
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
@@ -1650,6 +1649,9 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
       }
       else if(eit->first->getBond()->isDBond()) {
         pymol_script << "distance allDbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance allCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
       }
     }
   }
@@ -1670,6 +1672,9 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
       else if (eit->first->getBond()->isDBond()) {
         pymol_script << "distance mobileDBonds = id " << site_1 << " , id " << site_2 << endl;
       }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance mobileCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
     }
   }
   pymol_script << "color red, allHbonds" << endl;
@@ -1678,6 +1683,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   pymol_script << "color cyan, mobileHydrophobics" << endl;
   pymol_script << "color black, allDBonds" << endl;
   pymol_script << "color gray60, mobileDBonds" << endl;
+  pymol_script << "color lightmagenta, allCycleCovBonds" << endl;
+  pymol_script << "color deeppurple, mobileCycleCovBonds" << endl;
   pymol_script << "hide labels" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
@@ -1795,6 +1802,9 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Number of hydrogen bonds: " << protein->getHBonds().size() << endl;
     output << "Number of distance bonds: " << protein->getDBonds().size() << endl;
     output << "Number of hydrophobic bonds: " <<  protein->getHydrophobicBonds().size() << endl;
+    int numCovCycleCons = protein->m_spanningTree->m_cycleAnchorEdges.size() - protein->getHBonds().size()
+          - protein->getDBonds().size() - protein->getHydrophobicBonds().size();
+    output << "Number of cycle covalent bonds: " <<  numCovCycleCons << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
     output << "Number of free DOFs: " << diff << endl;
     output << "Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl << endl;
@@ -1805,7 +1815,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
     output << "Number of rigidified DOFs (covalent bonds): " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
            << endl;
-    output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
+    output << "Number of rigidified hydrogen and cycle covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
     output << "Number of rigidified distance bonds: " << protein->m_conf->getNullspace()->getNumRigidDBonds() << endl;
     output << "Number of rigidified hydrophobic bonds: " << protein->m_conf->getNullspace()->getNumRigidHydrophobicBonds() << endl;
     if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
