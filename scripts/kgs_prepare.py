@@ -517,17 +517,25 @@ class PDBFile:
         hybond=[]
         for c in self.atoms:
             if c.isHydrophobicAtom():
-            # if c.isHeavyAtom():
                 for s in self.getNearby(c.pos,c.vdwRadius()+2.0+cutoffD):
                     if not s.isHydrophobicAtom(): continue;
-                    # if not s.isHeavyAtom(): continue;
                     if c.id>=s.id: continue;
-                    # if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD) and not s.resi==c.resi:
-                    if s in c.neighbors: continue; #direct covalent neighbors
-                    if s in c.secondNeighbors: continue; #second covalent neighbors
-                    if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD):
+                    if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD) and not s.resi==c.resi:
                         energy=self.hydrophobicBondEnergy(c,s)
                         hybond.append((c,s,energy))
+                        
+        #USE TO IDENTIFY ALL STERIC INTERACTIONS BETWEEN NON-BONDED ATOMS WITH 2 BOND SEPARATION
+        # hybond=[]
+        # for c in self.atoms:
+            # if c.isHeavyAtom():
+                # for s in self.getNearby(c.pos,c.vdwRadius()+2.0+cutoffD):
+                    # if not s.isHeavyAtom(): continue;
+                    if c.id>=s.id: continue;
+                    # if s in c.neighbors: continue; #direct covalent neighbors
+                    # if s in c.secondNeighbors: continue; #second covalent neighbors
+                    # if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD):
+                        # energy=self.hydrophobicBondEnergy(c,s)
+                        # hybond.append((c,s,energy))      
                         
         sorted(hybond, key = lambda x : min(x[0].id, x[1].id))
         return hybond
