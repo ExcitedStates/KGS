@@ -117,6 +117,7 @@ class Atom:
                 self.elem = name_nodigits[0]
        
         self.neighbors = []
+        self.secondNeighbors = []
         self.hBondNeighbors = []
         self.hydrophobicBondNeighbors=[]
         self.rings = 0
@@ -170,7 +171,9 @@ class Atom:
     def isHydrophobicAtom(self):
         #Limit hydrophobic interactions to C,S in non-polar residue side-chains
         return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"] and not self.name=="C" and not self.name=="CA"
-#        return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"]:
+    
+    def isHeavyAtom(self):
+        return self.name[0] != "H"
     
     def getPDBline(self):
         if len(self.name)<=3: #Takes care of four-letter atom name alignment
@@ -211,8 +214,8 @@ class PDBFile:
             print("%s: removed %d waters with no hydrogens"%(self.name, len(dehydro_hoh)))
 
 
-    def getNearby(self, v, radius):
-        irad = int(math.ceil(radius))
+    def getNearby(self, v, radius): #return nearby atoms using the grid
+        irad = int(math.ceil(radius))#integer cell radius
         ivx,ivy,ivz = int(v[0]+0.5), int(v[1]+0.5), int(v[2]+0.5)
         nearby = []
 
@@ -252,6 +255,20 @@ class PDBFile:
                         atom1.neighbors.append(atom2)
                         atom2.neighbors.append(atom1)
                         
+    def buildSecCovNeighbors(self):
+        """build second-covalent neighbor field"""
+        for atom in self.atoms:
+            for n1 in atom.neighbors: #direct covalent neighbors
+                for n2 in n1.neighbors: #second covalent neighbors
+                    if n2 == atom: continue
+                    foundAlready = False;
+                    for n3 in atom.secondNeighbors:
+                        if n2 == n3:
+                            foundAlready = True;
+                            break;
+                    if not foundAlready:
+                        atom.secondNeighbors.append(n2)
+                        
     def buildHbondNeighbors(self):
         #Resetting neighbor information
         for atom in self.atoms:
@@ -264,7 +281,7 @@ class PDBFile:
     def buildHydrophobicBondNeighbors(self):
         for atom in self.atoms:
             atom.hydrophobicBondNeighbors=[]
-        for c,s,energy in self.gethydrophobicBonds(cutoffD):
+        for c,s,energy in self.getHydrophobicBonds(cutoffD):
                 c.hydrophobicBondNeighbors.append(s)  
                 s.hydrophobicBondNeighbors.append(c)
 
@@ -411,6 +428,9 @@ class PDBFile:
         self.buildRingCounts()
         self.buildIDATM()
         
+        #Build second-covalent neighbors (skip if not necessary)
+        self.buildSecCovNeighbors()
+        
         #Check ion neighborhood and coordination
         self.ionCoordination()
 
@@ -513,14 +533,19 @@ class PDBFile:
         sorted(bonds, key = lambda x : min(x[1].id,x[2].id) )
         return bonds
     
-    def gethydrophobicBonds(self,cutoffD=0.25):
+    def getHydrophobicBonds(self,cutoffD=0.25):
         hybond=[]
         for c in self.atoms:
             if c.isHydrophobicAtom():
+            # if c.isHeavyAtom():
                 for s in self.getNearby(c.pos,c.vdwRadius()+2.0+cutoffD):
                     if not s.isHydrophobicAtom(): continue;
-                    if c.id>s.id: continue
-                    if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD) and not s.resi==c.resi:
+                    # if not s.isHeavyAtom(): continue;
+                    if c.id>=s.id: continue;
+                    # if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD) and not s.resi==c.resi:
+                    if s in c.neighbors: continue; #direct covalent neighbors
+                    if s in c.secondNeighbors: continue; #second covalent neighbors
+                    if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD):
                         energy=self.hydrophobicBondEnergy(c,s)
                         hybond.append((c,s,energy))
                         
@@ -530,17 +555,16 @@ class PDBFile:
     def hydrophobicBondEnergy(self,c,s):
       
         '''Computes hydrophobic bond energy following the term described by Lennard Jones potential (as in KINARI)'''           
-        if c in self.atoms and s in self.atoms: 
-            if c.isHydrophobicAtom() and s.isHydrophobicAtom():
-                        r=c.distance(s)
-                        welldepth=math.sqrt(c.welldepth()*s.welldepth())
-                        R=s.nulldistance()+c.nulldistance()
-                        ratio=R/r
-                        ratio2=ratio*ratio
-                        ratio3=ratio2*ratio
-                        ratio6=ratio3*ratio3
-                        ratio12=ratio6*ratio6
-                        return welldepth*(ratio12-2*ratio6)
+        if c.isHydrophobicAtom() and s.isHydrophobicAtom():
+                    r=c.distance(s)
+                    welldepth=math.sqrt(c.welldepth()*s.welldepth())
+                    R=s.nulldistance()+c.nulldistance()
+                    ratio=R/r
+                    ratio2=ratio*ratio
+                    ratio3=ratio2*ratio
+                    ratio6=ratio3*ratio3
+                    ratio12=ratio6*ratio6
+                    return welldepth*(ratio12-2*ratio6)
         return 0
 
     def burial(self, atom):
@@ -720,7 +744,7 @@ class PDBFile:
 
     def checkHydrophobicBonds(self):
         if hydrophobics:
-            for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
+            for a1,a2,energy in self.getHydrophobicBonds(cutoffD):
                 self.constraints.append( "HydrophobicConstraint %d %d %s %s"%(a1.id, a2.id, str(a1), str(a2)) )
 
     def writePDB(self,fname):
@@ -753,7 +777,7 @@ class PDBFile:
             if energy <= -3.0:
                 f.write( "distance hbonds_strong = id %s, id %s\n"%(a.id, h.id) )
                 strong=True
-        for a1,a2,energy in self.gethydrophobicBonds(cutoffD):
+        for a1,a2,energy in self.getHydrophobicBonds(cutoffD):
             f.write("distance hydrophobics = id %s, id %s\n"%(a1.id,a2.id))
             hydroph=True
         if weak:
