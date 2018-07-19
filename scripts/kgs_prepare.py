@@ -530,7 +530,7 @@ class PDBFile:
             # if c.isHeavyAtom():
                 # for s in self.getNearby(c.pos,c.vdwRadius()+2.0+cutoffD):
                     # if not s.isHeavyAtom(): continue;
-                    if c.id>=s.id: continue;
+                    # if c.id>=s.id: continue;
                     # if s in c.neighbors: continue; #direct covalent neighbors
                     # if s in c.secondNeighbors: continue; #second covalent neighbors
                     # if c.distance(s)<=(c.vdwRadius()+s.vdwRadius()+cutoffD):
