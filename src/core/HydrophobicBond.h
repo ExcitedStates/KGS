@@ -26,24 +26,32 @@ IN THE SOFTWARE.
 
 */
 
-
-#include "DBond.h"
-#include "core/Atom.h"
-#include "math/MathUtility.h"
-#include "Logger.h"
-
-using namespace Math3D;
-using namespace std;
-
-DBond::DBond(Atom* a1, Atom* a2): Bond(a1, a2, "DB")
-{
-	m_iniDist = getLength();
-    m_bars=3;
-}
-
-double DBond::getLength() {
-  double length = m_atom1->m_position.distanceTo(m_atom2->m_position);
-  return length;
-}
+#ifndef HYDROPHOBICBOND_H
+#define HYDROPHOBICBOND_H
 
 
+#include "core/Bond.h"
+#include "math3d/primitives.h"
+
+class HydrophobicBond : public Bond {
+ public:
+
+  Atom * c;
+  Atom * s;
+
+    bool isSame (HydrophobicBond * b2);
+
+  HydrophobicBond(Atom* a1, Atom* a2);
+    HydrophobicBond(HydrophobicBond & hydrophobicBond);
+  Atom* atom1(){ return Bond::m_atom1; }
+  Atom* atom2(){ return Bond::m_atom2; }
+
+  double getLength();
+
+ private:
+  double m_iniDist;
+
+};
+
+
+#endif //HYDROPHOBICBOND_H

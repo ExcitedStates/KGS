@@ -39,12 +39,13 @@ IN THE SOFTWARE.
 #include "Rigidbody.h"
 #include "core/graph/KinGraph.h"
 #include "core/Configuration.h"
-#include "DBond.h"
 
 class Chain;
 class Grid;
 class Bond;
 class Hbond;
+class DBond;
+class HydrophobicBond;
 class Selection;
 
 class Molecule {
@@ -70,8 +71,10 @@ class Molecule {
   std::list<Bond*>& getCovBonds();
   const std::list<Hbond*>& getHBonds() const;
   const std::list<DBond*>& getDBonds() const;
+  const std::list<HydrophobicBond*>& getHydrophobicBonds() const;
   std::list<Hbond*>& getHBonds();
   std::list<DBond*>& getDBonds();
+  std::list<HydrophobicBond*>& getHydrophobicBonds();
 
   int getMinResidueNumber();
   int getMaxResidueNumber();
@@ -97,12 +100,13 @@ class Molecule {
   void addCovBond (Bond * bond);
   void addHbond (Hbond * hb);
   void addDBond (DBond * db);
+  void addHydrophobicBond (HydrophobicBond * hyb);
   void setToHbondIntersection (Molecule * p2);
   std::vector<int> findBestRigidBodyMatch(std::vector<int> rootID, Molecule * target = nullptr);
 
 
-  std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck);
-  double vdwEnergy (std::string collisionCheck);//compute vdw energy
+  std::pair<double,double> vdwEnergy (std::set< std::pair<Atom*,Atom*> >* allCollisions, std::string collisionCheck="all");
+  double vdwEnergy (std::string collisionCheck="all");//compute vdw energy
 
   std::set< std::pair<Atom*,Atom*> >& getInitialCollisions(); ///< Colliding atom-pairs in the initial conformation
 
@@ -127,6 +131,7 @@ class Molecule {
   std::list<Bond *> m_covBonds;
   std::list<Hbond *> m_hBonds;
   std::list<DBond *> m_dBonds;
+  std::list<HydrophobicBond *> m_hydrophobicBonds;
   std::vector<Atom*> m_atoms;
   std::map<unsigned int,Rigidbody*> m_rigidBodyMap; ///< Map for quickly looking up rigid bodies by id
   double m_collisionFactor;

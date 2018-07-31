@@ -134,7 +134,7 @@ void RigidityOptions::initializeVariables(){
 void RigidityOptions::print(){
   log("so")<<"Sampling options:"<<std::endl;
   log("so")<<"  --initial "<<initialStructureFile<<endl;
-//  log("so")<<"\t--target "<<targetStructureFile<<endl;
+//  log("so")<<" --target "<<targetStructureFile<<endl;
   log("so")<<"  --annotation "<<annotationFile<<endl;
   if(!hydrogenbondFile.empty()) {
     log("so")<<"  --hbondMethod "<<hydrogenbondMethod<<endl;
