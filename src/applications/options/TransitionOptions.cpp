@@ -163,13 +163,12 @@ TransitionOptions::TransitionOptions(int argc, char* argv[])
 
   //Check initial structure
   if(initialStructureFile.empty()) {
-    enableLogger("so");
     cerr<<"Initial structure file must be supplied"<<endl<<endl;
     exit(-1);
   }
   //Check target structure
   if(targetStructureFile.empty()){
-    log("so")<<"Target structure file must be supplied."<<endl<<endl;
+    cerr<<"Target structure file must be supplied."<<endl<<endl;
     exit(-1);
   }
 

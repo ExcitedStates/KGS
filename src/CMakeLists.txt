@@ -78,6 +78,7 @@ add_library( libKGS
 		directions/MSDDirection.h
 		directions/LSNullspaceDirection.h
 		directions/VDWDirection.h
+		directions/AtomPairDistanceDirection.h
 		math/MathUtility.h
 		math/SVD.h
 		math/infnan.h
@@ -141,9 +142,10 @@ add_library( libKGS
         directions/RandomDirection.cpp
         directions/DihedralDirection.cpp
         directions/RelativeMSDDirection.cpp
-	directions/MSDDirection.cpp
+		directions/MSDDirection.cpp
         directions/LSNullspaceDirection.cpp
         directions/VDWDirection.cpp
+		directions/AtomPairDistanceDirection.cpp
         metrics/Dihedral.cpp
         metrics/Metric.cpp
         metrics/RMSD.cpp

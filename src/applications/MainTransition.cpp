@@ -38,6 +38,9 @@ IN THE SOFTWARE.
 #include <planners/BidirectionalMovingFront.h>
 #include <planners/RRTPlanner.h>
 #include <planners/DihedralRRT.h>
+#include <directions/AtomPairDistanceDirection.h>
+#include <directions/LSNrelativeDirection.h>
+#include <directions/RelativeMSDDirection.h>
 
 #include "core/Grid.h"
 #include "CTKTimer.h"
@@ -61,7 +64,6 @@ extern double selectNodeTime;
 using namespace std;
 
 void targetedSampling(TransitionOptions& options){
-
   string pdb_file = options.initialStructureFile;
   Selection resNetwork(options.residueNetwork);
   Molecule* protein = IO::readPdb( pdb_file, options.extraCovBonds );
@@ -184,8 +186,31 @@ void targetedSampling(TransitionOptions& options){
     direction = bdir;
     blendedDir = true;
   }
-  else if(options.gradient <= 5)
+  else if(options.gradient <= 5) {
     direction = new LSNullspaceDirection(gradientSelection);
+  }
+  else if(options.gradient <= 6) {
+    std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
+        IO::readRelativeDistances(options.relativeDistances, protein);
+    Direction* d1 = new LSNrelativeDirection(gradientSelection, goal_distances);
+    Direction* d2 = new RandomDirection(blendedSelection, options.maxRotation);
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(d1, 0);
+    bdir->addDirection(d2, 1);
+    direction = bdir;
+    blendedDir = true;
+  }
+  else if(options.gradient <= 7) {
+    std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
+        IO::readRelativeDistances(options.relativeDistances, protein);
+    Direction* d1 = new RelativeMSDDirection(goal_distances);
+    Direction* d2 = new RandomDirection(blendedSelection, options.maxRotation);
+    BlendedDirection* bdir = new BlendedDirection();
+    bdir->addDirection(d1, 0);
+    bdir->addDirection(d2, 1);
+    direction = bdir;
+    blendedDir = true;
+  }
 
   //Initialize planner
   SamplingPlanner* planner;
