@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding: utf-8
 """
 Classes for representing and manipulating pdb-structures.
@@ -712,7 +712,7 @@ class PDBFile:
             os.remove(to_write)
         except ftplib.error_perm:
             os.remove(to_write)
-            print "ERROR! %s could not be retrieved from PDB!" % to_get
+            print("ERROR! %s could not be retrieved from PDB!" % to_get)
             ftp.quit()
             return None
 
