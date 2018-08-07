@@ -1,0 +1,6 @@
+The init pdbs is the A-chain from PDB entry 4ake, the open configuration of
+Adenylate Kinase (ADK). The target_aligned.pdb is PDB 1ake, the closed configuration of ADK. Either use init.kgs.pdb with KGS directly (it includes hydrogen bonds), or the combination of init.pdb as input structure and hBonds.txt as constraints
+(these are limited to the intersection between open and closed ADK).
+Hydrophobics are included in the init_withHydrophobics.kgs.pdb
+
+Various examples are given in the rigidity, dCCRRT or randomSampling folders.

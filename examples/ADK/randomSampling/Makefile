@@ -1,5 +1,7 @@
 KGS = ../../../build/kgs_explore
-KGSARGS = --initial ../init.pdb --hbondMethod user --hbondFile ../hBonds.txt --collisionFactor 0.75 --seed 418 --saveData 2 --sampleRandom true --gradient 1 --maxRotation 0.05 --stepSize 0.1 --decreaseSteps 2 --workingDirectory ./ --root -1 --preventClashes true --metric dihedral --planner dihedralrrt --samples 1000
+
+#Dihedral RRT, collapsing rigid edges, using h-bonds and hydrophobics
+KGSARGS = --initial ../init_withHydrophobics.kgs.pdb --collisionFactor 0.75 --seed 418 --saveData 2 --sampleRandom true --gradient 1 --maxRotation 0.05 --stepSize 0.1 --decreaseSteps 2 --workingDirectory ./ --preventClashes true --metric dihedral --planner dihedralrrt --samples 100 --collapseRigidEdges 1
 
 # Assumes that KGSARGS has been set
 all: output.txt
@@ -25,4 +27,4 @@ leakcheck:
 	@echo "!! it in gdb. E.g.: break *0x1000AC502 !!"
 
 clean:
-	rm -rf output output.txt
+	rm -rf output output.txt kgs_planner.log kgs_report.log kgs_debug.log
