@@ -130,7 +130,6 @@ int main( int argc, char* argv[] ) {
       move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
     }
   }
-  move->setStepSize(options.stepSize);
 
   Selection resNetwork(options.residueNetwork);
   std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =

@@ -31,14 +31,25 @@ IN THE SOFTWARE.
 
 #include "RawMove.h"
 #include "core/Molecule.h"
+#include <math/gsl_helpers.h>
+
+RawMove::RawMove():
+  Move()
+{}
+
+RawMove::RawMove(double maxRotation):
+    Move(maxRotation)
+{}
 
 Configuration* RawMove::performMove(Configuration* current, gsl_vector* gradient)
 {
   Configuration* new_q = new Configuration( current );
 
+  if(m_scale)
+    gsl_vector_scale_max_component(gradient,m_maxRotation);
+
   for (int i=0; i<new_q->getNumDOFs(); ++i){
-    //new_q->m_dofs[i] = formatRangeRadian(current->m_dofs[i] + m_stepSize*gsl_vector_get(gradient, i));
-    new_q->m_dofs[i] = (current->m_dofs[i] + m_stepSize*gsl_vector_get(gradient, i));
+    new_q->m_dofs[i] = formatRangeRadian(current->m_dofs[i] + gsl_vector_get(gradient, i));
   }
 
   return new_q;

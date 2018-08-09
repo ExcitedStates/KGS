@@ -33,27 +33,28 @@ IN THE SOFTWARE.
 #include <list>
 #include <math/NullspaceSVD.h>
 #include <moves/ClashAvoidingMove.h>
+#include "moves/NullspaceMove.h"
+#include "moves/DecreaseStepMove.h"
+#include "moves/RawMove.h"
 #include <planners/SamplingPlanner.h>
 #include <planners/PoissonPlanner.h>
 #include <planners/BidirectionalMovingFront.h>
 #include <planners/RRTPlanner.h>
 #include <planners/DihedralRRT.h>
+#include <planners/DEERPlanner.h>
 #include <directions/AtomPairDistanceDirection.h>
 #include <directions/LSNrelativeDirection.h>
 #include <directions/RelativeMSDDirection.h>
-
 #include "core/Grid.h"
 #include "CTKTimer.h"
 #include "HbondIdentifier.h"
 #include "IO.h"
 #include "Logger.h"
-#include "moves/NullspaceMove.h"
 #include "directions/RandomDirection.h"
 #include "directions/DihedralDirection.h"
 #include "directions/MSDDirection.h"
 #include "directions/LSNullspaceDirection.h"
 #include "directions/BlendedDirection.h"
-#include "moves/DecreaseStepMove.h"
 #include "metrics/RMSDnosuper.h"
 #include "applications/options/TransitionOptions.h"
 
@@ -67,7 +68,6 @@ void targetedSampling(TransitionOptions& options){
   string pdb_file = options.initialStructureFile;
   Selection resNetwork(options.residueNetwork);
   Molecule* protein = IO::readPdb( pdb_file, options.extraCovBonds );
-//  protein->setCollisionFactor(options.collisionFactor);
 
   if(!options.annotationFile.empty())
     IO::readAnnotations(protein, options.annotationFile);
@@ -81,7 +81,7 @@ void targetedSampling(TransitionOptions& options){
   Molecule* target = IO::readPdb( target_file, options.extraCovBonds );
 
   ///Deletes undesired hydrogen bonds if necessary
-  if(TransitionOptions::getOptions()->hbondIntersect){
+  if(options.hbondIntersect){
     log("samplingStatus")<<"Limiting constraints to hbond intersection"<<endl;
     protein->setToHbondIntersection(target);
   }
@@ -95,8 +95,8 @@ void targetedSampling(TransitionOptions& options){
   }
 
   ///Now we have all constraints and desired roots present to build the tree
-  protein->initializeTree(resNetwork,options.collisionFactor,TransitionOptions::getOptions()->roots,target);
-  target->initializeTree(resNetwork,options.collisionFactor,TransitionOptions::getOptions()->roots,protein);
+  protein->initializeTree(resNetwork,options.collisionFactor,options.roots,target);
+  target->initializeTree(resNetwork,options.collisionFactor,options.roots,protein);
 
   // Check for collision
   // This step is NECESSARY because it defines the original colliding atoms, and these atoms won't be considered as in collision during the sampling
@@ -110,24 +110,30 @@ void targetedSampling(TransitionOptions& options){
 //	m_molecule.m_spanningTree->print();
   log("samplingStatus")<<endl;
   log("samplingStatus")<<"Molecule has:"<<endl;
-  log("samplingStatus") << "> " << protein->getAtoms().size() << " atoms" << endl;
+  log("samplingStatus")<<"> " << protein->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
+  log("samplingStatus")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
+  log("samplingStatus")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
+  log("samplingStatus")<<"> "<<protein->getDBonds().size()<<" distance bonds"<<endl;
+  log("samplingStatus")<<"> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   log("samplingStatus")<<"Target has:"<<endl;
-  log("samplingStatus")<<"> "<<target->getAtoms().size()<<" atoms"<<endl;
+  log("samplingStatus")<<"> " << target->getAtoms().size() << " atoms" << endl;
   log("samplingStatus")<<"> "<<target->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
-  log("samplingStatus")<<"> "<<target->m_spanningTree->getNumDOFs()<<" DOFs of which "<<target->m_spanningTree->getNumCycleDOFs()<<" are cycle-DOFs\n"<<endl;
+  log("samplingStatus")<<"> "<<target->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
+  log("samplingStatus")<<"> "<<target->getHBonds().size()<<" hydrogen bonds"<<endl;
+  log("samplingStatus")<<"> "<<target->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
+  log("samplingStatus")<<"> "<<target->getDBonds().size()<<" distance bonds"<<endl;
+  log("samplingStatus")<<"> " << target->m_spanningTree->getNumDOFs() << " DOFs of which " << target->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   //Initialize metric
   metrics::Metric* metric = nullptr;
   Selection metricSelection(options.metricSelection);
   try {
-    if(TransitionOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
-    if(TransitionOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
-    if(TransitionOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+    if(options.metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(options.metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(options.metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
@@ -152,14 +158,13 @@ void targetedSampling(TransitionOptions& options){
                                  options.projectConstraints);
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(TransitionOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(options.maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
       move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
     }
   }
-  move->setStepSize(options.stepSize);
 
   //Initialize m_direction
   Direction* direction;
@@ -173,16 +178,16 @@ void targetedSampling(TransitionOptions& options){
   else if(options.gradient == 2){
     BlendedDirection* bdir = new BlendedDirection();
     bdir->addDirection(new DihedralDirection(gradientSelection),0);
-    bdir->addDirection(new RandomDirection(blendedSelection,TransitionOptions::getOptions()->maxRotation), 1);
+    bdir->addDirection(new RandomDirection(blendedSelection,options.maxRotation), 1);
     direction = bdir;
     blendedDir = true;
   }
   else if(options.gradient == 3)
-    direction = new MSDDirection(gradientSelection, TransitionOptions::getOptions()->alignAlways);
+    direction = new MSDDirection(gradientSelection, options.alignAlways);
   else if(options.gradient == 4){
     BlendedDirection* bdir = new BlendedDirection();
-    bdir->addDirection(new MSDDirection(gradientSelection, TransitionOptions::getOptions()->alignAlways),0);
-    bdir->addDirection(new RandomDirection(blendedSelection,TransitionOptions::getOptions()->maxRotation), 1);
+    bdir->addDirection(new MSDDirection(gradientSelection, options.alignAlways),0);
+    bdir->addDirection(new RandomDirection(blendedSelection,options.maxRotation), 1);
     direction = bdir;
     blendedDir = true;
   }
@@ -193,6 +198,11 @@ void targetedSampling(TransitionOptions& options){
     std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
         IO::readRelativeDistances(options.relativeDistances, protein);
     Direction* d1 = new LSNrelativeDirection(gradientSelection, goal_distances);
+  }
+  else if(options.gradient <= 7) {
+    std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
+        IO::readRelativeDistances(options.relativeDistances, protein);
+    Direction* d1 = new LSNrelativeDirection(gradientSelection, goal_distances);
     Direction* d2 = new RandomDirection(blendedSelection, options.maxRotation);
     BlendedDirection* bdir = new BlendedDirection();
     bdir->addDirection(d1, 0);
@@ -200,7 +210,7 @@ void targetedSampling(TransitionOptions& options){
     direction = bdir;
     blendedDir = true;
   }
-  else if(options.gradient <= 7) {
+  else if(options.gradient <= 8) {
     std::vector< std::tuple<Atom*, Atom*, double> > goal_distances =
         IO::readRelativeDistances(options.relativeDistances, protein);
     Direction* d1 = new RelativeMSDDirection(goal_distances);
@@ -234,7 +244,7 @@ void targetedSampling(TransitionOptions& options){
         options.maxRotation,
         options.sampleRandom
     );
-  else if(options.planner_string=="poisson")
+  else if(options.planner_string=="poisson") {
     planner = new PoissonPlanner(
         protein,
         options.samplesToGenerate,
@@ -242,6 +252,8 @@ void targetedSampling(TransitionOptions& options){
         options.stepSize,
         options.gradientSelection
     );
+    ///The Poisson planner unsets the scaling for its move to be compatible with the Poisson disc
+  }
   else if(options.planner_string=="dccrrt")
     planner = new BidirectionalMovingFront(
         protein,

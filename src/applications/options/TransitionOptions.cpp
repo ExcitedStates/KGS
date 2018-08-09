@@ -368,7 +368,7 @@ void TransitionOptions::printUsage(char* pname){
   log("so")<<"  --rejectsBeforeClose <integer> \t: For poisson sampling: Number of perturbations attempted before closing. The default is 10°."<<endl;
   log("so")<<"  --metric <rmsd|rmsdnosuper|dihedral> \t: The metric to use in sampler. Default is 'rmsd'."<<endl;
   log("so")<<"  --metricSelection <selection-pattern>\t: A pymol-like pattern that indicates which subset of atoms the metric operates on. Default is 'heavy'."<<endl;
-  log("so")<<"  --planner <binnedRRT|dihedralRRT> \t: The planning strategy used to create samples. Default is binnedRRT."<<endl;
+  log("so")<<"  --planner <binnedRRT|dihedralRRT|dccrrt|poisson> \t: The planning strategy used to create samples. Default is dccrrt."<<endl;
   log("so")<<"  --rebuildLength <whole number>\t: The length of fragments that are rebuilt. Standard is 0."<<endl;
   log("so")<<"  --rebuildFrequency <real number> \t: The frequency that rebuild perturbations will occur. The default is 0."<<endl;
   log("so")<<"  --rebuildInitial <whole number>\t: The number of structures added to the initial pool by rebuilding free loops. The default is 0."<<endl;

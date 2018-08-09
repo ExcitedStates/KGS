@@ -109,9 +109,9 @@ void randomSampling(ExploreOptions& options) {
   metrics::Metric* metric = nullptr;
   Selection metricSelection(options.metricSelection);
   try {
-    if(ExploreOptions::getOptions()->metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
-    if(ExploreOptions::getOptions()->metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
-    if(ExploreOptions::getOptions()->metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
+    if(options.metric_string=="rmsd") 		    metric = new metrics::RMSD(metricSelection);
+    if(options.metric_string=="rmsdnosuper") metric = new metrics::RMSDnosuper(metricSelection);
+    if(options.metric_string=="dihedral")    metric = new metrics::Dihedral(metricSelection);
   }catch(std::runtime_error& error) {
     cerr<<error.what()<<endl;
     exit(-1);
@@ -127,14 +127,14 @@ void randomSampling(ExploreOptions& options) {
                                  options.projectConstraints);
   }else{
     log("samplingStatus")<<"Using nullspace move"<<endl;
-    move = new NullspaceMove(ExploreOptions::getOptions()->maxRotation);
+    move = new NullspaceMove(options.maxRotation);
 
     if(options.decreaseSteps>0){
       log("samplingStatus")<<" .. with "<<options.decreaseSteps<<" decrease-steps"<<endl;
       move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
     }
   }
-  move->setStepSize(options.stepSize);
+  move->setMaxRotation(options.stepSize);
 
   //Initialize direction
   Direction* direction;
@@ -196,6 +196,7 @@ void randomSampling(ExploreOptions& options) {
         options.gradientSelection,
         options.enableBVH
     );
+    ///The Poisson planner unsets the scaling for its move to be compatible with the Poisson disc
   }else if(options.planner_string=="mcmc"){
     log("samplingStatus")<<"Using MCMC planner"<<endl;
     planner = new MCMCPlanner(

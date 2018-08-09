@@ -161,7 +161,6 @@ int main( int argc, char* argv[] ) {
       move = new DecreaseStepMove(move, (unsigned int)options.decreaseSteps, options.decreaseFactor);
     }
   }
-  move->setStepSize(options.stepSize);
 
   //Initialize m_direction
   Direction* direction = nullptr;
@@ -219,7 +218,7 @@ int main( int argc, char* argv[] ) {
         options.maxRotation,
         options.sampleRandom
     );
-  else if(options.planner_string=="poisson")
+  else if(options.planner_string=="poisson") {
     planner = new PoissonPlanner(
         protein,
         options.samplesToGenerate,
@@ -227,6 +226,8 @@ int main( int argc, char* argv[] ) {
         options.stepSize,
         options.gradientSelection
     );
+    ///The Poisson planner unsets the scaling for its move to be compatible with the Poisson disc
+  }
   else if(options.planner_string=="poisson2")
     planner = new PoissonPlanner2(
         protein,

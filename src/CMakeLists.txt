@@ -50,6 +50,7 @@ add_library( libKGS
 		applications/options/RigidityOptions.h
 		applications/options/AlignOptions.h
 		applications/options/HierarchyOptions.h
+		applications/options/DeerOptions.h
 		planners/SamplingPlanner.h
 		planners/DihedralRRT.h
 		planners/RRTPlanner.h
@@ -117,6 +118,7 @@ add_library( libKGS
 		applications/options/RigidityOptions.cpp
 		applications/options/AlignOptions.cpp
 		applications/options/HierarchyOptions.cpp
+		applications/options/DeerOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
@@ -183,8 +185,11 @@ add_library( libKGS
         core/graph/KinTree.cpp
         core/graph/KinTree.h
 	directions/LSNrelativeDirection.cpp
-        directions/LSNrelativeDirection.h
-	)
+       directions/LSNrelativeDirection.h
+	moves/LSNclashAvoidingMove.cpp 
+	moves/LSNclashAvoidingMove.h 
+	planners/DEERPlanner.cpp 
+	planners/DEERPlanner.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -243,6 +248,7 @@ add_executable( kgs_ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( kgs_rmsd            applications/MainRmsd.cpp )
 add_executable( kgs_align            applications/MainAlign.cpp )
 add_executable( kgs_transition      applications/MainTransition.cpp )
+add_executable( kgs_deer      		applications/MainDeer.cpp )
 add_executable( kgs_loopexplore     applications/MainLoopExplore.cpp )
 add_executable( kgs_hierarchy       applications/MainHierarchy.cpp )
 #add_executable( kgs_mcmc            applications/MainMCMC.cpp )
@@ -256,6 +262,7 @@ target_link_libraries( kgs_ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_rmsd             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_align             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_transition       libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_deer       	libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_hierarchy        libKGS ${GSL_LIBRARIES} )
 #target_link_libraries( kgs_mcmc             libKGS ${GSL_LIBRARIES} )

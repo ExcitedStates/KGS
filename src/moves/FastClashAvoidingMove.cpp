@@ -45,7 +45,7 @@ FastClashAvoidingMove::FastClashAvoidingMove(
     const string& atomTypes,
     bool projectConstraints
 ) :
-    m_maxRotation(maxRotation),
+    Move(maxRotation),
     m_trialSteps(trialSteps),
     m_collisionCheckAtomTypes(atomTypes),
     m_projectConstraints(projectConstraints)
@@ -69,6 +69,9 @@ Configuration* FastClashAvoidingMove::performMove(Configuration* current, gsl_ve
 
   double currProjNorm = gsl_vector_length(projected_gradient);
 //  log("planner") << "Norm of projected gradient: " << currProjNorm << endl;
+
+  if(m_scale)
+    gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
 
   Configuration *new_q = new Configuration(current);
   for (int i = 0; i < new_q->getNumDOFs(); ++i)
@@ -201,12 +204,12 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
   double normBefore = gsl_vector_length(reducedGradient);
   clashNullSpace->projectOnNullSpace(reducedGradient, reducedGradient);
   double normAfter = gsl_vector_length(reducedGradient);
-//  log("clashBug")<<"> normBefore: "<<normBefore<<endl;
-//  log("clashBug")<<"> normAfter:  "<<normAfter<<endl;
 
-  //Scale so the length matches the one before
-  if(normAfter>0.00000001)
-    gsl_vector_scale(reducedGradient, normBefore/normAfter);
+  //If no m_scaling by maxRotation, keep the same length as before! (this is for Poisson-Sampler)
+  if(!m_scale && normAfter>0.00000001) {//If no scaling,
+    double normAfter = gsl_vector_length(reducedGradient);
+    gsl_vector_scale(reducedGradient, normBefore / normAfter);
+  }
 
   //Transfer to general dofs again
   gsl_vector* projected_gradient = gsl_vector_copy(gradient);
@@ -214,12 +217,12 @@ Configuration* FastClashAvoidingMove::projectOnClashNullspace(
     double constrainedValue = gsl_vector_get(reducedGradient, general_clash_pair.second);
     gsl_vector_set(projected_gradient, general_clash_pair.first, constrainedValue);
   }
-
   //Clean up
   gsl_vector_free(reducedGradient);
   gsl_matrix_free(clashJac);
 
-  double currProjNorm = gsl_vector_length(projected_gradient);
+  if(m_scale)
+    gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
 
   Configuration* new_q = new Configuration(conf);
 //  log("planner")<<"Clash trial "<<trialStep<<", Norm of projected gradient: "<<currProjNorm<<endl;

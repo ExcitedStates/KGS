@@ -26,45 +26,50 @@ IN THE SOFTWARE.
 
 */
 
-#include "Move.h"
-#include <math/gsl_helpers.h>
-#include <cassert>
-#include "Logger.h"
+//
+// Created by Dominik Budday on 31.07.18.
+//
 
-Move::Move():
-    m_maxRotation(3.1415/18),//overwrite with getter/setter
-    m_scale(false) // by default scaling is disabled
-{}
+#ifndef KGS_LSNMOVE_H
+#define KGS_LSNMOVE_H
 
-Move::Move(double maxRotation):
-    m_maxRotation(maxRotation),//overwrite with getter/setter
-    m_scale(true) // by default scaling is enabled, disable via setter if not desired
-{}
 
-Move::~Move(){}
 
-Configuration* Move::move(Configuration* current, gsl_vector* gradient)
+#include <vector>
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+
+#include "metrics/Metric.h"
+#include "metrics/RMSD.h"
+#include "moves/Move.h"
+#include "core/Configuration.h"
+#include "directions/LSNrelativeDirection.h"
+
+class LSNclashAvoidingMove : public Move
 {
-  return performMove(current, gradient);
-}
+ public:
+  LSNclashAvoidingMove(LSNrelativeDirection *direction,
+                    double maxRotation,
+                    int trialSteps,
+                    const std::string& atomTypes,
+                    bool projectConstraints );
 
-void Move::setMaxRotation(double maxRotation)
-{
-  assert(maxRotation>0.0);
-  m_maxRotation = maxRotation;
-}
+ protected:
+  Configuration* performMove(Configuration* current, gsl_vector* gradient);
 
-double Move::getMaxRotation()
-{
-  return m_maxRotation;
-}
+ private:
+  
+  gsl_matrix* computeClashAvoidingJacobian( Configuration* conf,
+                                            std::set< std::pair<Atom*,Atom*> >& allCollisions);
 
-void Move::setScalingFlag(bool scale)
-{
-  m_scale = scale;
-}
+  /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
+  LSNrelativeDirection* m_direction;
+  const int m_trialSteps;
+  const bool m_projectConstraints;
+  const std::string m_collisionCheckAtomTypes;
+};
 
-bool Move::getScalingFlag()
-{
-  return m_scale;
-}
+
+
+#endif //KGS_LSNMOVE_H
