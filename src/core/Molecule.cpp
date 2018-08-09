@@ -38,7 +38,9 @@ IN THE SOFTWARE.
 #include "core/Chain.h"
 #include "Residue.h"
 #include "core/Bond.h"
-#include "HBond.h"
+#include "core/HBond.h"
+#include "core/DBond.h"
+#include "core/HydrophobicBond.h"
 #include "Grid.h"
 #include "CTKTimer.h"
 #include "metrics/RMSD.h"
@@ -108,7 +110,9 @@ Molecule::~Molecule() {
   for (list<DBond *>::iterator it=m_dBonds.begin(); it != m_dBonds.end(); ++it) {
     delete (*it);
   }
-
+  for (list<HydrophobicBond *>::iterator it=m_hydrophobicBonds.begin(); it != m_hydrophobicBonds.end(); ++it) {
+    delete (*it);
+  }
   // delete m_spanningTree
   if (m_spanningTree!=nullptr)
     delete m_spanningTree;
@@ -251,12 +255,21 @@ const std::list<DBond*>& Molecule::getDBonds() const {
   return m_dBonds;
 }
 
+const std::list<HydrophobicBond*>& Molecule::getHydrophobicBonds() const {
+  return m_hydrophobicBonds;
+}
+
+
 std::list<Hbond*>& Molecule::getHBonds(){
   return m_hBonds;
 }
 
 std::list<DBond*>& Molecule::getDBonds(){
   return m_dBonds;
+}
+
+std::list<HydrophobicBond*>& Molecule::getHydrophobicBonds(){
+  return m_hydrophobicBonds;
 }
 
 int Molecule::size() const {
@@ -388,8 +401,10 @@ void Molecule::addHbond (Hbond * hb) {
 }
 void Molecule::addDBond (DBond * db) {
   m_dBonds.push_back(db);
-//  db->m_atom1->addDBond(db);
-//  db->m_atom2->addDBond(db);
+}
+
+void Molecule::addHydrophobicBond (HydrophobicBond * hyb) {
+  m_hydrophobicBonds.push_back(hyb);
 }
 
 std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, Molecule * target){
@@ -401,6 +416,11 @@ std::vector<int> Molecule::findBestRigidBodyMatch(std::vector<int> chainRoots, M
 
   std::vector<int> bestRootIDs;
   for (const auto chain: this->getChains() ){
+    if (chainRoots.size() <= chainCount) {
+      bestRootIDs.push_back(standardId);
+      chainCount++;
+      continue;
+    }
     rootId = chainRoots[chainCount];
     if (rootId >= 1) {//user-specified, or standard choice of atom id == 0
       if (rootId > maxId) {
@@ -477,10 +497,9 @@ void Molecule::initializeTree(Selection& movingResidues,double collisionFactor, 
   this->setCollisionFactor(collisionFactor); //Sets the initial collisions //ToDo: Do we really need this here? Better when we know collision factor
 }
 
-
 void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //Create disjoint set
-  DisjointSets ds(getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
+  DisjointSets ds(this->getAtoms()[size() - 1]->getId() + 1); //Assumes the last atom has the highest id.
 
   //For all pairs of atoms in residues not in movingResidues call Union (rigidifies everything not in movingResidues)
   for(auto const& atom: m_atoms) {
@@ -518,7 +537,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<size();i++){
     Atom* atom = getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0 && atom->HydrophobicBond_Neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
@@ -527,9 +546,10 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
 
 
   int count=0;
+    int countHydro=0;
   //For each fixed bond (a1,a2) call Union(a1,a2)
   for (auto const& bond: getCovBonds()){
-    if( bond->Bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
+    if( bond->m_bars == 6 || bond->rigidified){//This is fixed in the Bond -> isLocked and from rigidity analysis
       count++;
       ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
       log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << bond->m_atom1->getId() << " - " << bond->m_atom2->getId() << endl;
@@ -541,7 +561,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //For each fixed bond (a1,a2) call Union(a1,a2)
   if(collapseLevel == 2) {
     for( auto const &bond: getHBonds()) {
-      if( bond->Bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
+      if( bond->m_bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
         count++;
         ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
         log("debug") << "IO::readRigidbody[" << __LINE__ << "] - Joining " << bond->m_atom1->getId() << " - "
@@ -549,8 +569,19 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
         continue;
       }
     }
+
+      for( auto const &bond: getHydrophobicBonds()) {
+          if( bond->m_bars == 6 || bond->rigidified ) {//This is fixed in the Bond -> isLocked and from rigidity analysis
+              countHydro++;
+              ds.Union(bond->m_atom1->getId(), bond->m_atom2->getId());
+              log("debug") << "IO::readRigidbody[" << __LINE__ << "] - Joining " << bond->m_atom1->getId() << " - "
+                           << bond->m_atom2->getId() << endl;
+              continue;
+          }
+      }
   }
   log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<count<<" hydrogen bonds."<<endl;
+  log("debug")<<"IO::buildRigidBodies["<< __LINE__<<"] - Rigidified "<<countHydro<<" hydrophobic bonds."<<endl;
 
   int c=0;
   map<int,int> idMap;//Maps atom id's to rigid body id's for use in the DS structure.
@@ -615,6 +646,13 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
       m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
   }
   for (auto const& bond: getDBonds()) {
+    int setId1 = ds.FindSet(bond->m_atom1->getId());
+    m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
+    int setId2 = ds.FindSet(bond->m_atom2->getId());
+    if(setId1!=setId2)
+      m_rigidBodyMap.find( idMap.find(setId2)->second )->second->addBond(bond);
+  }
+  for (auto const& bond: getHydrophobicBonds()) {
     int setId1 = ds.FindSet(bond->m_atom1->getId());
     m_rigidBodyMap.find( idMap.find(setId1)->second )->second->addBond(bond);
     int setId2 = ds.FindSet(bond->m_atom2->getId());
@@ -800,7 +838,8 @@ pair<double,double> Molecule::vdwEnergy (set< pair<Atom*,Atom*> >* allCollisions
       vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
-      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
+//      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6)); ///WRONG, no factor of 2 in this formulation
+      double atomContribution = 4 * epsilon_12 * (pow(ratio,12) - pow(ratio,6));
 
       //Full enthalpy including atoms in clash constraints
       energy += atomContribution;
@@ -822,7 +861,7 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
   double energy=0, d_12, ratio, vdw_r1, vdw_d12, epsilon1, epsilon_12;
   set< pair<Atom*,Atom*> >::iterator mit;
   // for each atom, look for it's neighbors.
-  //For each such neighbor, compute U(R_ab)=epsilon_ij*(vdw_r12/r_12)^12-2*(VDW_R0/r_12)^6) and sum up everything.
+  //For each such neighbor, compute U(R_ab)= 4 * epsilon_ij*(vdw_r12/r_12)^12 - (VDW_R0/r_12)^6) and sum up everything.
   // CHARMM: http://www.charmmtutorial.org/index.php/The_Energy_Function#Energy_calculation
   for (vector<Atom*>::const_iterator ait=m_atoms.begin(); ait!=m_atoms.end(); ++ait) {
     Atom* atom1 = *ait;
@@ -849,7 +888,8 @@ double Molecule::vdwEnergy (string collisionCheck) {// compute the total vdw ene
       vdw_d12 = (vdw_r1 + atom2->getRadius())/2.0; // from CHARMM: arithmetic mean
       ratio = vdw_d12/d_12;
       epsilon_12 = sqrt(epsilon1 * (atom2->getEpsilon())); //from CHARMM: geometric mean
-      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));
+//      double atomContribution = 4 * epsilon_12 * (pow(ratio,12)-2*pow(ratio,6));///WRONG, no factor of 2 in this formulation
+      double atomContribution = 4 * epsilon_12 * (pow(ratio,12) - pow(ratio,6));
 
       //Full enthalpy including atoms in clash constraints
       energy += atomContribution;
@@ -1471,7 +1511,7 @@ Molecule* Molecule::deepClone() const{
 //    Bond* newBond = ret->addCovBond( a1_new->getResidue(), a2_new->getResidue(), a1_new->getName(), a2_new->getName() );
     Bond* newBond = ret->addCovBond( a1_new, a2_new );
     if(newBond){
-      newBond->Bars = covBond->Bars;
+      newBond->m_bars = covBond->m_bars;
       newBond->rigidified = covBond->rigidified;
     }
   }
@@ -1483,7 +1523,7 @@ Molecule* Molecule::deepClone() const{
     Atom *acc = ret->getAtom(hbond->Acceptor->getId());
     Atom *AA = ret->getAtom(hbond->AA->getId());
     Hbond *new_hb = new Hbond(hatom, acc, donor, AA, hbond->getIniEnergy());
-    new_hb->Bars = hbond->Bars;
+    new_hb->m_bars = hbond->m_bars;
     new_hb->rigidified = hbond->rigidified;
     ret->addHbond(new_hb);
   }
@@ -1493,8 +1533,17 @@ Molecule* Molecule::deepClone() const{
     Atom *a1 = ret->getAtom(dbond->m_atom1->getId());
     Atom *a2 = ret->getAtom(dbond->m_atom2->getId());
     DBond *new_db = new DBond(a1, a2);
-    new_db->Bars = dbond->Bars;
+    new_db->m_bars = dbond->m_bars;
     ret->addDBond(new_db);
+  }
+
+  //Clone hydrophobicBonds
+  for(auto const& hybond: getHydrophobicBonds()) {
+    Atom *a1 = ret->getAtom(hybond->m_atom1->getId());
+    Atom *a2 = ret->getAtom(hybond->m_atom2->getId());
+    HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
+    new_hyb->m_bars = hybond->m_bars;
+    ret->addHydrophobicBond(new_hyb);
   }
 
   // Fill in the second_cov_neighbor_list
@@ -1528,26 +1577,46 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
 
   Molecule *ret=deepClone();
 
-  int i=0; //indexing for hBonds
-  //To collapse molecule, we turn rigid h-bonds into covalent bonds
+  int hIdx=0; //indexing for hBonds (includes default bonds)
+  int dIdx=0; //indexing for dBonds
+  int hydroIdx=0; //indexing for hydrophobics
+  //To collapse molecule, we turn rigid constraints into covalent bonds
   if(collapseLevel==2) {
     for( auto const &edge_nca_pair : m_spanningTree->m_cycleAnchorEdges ) {
 
       KinEdge *edge=edge_nca_pair.first;
-
-      //Get corresponding rigidity information
-      if( m_conf->getNullspace()->isHBondRigid(i++)) {
-        //If its a rigid hbond convert it to a rigid covalent bond
-        if( edge->getBond()->isHBond()) {
+      Bond* bond = edge->getBond();
+      if( bond->isHydrophobicBond() ){
+        if( m_conf->getNullspace()->isHydrophobicBondRigid(hydroIdx++) ){
           Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
           Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
           Bond *newBond=ret->addCovBond(a1_new, a2_new);
           if( newBond ) {
-            newBond->rigidified=true;
-//          log("debug")<<"Molecule.cpp:"<<__LINE__<<" covalently connecting "<<a1_new<<"-"<<a2_new<<" with rigid bond"<<endl;
+            newBond->rigidified = true;
           }
         }
-      }//end if
+      }
+      else if( bond->isDBond() ){ /// D-bonds
+        if( m_conf->getNullspace()->isDBondRigid(dIdx++) ){
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified = true;
+          }
+        }
+      }
+      else { //H-bonds and default bonds; if( bond->isHBond() )
+        if( m_conf->getNullspace()->isHBondRigid(hIdx++) ){
+          Atom *a1_new=ret->getAtom(edge->getBond()->m_atom1->getId());
+          Atom *a2_new=ret->getAtom(edge->getBond()->m_atom2->getId());
+          Bond *newBond=ret->addCovBond(a1_new, a2_new);
+          if( newBond ) {
+            newBond->rigidified = true;
+          }
+        }
+      }
+
     }
   }
 

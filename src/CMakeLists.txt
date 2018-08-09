@@ -9,7 +9,6 @@ set(KGS_VERSION ${KGS_MAJOR_VERSION}.${KGS_MINOR_VERSION}.${KGS_PATCH_VERSION})
 
 
 
-
 # Enable C++11 support
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -39,6 +38,7 @@ add_library( libKGS
 		core/Bond.h
 		core/HBond.h
 		core/DBond.h
+		core/HydrophobicBond.h
 		core/Residue.h
 		ResidueProfiles.h
 		core/Rigidbody.h
@@ -50,6 +50,7 @@ add_library( libKGS
 		applications/options/RigidityOptions.h
 		applications/options/AlignOptions.h
 		applications/options/HierarchyOptions.h
+		applications/options/DeerOptions.h
 		planners/SamplingPlanner.h
 		planners/DihedralRRT.h
 		planners/RRTPlanner.h
@@ -78,6 +79,7 @@ add_library( libKGS
 		directions/MSDDirection.h
 		directions/LSNullspaceDirection.h
 		directions/VDWDirection.h
+		directions/AtomPairDistanceDirection.h
 		math/MathUtility.h
 		math/SVD.h
 		math/infnan.h
@@ -103,7 +105,8 @@ add_library( libKGS
         core/Molecule.cpp
         core/Bond.cpp
         core/HBond.cpp
-        core/DBond.cpp
+	core/DBond.cpp
+	core/HydrophobicBond.cpp 
         core/Residue.cpp
         core/Rigidbody.cpp
         core/graph/KinGraph.cpp
@@ -115,10 +118,11 @@ add_library( libKGS
 		applications/options/RigidityOptions.cpp
 		applications/options/AlignOptions.cpp
 		applications/options/HierarchyOptions.cpp
+		applications/options/DeerOptions.cpp
         planners/SamplingPlanner.cpp
         planners/DihedralRRT.cpp
         planners/RRTPlanner.cpp
-		planners/MCMCPlanner.cpp
+	planners/MCMCPlanner.cpp
         planners/PoissonPlanner.cpp
         planners/PoissonPlanner2.cpp
         planners/BidirectionalMovingFront.cpp
@@ -143,6 +147,7 @@ add_library( libKGS
 		directions/MSDDirection.cpp
         directions/LSNullspaceDirection.cpp
         directions/VDWDirection.cpp
+		directions/AtomPairDistanceDirection.cpp
         metrics/Dihedral.cpp
         metrics/Metric.cpp
         metrics/RMSD.cpp
@@ -179,12 +184,12 @@ add_library( libKGS
         core/graph/KinVertex.h
         core/graph/KinTree.cpp
         core/graph/KinTree.h
-		directions/LSNrelativeDirection.cpp
-        directions/LSNrelativeDirection.h
-        core/graph/Constraint.cpp
-        core/graph/Constraint.h
-        core/ConstraintSet.cpp
-        core/ConstraintSet.h )
+	directions/LSNrelativeDirection.cpp
+       directions/LSNrelativeDirection.h
+	moves/LSNclashAvoidingMove.cpp 
+	moves/LSNclashAvoidingMove.h 
+	planners/DEERPlanner.cpp 
+	planners/DEERPlanner.h)
 
 set_target_properties( libKGS PROPERTIES PREFIX "" )
 
@@ -243,6 +248,7 @@ add_executable( kgs_ensemble_pca    applications/MainEnsemblePCA.cpp )
 add_executable( kgs_rmsd            applications/MainRmsd.cpp )
 add_executable( kgs_align            applications/MainAlign.cpp )
 add_executable( kgs_transition      applications/MainTransition.cpp )
+add_executable( kgs_deer      		applications/MainDeer.cpp )
 add_executable( kgs_loopexplore     applications/MainLoopExplore.cpp )
 add_executable( kgs_hierarchy       applications/MainHierarchy.cpp )
 #add_executable( kgs_mcmc            applications/MainMCMC.cpp )
@@ -256,6 +262,7 @@ target_link_libraries( kgs_ensemble_pca     libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_rmsd             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_align             libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_transition       libKGS ${GSL_LIBRARIES} )
+target_link_libraries( kgs_deer       	libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_loopexplore      libKGS ${GSL_LIBRARIES} )
 target_link_libraries( kgs_hierarchy        libKGS ${GSL_LIBRARIES} )
 #target_link_libraries( kgs_mcmc             libKGS ${GSL_LIBRARIES} )

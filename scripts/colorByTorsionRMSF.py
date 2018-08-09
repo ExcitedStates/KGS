@@ -48,7 +48,7 @@ def getTorsionRMSF(pdbPath,pathList,reversePathList,backboneOnly):
 	target_names = [fn for fn in all_files if any ([fnmatch.fnmatch(fn,ext) for ext in included_extensions]) and not fn.startswith(modelName)];
 	target_name = target_names[0]
 	targetName = str(target_name[target_name.rfind("/")+1:target_name.rfind("_new_")])
-	
+	print "targets",len(target_names)
 	dofIDs = []
 	resids = []
 	torsions =[]
@@ -100,6 +100,7 @@ def getTorsionRMSF(pdbPath,pathList,reversePathList,backboneOnly):
 	# extract information along the reverse path
 	firstFile = 1
 	for sample in reversePathList:
+		print sample
 		with open(outputDir+"/"+targetName+"_q_"+str(sample)+".txt", "r") as q_file:
 			if firstFile ==1:
 				#Individual information (use first file to extract dof IDs etc.)
@@ -130,7 +131,7 @@ def getTorsionRMSF(pdbPath,pathList,reversePathList,backboneOnly):
 					count+=1
 
 	# Now we have the squared sum of torsions over the reverse path
-	for i in range(len(torsions)):
+	for i in range(len(reverse_torsions)):
 		#Average over all states along path
 		reverse_torsions[i] = math.sqrt(reverse_torsions[i]/revSamples)
 
@@ -189,8 +190,10 @@ def main():
 		fwdSamples += len(pathList)
 		revSamples += len(reversePathList)
 		fwdTorsionRMSF, revTorsionRMSF = getTorsionRMSF(pdbPath, pathList, reversePathList,backboneOnly)
+		print len(fwdTorsionRMSF),len(revTorsionRMSF)
 		for j in range(len(fwdTorsionRMSF)):
 			forwardTorsionRMSF[j] += fwdTorsionRMSF[j]
+		for j in range(len(revTorsionRMSF)):
 			reverseTorsionRMSF[j] += revTorsionRMSF[j]
 	
 	numSamples = fwdSamples+revSamples

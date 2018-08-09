@@ -62,7 +62,6 @@ class ClashAvoidingMove : public Move
                                             std::set< std::pair<Atom*,Atom*> >& allCollisions);
 
   /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
-  const double m_maxRotation;
   const int m_trialSteps;
   const bool m_projectConstraints;
   const std::string m_collisionCheckAtomTypes;

@@ -53,11 +53,13 @@ IN THE SOFTWARE.
 #include "core/Bond.h"
 #include "core/HBond.h"
 #include "core/DBond.h"
+#include "core/HydrophobicBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"
 #include "Color.h"
 #include "HbondIdentifier.h"
+#include "core/graph/KinTree.h"
 
 
 using namespace std;
@@ -91,9 +93,8 @@ Molecule* IO::readPdb (
     const string& hbondFile,
     const Molecule* reference
 )
-{
+ {
   Molecule* molecule = new Molecule();
-
   //Read molecule name
   int nameSplit=pdb_file.find_last_of("/\\");
   string moleculeName=pdb_file.substr(nameSplit + 1);
@@ -111,8 +112,10 @@ Molecule* IO::readPdb (
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
   vector< pair<int,int> > distanceConstraints;
+  vector< pair<int,int> > hydrophobicConstraints;
 
   int atomCount=0;
+
 
   //Read lines of PDB-file.
   while( !pdb.eof()) {
@@ -149,6 +152,14 @@ Molecule* IO::readPdb (
       iss>>id1>>id2;
       distanceConstraints.push_back( make_pair(id1,id2) );
 
+      continue;
+    }
+    if( line.substr(0,32)=="REMARK 555 HydrophobicConstraint"){
+      std::istringstream iss(line.substr(32));
+      int id1, id2;
+      //TODO: Fail gracefully
+      iss>>id1>>id2;
+      hydrophobicConstraints.push_back( make_pair(id1,id2) );
       continue;
     }
 
@@ -209,7 +220,6 @@ Molecule* IO::readPdb (
     }
   }
   if(!foundHydro) cerr<<"IO::readPdb - Warning: No hydrogens found in file. Consider running `reduce`"<<endl;
-
 
   //Create covalent bonds from residue profiles
   ResidueProfile residue_profile=readResidueProfile();
@@ -329,7 +339,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //        molecule->addCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
         molecule->addCovBond(a1, a2);
-//        cout << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+        log("debug") << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
       }
     }
   }
@@ -367,7 +377,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
 //        molecule->addCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
         molecule->addCovBond(a3, a4);
-        cout << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
+        log("debug") << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
              << endl;
       }
     }
@@ -444,7 +454,7 @@ Molecule* IO::readPdb (
 
     // Set the number of bars to six for all these bonds!
     if(fixedBonds.find(query1)!=fixedBonds.end() || fixedBonds.find(query2)!=fixedBonds.end()){
-      bond->Bars = 6;
+      bond->m_bars = 6;
     }
 
   }
@@ -482,7 +492,6 @@ Molecule* IO::readPdb (
 //      atom->setAsSidechainAtom();
 //  }
 
-
   //Create H-bonds from REMARK records
   for(const pair<int,int>& constraint: torsionConstraints) {
     Atom* hatom = molecule->getAtom(constraint.second);
@@ -514,6 +523,13 @@ Molecule* IO::readPdb (
     Atom* a2 = molecule->getAtom(constraint.second);
     DBond *new_db = new DBond(a1, a2);
     molecule->addDBond(new_db);
+  }
+  
+  for(const pair<int,int>& constraint: hydrophobicConstraints) {
+    Atom* a1 = molecule->getAtom(constraint.first);
+    Atom* a2 = molecule->getAtom(constraint.second);
+    HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
+    molecule->addHydrophobicBond(new_hyb);
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
@@ -676,8 +692,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      continue;
 //    }
@@ -835,8 +851,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->m_atom2->getId() << endl;
 //      continue;
@@ -1075,7 +1091,7 @@ void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   for (auto const& bond: molecule->getCovBonds()){
     output << right << setw(8) << bond->m_atom1->getId();
     output << right << setw(8) << bond->m_atom2->getId();
-    output << right << setw(8) << bond->Bars << endl;
+    output << right << setw(8) << bond->m_bars << endl;
   }
   output.close();
 }
@@ -1163,7 +1179,7 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
     output << bond->Acceptor->getName()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << bond->getIniEnergy()<<" ";
-    output << bond->Bars<<" ";
+    output << bond->m_bars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
     output << bond->getAngle_H_A_AA()<<endl;
@@ -1195,7 +1211,7 @@ void IO::writeHbondsChange (Configuration *conf, string output_file_name) {
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << energy<<" ";
-    int numBars = bond->Bars;
+    int numBars = bond->m_bars;
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
@@ -1617,30 +1633,59 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   pymol_script << "set dash_gap, 0.1" << endl;
 
   int site_1, site_2;
-  vector< pair<KinEdge*,KinVertex*> >::iterator eit;
+  std::vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
+  /// initial molecule (nothing collapsed)
   if(iniMolecule) {
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-
       site_1 = eit->first->getBond()->m_atom1->getId();
       site_2 = eit->first->getBond()->m_atom2->getId();
-      pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
-
+      if(eit->first->getBond()->isHBond()) {
+        pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if(eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance allHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if(eit->first->getBond()->isDBond()) {
+        pymol_script << "distance allDbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance allCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
     }
-    pymol_script << "color red, allHbonds" << endl;
-    pymol_script << "hide labels, allHbonds" << endl;
   }
 
-  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+  /// collapsed molecule, remaining constraints
+  if(rigidified) {
+    for (eit = rigidified->m_spanningTree->m_cycleAnchorEdges.begin();
+         eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
 
-    site_1 = eit->first->getBond()->m_atom1->getId();
-    site_2 = eit->first->getBond()->m_atom2->getId();
-    pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
-
+      if (eit->first->getBond()->isHBond()) {
+        pymol_script << "distance mobileHbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance mobileHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isDBond()) {
+        pymol_script << "distance mobileDBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance mobileCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+    }
   }
-  pymol_script << "color yellow, hbondConstraints" << endl;
-  pymol_script << "hide labels, hbondConstraints" << endl;
+  pymol_script << "color red, allHbonds" << endl;
+  pymol_script << "color yellow, mobileHbonds" << endl;
+  pymol_script << "color deepteal, allHydrophobics" << endl;
+  pymol_script << "color cyan, mobileHydrophobics" << endl;
+  pymol_script << "color black, allDBonds" << endl;
+  pymol_script << "color gray60, mobileDBonds" << endl;
+  pymol_script << "color lightmagenta, allCycleCovBonds" << endl;
+  pymol_script << "color deeppurple, mobileCycleCovBonds" << endl;
+  pymol_script << "hide labels" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1754,18 +1799,25 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Number of chains: " << protein->m_chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
-    output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;
+    output << "Number of hydrogen bonds: " << protein->getHBonds().size() << endl;
+    output << "Number of distance bonds: " << protein->getDBonds().size() << endl;
+    output << "Number of hydrophobic bonds: " <<  protein->getHydrophobicBonds().size() << endl;
+    int numCovCycleCons = protein->m_spanningTree->m_cycleAnchorEdges.size() - protein->getHBonds().size()
+          - protein->getDBonds().size() - protein->getHydrophobicBonds().size();
+    output << "Number of cycle covalent bonds: " <<  numCovCycleCons << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
     output << "Number of free DOFs: " << diff << endl;
     output << "Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl << endl;
     output << "************* Statistics on rigidity analysis *************" << endl;
     output << "Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize()
            << endl;
-    output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
-    output << "Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
-           << endl;
-    output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
 
+    output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
+    output << "Number of rigidified DOFs (covalent bonds): " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
+           << endl;
+    output << "Number of rigidified hydrogen and cycle covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
+    output << "Number of rigidified distance bonds: " << protein->m_conf->getNullspace()->getNumRigidDBonds() << endl;
+    output << "Number of rigidified hydrophobic bonds: " << protein->m_conf->getNullspace()->getNumRigidHydrophobicBonds() << endl;
     if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
       output << "Number of rigid clusters: " << rigidified->m_conf->m_numClusters << endl;
       output << "Size of biggest cluster: " << rigidified->m_conf->m_maxSize << endl;
@@ -2289,3 +2341,5 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
 
   }
 }
+
+

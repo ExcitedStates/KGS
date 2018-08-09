@@ -32,7 +32,13 @@ IN THE SOFTWARE.
 #include "Logger.h"
 
 Move::Move():
-    m_stepSize(1.0)
+    m_maxRotation(3.1415/18),//overwrite with getter/setter
+    m_scale(false) // by default scaling is disabled
+{}
+
+Move::Move(double maxRotation):
+    m_maxRotation(maxRotation),//overwrite with getter/setter
+    m_scale(true) // by default scaling is enabled, disable via setter if not desired
 {}
 
 Move::~Move(){}
@@ -42,14 +48,23 @@ Configuration* Move::move(Configuration* current, gsl_vector* gradient)
   return performMove(current, gradient);
 }
 
-void Move::setStepSize(double stepSize)
+void Move::setMaxRotation(double maxRotation)
 {
-  assert(stepSize>0.0);
-
-  m_stepSize = stepSize;
+  assert(maxRotation>0.0);
+  m_maxRotation = maxRotation;
 }
 
-double Move::getStepSize()
+double Move::getMaxRotation()
 {
-  return m_stepSize;
+  return m_maxRotation;
+}
+
+void Move::setScalingFlag(bool scale)
+{
+  m_scale = scale;
+}
+
+bool Move::getScalingFlag()
+{
+  return m_scale;
 }

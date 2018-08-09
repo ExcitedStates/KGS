@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 #include <vector>
 #include "Residue.h"
 #include "Coordinate.h"
+#include "HydrophobicBond.h"
 
 // Vdw radii are from source http://www.cgl.ucsf.edu/chimera/docs/UsersGuide/midas/vdwtables.html#allatom, except for SE and UNKNOWN
 // To get CHARMM parameters for each atom; for now assume these VDW_RADII = Rmin/2
@@ -114,9 +115,14 @@ class Atom {
 
   void addHbond(Hbond *hbond);
 
+  void addHydrophobicBond(HydrophobicBond *hydrophobicBond)  ;
+
+
   void removeHbond(Hbond *hbond);
 
   bool isHbondNeighbor(Atom *other) const;
+
+  bool isHydrophobicNeighbor(Atom *other)  const;
 
   Atom *getBondNeighbor(Bond *bond) const;
 
@@ -164,8 +170,10 @@ class Atom {
   Coordinate m_referencePosition;
   std::vector<Bond *> Cov_bond_list;
   std::vector<Hbond *> Hbond_list;
+  std::vector<HydrophobicBond *> HydrophobicBond_list;
   std::vector<Atom *> Cov_neighbor_list;
   std::vector<Atom *> Hbond_neighbor_list;
+  std::vector<Atom *> HydrophobicBond_Neighbor_list;
   std::vector<Atom *> Second_cov_neighbor_list; // 2nd immediate covalent bond neighbors
 
   AtomType m_element;
