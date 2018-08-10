@@ -85,6 +85,7 @@ writeIMOD = False
 waters = True
 ligands = True
 hydrophobics = True
+mainchainOnly = False
 altloc = "A"
 cutoff = -1.0
 cutoffD = 0.25 #Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
@@ -159,12 +160,19 @@ class Atom:
         raise RuntimeError("sp-hybridization not defined for atom type: "+self.atomType+" ("+str(self)+")")
 
     def isDonor(self):
-        hasHNeighbor = any([n.elem=="H" for n in self.neighbors])
-        return hasHNeighbor and (self.elem=="O" or self.elem=="N")
+        if mainchainOnly:
+            hasHNeighbor = any([n.name=="H" for n in self.neighbors])
+            return hasHNeighbor and (self.name=="O" or self.name=="N")
+        else:
+            hasHNeighbor = any([n.elem=="H" for n in self.neighbors])
+            return hasHNeighbor and (self.elem=="O" or self.elem=="N")
 
     def isAcceptor(self):
-        return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) # or self.elem == "S"
-
+        if mainchainOnly:
+            return self.name=="O" or (self.name=="N" and len(self.neighbors)<=2) # or self.elem == "S"
+        else:
+            return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) # or self.elem == "S"
+        
     def isHydrophobicAtom(self):
         #Limit hydrophobic interactions to C,S in non-polar residue side-chains
         return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"] and not self.name=="C" and not self.name=="CA"
@@ -465,14 +473,40 @@ class PDBFile:
             return energy_dist * energy_angl * energy_angl
         if donor.getSP()==2 and acceptor.getSP() == 2:
             # compute phi
-            n_d = normalize(cross(sub(donor.neighbors[0].pos, donor.pos), sub(donor.neighbors[1].pos, donor.pos)))
-            if len(aa.neighbors) >= 2:  # Not necessarily the case
-                n_a = normalize(cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
+            # FROM DAHIYAT et al. 1997 paper:
+            # "phi is the angle between the normals of the planes defined by the six atoms attached to the sp2 centers
+            # (the supplement of phi is used when phi is less than 90 degrees)
+            # sp2-centers are the donor and the base atom
+            # --> use H-atom and both donor neighbors plus acceptor and both base neighbors
+            if len(donor.neighbors) >= 3:
+                n_d = normalize(cross(sub(donor.neighbors[1].pos, donor.neighbors[0].pos), sub(donor.neighbors[2].pos, donor.neighbors[0].pos)))
+            elif len(donor.neighbors) >= 2:
+                n_d = normalize(cross(sub(donor.neighbors[1].pos, donor.pos), sub(donor.neighbors[0].pos, donor.pos)))
             else:
+                raise RuntimeError("Hybridization error at donor: "+str(donor.id))
+            if len(aa.neighbors) >= 3:  # Not necessarily the case
+                n_a = normalize(cross(sub(aa.neighbors[1].pos, aa.neighbors[0].pos), sub(aa.neighbors[2].pos,aa.neighbors[0].pos)) )
+            elif len(aa.neighbors) >= 2:
+                n_a = normalize( cross(sub(aa.neighbors[1].pos, aa.pos), sub(aa.neighbors[0].pos,aa.pos)) )
+            else:
+                print "Hydrogen bond with single-neighbor base atom"
                 n_a = normalize( cross(sub(aa.pos,acceptor.pos), sub(hydrogen.pos,acceptor.pos)) )
-            # n_a = normalize( cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
-            phi = math.acos( dot(n_d, n_a) )
-            if phi>3.141592: phi = 3.141592-phi
+        
+            phi = math.acos( dot(n_d, n_a) ) # dot-product between -1 and 1, acos lies between 0 and pi
+            
+            if phi < 0.5*math.pi: phi = math.pi-phi #Dahiyat: the supplement of phi is used when phi is less than 90 degrees
+            
+            #  %%%%%%%%%%%%% BEFORE WITH BUG %%%%%%%%%%%%%%%%%%%%%%%%
+            # n_d = normalize(cross(sub(donor.neighbors[0].pos, donor.pos), sub(donor.neighbors[1].pos, donor.pos)))
+            # if len(aa.neighbors) >= 2:  # Not necessarily the case
+            #     n_a = normalize(cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
+            # else:
+            #     n_a = normalize( cross(sub(aa.pos,acceptor.pos), sub(hydrogen.pos,acceptor.pos)) )
+            # # n_a = normalize( cross(sub(aa.neighbors[0].pos, aa.pos), sub(aa.neighbors[1].pos,aa.pos)) )
+            #
+            # phi = math.acos( dot(n_d, n_a) )
+            # if phi>3.141592: phi = 3.141592-phi
+            #  %%%%%%%%%%%%% BEFORE WITH BUG %%%%%%%%%%%%%%%%%%%%%%%%
 
             return energy_dist * energy_angl * math.cos(max(phi,psi))**2
 
@@ -935,6 +969,7 @@ def printUsage(argv):
     print("  -alt          : keeping specified alt loc (and empty alt loc) ")
     print("  -chain        : keeping only specified chain")
     print("  -energy       : energy cutoff for hydrogen bonds")
+    print("  -mainchain    : only mainchain hydrogen bonds")
     print("  -cutoffD      : distance cutoff for hydrophobic interactions")
     print("  -imod         : save donor-acceptor connections for use as springs in iMod")
     print("  -model        : limit analysis to single model number in multi-model file")
@@ -1018,6 +1053,11 @@ if __name__ == "__main__":
         argv.remove(model)
         print "Keeping only model",model
         model = int(model)
+        
+    if "-mainchain" in argv:
+        mainchainOnly = True
+        argv.remove("-mainchain")
+        print "Keeping only backbone hydrogen bonds"
 
     #Only thing left of argv should be the program name and input file
     if not len(argv)==2:

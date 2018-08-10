@@ -61,8 +61,7 @@ class DihedralRRT : public SamplingPlanner {
 
   std::list<Configuration *> &getSamples() { return m_samples; }
 
-  double m_deform_mag;
-  double m_rand_radius;
+  Configuration* getFurthestSample() {return m_furthestSample;}
 
  protected:
   Configuration *GenerateRandConf();
@@ -77,24 +76,19 @@ class DihedralRRT : public SamplingPlanner {
 
   metrics::Dihedral *m_dihedralMetric;
 
-  double m_maxDistance;
+  double m_explorationRadius;
   bool m_sampleRandom;
 
   std::list<Configuration *> m_samples;
   int m_numDOFs;
   std::vector<Configuration *> m_path;
 
-  int m_nCDCall;
-  int m_nRMSDCall;
-
-  double m_top_min_rmsd;
-  int m_top_min_rmsd_id;
-  double m_minMovDihDistance;
-  int m_minMovDihDistance_id;
-
   int m_numSamples;
   double m_maxRotation;
   int m_max_depth;
+
+  Configuration* m_furthestSample;
+  double m_furthestDistance;
 };
 
 #endif /* DIHEDRALRRT_H_ */

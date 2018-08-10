@@ -128,7 +128,7 @@ void RigidityOptions::initializeVariables(){
   roots                     = {1}; //Choose the first atom
   collisionCheck            = "all";
   svdCutoff                 = 1.0e-12;
-  collapseRigid             = true;
+  collapseRigid             = 2;
 }
 
 void RigidityOptions::print(){
@@ -149,7 +149,7 @@ void RigidityOptions::print(){
   log("so")<<"  --root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
   log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
-  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl<<endl;
 }
 
 void RigidityOptions::printUsage(char* pname){
@@ -176,7 +176,7 @@ void RigidityOptions::printUsage(char* pname){
   log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
   log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
-  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2. (other options currently not enabled)."<<endl;
+  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Rigid bodies after merging over rigid edges. 0: Dont merge (initial rigid bodies). 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2 (real rigidity analysis)"<<endl;
 }
 
 

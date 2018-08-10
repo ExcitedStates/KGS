@@ -242,8 +242,8 @@ void DeerOptions::print(){
   log("so")<<"\t--frontSize "<<frontSize<<endl;
   log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
   log("so")<<"\t--collapseRigidEdges "<<collapseRigid<<endl;
-  log("so")<<"\t  --relativeDistances "<<relativeDistances<<endl;
-  log("so")<<"\t  --predictStrain "<<predictStrain<<endl;
+  log("so")<<"\t--relativeDistances "<<relativeDistances<<endl;
+  log("so")<<"\t--predictStrain "<<predictStrain<<endl;
   log("so")<<"\t--radius "<<explorationRadius<<endl;
   log("so")<<"\t--explore "<<explore<<endl;
 }

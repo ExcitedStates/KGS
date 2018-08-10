@@ -57,13 +57,15 @@ int main( int argc, char* argv[] ){
   timer.Reset();
   double start_time = timer.LastElapsedTime();
 
-  enableLogger("rigidity");
-
   if(argc<2){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
   RigidityOptions::createOptions(argc,argv);
   RigidityOptions& options = *(RigidityOptions::getOptions());
 
+  enableLogger("rigidity");
+  enableLogger("default");
+
+  enableLogger("so"); //print options
   options.print();
 
   string out_path = options.workingDirectory;
@@ -116,7 +118,7 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "Number of redundant constraints: " <<numRedundantCons << endl;
 
   /// Create larger rigid substructures for rigid cluster decomposition
-  Molecule* rigidified = protein->collapseRigidBonds(2);
+  Molecule* rigidified = protein->collapseRigidBonds(options.collapseRigid);
 
   //Print final status
   double end_time = timer.ElapsedTime();
@@ -148,12 +150,12 @@ int main( int argc, char* argv[] ){
   ///Write pyMol script
   IO::writePyMolScript(rigidified, out_file, pyMol, protein);
 
+  if(options.saveData <= 1) return 0;
+
   ///save singular values
   //NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
   string outSing = out_path + "output/singVals.txt";
   gsl_vector_outtofile(ns.getSVD()->S, outSing);
-
-  if(options.saveData <= 1) return 0;
 
   ///save Jacobian and Nullspace to file
   string outJac=out_path + "output/" +  name + "_jac_" +
