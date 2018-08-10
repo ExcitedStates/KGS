@@ -438,7 +438,7 @@ void DEERPlanner::createTrajectory() {
   ///save pyMol movie script
   string out_pyMol = out_path + "output/" + name + "_pathMov.pml";
 
-  IO::writeTrajectory(m_protein, out_collPdb, out_pyMol, nullptr);
+  IO::writeTrajectory(m_protein, out_collPdb, out_pyMol, nullptr,&m_goalDistances);
 }
 
 double DEERPlanner::dist_to_objective(Configuration* conf)

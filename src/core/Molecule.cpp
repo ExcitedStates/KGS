@@ -1484,6 +1484,7 @@ Configuration* Molecule::localRebuild(vector<int>& resetDOFs, vector<double>& re
   return ret;
 }
 
+///Clone the molecule and start off with the set configuration as reference position
 Molecule* Molecule::deepClone() const{
   Molecule* ret = new Molecule();
   ret->setName(m_name);
@@ -1497,7 +1498,7 @@ Molecule* Molecule::deepClone() const{
         atom->getResidue()->getId(),
         atom->getName(),
         atom->getId(),
-        atom->m_referencePosition
+        atom->m_position
     );
 
 //    if(atom->is)
