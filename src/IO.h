@@ -84,12 +84,10 @@ class IO {
   static void writeQ(Molecule *molecule, Configuration *referenceConf, std::string output_file_name);
 
   static void
-  writeTrajectory(Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr);
+  writeTrajectory(Molecule *molecule, std::string output_file, std::string output_mdl, Molecule *target = nullptr, const std::vector<std::tuple<Atom *, Atom *, double> >* deer = nullptr);
 
   static std::vector<std::tuple<Atom *, Atom *, double> >
   readRelativeDistances(const std::string &fname, Molecule *mol);
-
-//  static void writeRigidbodyIDToBFactor(Molecule *mol);
 
   static void
   writeNewSample(Configuration *conf, Configuration *ref, int sample_num, const std::string &workingDir, int saveData);

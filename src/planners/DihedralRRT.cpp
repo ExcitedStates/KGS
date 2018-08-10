@@ -71,7 +71,7 @@ DihedralRRT::DihedralRRT(
     m_protein(protein),
     m_direction(direction),
     m_numSamples(numSamples),
-    m_maxDistance(maxDistance),
+    m_explorationRadius(maxDistance),
     m_maxRotation(maxRotation),
     m_sampleRandom(sampleRandom){
   m_protein = protein;
@@ -83,14 +83,9 @@ DihedralRRT::DihedralRRT(
   m_samples.push_back(pSmp);
   pSmp->m_vdwEnergy = m_protein->vdwEnergy();
   pSmp->m_id = 0; // m_root
+  m_furthestSample = pSmp;
+  m_furthestDistance = 0.0;
 
-  m_deform_mag = 0.25;
-  m_rand_radius = 2;
-
-  m_top_min_rmsd = 99999;
-  m_top_min_rmsd_id = -1;
-  m_minMovDihDistance = 99999;
-  m_minMovDihDistance_id = -1;
 }
 
 DihedralRRT::~DihedralRRT() {
@@ -148,6 +143,10 @@ void DihedralRRT::generateSamples() {
       pNewSmp->m_distanceToParent = m_metric->distance(pNewSmp, pClosestSmp);
       pNewSmp->m_id = sample_id;
       pNewSmp->m_vdwEnergy = m_protein->vdwEnergy();
+      if(pNewSmp->m_distanceToIni > m_furthestDistance){
+        m_furthestDistance = pNewSmp->m_distanceToIni;
+        m_furthestSample = pNewSmp;
+      }
 
       /// Energies and geometries
       double hEnergy = HbondIdentifier::computeHbondEnergy(pNewSmp);
@@ -201,10 +200,14 @@ Configuration *DihedralRRT::GenerateRandConf() {
     length += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
   }
   length = sqrt(length);
+
+  double norm;
 //  if (ExploreOptions::getOptions()->scaleToRadius) {
-    double factor = pow(Random01(), 1.0 / m_numDOFs) * m_maxDistance / length; ///ToDo: Do we still want this scaling?
+    double factor = pow(Random01(), 1.0 / m_numDOFs) * m_explorationRadius / length; ///ToDo: Do we still want this scaling?
+    cout<<"Scaling factor: "<<factor<<endl;
     for (int i = 0; i < m_numDOFs; ++i) {
       pNewSmp->m_dofs[i] = factor * pNewSmp->m_dofs[i];
+      norm += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
     }
 //  }
 

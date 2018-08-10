@@ -1762,20 +1762,6 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
       }
       output<<endl<<"NaN"<<endl<<endl;
     }
-//    vector< pair<int, unsigned int> >::iterator it=c->m_sortedRBs.begin();
-//
-//    while( it != c->m_sortedRBs.end() ){
-//
-//      vector<Atom*>::iterator ait = c->m_biggerRBMap[it->second]->Atoms.begin();
-//      while( ait != c->m_biggerRBMap[it->second]->Atoms.end() ){
-//      output << (*ait)->getId() << endl;
-//      ait++;
-//    }
-//      output << endl;
-//      output << "NaN"<<endl;
-//      output << endl;
-//      it++;
-//    }
 
   }
   output.close();
@@ -1832,7 +1818,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
 
 }
 
-void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target) {
+void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target, const std::vector<std::tuple<Atom *, Atom *, double> >* deer) {
 
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {
@@ -1883,49 +1869,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
     for(int i=0; i <= treeDepth; i++){
 
       output << "MODEL"<<currId<<endl;
-
-      //			std::size_t pos = output_file_name.find("path");
-      //			string input_file_name=output_file_name.substr(0,pos) + "new_" +
-      //					static_cast<ostringstream*>( &(ostringstream() << currId) )->str() + ".pdb";
-      //			ifstream inputFile(input_file_name.c_str());
-      //
-      //			if (!inputFile.good()) {
-      //				cerr << "Error: cannot open file " << input_file_name << endl;
-      //				exit(-1);
-      //			}
-      //			string line, temp;
-      //
-      //			int test=0;
-      //			while (!inputFile.eof()) {
-      //				getline(inputFile,line);
-      //				if (inputFile.eof()) break;
-      //				if (line.substr(0,4)!="ATOM") // skip if it is not an ATOM line
-      //					continue;
-      //				output << line << endl;
-      //				test++;
-      //			}
-
-      //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = molecule->m_spanningTree->m_edges.begin(); eit != molecule->m_spanningTree->m_edges.end(); eit++){
-      //				KinEdge* e = (*eit);
-      //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
-      //				double val = Abs(c->m_f[dofId]);
-      //				int num;
-      //				if( val > 0.01)
-      //					num=1;
-      //				else if (val > 0.00000001)
-      //					num=2;
-      //				else
-      //					num=3;
-      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->m_id)->second)
-      //						resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //				else{
-      //					resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //			}
 
       for (auto const& atom: molecule->getAtoms()) {
         Residue* res = atom->getResidue();
@@ -2005,48 +1948,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       output << "REMARK\tFile corresponds to sample "<<currId<<endl;
       output << "MODEL"<<++firstPathLength<<endl;
 
-      //			std::size_t pos = output_file_name.find("path");
-      //			string input_file_name=output_file_name.substr(0,pos) + "new_" +
-      //					static_cast<ostringstream*>( &(ostringstream() << currId) )->str() + ".pdb";
-      //			ifstream inputFile(input_file_name.c_str());
-      //
-      //			if (!inputFile.good()) {
-      //				cerr << "Error: cannot open file " << input_file_name << endl;
-      //				exit(-1);
-      //			}
-      //			string line, temp;
-      //
-      //			int test=0;
-      //			while (!inputFile.eof()) {
-      //				getline(inputFile,line);
-      //				if (inputFile.eof()) break;
-      //				if (line.substr(0,4)!="ATOM") // skip if it is not an ATOM line
-      //					continue;
-      //				output << line << endl;
-      //				test++;
-      //			}
-      //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = target->m_spanningTree->m_edges.begin(); eit != target->m_spanningTree->m_edges.end(); eit++){
-      //				KinEdge* e = (*eit);
-      //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
-      //				double val = Abs(c->m_f[dofId]);
-      //				int num;
-      //				if( val > 0.01)
-      //					num=1;
-      //				else if (val > 0.00000001)
-      //					num=2;
-      //				else
-      //					num=3;
-      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->m_id)->second)
-      //						resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //				else{
-      //					resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //			}
-
       for (auto const& atom: target->getAtoms()) {
         Residue* res = atom->getResidue();
         char buffer[100];
@@ -2105,7 +2006,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   //////////////////////////////////////////////////////////////////////
   pymol_script << "load " << output_file_name << endl << endl;
   pymol_script << "set line_width = 1" << endl;
-  //	  pymol_script << "color black" << endl << endl;
 
   //Determine object name
   size_t start_idx = output_file_name.find_last_of("/")+1;
@@ -2119,19 +2019,8 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   // Also, we save each cluster's color in a map for use again later
 
   map< unsigned int, string > mapClusterIDtoColor;
-//  map<unsigned int,Rigidbody*>::iterator rbit = molecule->m_conf->m_biggerRBMap.begin();
-//  vector< pair< int, unsigned int> >::iterator sit = molecule->m_conf->m_sortedRBs.begin();
   Color::next_rcd_color_as_name(true);
 
-//  while(sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( sit->first >= MIN_CLUSTER_SIZE ){
-//      string color = Color::next_rcd_color_as_name();
-//      mapClusterIDtoColor[sit->second] = color;
-//      pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
-//        << " and b < " << float(sit->second+0.01) << ")" << endl;
-//    }
-//    sit++;
-//  }
   for(auto const& rb: molecule->getRigidbodies()){
     if(rb->Atoms.size()<MIN_CLUSTER_SIZE) continue;
     string color = Color::next_rcd_color_as_name();
@@ -2152,11 +2041,29 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
 
     site_1 = eit.first->getBond()->m_atom1->getId();
     site_2 = eit.first->getBond()->m_atom2->getId();
-    pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
+    if(eit.first->getBond()->isHBond()) {
+      pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else if(eit.first->getBond()->isDBond()) {
+      pymol_script << "distance dbonds = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else if(eit.first->getBond()->isHydrophobicBond()) {
+      pymol_script << "distance hydrophobics = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else{
+      pymol_script << "distance constraints = id " << site_1 << " , id " << site_2 << endl;
+    }
 
   }
-  pymol_script << "color pink, hbonds" << endl;
-  pymol_script << "hide labels, hbonds" << endl;
+  pymol_script << "color yellow, hbonds" << endl;
+  pymol_script << "color teal, hydrophobics" << endl;
+  pymol_script << "color pink, dbonds" << endl;
+  pymol_script << "show dashes, hbonds" << endl;
+  pymol_script << "show dashes, hydrophobics" << endl;
+  pymol_script << "show dashes, dbonds" << endl;
+  pymol_script << "hide labels" << endl;
+
+  /// Commented out rigid clusters, too much information for long trajectories
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -2164,34 +2071,21 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   // objects.
   //////////////////////////////////////////////////////////////////////
 
-  render_style = "lines";
-  //	   for each rigid cluster, create a new pymol object of the cluster.
-  unsigned int total_RC_objects = 0;
-//  rbit = molecule->m_conf->m_biggerRBMap.begin();
-//  sit = molecule->m_conf->m_sortedRBs.begin();
-//  while( sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( (sit->first) >= MIN_CLUSTER_SIZE ){
-//  pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << sit->second<< " has "
-//               << sit->first << " atoms." << endl;
-//  pymol_script << "select RC" << sit->second << ", ( b > " << float(sit->second-0.01)
-//               << " and b < " << float(sit->second+0.01) << ")" << endl;
-//  pymol_script << "show " << render_style << ", RC" << sit->second << endl;
-//  pymol_script << "set line_width = 3, " << "RC" << sit->second << endl;
-//  pymol_script << "color " << mapClusterIDtoColor[sit->second] << ", RC" << sit->second << endl << endl;
-//}
-//sit++;
-//}
-  for(auto const& rb: molecule->getRigidbodies()){
-    if(rb->Atoms.size()>=MIN_CLUSTER_SIZE){
-      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
-        << rb->Atoms.size() << " atoms." << endl;
-      pymol_script << "select RC" << rb->id() << ", ( b > " << float(rb->id()-0.01)
-        << " and b < " << float(rb->id()+0.01) << ")" << endl;
-      pymol_script << "show " << render_style << ", RC" << rb->id() << endl;
-      pymol_script << "set line_width = 3, " << "RC" << rb->id() << endl;
-      pymol_script << "color " << mapClusterIDtoColor[rb->id()] << ", RC" << rb->id() << endl << endl;
-    }
-  }
+//  render_style = "lines";
+//  //	   for each rigid cluster, create a new pymol object of the cluster.
+//  unsigned int total_RC_objects = 0;
+
+//  for(auto const& rb: molecule->getRigidbodies()){
+//    if(rb->Atoms.size()>=MIN_CLUSTER_SIZE){
+//      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
+//        << rb->Atoms.size() << " atoms." << endl;
+//      pymol_script << "select RC" << rb->id() << ", ( b > " << float(rb->id()-0.01)
+//        << " and b < " << float(rb->id()+0.01) << ")" << endl;
+//      pymol_script << "show " << render_style << ", RC" << rb->id() << endl;
+//      pymol_script << "set line_width = 3, " << "RC" << rb->id() << endl;
+//      pymol_script << "color " << mapClusterIDtoColor[rb->id()] << ", RC" << rb->id() << endl << endl;
+//    }
+//  }
 
   //	  pymol_script << "create Moving, ( b > " << float(0.9)
   //		<< " and b < " << float(1.1) << ")" << endl;
@@ -2205,24 +2099,35 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   //		<< " and b < " << float(3.1) << ")" << endl;
   //	  pymol_script << "color blue, Fix"<< endl;
 
-  // Some final global attributes to set.
+
+  if(deer!= nullptr) {
+    for (auto &m_goalDistance : *deer) {
+      Atom *a1 = get<0>(m_goalDistance);
+      Atom *a2 = get<1>(m_goalDistance);
+      pymol_script << "distance deer = id " << a1->getId() << " and "<<obj_name<<
+      ", id " << a2->getId() << " and "<<obj_name<<endl;
+    }
+    pymol_script << "color red, deer"<<endl;
+    pymol_script << "show dashes, deer" << endl;
+    pymol_script << "show labels, deer" << endl;
+  }
+
+    // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
   pymol_script << "bg_color white" << endl;
   pymol_script << "clip slab, 200" << endl;
   pymol_script << "center all" << endl;
   pymol_script << "zoom" << endl <<endl;
 
-  pymol_script << "hide everything" << endl;
+//  pymol_script << "hide everything" << endl;
   pymol_script << "show lines" << endl;
-  pymol_script << "set line_width = 3 " << endl;
+//  pymol_script << "set line_width = 3 " << endl;
   pymol_script << "show cartoon" << endl;
-  pymol_script << "show dashes, hbonds" << endl;
+  pymol_script << "dss "<< obj_name<<endl;
   pymol_script << "set cartoon_transparency, 0.7" << endl;
 
   pymol_script.close();
 }
-
-
 
 std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const std::string& fname, Molecule* mol){
   ifstream input(fname.c_str());
