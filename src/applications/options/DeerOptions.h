@@ -90,6 +90,8 @@ class DeerOptions : ApplicationOptions {
   double explorationRadius;
   /** Explore conformations after DEER distances have been reached */
   bool explore;
+  /** Explore conformations with DEER distances, random targets or CONECT (false) */
+  bool exploreRandom;
 
   void print();
 
