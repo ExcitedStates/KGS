@@ -174,8 +174,8 @@ class Atom:
             return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) # or self.elem == "S"
         
     def isHydrophobicAtom(self):
-        #Limit hydrophobic interactions to C,S in non-polar residue side-chains
-        return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","PRO","LEU","ILE","MET","TRP","PHE","CYS","TYR","GLN"] and not self.name=="C" and not self.name=="CA"
+        #Limit hydrophobic interactions to C,S in non-polar residue side-chains; taken from Betts2003: Amino acid properties and consequences of substitutions
+        return self.elem in ["C","S"] and self.resn in ["GLY","ALA","VAL","LEU","ILE","CYS","MET","PHE","TYR","TRP","THR","HIS","LYS"] and not self.name=="C" and not self.name=="CA"
     
     def isHeavyAtom(self):
         return self.name[0] != "H"
@@ -574,7 +574,7 @@ class PDBFile:
         sorted(hybond, key = lambda x : min(x[0].id, x[1].id))
         return hybond
     
-    def hydrophobicBondEnergy(self,c,s):
+    def hydrophobicBondEnergy(self,c,s):# not in use
       
         '''Computes hydrophobic bond energy following the term described by Lennard Jones potential (as in KINARI)'''           
         if c.isHydrophobicAtom() and s.isHydrophobicAtom():

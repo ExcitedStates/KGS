@@ -204,7 +204,6 @@ Configuration *DihedralRRT::GenerateRandConf() {
   double norm;
 //  if (ExploreOptions::getOptions()->scaleToRadius) {
     double factor = pow(Random01(), 1.0 / m_numDOFs) * m_explorationRadius / length; ///ToDo: Do we still want this scaling?
-    cout<<"Scaling factor: "<<factor<<endl;
     for (int i = 0; i < m_numDOFs; ++i) {
       pNewSmp->m_dofs[i] = factor * pNewSmp->m_dofs[i];
       norm += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];

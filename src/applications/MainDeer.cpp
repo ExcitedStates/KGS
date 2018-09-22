@@ -420,7 +420,7 @@ int main( int argc, char* argv[] ) {
                                           remainingSamples,
                                           options.explorationRadius,
                                           options.maxRotation,
-                                          false);
+                                          options.exploreRandom);
 
     explorePlanner->initialize(randMove, metric, options.workingDirectory, options.saveData);
 

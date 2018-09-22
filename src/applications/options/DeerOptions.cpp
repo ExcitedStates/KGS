@@ -104,6 +104,7 @@ DeerOptions::DeerOptions(int argc, char* argv[]):
     if(arg=="--logger"){                        ++i;                                                continue; }
     if(arg=="--radius" || arg=="-r"){           explorationRadius = atof(argv[++i]);                continue; }
     if(arg=="--explore"){                       explore = Util::stob(argv[++i]);                    continue; }
+    if(arg=="--exploreRandom"){                 exploreRandom = Util::stob(argv[++i]);              continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -208,6 +209,7 @@ void DeerOptions::initializeVariables(){
   predictStrain             = false;
   explorationRadius         = 2.0;
   explore                   = false;
+  exploreRandom             = true;
 }
 
 void DeerOptions::print(){
@@ -246,6 +248,7 @@ void DeerOptions::print(){
   log("so")<<"\t--predictStrain "<<predictStrain<<endl;
   log("so")<<"\t--radius "<<explorationRadius<<endl;
   log("so")<<"\t--explore "<<explore<<endl;
+  log("so")<<"\t--exploreRandom "<<exploreRandom<<endl;
 }
 
 void DeerOptions::printUsage(char* pname){
@@ -289,4 +292,5 @@ void DeerOptions::printUsage(char* pname){
   log("so")<<"  --predictStrain <true|false> \t: Indicate whether strain on constraints should be printed."<<endl;
   log("so")<<"  --radius <real number> \t: Radius of exploration after DEER distances have been reached."<<endl;
   log("so")<<"  --explore "<<(explore?"true":"false: Explore after DEER distances have been reached. Default false.")<<endl;
+  log("so")<<"  --exploreRandom "<<(exploreRandom?"true":"false: Exploration phase: random targets or CONECT strategy (continue with last sample). Default true.")<<endl;
 }
