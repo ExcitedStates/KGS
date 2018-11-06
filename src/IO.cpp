@@ -1146,7 +1146,7 @@ void IO::writeHbondsIn (Molecule *molecule, string output_file_name) {
 void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
 
-  int count=0;
+  int count=0; //hydrogen bond count
 
   //Header line
   output << "H-bond_ID ";
@@ -1164,26 +1164,64 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   output << "#bars ";
   output << "length ";
   output << "angle_D_H_A ";
-  output << "angle_H_A_AA"<<endl;
+  output << "angle_H_A_AA ";
+  output << "row_idx"<<endl;
 
-  for (auto const& bond: molecule->getHBonds()){
-    output << ++count<<" ";
-    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
-    output << bond->Hatom->getResidue()->getId()<<" ";
-    output << bond->Hatom->getResidue()->getName()<<" ";
-    output << bond->Hatom->getName()<<" ";
-    output << bond->Hatom->getId()<<" ";
-    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
-    output << bond->Acceptor->getResidue()->getId()<<" ";
-    output << bond->Acceptor->getResidue()->getName()<<" ";
-    output << bond->Acceptor->getName()<<" ";
-    output << bond->Acceptor->getId()<<" ";
-    output << bond->getIniEnergy()<<" ";
-    output << bond->m_bars<<" ";
-    output << bond->getLength()<<" ";
-    output << bond->getAngle_D_H_A()<<" ";
-    output << bond->getAngle_H_A_AA()<<endl;
+  int rowIdx=0;
+  for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: molecule->m_spanningTree->m_cycleAnchorEdges){
+    KinEdge* edge_ptr = edge_vertex_pair.first;
+    Bond* bond_ptr = edge_ptr->getBond();
+    ///Correct row counter
+    if(bond_ptr->isDBond()){//3 constraints, 3 rel. DOF
+      rowIdx+=3;
+    }
+    else if(bond_ptr->isHydrophobicBond()){//hydrophobic bond, 1 constraint, 5 rel. DOF
+      rowIdx += 1;
+    }
+    else if(bond_ptr->isHBond()){//limit this analysis to hydrogen bonds
+      Hbond* bond = static_cast<Hbond*>(bond_ptr);
+      output << ++count<<" ";
+      output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+      output << bond->Hatom->getResidue()->getId()<<" ";
+      output << bond->Hatom->getResidue()->getName()<<" ";
+      output << bond->Hatom->getName()<<" ";
+      output << bond->Hatom->getId()<<" ";
+      output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+      output << bond->Acceptor->getResidue()->getId()<<" ";
+      output << bond->Acceptor->getResidue()->getName()<<" ";
+      output << bond->Acceptor->getName()<<" ";
+      output << bond->Acceptor->getId()<<" ";
+      output << bond->getIniEnergy()<<" ";
+      output << bond->m_bars<<" ";
+      output << bond->getLength()<<" ";
+      output << bond->getAngle_D_H_A()<<" ";
+      output << bond->getAngle_H_A_AA()<<" ";
+      output << rowIdx<<endl;
+      rowIdx+=5;
+    }
+    else{ //Hbonds or default; 5 constraints, 1 rel. DOF
+      rowIdx+=5;
+    }
   }
+
+//  for (auto const& bond: molecule->getHBonds()){
+//    output << ++count<<" ";
+//    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+//    output << bond->Hatom->getResidue()->getId()<<" ";
+//    output << bond->Hatom->getResidue()->getName()<<" ";
+//    output << bond->Hatom->getName()<<" ";
+//    output << bond->Hatom->getId()<<" ";
+//    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+//    output << bond->Acceptor->getResidue()->getId()<<" ";
+//    output << bond->Acceptor->getResidue()->getName()<<" ";
+//    output << bond->Acceptor->getName()<<" ";
+//    output << bond->Acceptor->getId()<<" ";
+//    output << bond->getIniEnergy()<<" ";
+//    output << bond->m_bars<<" ";
+//    output << bond->getLength()<<" ";
+//    output << bond->getAngle_D_H_A()<<" ";
+//    output << bond->getAngle_H_A_AA()<<endl;
+//  }
   output.close();
 }
 
@@ -1585,6 +1623,26 @@ void IO::readHbonds_vadar(Molecule * molecule, string file){
 
 void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_file_name, Molecule* iniMolecule) {
 
+  //We sort them so the biggest clusters always have the smallest IDs and the same colors
+  std::vector< std::pair<int, unsigned int> > sortedRBs; //pair of int size, unsigned int ID
+
+  unsigned int maxSize = 0;
+  unsigned int maxIndex=0;
+
+  for(auto const& it : rigidified->getRigidbodies() ){
+    int rbSize = it->size();
+    sortedRBs.push_back(make_pair( rbSize , it->id() ));
+    if(rbSize > maxSize){
+      maxSize = rbSize;
+      maxIndex = it->id();
+    }
+  }
+
+  vector< pair<int, unsigned int> >::iterator vsit = sortedRBs.begin();
+  vector< pair<int, unsigned int> >::iterator veit = sortedRBs.end();
+
+  sort(vsit, veit,Rigidbody::compareSize); //sorts them by size
+
   ofstream pymol_script( output_file_name.c_str() );
 
   string render_style;
@@ -1617,14 +1675,10 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   // assign that color to those atoms.
   // Also, we save each cluster's color in a map for use again later
   Color::next_rcd_color_as_name(true);
-
-  for(auto const& rb : rigidified->getRigidbodies()){
-    if(rb->Atoms.size()>MIN_CLUSTER_SIZE){
-
+  for(auto const& rb : sortedRBs){
       string color = Color::next_rcd_color_as_name();
-      pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
-                   << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
-    }
+      pymol_script << "color " << color << ", ( b > " << float(rb.second)/100-0.001
+                   << " and b < " << float(rb.second)/100+0.001 << ")" << endl;
   }
 
   // Python commands to draw hbonds
@@ -1727,8 +1781,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   //Create biggest cluster as separate object, color blue for simple identification
   pymol_script << "create biggestCluster, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
                << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
-  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
-               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
+//  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+//               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
 
   // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
@@ -2239,7 +2293,8 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
 
     if (NullspaceSVD *derived = dynamic_cast<NullspaceSVD *>(conf->getNullspace())) {
       gsl_vector_outtofile(derived->getSVD()->S, outSing);
-      derived->writeMatricesToFiles(outJac, outNull);
+      gsl_matrix_outtofile(derived->getMatrix(),outJac);
+      gsl_matrix_outtofile(derived->getBasis(),outNull);
     }
     IO::writeRBs(protein, rbFile);
     IO::writeStats(protein, statFile);

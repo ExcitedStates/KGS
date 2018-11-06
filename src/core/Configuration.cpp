@@ -47,6 +47,7 @@ IN THE SOFTWARE.
 #include "Bond.h"
 #include "math3d/primitives.h"
 #include "../math3d/primitives.h"
+#include "Selection.h"
 
 using namespace std;
 
@@ -974,6 +975,57 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
     double normAfter = gsl_vector_length(after_project);
     gsl_vector_scale(after_project, normBefore/normAfter);
   }
+}
+
+double Configuration::siteDOFTransfer(Selection& source,Selection& sink){
+  ///Identify "allostery" through degrees of freedom shared/linked between two sites
+  double ret=0.0;
+  std::vector<Residue*> sinkResis = sink.getSelectedResidues(m_molecule);
+  std::vector<Residue*> sourceResis = source.getSelectedResidues(m_molecule);
+
+  std::vector<int> sinkDOFIds;
+  std::vector<int> sourceDOFIds;
+
+  string output_file_name = "dofTreeAnalysis.txt";
+  ofstream output(output_file_name.c_str());
+
+  /// Identify the correct column indices for source and sink DOF, write out tree information
+  int countSource=0, countSink=0, countBoth=0;
+  //Second, constrain covalent edge bonds
+  for (auto const &edge : m_molecule->m_spanningTree->m_edges) {
+    int dof_id = edge->getDOF()->getCycleIndex();
+    if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+      if(edge->getBond() != nullptr){//not a global DOF
+        ///write out log for tree-based post-processing
+        output<<dof_id<<" "<<edge->getBond()->m_atom1->getResidue()->getId()<<" "<<edge->getBond()->m_atom1->getId()<<" "<<edge->getBond()->m_atom2->getId()<<" '"<<edge->getBond()->m_atom1->getResidue()->getChain()->getName()<<"'"<<endl;
+
+        if(source.inSelection( edge->getBond()) ){//This dof is in the source selection
+          sourceDOFIds.push_back(dof_id);
+        }
+        if(sink.inSelection( edge->getBond() ) ) {//This dof is in the sink selection
+          sinkDOFIds.push_back(dof_id);
+        }
+      }
+    }
+  }
+  output.close();
+
+  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ) {
+    cout << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
+         << endl;
+
+    Nullspace *N = getNullspace();
+
+    ret = N->siteDOFTransfer(sourceDOFIds, sinkDOFIds);
+
+    cout << "Allosteric communication via joint significant contributions from " << ret << " out of "
+         << N->getNullspaceSize() << " collective degrees of freedom." << endl;
+  }
+  else{
+    cout<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
+    cout<<"Source 0 sink 0 shared 0"<<endl;
+  }
+  return ret;
 }
 
 Molecule * Configuration::getMolecule() const

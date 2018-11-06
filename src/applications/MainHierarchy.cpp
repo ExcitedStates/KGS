@@ -299,6 +299,13 @@ int main( int argc, char* argv[] ) {
   }
 
   gsl_matrix_free(fullProduct);
+
+  //Site transfer DOF analysis
+  Selection source(options.source);
+  Selection sink(options.sink);
+  double siteTransfer = protein->m_conf->siteDOFTransfer(source,sink);
+
+
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
 

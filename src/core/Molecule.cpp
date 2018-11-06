@@ -35,6 +35,7 @@ IN THE SOFTWARE.
 
 #include "DisjointSets.h"
 #include "Molecule.h"
+#include <Selection.h>
 #include "core/Chain.h"
 #include "Residue.h"
 #include "core/Bond.h"
@@ -537,7 +538,7 @@ void Molecule::buildRigidBodies(Selection& movingResidues, int collapseLevel) {
   //For each atom, a1, with exactly one cov neighbor and not participating in an hbond, a2, call Union(a1,a2)
   for (int i=0;i<size();i++){
     Atom* atom = getAtoms()[i];
-    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size()==0 && atom->HydrophobicBond_Neighbor_list.size()==0){
+    if(atom->Cov_neighbor_list.size()==1 && atom->Hbond_neighbor_list.size() ==0 && atom->HydrophobicBond_Neighbor_list.size()==0){
       ds.Union(atom->getId(), atom->Cov_neighbor_list[0]->getId());
       log("debug") << "IO::buildRigidBodies["<< __LINE__<<"] - Joining " << atom->getId() << " - " << atom->Cov_neighbor_list[0]->getId() << endl;
       //cout<<"Only one neighbor: "<<atom->getName()<<" "<<atom->getId()<<" - "<<atom->Cov_neighbor_list[0]->getName()<<" "<<atom->Cov_neighbor_list[0]->getId()<<endl;
@@ -1642,36 +1643,48 @@ Molecule* Molecule::collapseRigidBonds(int collapseLevel) {
 
 void Molecule::writeRigidbodyIDToBFactor()
 {
-  //We sort them so the biggest clusters always have the smallest IDs and the same colors
-  std::vector< std::pair<int, unsigned int> > sortedRBs; //pair of int size, unsigned int ID
-
   unsigned int maxSize = 0;
   unsigned int maxIndex=0;
 
+//  //We sort them so the biggest clusters always have the smallest IDs and the same colors
+//  std::vector< std::pair<int, unsigned int> > sortedRBs; //pair of int size, unsigned int ID
+//
+//  for(auto const& it : m_rigidBodyMap ){
+//    int rbSize = it.second->size();
+//    sortedRBs.push_back(make_pair( rbSize , it.first ));
+//    if(rbSize > maxSize){
+//      maxSize = rbSize;
+//      maxIndex = it.first;
+//    }
+//  }
+//
+//  vector< pair<int, unsigned int> >::iterator vsit = sortedRBs.begin();
+//  vector< pair<int, unsigned int> >::iterator veit = sortedRBs.end();
+//
+//  sort(vsit, veit,Rigidbody::compareSize); //sorts them by size
+
+//  int outputID = 0;
+//  for(auto const& idPair : sortedRBs){
+//    ///get rb id sorted by size, access rb in protein, color all atoms to id
+//    Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
+////    log("debug")<<"WriteRBID: sorted number "<<outputID<<" rigid body ID "<<currentRB->id()<<" size "<<currentRB->size()<<endl;
+//    for(auto const& atom: currentRB->Atoms){
+//      atom->setBFactor(float(outputID)/100);
+////      atom->setBFactor(float(currentRB->id())/100);
+//    }
+//    outputID++;
+//  }
+
   for(auto const& it : m_rigidBodyMap ){
-    int rbSize = it.second->size();
-    sortedRBs.push_back(make_pair( rbSize , it.first ));
+    Rigidbody* currentRB = it.second;
+    int rbSize = currentRB->size();
+    for(auto const& atom: currentRB->Atoms) {
+      atom->setBFactor(float(currentRB->id()) / 100);
+    }
     if(rbSize > maxSize){
       maxSize = rbSize;
       maxIndex = it.first;
     }
-  }
-
-  vector< pair<int, unsigned int> >::iterator vsit = sortedRBs.begin();
-  vector< pair<int, unsigned int> >::iterator veit = sortedRBs.end();
-
-  sort(vsit, veit,Rigidbody::compareSize); //sorts them by size
-
-  int outputID = 0;
-  for(auto const& idPair : sortedRBs){
-    ///get rb id sorted by size, access rb in protein, color all atoms to id
-    Rigidbody* currentRB = m_rigidBodyMap[idPair.second];
-//    log("debug")<<"WriteRBID: sorted number "<<outputID<<" rigid body ID "<<currentRB->id()<<" size "<<currentRB->size()<<endl;
-    for(auto const& atom: currentRB->Atoms){
-//      atom->setBFactor(float(outputID)/100);
-      atom->setBFactor(float(currentRB->id())/100);
-    }
-    outputID++;
   }
 
   ///Store information in the molecule

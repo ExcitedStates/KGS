@@ -247,3 +247,27 @@ double frobenius_norm (const gsl_matrix *m) {
   return pow(square_sum,0.5);
 }
 
+
+double shannonEntropy(const gsl_vector* v){
+
+  int size = v->size;
+  double sqSum=0.0;
+  double eVal = 0.0;
+  gsl_vector* kappa = gsl_vector_calloc(size);
+  for (int i=0; i<size; ++i) {
+    double val = gsl_vector_get(v,i);
+    sqSum += val*val;
+    gsl_vector_set(kappa,i,val*val);
+  }
+  gsl_vector_scale(kappa,1.0/sqSum);
+  for (int i=0; i< size; ++i){
+    double val = gsl_vector_get(kappa,i);
+//    cout<<" Shannon "<<val<<endl;
+//    if(!isinf(log(val))) { // 0 * log (0) = 0 after convention
+    if(val > 0) {
+      eVal += -val * log(val);
+    }
+  }
+  gsl_vector_free(kappa);
+  return 1.0/(double)(size) * exp(eVal);
+}

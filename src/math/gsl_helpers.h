@@ -48,5 +48,8 @@ gsl_vector* RandomUnitVector (int size);
 
 double frobenius_norm (const gsl_matrix *m);
 
+/** Compute Shannon entropy from information theory for given input vector**/
+double shannonEntropy(const gsl_vector* v);
+
 
 #endif //KGS_GSL_HELPERS_H

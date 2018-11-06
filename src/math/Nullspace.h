@@ -5,6 +5,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 #include <string>
+#include <vector>
 
 #include "math/SVD.h"
 //#include "math/QR.h"
@@ -71,6 +72,8 @@ class Nullspace {
   bool isDBondRigid(int bond_id){ return fabs(gsl_vector_get(m_rigidDBonds, bond_id)-1.0)<0.001; }
 
   bool isHydrophobicBondRigid(int bond_id){ return fabs(gsl_vector_get(m_rigidHydrophobicBonds,bond_id)-1.0)<0.001; }
+
+  double siteDOFTransfer(std::vector<int> source, std::vector<int> sink);
  protected:
   int m_nullspaceSize;         ///< Size of nullspace (rank of jacobian)
   int m, n;                    ///< Dimensions of underlying matrix (jacobian)

@@ -76,8 +76,10 @@ RigidityOptions::RigidityOptions(int argc, char* argv[])
     if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
-    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--sink"){                          sink = argv[++i];                                   continue; }
+    if(arg=="--source"){                        source = argv[++i];                                 continue; }
 //    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
 
     if(arg.at(0)=='-'){
@@ -129,6 +131,8 @@ void RigidityOptions::initializeVariables(){
   collisionCheck            = "all";
   svdCutoff                 = 1.0e-12;
   collapseRigid             = 2;
+  sink                      = "";
+  source                    = "";
 }
 
 void RigidityOptions::print(){
@@ -149,7 +153,9 @@ void RigidityOptions::print(){
   log("so")<<"  --root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
   log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
-  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl<<endl;
+  log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --sink "<<sink<<endl;
+  log("so")<<"  --source "<<source<<endl<<endl;
 }
 
 void RigidityOptions::printUsage(char* pname){
@@ -177,6 +183,8 @@ void RigidityOptions::printUsage(char* pname){
   log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
   log("so")<<"  --collapseRigidEdges <0|1|2> \t: Rigid bodies after merging over rigid edges. 0: Dont merge (initial rigid bodies). 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2 (real rigidity analysis)"<<endl;
+  log("so")<<"  --sink <selection-pattern>\t: A pymol-like pattern that specifies sink residues in DoF transfer analysis. Default none."<<endl;
+  log("so")<<"  --source <selection-pattern>\t: A pymol-like pattern that specifies source residues in DoF transfer analysis. Default none."<<endl;
 }
 
 

@@ -39,6 +39,7 @@ IN THE SOFTWARE.
 #include "core/graph/KinGraph.h"
 
 class Molecule;
+class Selection;
 
 
 /**
@@ -132,6 +133,8 @@ class Configuration
 
   Configuration* getParent();   ///< Access configuration that spawned this one
   std::list<Configuration*>& getChildren(); ///< Access child configurations
+
+  double siteDOFTransfer(Selection& source, Selection& sink); //
 
   static Nullspace* ClashAvoidingNullSpace; //TODO: Make private (or even better put in ClashAvoidingMove).
  protected:

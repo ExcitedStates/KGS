@@ -169,9 +169,9 @@ class Atom:
 
     def isAcceptor(self):
         if mainchainOnly:
-            return self.name=="O" or (self.name=="N" and len(self.neighbors)<=2) # or self.elem == "S"
+            return self.name=="O" or (self.name=="N" and len(self.neighbors)<=2) or self.elem == "S"
         else:
-            return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) # or self.elem == "S"
+            return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) or self.elem == "S"
         
     def isHydrophobicAtom(self):
         #Limit hydrophobic interactions to C,S in non-polar residue side-chains; taken from Betts2003: Amino acid properties and consequences of substitutions
@@ -536,7 +536,7 @@ class PDBFile:
                 aa = acceptor.neighbors[0]
                 for hydrogen in donor.neighbors:
                     if not hydrogen.elem=="H": continue
-                    if hydrogen.distance(acceptor) > 2.5: continue
+                    if hydrogen.distance(acceptor) > 2.6: continue
                     try:
                         energy = self.hydrogenBondEnergy(aa, acceptor, hydrogen, donor)
                         # print "Angle: "+str(angle(donor.pos,hydrogen.pos,acceptor.pos)*180/math.pi)+", energy: "+str(energy)
@@ -838,6 +838,42 @@ class PDBFile:
         for atom in self.atoms:
             meanCoordination += len(atom.neighbors)+len(atom.hBondNeighbors)+len(atom.hydrophobicBondNeighbors)
         return meanCoordination/len(self.atoms)
+    
+    def identifyFreeWaters(self):
+        # Todo:
+        # 1. Keep all atoms in one chain and all HETATM --> modify model_init
+        # 2. get all hydrogen bonds
+        # 3. get all real atoms and all HETATM separately
+        # 4. initialize empty bound water atom list
+        # 5. loop through all h-bond constraints, if resi is present, add to bound water list
+        # 6. set self.atoms to real atoms and bound HETATM entries.
+        # 7. MAKE SURE NO HOH atoms occur double in the list.
+        # self.buildHbondNeighbors()
+        # self.buildHydrophobicBondNeighbors()       
+        
+        keepWaters = []
+        realAtoms = [a for a in self.atoms if a.resn != "HOH"]
+        hetatms = [a for a in self.atoms if a.resn == "HOH"]
+        
+        for aa,a,h,d,energy in self.getHydrogenBonds(cutoff):
+            if (a.resn=="HOH" and h.resn != "HOH" ): # protein solvent h-bonds
+                atomO = self.getAtom(a.resi,"O")
+                atomH1 = self.getAtom(a.resi,"H1")
+                atomH2 = self.getAtom(a.resi,"H2")
+                keepWaters.append(atomO)
+                keepWaters.append(atomH1)
+                keepWaters.append(atomH2)
+            if (a.resn != "HOH" and h.resn == "HOH"):
+                atomO = self.getAtom(h.resi,"O")
+                atomH1 = self.getAtom(h.resi,"H1")
+                atomH2 = self.getAtom(h.resi,"H2")
+                keepWaters.append(atomO)
+                keepWaters.append(atomH1)
+                keepWaters.append(atomH2)
+        self.atoms  = realAtoms+keepWaters
+        removedWaters = [a for a in hetatms if a not in keepWaters]
+        if removedWaters:
+            print("%s: removed %d waters not involved in protein-solvent h-bonds"%(self.name, len(removedWaters)))     
 
 class MultiModel:
     def __init__(self, pdb_file,modelNum):

@@ -263,5 +263,75 @@ gsl_matrix *Nullspace::getBasis() const {
 }
 
 
+double Nullspace::siteDOFTransfer(std::vector<int> source, std::vector<int> sink) {
 
+  double ret = 0;
+  gsl_vector *currentNCol = gsl_vector_alloc(n);
+
+  /// Rigidity based counting
+//  bool sourceDOFMoving = false;
+//  bool sinkDOFMoving = false;
+//  int numSource = 0;
+//  int numSink = 0;
+//  int numShared = 0;
+//  for(int colID=0; colID<m_nullspaceBasis->size2; colID++){
+//    gsl_matrix_get_col(currentNCol,m_nullspaceBasis, colID);
+//    sourceDOFMoving = false;
+//    sinkDOFMoving = false;
+//
+//    for (auto sourceID : source) {
+//      double val = fabs(gsl_vector_get(currentNCol, sourceID));
+//      if (val > RIGID_TOL) {
+//        sourceDOFMoving = true;
+//        numSource++;
+//        break;
+//      }
+//    }
+//
+//    for(auto sinkID : sink) {
+//      double val = fabs(gsl_vector_get(currentNCol, sinkID));
+//      if (val > RIGID_TOL) {
+//        sinkDOFMoving = true;
+//        numSink++;
+//        break;
+//      }
+//    }
+//    if(sourceDOFMoving && sinkDOFMoving){
+//      numShared++;
+//    }
+//  }
+
+  /// Geometry and information theory based computation
+  double numSource = 0;
+  double numSink = 0;
+  double numShared = 0;
+  gsl_vector *sourceVals =  gsl_vector_calloc(source.size());
+  gsl_vector *sinkVals =  gsl_vector_calloc(sink.size());
+  gsl_vector *jointVals =  gsl_vector_calloc(source.size() + sink.size());
+  cout<<source.size()<<" "<<sink.size()<<endl;
+
+  for(int colID=0; colID<m_nullspaceBasis->size2; colID++){
+    gsl_matrix_get_col(currentNCol,m_nullspaceBasis, colID);
+    int sourceCounter=0;
+    for (auto sourceID : source) {
+      gsl_vector_set(sourceVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+      gsl_vector_set(jointVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+      sourceCounter++;
+    }
+    numSource += shannonEntropy(sourceVals);
+
+    int sinkCounter = 0;
+    for(auto sinkID : sink) {
+      gsl_vector_set(sinkVals,sinkCounter,gsl_vector_get(currentNCol, sinkID));
+      gsl_vector_set(jointVals,sourceCounter+sinkCounter,gsl_vector_get(currentNCol, sinkID));
+      sinkCounter++;
+    }
+    numSink += shannonEntropy(sinkVals);
+    numShared += shannonEntropy(jointVals);
+  }
+
+  cout<<"Source "<<numSource<<" sink "<<numSink<<" shared "<<numShared<<endl;
+  ret = numSource + numSink - numShared;
+  return ret;
+}
 

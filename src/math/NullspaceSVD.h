@@ -23,10 +23,6 @@ class NullspaceSVD: public Nullspace {
   /** Return the SVD of the nullspace as columns of a matrix */
   SVD *getSVD() const;
 
-  void writeMatricesToFiles(
-      const std::string& jac_file,
-      const std::string& null_file) const;
-
   static void setSingularValueTolerance(double val);
 
 private:
