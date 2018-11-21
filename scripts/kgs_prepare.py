@@ -842,8 +842,8 @@ class PDBFile:
     def identifyFreeWaters(self):
         # Todo:
         # 1. Keep all atoms in one chain and all HETATM --> modify model_init
-        # 2. get all hydrogen bonds
-        # 3. get all real atoms and all HETATM separately
+        # 2. get all hydrogen bonds -> Done
+        # 3. get all real atoms and all HETATM separately -> Done
         # 4. initialize empty bound water atom list
         # 5. loop through all h-bond constraints, if resi is present, add to bound water list
         # 6. set self.atoms to real atoms and bound HETATM entries.

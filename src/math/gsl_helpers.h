@@ -48,8 +48,17 @@ gsl_vector* RandomUnitVector (int size);
 
 double frobenius_norm (const gsl_matrix *m);
 
-/** Compute Shannon entropy from information theory for given input vector**/
-double shannonEntropy(const gsl_vector* v);
+/** Compute Shannon entropy (as in JCIM paper: fraction of significant contributors) for given input vector**/
+double fractionOfSignificantContributors(const gsl_vector *v);
+
+/** Compute Shannon entropy unnormalized: number of significant contributors of given input vector**/
+double significantContributors(const gsl_vector *v);
+
+/** Compute Shannon entropy from information theory in bits for given input vector**/
+double shannonEntropyInBits(const gsl_vector* v);
+
+/** Compute Shannon entropy from information theory in bits for given input vector**/
+double shannonEntropyUnnormalizedInBits(const gsl_vector* v);
 
 
 #endif //KGS_GSL_HELPERS_H

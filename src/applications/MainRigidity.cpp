@@ -72,6 +72,11 @@ int main( int argc, char* argv[] ){
   testStream.open("dofIDxList_test.txt");
   enableLogger("test", testStream);
 
+
+  ofstream mutualInfoStream;
+  mutualInfoStream.open("mutualInformation.txt");
+  enableLogger("mi", mutualInfoStream);
+
   string out_path = options.workingDirectory;
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
@@ -109,7 +114,7 @@ int main( int argc, char* argv[] ){
   //Site transfer DOF analysis
   Selection source(options.source);
   Selection sink(options.sink);
-  double siteTransfer = protein->m_conf->siteDOFTransfer(source,sink);
+  double mutualInformation = protein->m_conf->siteDOFTransfer(source,sink,ns.getBasis()); /// change this to V-matrix for whole sliding mechanism
 
   /// Create larger rigid substructures for rigid cluster decomposition
   Molecule* rigidified = protein->collapseRigidBonds(options.collapseRigid);

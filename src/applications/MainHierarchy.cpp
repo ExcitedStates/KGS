@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <list>
+#include <queue>
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -70,17 +71,27 @@ using namespace std;
 void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const NullspaceSVD &ns, gsl_matrix* baseNullspaceV, gsl_vector* singValVector, int numResis){
   //Save the output for comparison to normal modes via iMode
   //This requires a contiguous residue sequence without gaps
-  Residue* const firstResi = (protein->getAtoms())[0]->getResidue();
+  Residue* firstResi = (protein->getAtoms())[0]->getResidue();
   int numCols = ns.getMatrix()->size2;
   int dofCounter = 0;
   int numProlines = 0;
+  int chainCounter = 0;
   gsl_vector* projected_gradient = gsl_vector_alloc(numCols);
   std::map< pair<Residue*,int>, int> iModDofIndices;
+  std::queue<int> globalIndices;
   std::vector<Residue *>::iterator resIt;
   for(auto chain : protein->m_chains) {
+    if(chainCounter > 0){///more than 1 chain, add six "global" dofs
+    firstResi = chain->getResidues()[0];
+      for(int gi=0; gi<6; gi++) {
+        cout<<"Adding global iMOd dof"<<endl;
+        globalIndices.push(dofCounter++);
+      }
+    }
     std::vector<Residue *> &residues = chain->getResidues();
     for(auto const resi : residues){
       if (resi == firstResi){//Special case where first dof is fixed in iMod
+        cout<<"Found first residue"<<endl;
         iModDofIndices.insert(make_pair( make_pair(resi,1), dofCounter++) );
         continue;
       }
@@ -91,8 +102,9 @@ void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const Nu
       else
         numProlines++;
     }
+    chainCounter++;
   }
-  int numImodDofs = numResis * 2 - 1 - numProlines;
+  int numImodDofs = dofCounter; //numResis * 2 - 1 - numProlines + (chainCounter - 1)*6;
   log("hierarchy")<<"KGS predicts "<<numImodDofs<<" imod dofs."<<endl;
   gsl_vector* iModDofs = gsl_vector_alloc(numImodDofs);
 
@@ -116,13 +128,19 @@ void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const Nu
     gsl_vector_set_zero(iModDofs);
     for( auto const edge : protein->m_spanningTree->m_edges){
       Bond *bond = edge->getBond();
-      // Check for global dof bonds
-      if (bond == nullptr)
+      if (bond == nullptr) {
+//        int idx = globalIndices.front();
+//        cout<<"Adding global cycle dof "<<idx<<" to iMOD vector"<<endl;
+//        if (idx >= 0 && idx <= numImodDofs) {
+//          gsl_vector_set(iModDofs, idx, 0);
+//        }
+//        globalIndices.pop();
         continue;
+      }
 
-      int idx=-1; //iMod index
       int cycleDofID =  edge->getDOF()->getCycleIndex(); //KGS cycle index
       if (cycleDofID != -1) {//if cycle DOF in KGS
+        int idx=-1; //iMod index
         Atom *atom1 = bond->m_atom1;
         if (bond->m_atom1->getName() == "N" and bond->m_atom2->getName() == "CA") {
           idx = iModDofIndices[make_pair(atom1->getResidue(),0)];
@@ -177,6 +195,11 @@ int main( int argc, char* argv[] ) {
   ofstream dataStream;
   dataStream.open("hierarchy_data.txt");
   enableLogger("data", dataStream);
+
+  ofstream mutualInfoStream;
+  mutualInfoStream.open("mutualInformation.txt");
+  enableLogger("mi", mutualInfoStream);
+
 
 //  ofstream debugStream;
 //  debugStream.open("kgs_debug.log");
@@ -303,7 +326,7 @@ int main( int argc, char* argv[] ) {
   //Site transfer DOF analysis
   Selection source(options.source);
   Selection sink(options.sink);
-  double siteTransfer = protein->m_conf->siteDOFTransfer(source,sink);
+  double mutualInformation = protein->m_conf->siteDOFTransfer(source,sink,ns.getSVD()->V);
 
 
   //Store output data in this file, space-separated in this order

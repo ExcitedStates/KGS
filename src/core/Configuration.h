@@ -134,7 +134,7 @@ class Configuration
   Configuration* getParent();   ///< Access configuration that spawned this one
   std::list<Configuration*>& getChildren(); ///< Access child configurations
 
-  double siteDOFTransfer(Selection& source, Selection& sink); //
+  double siteDOFTransfer(Selection& source, Selection& sink,gsl_matrix* baseMatrix); //
 
   static Nullspace* ClashAvoidingNullSpace; //TODO: Make private (or even better put in ClashAvoidingMove).
  protected:

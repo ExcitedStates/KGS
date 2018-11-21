@@ -977,7 +977,7 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
   }
 }
 
-double Configuration::siteDOFTransfer(Selection& source,Selection& sink){
+double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matrix* baseMatrix){
   ///Identify "allostery" through degrees of freedom shared/linked between two sites
   double ret=0.0;
   std::vector<Residue*> sinkResis = sink.getSelectedResidues(m_molecule);
@@ -1014,16 +1014,56 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink){
     cout << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
          << endl;
 
-    Nullspace *N = getNullspace();
+    gsl_vector *currentNCol = gsl_vector_alloc(baseMatrix->size1);
+/// Geometry and information theory based computation
+    double numSource = 0;
+    double numSink = 0;
+    double numUnion = 0;
+    double baseEntropy = 0; //full vector in N
+    gsl_vector *sourceVals =  gsl_vector_calloc(sourceDOFIds.size());
+    gsl_vector *sinkVals =  gsl_vector_calloc(sinkDOFIds.size());
 
-    ret = N->siteDOFTransfer(sourceDOFIds, sinkDOFIds);
+    for(int colID=baseMatrix->size2-1; colID>=0; colID--){
+      gsl_matrix_get_col(currentNCol,baseMatrix, colID);
+      double baseVal = shannonEntropyUnnormalizedInBits(currentNCol);
+      baseEntropy += baseVal;
+      int sourceCounter=0;
+      for (auto sourceID : sourceDOFIds) {
+        gsl_vector_set(sourceVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+//      gsl_vector_set(jointVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+        sourceCounter++;
+      }
+      double sourceVal = shannonEntropyUnnormalizedInBits(sourceVals);
+      numSource += sourceVal;
 
-    cout << "Allosteric communication via joint significant contributions from " << ret << " out of "
-         << N->getNullspaceSize() << " collective degrees of freedom." << endl;
+      int sinkCounter = 0;
+      for(auto sinkID : sinkDOFIds) {
+        gsl_vector_set(sinkVals,sinkCounter,gsl_vector_get(currentNCol, sinkID));
+//      gsl_vector_set(jointVals,sourceCounter+sinkCounter,gsl_vector_get(currentNCol, sinkID));
+        sinkCounter++;
+      }
+      double sinkVal = shannonEntropyUnnormalizedInBits(sinkVals);
+      numSink += sinkVal;
+
+      double unionVal = 0.0;
+//      if (sourceVal != 0 && sinkVal != 0)
+      unionVal = sourceVal * sinkVal; // /(sourceVal+sinkVal);
+      numUnion += unionVal;
+
+      log("mi")<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
+    }
+
+    gsl_vector_free(sourceVals);
+    gsl_vector_free(sinkVals);
+
+    ret = numUnion/(numSource+numSink);
+    
+    cout << "Allosteric communication between source and sink:"<< endl;
+    cout<<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
   }
   else{
     cout<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
-    cout<<"Source 0 sink 0 shared 0"<<endl;
+    cout<<"Source 0 sink 0 union 0"<<endl;
   }
   return ret;
 }
