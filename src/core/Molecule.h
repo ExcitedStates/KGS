@@ -34,7 +34,6 @@ IN THE SOFTWARE.
 #include <list>
 #include <set>
 #include <core/graph/KinTree.h>
-#include <Selection.h>
 
 #include "Rigidbody.h"
 #include "core/graph/KinGraph.h"

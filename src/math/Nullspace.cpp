@@ -10,6 +10,8 @@
 //#include "QRMKL.h"
 #include "NullspaceSVD.h"
 //#include "NullspaceQR.h"
+#include <iostream>
+#include <stdio.h>
 
 using namespace std;
 
@@ -261,7 +263,3 @@ void Nullspace::projectOnNullSpace(gsl_vector *to_project, gsl_vector *after_pro
 gsl_matrix *Nullspace::getBasis() const {
   return m_nullspaceBasis;
 }
-
-
-
-

@@ -13,6 +13,8 @@ class Atom:
         self.y = float(atom_string[38:46])
         self.z = float(atom_string[46:54])
         self.pos = np.array([self.x,self.y,self.z])
+        self.occ = float(atom_string[54:60])
+        self.temp_factor = float(atom_string[60:66])
         if len(atom_string)>=78:
             self.elem = atom_string[76:78].strip()
 
@@ -187,6 +189,18 @@ class PDBFile:
         return ret
 
 
+    def bFactorList(self, model_number = 0, names=["C4'","CA"],resis=None):
+        """
+        Get a list of b-factors number of atoms with one of the specified names, an optional list of residues
+        that can limit b factors to specified residues only, useful for
+        comparison across non-identical sequences or with missing loops.
+        """
+        ret =[]
+        for atom in self.models[model_number]:
+            if names and atom.name not in names: continue
+            if resis and atom.resi not in resis: continue
+            ret.append(atom.temp_factor)
+        return ret
 
     def coordMatrix(self, model_number = 0, names=["C4'","CA"],resis=None):
         """

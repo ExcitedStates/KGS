@@ -47,6 +47,7 @@ IN THE SOFTWARE.
 #include "Bond.h"
 #include "math3d/primitives.h"
 #include "../math3d/primitives.h"
+#include "Selection.h"
 
 using namespace std;
 
@@ -974,6 +975,97 @@ void Configuration::projectOnCycleNullSpace (gsl_vector *to_project, gsl_vector 
     double normAfter = gsl_vector_length(after_project);
     gsl_vector_scale(after_project, normBefore/normAfter);
   }
+}
+
+double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matrix* baseMatrix){
+  ///Identify "allostery" through degrees of freedom shared/linked between two sites
+  double ret=0.0;
+  std::vector<Residue*> sinkResis = sink.getSelectedResidues(m_molecule);
+  std::vector<Residue*> sourceResis = source.getSelectedResidues(m_molecule);
+
+  std::vector<int> sinkDOFIds;
+  std::vector<int> sourceDOFIds;
+
+  string output_file_name = "dofTreeAnalysis.txt";
+  ofstream output(output_file_name.c_str());
+
+  /// Identify the correct column indices for source and sink DOF, write out tree information
+  int countSource=0, countSink=0, countBoth=0;
+  //Second, constrain covalent edge bonds
+  for (auto const &edge : m_molecule->m_spanningTree->m_edges) {
+    int dof_id = edge->getDOF()->getCycleIndex();
+    if (dof_id!=-1) { // this edge is a cycle DOF, dof_id is the corresponding column!
+      if(edge->getBond() != nullptr){//not a global DOF
+        ///write out log for tree-based post-processing
+        output<<dof_id<<" "<<edge->getBond()->m_atom1->getResidue()->getId()<<" "<<edge->getBond()->m_atom1->getId()<<" "<<edge->getBond()->m_atom2->getId()<<" '"<<edge->getBond()->m_atom1->getResidue()->getChain()->getName()<<"'"<<endl;
+
+        if(source.inSelection( edge->getBond()) ){//This dof is in the source selection
+          sourceDOFIds.push_back(dof_id);
+        }
+        if(sink.inSelection( edge->getBond() ) ) {//This dof is in the sink selection
+          sinkDOFIds.push_back(dof_id);
+        }
+      }
+    }
+  }
+  output.close();
+
+  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ) {
+    cout << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
+         << endl;
+
+    gsl_vector *currentNCol = gsl_vector_alloc(baseMatrix->size1);
+/// Geometry and information theory based computation
+    double numSource = 0;
+    double numSink = 0;
+    double numUnion = 0;
+    double baseEntropy = 0; //full vector in N
+    gsl_vector *sourceVals =  gsl_vector_calloc(sourceDOFIds.size());
+    gsl_vector *sinkVals =  gsl_vector_calloc(sinkDOFIds.size());
+
+    for(int colID=baseMatrix->size2-1; colID>=0; colID--){
+      gsl_matrix_get_col(currentNCol,baseMatrix, colID);
+      double baseVal = shannonEntropyUnnormalizedInBits(currentNCol);
+      baseEntropy += baseVal;
+      int sourceCounter=0;
+      for (auto sourceID : sourceDOFIds) {
+        gsl_vector_set(sourceVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+//      gsl_vector_set(jointVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+        sourceCounter++;
+      }
+      double sourceVal = shannonEntropyUnnormalizedInBits(sourceVals);
+      numSource += sourceVal;
+
+      int sinkCounter = 0;
+      for(auto sinkID : sinkDOFIds) {
+        gsl_vector_set(sinkVals,sinkCounter,gsl_vector_get(currentNCol, sinkID));
+//      gsl_vector_set(jointVals,sourceCounter+sinkCounter,gsl_vector_get(currentNCol, sinkID));
+        sinkCounter++;
+      }
+      double sinkVal = shannonEntropyUnnormalizedInBits(sinkVals);
+      numSink += sinkVal;
+
+      double unionVal = 0.0;
+//      if (sourceVal != 0 && sinkVal != 0)
+      unionVal = sourceVal * sinkVal; // /(sourceVal+sinkVal);
+      numUnion += unionVal;
+
+      log("mi")<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
+    }
+
+    gsl_vector_free(sourceVals);
+    gsl_vector_free(sinkVals);
+
+    ret = numUnion/(numSource+numSink);
+    
+    cout << "Allosteric communication between source and sink:"<< endl;
+    cout<<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
+  }
+  else{
+    cout<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
+    cout<<"Source 0 sink 0 union 0"<<endl;
+  }
+  return ret;
 }
 
 Molecule * Configuration::getMolecule() const

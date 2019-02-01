@@ -68,22 +68,16 @@ int main( int argc, char* argv[] ){
   enableLogger("so"); //print options
   options.print();
 
+  ofstream testStream;
+  testStream.open("dofIDxList_test.txt");
+  enableLogger("test", testStream);
+
+
+  ofstream mutualInfoStream;
+  mutualInfoStream.open("mutualInformation.txt");
+  enableLogger("mi", mutualInfoStream);
+
   string out_path = options.workingDirectory;
-
-  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Einfluss von Hydrophobics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  // ToDo
-  // 1. Code-Ablauf der Rigidity Analysis nachvollziehen
-  // 2. Quasi-identische Implementierung für Neue Klasse HydrophobicBonds (vgl. mit HBonds, bereits angefangen)
-  // 3. Anpassung der Jacobi-Matrix zum Handling mehrerer Constraint-Typen (vgl. mit DBonds, bereits angefangen)
-  // 4. Anpassung der Matrix, die freie Bewegungen der Constraint-Typen überprüft (HBondJacobian)
-  // 5. Evtl extrahieren der Berechnung der Ableitung in eigene Constraint-Klasse
-  // 6. Berechnung des Nullraums
-  // 7. Identifikation starrer dihedrals und hydrophobic bonds (vgl. bisher HBonds)
-
-  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Einfluss von Hydrophobics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
@@ -116,6 +110,11 @@ int main( int argc, char* argv[] ){
   log("rigidity") << "Dimension of kernel: " << nullspaceCols << endl;
   log("rigidity") << "Rank of Jacobian: " <<rankJacobian << endl;
   log("rigidity") << "Number of redundant constraints: " <<numRedundantCons << endl;
+
+  //Site transfer DOF analysis
+  Selection source(options.source);
+  Selection sink(options.sink);
+  double mutualInformation = protein->m_conf->siteDOFTransfer(source,sink,ns.getBasis()); /// change this to V-matrix for whole sliding mechanism
 
   /// Create larger rigid substructures for rigid cluster decomposition
   Molecule* rigidified = protein->collapseRigidBonds(options.collapseRigid);
@@ -165,7 +164,8 @@ int main( int argc, char* argv[] ){
                  std::to_string((long long)sample_id)
                  + ".txt";
 
-  ns.writeMatricesToFiles(outJac, outNull);
+  gsl_matrix_outtofile(ns.getBasis(),outNull);
+  gsl_matrix_outtofile(ns.getMatrix(),outJac);
 
   if(options.saveData <= 2) return 0;
 
