@@ -84,7 +84,8 @@ class HierarchyOptions {
   std::string sink;
   /** Sink/Source to identify transferred DoF between different areas. */
   std::string source;
-
+  /** Sample lowest free-energy motions (instead of along IDs in the V matrix). */
+  bool sampleFree;
   void print();
 
  private:

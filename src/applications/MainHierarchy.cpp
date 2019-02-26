@@ -297,7 +297,7 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  if(options.saveData > -1) {
+  if(options.saveData > 1) {
     string outMat = "Vmatrix.txt";
     gsl_matrix_outtofile(baseNullspaceV, outMat);
     string outProd = "fullProduct_JV.txt";
@@ -324,22 +324,39 @@ int main( int argc, char* argv[] ) {
   gsl_matrix_free(fullProduct);
 
   //Site transfer DOF analysis
-  Selection source(options.source);
-  Selection sink(options.sink);
-  double mutualInformation = protein->m_conf->siteDOFTransfer(source,sink,ns.getSVD()->V);
-
+  if(options.source != "") {
+      Selection source(options.source);
+      Selection sink(options.sink);
+      double mutualInformation = protein->m_conf->siteDOFTransfer(source, sink, ns.getSVD()->V);
+  }
 
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
 
   int maxSamples = min(options.samples,numCols);
+  cout<<maxSamples<<endl;
+  int v_i = -1;
+  gsl_vector* freeEnergyIdx = gsl_vector_calloc(numCols);
 
-  for( int v_i = 0; v_i < maxSamples; ++v_i) {
-    conf->updateMolecule();
-    bool inNullspace = v_i< nullspaceCols;
-    if( v_i == nullspaceCols){
-      log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
+  if (options.sampleFree){//compute free-energy of modes, pick in order of lowest free-energy modes
+      cout<<"Sorting free energy motions"<<endl;
+      protein->m_conf->sortFreeEnergyModes(ns.getSVD()->V,ns.getSVD()->S,freeEnergyIdx);
+      cout<<"Lowest mode number "<<gsl_vector_get(freeEnergyIdx,0)<<endl;
+  }
+
+  while( sampleCount < maxSamples) {
+    conf->updateMolecule();//restore to initial conf
+
+    if(options.sampleFree){//pick sample Free index
+        v_i = gsl_vector_get(freeEnergyIdx,sampleCount);//sorted from reverse to fit numCols - v_i - 1
     }
+    else{
+        v_i++; //increase nullspace column counter, move along V indices
+        if (v_i == nullspaceCols) {
+            log("hierarchy") << endl << "Now motions outside of the nullspace." << endl << endl;
+        }
+    }
+    bool inNullspace = v_i < nullspaceCols;
 
     gsl_vector_view projected_gradient_view = gsl_matrix_column(baseNullspaceV,numCols - v_i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
@@ -414,6 +431,7 @@ int main( int argc, char* argv[] ) {
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
     log("data")<<sampleCount<<" "<<inCollision<<" "<<inNullspace<<" "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<normDeltaHEnergy<<endl;
   }
+
 
   ///If target structure is available, also test direction towards target
   if(options.targetStructureFile != ""){
@@ -510,6 +528,7 @@ int main( int argc, char* argv[] ) {
   gsl_vector_free(singValVector);
   gsl_matrix_free(baseJacobian);
   gsl_matrix_free(baseNullspaceV);
+  gsl_vector_free(freeEnergyIdx);
 
 //  reportStream.close();
   dataStream.close();
