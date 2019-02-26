@@ -1112,18 +1112,22 @@ void Configuration::sortFreeEnergyModes(gsl_matrix* baseMatrix,gsl_vector* singV
 {
   double maxSingVal = gsl_vector_get(singVals, 0);
   int numCols = baseMatrix->size1;
+  int numSingVals = singVals->size;
   double cT = 1.0;
   gsl_vector* freeEnergies = gsl_vector_calloc(numCols);
   gsl_vector *currentCol = gsl_vector_alloc(numCols);
 
   int idxCount = 0;
   for (int i = numCols; i > 0; --i) {//start from the nullspace, so IDs are sorted from that end
-    double enthalpy = gsl_vector_get(singVals, i-1) / maxSingVal;
-    gsl_matrix_get_col(currentCol,baseMatrix, i-1);
-    double entropy = fractionOfSignificantContributors(currentCol);
-    gsl_vector_set(freeEnergies,idxCount,enthalpy - cT*entropy);
-    gsl_vector_set(returnIDs,idxCount,idxCount);
-    idxCount++;
+      double enthalpy = 0.0;
+      if (i < numSingVals){
+          enthalpy = gsl_vector_get(singVals, i - 1) / maxSingVal;
+      }
+      gsl_matrix_get_col(currentCol,baseMatrix, i-1);
+      double entropy = fractionOfSignificantContributors(currentCol);
+      gsl_vector_set(freeEnergies,idxCount,enthalpy - cT*entropy);
+      gsl_vector_set(returnIDs,idxCount,idxCount);
+      idxCount++;
   }
   gsl_sort_vector2(freeEnergies,returnIDs);
   gsl_vector_free(freeEnergies);
