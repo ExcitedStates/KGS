@@ -1011,8 +1011,11 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matr
   }
   output.close();
 
-  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ) {
-    log("mi") << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
+  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ){
+    output_file_name = "mutualInformation.txt";
+    ofstream outputMI(output_file_name.c_str());
+
+    outputMI << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
          << endl;
 
     gsl_vector *currentNCol = gsl_vector_alloc(baseMatrix->size1);
@@ -1088,7 +1091,7 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matr
       double unionVal = shannonEntropyInBits(jointVals);
       numUnion += unionVal;
 
-      log("mi")<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
+      outputMI<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
     }
 
     gsl_vector_free(sourceVals);
@@ -1098,12 +1101,13 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matr
     ret = numSource + numSink - numUnion;
     /// Implementation DONE
 
-    log("mi") << "Allosteric communication between source and sink:"<< endl;
-    log("mi")<<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
+    outputMI << "Allosteric communication between source and sink:"<< endl;
+    outputMI <<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
+    outputMI.close();
   }
   else{
-    log("mi")<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
-    log("mi")<<"Source 0 sink 0 union 0"<<endl;
+    log("rigidity")<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
+    log("rigidity")<<"Source 0 sink 0 union 0"<<endl;
   }
   return ret;
 }

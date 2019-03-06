@@ -196,11 +196,6 @@ int main( int argc, char* argv[] ) {
   dataStream.open("hierarchy_data.txt");
   enableLogger("data", dataStream);
 
-  ofstream mutualInfoStream;
-  mutualInfoStream.open("mutualInformation.txt");
-  enableLogger("mi", mutualInfoStream);
-
-
 //  ofstream debugStream;
 //  debugStream.open("kgs_debug.log");
 //  enableLogger("debug", debugStream);
@@ -334,7 +329,7 @@ int main( int argc, char* argv[] ) {
   log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
 
   int maxSamples = min(options.samples,numCols);
-  cout<<maxSamples<<endl;
+  cout<<"Generating "<<maxSamples<<" samples."<<endl;
   int v_i = -1;
   gsl_vector* freeEnergyIdx = gsl_vector_calloc(numCols);
 

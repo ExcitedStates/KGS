@@ -3,4 +3,18 @@ Adenylate Kinase (ADK). The target_aligned.pdb is PDB 1ake, the closed configura
 (these are limited to the intersection between open and closed ADK).
 Hydrophobics are included in the init_withHydrophobics.kgs.pdb
 
-Various examples are given in the rigidity, dCCRRT or randomSampling folders.
+Various examples are given in the rigidity, dCCRRT, randomSampling, or hierarchy folders.
+
+Rigidity:
+- compute rigid cluster decomposition based on nullspace modes 
+ --> output pymol file, color by b factor
+
+
+Hierarchy/free energy modes:
+- ensemble from sampling 10 modes with lowest free energy
+--> output: create ensemble from structures, run rmsf_states in pymol
+For more details, check out the hierarchy repo
+
+dCCRRT:
+- motion planning with dCCRRT --> with ~10,000 - 20,000 samples, dCCRRT finds a close transition pathway between open and closed starting structures
+- dCC residue networks for insights into allostery
