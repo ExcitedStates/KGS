@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 #include <math/SVDGSL.h>
 #include <math/SVDMKL.h>
 #include <gsl/gsl_matrix_double.h>
+#include <gsl/gsl_sort_vector_double.h> //provides vector sorting
 #include <math/gsl_helpers.h>
 #include <math/NullspaceSVD.h>
 #include <gsl/gsl_matrix.h>
@@ -1010,8 +1011,11 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matr
   }
   output.close();
 
-  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ) {
-    cout << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
+  if(!sourceDOFIds.empty() & !sinkDOFIds.empty() ){
+    output_file_name = "mutualInformation.txt";
+    ofstream outputMI(output_file_name.c_str());
+
+    outputMI << "Selection source has " << sourceDOFIds.size() << " dofs, sink has " << sinkDOFIds.size() << " dofs."
          << endl;
 
     gsl_vector *currentNCol = gsl_vector_alloc(baseMatrix->size1);
@@ -1023,49 +1027,114 @@ double Configuration::siteDOFTransfer(Selection& source,Selection& sink,gsl_matr
     gsl_vector *sourceVals =  gsl_vector_calloc(sourceDOFIds.size());
     gsl_vector *sinkVals =  gsl_vector_calloc(sinkDOFIds.size());
 
+    ///Implementation with multiplication and sum at the end
+//    for(int colID=baseMatrix->size2-1; colID>=0; colID--){
+//      gsl_matrix_get_col(currentNCol,baseMatrix, colID);
+//      double baseVal = shannonEntropyUnnormalizedInBits(currentNCol);
+//      baseEntropy += baseVal;
+//      int sourceCounter=0;
+//      for (auto sourceID : sourceDOFIds) {
+//        gsl_vector_set(sourceVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+//        sourceCounter++;
+//      }
+//      double sourceVal = shannonEntropyUnnormalizedInBits(sourceVals);
+//      numSource += sourceVal;
+//
+//      int sinkCounter = 0;
+//      for(auto sinkID : sinkDOFIds) {
+//        gsl_vector_set(sinkVals,sinkCounter,gsl_vector_get(currentNCol, sinkID));
+//        sinkCounter++;
+//      }
+//      double sinkVal = shannonEntropyUnnormalizedInBits(sinkVals);
+//      numSink += sinkVal;
+//
+//      double unionVal = 0.0;
+////      if (sourceVal != 0 && sinkVal != 0)
+//      unionVal = sourceVal * sinkVal; // /(sourceVal+sinkVal);
+//      numUnion += unionVal;
+//
+//      log("mi")<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
+//    }
+//
+//    gsl_vector_free(sourceVals);
+//    gsl_vector_free(sinkVals);
+//
+//    ret = numUnion/(numSource+numSink);
+
+    /// Implementation with normalized vectors in source, sink, and joint (Henry's final email)
+    gsl_vector *jointVals =  gsl_vector_calloc(sourceDOFIds.size() + sinkDOFIds.size());
     for(int colID=baseMatrix->size2-1; colID>=0; colID--){
       gsl_matrix_get_col(currentNCol,baseMatrix, colID);
-      double baseVal = shannonEntropyUnnormalizedInBits(currentNCol);
+      double baseVal = shannonEntropyInBits(currentNCol);
       baseEntropy += baseVal;
       int sourceCounter=0;
+      int jointCounter=0;
       for (auto sourceID : sourceDOFIds) {
         gsl_vector_set(sourceVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
-//      gsl_vector_set(jointVals,sourceCounter,gsl_vector_get(currentNCol, sourceID));
+        gsl_vector_set(jointVals,jointCounter,gsl_vector_get(currentNCol, sourceID));
         sourceCounter++;
+        jointCounter++;
       }
-      double sourceVal = shannonEntropyUnnormalizedInBits(sourceVals);
+      double sourceVal = shannonEntropyInBits(sourceVals);
       numSource += sourceVal;
 
       int sinkCounter = 0;
       for(auto sinkID : sinkDOFIds) {
         gsl_vector_set(sinkVals,sinkCounter,gsl_vector_get(currentNCol, sinkID));
-//      gsl_vector_set(jointVals,sourceCounter+sinkCounter,gsl_vector_get(currentNCol, sinkID));
+        gsl_vector_set(jointVals,jointCounter,gsl_vector_get(currentNCol, sinkID));
         sinkCounter++;
+        jointCounter++;
       }
-      double sinkVal = shannonEntropyUnnormalizedInBits(sinkVals);
+      double sinkVal = shannonEntropyInBits(sinkVals);
       numSink += sinkVal;
 
-      double unionVal = 0.0;
-//      if (sourceVal != 0 && sinkVal != 0)
-      unionVal = sourceVal * sinkVal; // /(sourceVal+sinkVal);
+      double unionVal = shannonEntropyInBits(jointVals);
       numUnion += unionVal;
 
-      log("mi")<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
+      outputMI<<baseVal<<" "<<sourceVal<<" "<<sinkVal<<" "<<unionVal<<endl;
     }
 
     gsl_vector_free(sourceVals);
     gsl_vector_free(sinkVals);
+    gsl_vector_free(jointVals);
 
-    ret = numUnion/(numSource+numSink);
-    
-    cout << "Allosteric communication between source and sink:"<< endl;
-    cout<<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
+    ret = numSource + numSink - numUnion;
+    /// Implementation DONE
+
+    outputMI << "Allosteric communication between source and sink:"<< endl;
+    outputMI <<"Base "<<baseEntropy<<" source "<<numSource<<" sink "<<numSink<<" union "<<numUnion<<" MutualInformationProxy "<<ret<<endl;
+    outputMI.close();
   }
   else{
-    cout<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
-    cout<<"Source 0 sink 0 union 0"<<endl;
+    log("rigidity")<<"No coordinated motion in source or sink, skipping site DoF transfer analysis."<<endl;
+    log("rigidity")<<"Source 0 sink 0 union 0"<<endl;
   }
   return ret;
+}
+
+void Configuration::sortFreeEnergyModes(gsl_matrix* baseMatrix,gsl_vector* singVals, gsl_vector* returnIDs)
+{
+  double maxSingVal = gsl_vector_get(singVals, 0);
+  int numCols = baseMatrix->size1;
+  int numSingVals = singVals->size;
+  double cT = 1.0;
+  gsl_vector* freeEnergies = gsl_vector_calloc(numCols);
+  gsl_vector *currentCol = gsl_vector_alloc(numCols);
+
+  int idxCount = 0;
+  for (int i = numCols; i > 0; --i) {//start from the nullspace, so IDs are sorted from that end
+      double enthalpy = 0.0;
+      if (i < numSingVals){
+          enthalpy = gsl_vector_get(singVals, i - 1) / maxSingVal;
+      }
+      gsl_matrix_get_col(currentCol,baseMatrix, i-1);
+      double entropy = fractionOfSignificantContributors(currentCol);
+      gsl_vector_set(freeEnergies,idxCount,enthalpy - cT*entropy);
+      gsl_vector_set(returnIDs,idxCount,idxCount);
+      idxCount++;
+  }
+  gsl_sort_vector2(freeEnergies,returnIDs);
+  gsl_vector_free(freeEnergies);
 }
 
 Molecule * Configuration::getMolecule() const

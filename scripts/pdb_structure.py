@@ -1,11 +1,11 @@
 import math
 import numpy as np
 
-
 class Atom:
     def __init__(self, atom_string):
         self.id = int(atom_string[6:11])
         self.name = atom_string[11:16].strip()
+        self.alt = atom_string[16]
         self.resn = atom_string[17:20].strip()
         self.chain = atom_string[21]
         self.resi = int(atom_string[22:26])
@@ -49,9 +49,7 @@ class PDBFile:
         prefix="pdb"
         suffix=".ent.gz"
 
-        import os
-        import ftplib
-        import gzip
+        import os, sys, ftplib, shutil, gzip
 
         # Log into server
         #print "Downloading %s from %s ..." % (pdb_id, hostname)
@@ -259,7 +257,7 @@ class PDBFile:
         r_det = np.linalg.det(r)
         if r_det < 0:
             # print 'WARNING: MIRRORING'
-            u[:, -1] = -u[:, -1]
+            u[:,-1] = -u[:,-1]
             r = np.dot(u, v_tr)
         # is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr))
         # if is_reflection:
@@ -269,16 +267,19 @@ class PDBFile:
         import itertools
         rms = 0.
         for c1, c2 in itertools.izip(crds1, crds2):
-            c2_r = np.dot(r, c2)
+            c2_r = np.dot(r, c2) #rotate centroid-shifted coordinates
+            #compute optimal RMSD
             tmp = c1-c2_r
             rms += np.dot(tmp, tmp)
-
+        
+        # Return RMSD
         return math.sqrt(rms/n)
 
 
     def alignTo(self, pdbFile, model1=0, model2=0):
         """
         Return the smallest root-mean-square-deviation between coordinates in self and pdbFile
+        and moves self to best align with pdbFile
         """
 
         crds2 = self.coordMatrix(model1, names=None)
@@ -294,41 +295,56 @@ class PDBFile:
 
         #Move crds1 to origo
         avg1 = np.zeros(3)
-        for c1 in crds1: avg1 += c1
+        for c1 in crds1:
+            avg1 += c1
         avg1 /= n
-        for c1 in crds1: c1-=avg1
+        for c1 in crds1:
+            c1-=avg1
 
         #Move crds2 to origo
         avg2 = np.zeros(3)
-        for c2 in crds2: avg2 += c2
+        for c2 in crds2:
+            avg2 += c2
         avg2 /= n
-        for c2 in crds2: c2-=avg2
+        for c2 in crds2:
+            c2-=avg2
 
 
         #Get optimal rotation
         #From http://boscoh.com/protein/rmsd-root-mean-square-deviation.html
-        correlation_matrix = np.dot(np.transpose(crds1), crds2)
+        correlation_matrix = np.matmul(np.transpose(crds1), crds2)
         u, s, v_tr = np.linalg.svd(correlation_matrix)
-        r = np.dot(u,v_tr)
-        r_det = np.linalg.det(r)
-        if r_det<0:
+        # r = np.matmul(u,v_tr)
+        # r_det = np.linalg.det(r)
+        r_det = (np.linalg.det(u) * np.linalg.det(v_tr))
+        if r_det<0.0:
             #print 'WARNING: MIRRORING'
             u[:,-1] = -u[:,-1]
-            r = np.dot(u,v_tr)
+        r = np.dot(u,v_tr)
         #is_reflection = (np.linalg.det(u) * np.linalg.det(v_tr)) 
         #if is_reflection:
         #	u[:,-1] = -u[:,-1]
 
         #Apply rotation and find rmsd
         a = 0
-        for c2 in crds2:
-            c2_r = np.dot(r, c2)
-            c2_r+= avg2
-
+        import itertools
+        rms = 0.
+        for c1, c2 in itertools.izip(crds1, crds2):
+            c2_r = np.dot(r, c2) #rotate coordinates
+            #RMSD
+            tmp = c1-c2_r
+            rms += np.dot(tmp, tmp)
+            
+            c2_r+= avg1 #apply centroid translation of first point cloud to have best overlap
+            #Save new positions
             self.models[model1][a].x = c2_r[0]
             self.models[model1][a].y = c2_r[1]
             self.models[model1][a].z = c2_r[2]
+            self.models[model1][a].pos = np.array([c2_r[0],c2_r[1],c2_r[2]])
             a+=1
+        
+        #Return RMSD    
+        return math.sqrt(rms/n)
 
     def save(self, fileName):
         f = open(fileName, "w")
@@ -341,6 +357,7 @@ class PDBFile:
 
             if len(self.models)>1:
                 f.write("ENDMDL\n")
+        f.close()
 
     def __repr__(self):
         return "PDBFile('"+self.file_name+"')"

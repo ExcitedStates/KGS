@@ -135,6 +135,7 @@ class Configuration
   std::list<Configuration*>& getChildren(); ///< Access child configurations
 
   double siteDOFTransfer(Selection& source, Selection& sink,gsl_matrix* baseMatrix); //
+  void sortFreeEnergyModes(gsl_matrix* baseMatrix, gsl_vector* singVals, gsl_vector* returnIDs); //return index list of modes sorted by free energy
 
   static Nullspace* ClashAvoidingNullSpace; //TODO: Make private (or even better put in ClashAvoidingMove).
  protected:

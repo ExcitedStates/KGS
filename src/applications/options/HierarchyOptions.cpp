@@ -77,9 +77,10 @@ HierarchyOptions::HierarchyOptions(int argc, char* argv[])
     if(arg=="--residueNetwork" || arg=="-res"){ residueNetwork = argv[++i];                         continue; }
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
     if(arg=="--sink"){                          sink = argv[++i];                                   continue; }
     if(arg=="--source"){                        source = argv[++i];                                 continue; }
+    if(arg=="--sampleFree"){                    sampleFree = Util::stob(argv[++i]);                 continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -127,6 +128,7 @@ void HierarchyOptions::initializeVariables(){
   svdCutoff                 = 1.0e-12;
   sink                      = "";
   source                    = "";
+  sampleFree                = false;
 }
 
 void HierarchyOptions::print(){
@@ -177,6 +179,7 @@ void HierarchyOptions::printUsage(char* pname){
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace. Default: 1.0e-12. Higher value can artificially increase nullspace."<<endl;
   log("so")<<"  --sink <selection-pattern>\t: A pymol-like pattern that specifies sink residues in DoF transfer analysis. Default none."<<endl;
   log("so")<<"  --source <selection-pattern>\t: A pymol-like pattern that specifies source residues in DoF transfer analysis. Default none."<<endl;
+  log("so")<<"  --sampleFree <bool>\t: Sample lowest free energy motions instead of along indices in V."<<endl;
 }
 
 
