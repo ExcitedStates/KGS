@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 import pdb_structure
 import sys
 import os.path
@@ -15,9 +15,9 @@ if __name__ == "__main__":
 
     from collections import defaultdict
     chain_map = defaultdict(list)
-    for a in struc.models[0].atoms:
-        if not a.hetatm:
-            chain_map[a.chain].append(a)
+    for a in struc.models[0]:
+        # if not a.hetatm:
+        chain_map[a.chain].append(a)
 
     protresnmap = {'ALA': 'A',
                    'ARG': 'R',

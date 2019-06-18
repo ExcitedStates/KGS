@@ -48,6 +48,7 @@ IN THE SOFTWARE.
 #include "CTKTimer.h"
 #include "metrics/RMSD.h"
 #include "metrics/Dihedral.h"
+#include "HbondIdentifier.h"
 
 
 using namespace std;
@@ -70,7 +71,7 @@ DihedralRRT::DihedralRRT(
     m_protein(protein),
     m_direction(direction),
     m_numSamples(numSamples),
-    m_maxDistance(maxDistance),
+    m_explorationRadius(maxDistance),
     m_maxRotation(maxRotation),
     m_sampleRandom(sampleRandom){
   m_protein = protein;
@@ -80,16 +81,11 @@ DihedralRRT::DihedralRRT(
   m_protein->m_conf = pSmp;
   m_target = nullptr;
   m_samples.push_back(pSmp);
-  pSmp->m_vdwEnergy = 99999;
+  pSmp->m_vdwEnergy = m_protein->vdwEnergy();
   pSmp->m_id = 0; // m_root
+  m_furthestSample = pSmp;
+  m_furthestDistance = 0.0;
 
-  m_deform_mag = 0.25;
-  m_rand_radius = 2;
-
-  m_top_min_rmsd = 99999;
-  m_top_min_rmsd_id = -1;
-  m_minMovDihDistance = 99999;
-  m_minMovDihDistance_id = -1;
 }
 
 DihedralRRT::~DihedralRRT() {
@@ -106,6 +102,9 @@ void DihedralRRT::generateSamples() {
 
   //Save initial file (for movie)
   IO::writeNewSample(m_samples.front(), m_samples.front(), sample_id, m_workingDir, m_saveData);
+
+  double initialVdwEnergy = m_samples.front()->m_vdwEnergy;
+  double initialHbondEnergy = HbondIdentifier::computeHbondEnergy(m_samples.front());
 
   bool createNewTarget = false;
 
@@ -143,8 +142,20 @@ void DihedralRRT::generateSamples() {
       pNewSmp->m_distanceToIni = m_metric->distance(pNewSmp, m_samples.front());
       pNewSmp->m_distanceToParent = m_metric->distance(pNewSmp, pClosestSmp);
       pNewSmp->m_id = sample_id;
-      m_samples.push_back(pNewSmp);
+      pNewSmp->m_vdwEnergy = m_protein->vdwEnergy();
+      if(pNewSmp->m_distanceToIni > m_furthestDistance){
+        m_furthestDistance = pNewSmp->m_distanceToIni;
+        m_furthestSample = pNewSmp;
+      }
 
+      /// Energies and geometries
+      double hEnergy = HbondIdentifier::computeHbondEnergy(pNewSmp);
+      double deltaVdwEnergy = pNewSmp->m_vdwEnergy - initialVdwEnergy;
+      double deltaHbondEnergy = hEnergy - initialHbondEnergy;
+      double observedViolation = m_protein->checkCycleClosure(pNewSmp);
+
+      /// save sample
+      m_samples.push_back(pNewSmp);
       IO::writeNewSample(pNewSmp, m_samples.front(), sample_id, m_workingDir, m_saveData);
 
       if (pNewSmp->m_treeDepth > max_depth)
@@ -155,7 +166,14 @@ void DihedralRRT::generateSamples() {
       log("samplingStatus") << "> New structure: " << m_protein->getName() << "_new_" << sample_id << ".pdb";
       log("samplingStatus") << " .. Distance to initial: " << setprecision(6) << pNewSmp->m_distanceToIni;
       log("samplingStatus") << " .. Distance to current target: " << setprecision(3) << distToRandGoal;
-      log("samplingStatus") << " .. accessible dofs: " << pNewSmp->m_clashFreeDofs << endl << endl;
+      log("samplingStatus") << " .. accessible dofs: " << pNewSmp->m_clashFreeDofs;
+      log("samplingStatus") << " .. constraint perturbation: " << observedViolation<< endl << endl;
+
+      log("planner") << "> New structure: " << m_protein->getName() << "_new_" << sample_id << ".pdb";
+      log("planner") << " .. Hbond energy: " << setprecision(6) << hEnergy;
+      log("planner") << " .. Delta Hbond energy: " << setprecision(6) << deltaHbondEnergy;
+      log("planner") << " .. Observed violation: " << setprecision(6) << observedViolation;
+      log("planner") << " .. Delta vdw energy: " << setprecision(6) << deltaVdwEnergy << endl << endl;
 
       if (distToRandGoal <= MOV_DIH_THRESHOLD) {//current target reached
         delete pTarget;
@@ -182,10 +200,13 @@ Configuration *DihedralRRT::GenerateRandConf() {
     length += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
   }
   length = sqrt(length);
+
+  double norm;
 //  if (ExploreOptions::getOptions()->scaleToRadius) {
-    double factor = pow(Random01(), 1.0 / m_numDOFs) * m_maxDistance / length; ///ToDo: Do we still want this scaling?
+    double factor = pow(Random01(), 1.0 / m_numDOFs) * m_explorationRadius / length; ///ToDo: Do we still want this scaling?
     for (int i = 0; i < m_numDOFs; ++i) {
       pNewSmp->m_dofs[i] = factor * pNewSmp->m_dofs[i];
+      norm += pNewSmp->m_dofs[i] * pNewSmp->m_dofs[i];
     }
 //  }
 

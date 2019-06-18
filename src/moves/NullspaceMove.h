@@ -49,10 +49,7 @@ class NullspaceMove: public Move
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
 
  private:
-  gsl_vector* projectOnNullspace(Configuration* conf, gsl_vector* gradient, gsl_vector* ret);
-  const double m_maxRotation;
-  //const int m_decreaseSteps;
-  //const int m_decreaseFactor;
-  //const double m_stepSize;
+  ///not in use, instead projectOnCycleNullspace within Configuration class
+//  gsl_vector* projectOnNullspace(Configuration* conf, gsl_vector* gradient, gsl_vector* ret);
 };
 #endif

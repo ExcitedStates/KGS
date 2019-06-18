@@ -60,6 +60,7 @@ double Dihedral::distance(Configuration* c1, Configuration* c2)
 
   Molecule * m_protein = c1->getMolecule();
   bool useGlobals = m_protein!=c2->getMolecule();
+  //if true, two separate molecules with different torsional dofs --> use global torsion values and not m_dofs
   //TODO: Extract c1->getGlobalTorsions and c2->getGlobalTorsions to avoid complicated loop and multiple global guards
 
   int count = 0;

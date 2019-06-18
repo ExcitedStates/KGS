@@ -160,6 +160,10 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
           KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
           cycleEdges.push_back(edge);
           log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from d-bond " << edge << endl;
+        } else if (bond->isHydrophobicBond()) {
+          KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
+          cycleEdges.push_back(edge);
+          log("debug") << "KinTree::KinTree(..) - Adding cycle-edge from hydrophobic-bond " << edge << endl;
         } else {
           if (visitedVertices.count(bonded_vertex) > 0) {
             KinEdge *edge = new KinEdge(current_vertex, bonded_vertex, bond);
@@ -185,7 +189,7 @@ KinTree::KinTree( const std::vector<Rigidbody*>& rigidbodies, const std::vector<
   //This is important for the hydrogen-bond hierarchy analysis!
   cycleEdges.sort(KinEdge::compareIDs);
 
-  // For each hbond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
+  // For each hbond, dbond, and hydrophobicBond KinEdge, find the lowest common ancestor (LCA) of its end-vertices and put all DOFs from the
   // end-points to the LCA into m_spanningTree->m_cycleDOFs.
   for (auto const &h_edge : cycleEdges) {
     KinVertex *lca = findCommonAncestor(h_edge->StartVertex, h_edge->EndVertex);

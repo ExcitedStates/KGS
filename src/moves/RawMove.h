@@ -35,9 +35,11 @@ IN THE SOFTWARE.
 #include "Move.h"
 
 class RawMove: public Move {
+ public:
+  RawMove();
+  RawMove(double maxRotation);
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);
-
 
 };
 

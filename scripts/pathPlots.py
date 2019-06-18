@@ -415,15 +415,15 @@ def main():
 	# os.chdir("../..")
 		
 	#New idea: entropy via fluctuating dofs along the path
-	deltaS = np.gradient(relDofs)
+	deltaS = np.gradient(np.asarray(relDofs))
 	deltaS = deltaS.tolist()
 	# print deltaS
-	rev_deltaS = np.gradient(rev_relDofs)
+	rev_deltaS = np.gradient(np.asarray(rev_relDofs))
 	rev_deltaS = rev_deltaS.tolist()
 	#Internal energy differences along the path
-	deltaU = np.gradient(energy)
+	deltaU = np.gradient(np.asarray(energy))
 	deltaU = deltaU.tolist()
-	rev_deltaU = np.gradient(rev_energy)
+	rev_deltaU = np.gradient(np.asarray(rev_energy))
 	rev_deltaU = rev_deltaU.tolist()
 	#Free Helmholtz energy (volume changes ignored, otherwise Gibb's free energy)
 	Tfac = 300

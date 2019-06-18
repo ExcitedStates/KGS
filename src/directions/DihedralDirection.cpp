@@ -52,7 +52,7 @@ void DihedralDirection::computeGradient(Configuration* conf, Configuration* targ
     if( !m_resNetwork.inSelection(edge->getBond()) ) continue;
 
     int dofId = edge->getDOF()->getIndex();
-//    int resId = edge->getBond()->Atom1->getResidue()->getId();
+
     double angle_diff = target->getGlobalTorsion(dofId) - conf->getGlobalTorsion(dofId);
     angle_diff = formatRangeRadian(angle_diff);
 

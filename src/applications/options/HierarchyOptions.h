@@ -80,7 +80,12 @@ class HierarchyOptions {
   std::string collisionCheck;
   /** Cut-off for svd computation (magnitude of smallest singular value in the nullspace)*/
   double svdCutoff;
-
+  /** Sink/Source to identify transferred DoF between different areas. */
+  std::string sink;
+  /** Sink/Source to identify transferred DoF between different areas. */
+  std::string source;
+  /** Sample lowest free-energy motions (instead of along IDs in the V matrix). */
+  bool sampleFree;
   void print();
 
  private:

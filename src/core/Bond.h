@@ -38,7 +38,7 @@ class Bond {
 	Atom* m_atom1; // m_atom1 m_id is always smaller than m_atom2 m_id (is this correct?! @D)
 	Atom* m_atom2;
 	std::string m_bondType;
-	int Bars;
+	int m_bars;
 	bool rigidified;
 
 	Bond(Atom* atom1, Atom* atom2, std::string bond_type);
@@ -51,6 +51,7 @@ class Bond {
 	bool isPeptideBond() const;
 	bool isHBond() const;
 	bool isDBond() const;
+	bool isHydrophobicBond() const;
 
   double getTorsion();
 

@@ -42,6 +42,7 @@ class CompositeMove: public Move
   ~CompositeMove();
 
   void addMove(Move* m, double weight);
+  void setScalingFlag(bool scale);
 
  protected:
   Configuration* performMove(Configuration* current, gsl_vector* gradient);

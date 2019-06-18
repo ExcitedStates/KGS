@@ -47,4 +47,4 @@ class DBond : public Bond {
 
 };
 
-#endif
+#endif // DBOND_H

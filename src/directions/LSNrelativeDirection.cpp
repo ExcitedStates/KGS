@@ -44,7 +44,7 @@ LSNrelativeDirection::LSNrelativeDirection(
     const std::vector< std::tuple<Atom*, Atom*, double> >& goal_distances
 ) :
     m_atomsMovingSelection(atomsMoving),
-    goal_distances(goal_distances)
+    m_goalDistances(goal_distances)
 {
 //  int numMovingAtoms = ExploreOptions::getOptions()->getAtomsMoving()->size();
 //  m_TargetJacobian = gsl_matrix_calloc( numMovingAtoms*3, 1 );
@@ -52,7 +52,7 @@ LSNrelativeDirection::LSNrelativeDirection(
 
 
 void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* conf2, gsl_vector* ret)
-{
+{///conf2 is not needed and only due to the "heritage" structure, goals defined beforehand via goal_distances
   Molecule* protein = conf->getMolecule();
 
 //  vector<Atom*> atomList = m_atomsMovingSelection.getSelectedAtoms(protein);
@@ -77,8 +77,8 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
   }
 
 //  const vector<Atom*>* atomList = ExploreOptions::getOptions()->getAtomsMoving();
-  gsl_matrix* TargetJacobian = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
-  gsl_matrix* TargetDirection = gsl_matrix_calloc(goal_distances.size()*6,fullN->size1);
+  gsl_matrix* TargetJacobian = gsl_matrix_calloc(m_goalDistances.size()*6,fullN->size1);
+  gsl_matrix* TargetDirection = gsl_matrix_calloc(m_goalDistances.size()*6,fullN->size1);
 //  gsl_matrix_set_zero(m_TargetJacobian); //Already done by calloc
 //  gsl_matrix_set_zero(m_TargetPosition);
   fillmatrices(conf, TargetJacobian, TargetDirection);
@@ -97,6 +97,27 @@ void LSNrelativeDirection::computeGradient(Configuration* conf, Configuration* c
 
 }
 
+void LSNrelativeDirection::computeGradientExternalN(gsl_matrix* fullN, Configuration* conf, Configuration* conf2, gsl_vector* ret)
+{///conf2 is not needed and only due to the "heritage" structure, goals defined beforehand via goal_distances
+
+  //full (clash-free) N provided externally e.g. from LSNclashAvoidingMove, otherwise identical procedure
+  Molecule* protein = conf->getMolecule();
+  ///TODO: Speed-up possible by storing TargetJacobian and TargetDirection from previous round
+  gsl_matrix* TargetJacobian = gsl_matrix_calloc(m_goalDistances.size()*6,fullN->size1);
+  gsl_matrix* TargetDirection = gsl_matrix_calloc(m_goalDistances.size()*6,fullN->size1);
+  fillmatrices(conf, TargetJacobian, TargetDirection);
+
+  gsl_matrix* bestmove = determineBestMove(fullN,TargetJacobian,TargetDirection);
+
+  for (int i=0;i<fullN->size1;i++){
+    double val = gsl_matrix_get(bestmove, i, 0);
+    assert( !std::isnan(val) );
+    gsl_vector_set(ret,i,val); //TODO: Speed up with memcpy
+  }
+  gsl_matrix_free(bestmove);
+  gsl_matrix_free(TargetJacobian);
+  gsl_matrix_free(TargetDirection);
+}
 
 void LSNrelativeDirection::fillmatrices(Configuration* current_q,
                                         gsl_matrix* targetJacobian,
@@ -115,13 +136,13 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
 //    cerr<<"LSNullspaceDirection::fillmatrices - Molecules contain different number of atoms"<<endl;
 //    exit(-1);
 //  }
-  int nb_couple = goal_distances.size();
+  int nb_couple = m_goalDistances.size();
   //for(auto const& atom : atomList){//only use to extract res IDs and names
   gsl_vector* u = gsl_vector_alloc(3);//contains the m_direction between each couple of atoms.
   for (int i=0;i<nb_couple;i++){
-    Atom* atom1 = get<0>(goal_distances[i]);
-    Atom* atom2 = get<1>(goal_distances[i]);
-    double dist_goal = get<2>(goal_distances[i]);
+    Atom* atom1 = get<0>(m_goalDistances[i]);
+    Atom* atom2 = get<1>(m_goalDistances[i]);
+    double dist_goal = get<2>(m_goalDistances[i]);
     /*string name = atom->getName();
     int resId = atom->getResidue()->getId();
     string chainName = atom->getResidue()->getChain()->getName();
@@ -135,17 +156,17 @@ void LSNrelativeDirection::fillmatrices(Configuration* current_q,
     double d = gsl_vector_length(u);
     //cout<<"Distance: "<<d<<" "<<dist_goal<<endl;
     gsl_matrix_set(targetPosition,2*i*3+0,0, (gsl_vector_get(u,0)/d)*(dist_goal-d)/2);
-    //cout<<"Direction : "<<(gsl_vector_get(u,0)/d)*(goal_distances[i]-d)/2<<endl;
+    //cout<<"Direction : "<<(gsl_vector_get(u,0)/d)*(m_goalDistances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+1,0, (gsl_vector_get(u,1)/d)*(dist_goal-d)/2);
-    //cout<<"Direction : "<<(gsl_vector_get(u,1)/d)*(goal_distances[i]-d)/2<<endl;
+    //cout<<"Direction : "<<(gsl_vector_get(u,1)/d)*(m_goalDistances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+2,0, (gsl_vector_get(u,2)/d)*(dist_goal-d)/2);
-    // cout<<"Direction : "<<(gsl_vector_get(u,2)/d)*(goal_distances[i]-d)/2<<endl;
+    // cout<<"Direction : "<<(gsl_vector_get(u,2)/d)*(m_goalDistances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+3,0, -(gsl_vector_get(u,0)/d)*(dist_goal-d)/2);
-    // cout<<"Direction : "<<-(gsl_vector_get(u,0)/d)*(goal_distances[i]-d)/2<<endl;
+    // cout<<"Direction : "<<-(gsl_vector_get(u,0)/d)*(m_goalDistances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+4,0, -(gsl_vector_get(u,1)/d)*(dist_goal-d)/2);
-    //cout<<"Direction : "<<-(gsl_vector_get(u,1)/d)*(goal_distances[i]-d)/2<<endl;
+    //cout<<"Direction : "<<-(gsl_vector_get(u,1)/d)*(m_goalDistances[i]-d)/2<<endl;
     gsl_matrix_set(targetPosition,2*i*3+5,0, -(gsl_vector_get(u,2)/d)*(dist_goal-d)/2);
-    //cout<<"Direction : "<<-(gsl_vector_get(u,2)/d)*(goal_distances[i]-d)/2<<endl;
+    //cout<<"Direction : "<<-(gsl_vector_get(u,2)/d)*(m_goalDistances[i]-d)/2<<endl;
 
     KinVertex* currVertex1 = atom1->getRigidbody()->getVertex();
     KinVertex* currVertex2 = atom2->getRigidbody()->getVertex();

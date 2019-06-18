@@ -36,6 +36,7 @@ IN THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <list>
+#include <queue>
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -70,17 +71,27 @@ using namespace std;
 void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const NullspaceSVD &ns, gsl_matrix* baseNullspaceV, gsl_vector* singValVector, int numResis){
   //Save the output for comparison to normal modes via iMode
   //This requires a contiguous residue sequence without gaps
-  Residue* const firstResi = (protein->getAtoms())[0]->getResidue();
+  Residue* firstResi = (protein->getAtoms())[0]->getResidue();
   int numCols = ns.getMatrix()->size2;
   int dofCounter = 0;
   int numProlines = 0;
+  int chainCounter = 0;
   gsl_vector* projected_gradient = gsl_vector_alloc(numCols);
   std::map< pair<Residue*,int>, int> iModDofIndices;
+  std::queue<int> globalIndices;
   std::vector<Residue *>::iterator resIt;
   for(auto chain : protein->m_chains) {
+    if(chainCounter > 0){///more than 1 chain, add six "global" dofs
+    firstResi = chain->getResidues()[0];
+      for(int gi=0; gi<6; gi++) {
+        cout<<"Adding global iMOd dof"<<endl;
+        globalIndices.push(dofCounter++);
+      }
+    }
     std::vector<Residue *> &residues = chain->getResidues();
     for(auto const resi : residues){
       if (resi == firstResi){//Special case where first dof is fixed in iMod
+        cout<<"Found first residue"<<endl;
         iModDofIndices.insert(make_pair( make_pair(resi,1), dofCounter++) );
         continue;
       }
@@ -91,8 +102,9 @@ void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const Nu
       else
         numProlines++;
     }
+    chainCounter++;
   }
-  int numImodDofs = numResis * 2 - 1 - numProlines;
+  int numImodDofs = dofCounter; //numResis * 2 - 1 - numProlines + (chainCounter - 1)*6;
   log("hierarchy")<<"KGS predicts "<<numImodDofs<<" imod dofs."<<endl;
   gsl_vector* iModDofs = gsl_vector_alloc(numImodDofs);
 
@@ -116,13 +128,19 @@ void imodeComparisonFiles(Molecule* protein, HierarchyOptions& options, const Nu
     gsl_vector_set_zero(iModDofs);
     for( auto const edge : protein->m_spanningTree->m_edges){
       Bond *bond = edge->getBond();
-      // Check for global dof bonds
-      if (bond == nullptr)
+      if (bond == nullptr) {
+//        int idx = globalIndices.front();
+//        cout<<"Adding global cycle dof "<<idx<<" to iMOD vector"<<endl;
+//        if (idx >= 0 && idx <= numImodDofs) {
+//          gsl_vector_set(iModDofs, idx, 0);
+//        }
+//        globalIndices.pop();
         continue;
+      }
 
-      int idx=-1; //iMod index
       int cycleDofID =  edge->getDOF()->getCycleIndex(); //KGS cycle index
       if (cycleDofID != -1) {//if cycle DOF in KGS
+        int idx=-1; //iMod index
         Atom *atom1 = bond->m_atom1;
         if (bond->m_atom1->getName() == "N" and bond->m_atom2->getName() == "CA") {
           idx = iModDofIndices[make_pair(atom1->getResidue(),0)];
@@ -274,7 +292,7 @@ int main( int argc, char* argv[] ) {
   //Write the complete J*V product out to file
   gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-  if(options.saveData > -1) {
+  if(options.saveData > 1) {
     string outMat = "Vmatrix.txt";
     gsl_matrix_outtofile(baseNullspaceV, outMat);
     string outProd = "fullProduct_JV.txt";
@@ -299,17 +317,41 @@ int main( int argc, char* argv[] ) {
   }
 
   gsl_matrix_free(fullProduct);
+
+  //Site transfer DOF analysis
+  if(options.source != "") {
+      Selection source(options.source);
+      Selection sink(options.sink);
+      double mutualInformation = protein->m_conf->siteDOFTransfer(source, sink, ns.getSVD()->V);
+  }
+
   //Store output data in this file, space-separated in this order
   log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
 
   int maxSamples = min(options.samples,numCols);
+  cout<<"Generating "<<maxSamples<<" samples."<<endl;
+  int v_i = -1;
+  gsl_vector* freeEnergyIdx = gsl_vector_calloc(numCols);
 
-  for( int v_i = 0; v_i < maxSamples; ++v_i) {
-    conf->updateMolecule();
-    bool inNullspace = v_i< nullspaceCols;
-    if( v_i == nullspaceCols){
-      log("hierarchy")<<endl<<"Now motions outside of the nullspace."<<endl<<endl;
+  if (options.sampleFree){//compute free-energy of modes, pick in order of lowest free-energy modes
+      cout<<"Sorting free energy motions"<<endl;
+      protein->m_conf->sortFreeEnergyModes(ns.getSVD()->V,ns.getSVD()->S,freeEnergyIdx);
+      cout<<"Lowest mode number "<<gsl_vector_get(freeEnergyIdx,0)<<endl;
+  }
+
+  while( sampleCount < maxSamples) {
+    conf->updateMolecule();//restore to initial conf
+
+    if(options.sampleFree){//pick sample Free index
+        v_i = gsl_vector_get(freeEnergyIdx,sampleCount);//sorted from reverse to fit numCols - v_i - 1
     }
+    else{
+        v_i++; //increase nullspace column counter, move along V indices
+        if (v_i == nullspaceCols) {
+            log("hierarchy") << endl << "Now motions outside of the nullspace." << endl << endl;
+        }
+    }
+    bool inNullspace = v_i < nullspaceCols;
 
     gsl_vector_view projected_gradient_view = gsl_matrix_column(baseNullspaceV,numCols - v_i - 1);
     gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
@@ -384,6 +426,7 @@ int main( int argc, char* argv[] ) {
 //    log("data")<<"sample inCollision inNullspace gradientNorm predictedViolation observedViolation hbondDelta"<<endl;
     log("data")<<sampleCount<<" "<<inCollision<<" "<<inNullspace<<" "<<gradNorm<<" "<<predictedViolation<<" "<<observedViolation<<" "<<normDeltaHEnergy<<endl;
   }
+
 
   ///If target structure is available, also test direction towards target
   if(options.targetStructureFile != ""){
@@ -480,6 +523,7 @@ int main( int argc, char* argv[] ) {
   gsl_vector_free(singValVector);
   gsl_matrix_free(baseJacobian);
   gsl_matrix_free(baseNullspaceV);
+  gsl_vector_free(freeEnergyIdx);
 
 //  reportStream.close();
   dataStream.close();

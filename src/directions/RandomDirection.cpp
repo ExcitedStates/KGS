@@ -59,7 +59,7 @@ void RandomDirection::computeGradient(Configuration* conf, Configuration* target
 
     gsl_vector_set(ret, dofId, newVal);
   }
-
+  //TODO: remove scaling, angular values do not make sense for "translate dofs"
   if ( absMax > m_maxRotation ){
     gsl_vector_scale(ret, m_maxRotation/absMax);
   }

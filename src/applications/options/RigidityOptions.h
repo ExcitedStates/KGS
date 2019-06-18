@@ -77,6 +77,10 @@ class RigidityOptions {
   double svdCutoff;
   /** Option for collapsing rigid edges. */
   int collapseRigid;
+  /** Sink/Source to identify transferred DoF between different areas. */
+  std::string sink;
+  /** Sink/Source to identify transferred DoF between different areas. */
+  std::string source;
 
   void print();
 

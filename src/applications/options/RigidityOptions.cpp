@@ -76,8 +76,10 @@ RigidityOptions::RigidityOptions(int argc, char* argv[])
     if(arg=="--preventClashes"){                preventClashes = Util::stob(argv[++i]);             continue; }
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
-    if(arg=="--collapseRigidEdges"){             collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--collapseRigidEdges"){            collapseRigid = atoi(argv[++i]);                    continue; }
+    if(arg=="--sink"){                          sink = argv[++i];                                   continue; }
+    if(arg=="--source"){                        source = argv[++i];                                 continue; }
 //    if(arg=="--relativeDistances"){             relativeDistances = argv[++i];                      continue; }
 
     if(arg.at(0)=='-'){
@@ -128,13 +130,15 @@ void RigidityOptions::initializeVariables(){
   roots                     = {1}; //Choose the first atom
   collisionCheck            = "all";
   svdCutoff                 = 1.0e-12;
-  collapseRigid             = true;
+  collapseRigid             = 2;
+  sink                      = "";
+  source                    = "";
 }
 
 void RigidityOptions::print(){
   log("so")<<"Sampling options:"<<std::endl;
   log("so")<<"  --initial "<<initialStructureFile<<endl;
-//  log("so")<<"\t--target "<<targetStructureFile<<endl;
+//  log("so")<<" --target "<<targetStructureFile<<endl;
   log("so")<<"  --annotation "<<annotationFile<<endl;
   if(!hydrogenbondFile.empty()) {
     log("so")<<"  --hbondMethod "<<hydrogenbondMethod<<endl;
@@ -150,6 +154,8 @@ void RigidityOptions::print(){
   log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
   log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
   log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
+  log("so")<<"  --sink "<<sink<<endl;
+  log("so")<<"  --source "<<source<<endl<<endl;
 }
 
 void RigidityOptions::printUsage(char* pname){
@@ -176,7 +182,9 @@ void RigidityOptions::printUsage(char* pname){
   log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
   log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12. Higher value can artificially increase nullspace."<<endl;
-  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2. (other options currently not enabled)."<<endl;
+  log("so")<<"  --collapseRigidEdges <0|1|2> \t: Rigid bodies after merging over rigid edges. 0: Dont merge (initial rigid bodies). 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 2 (real rigidity analysis)"<<endl;
+  log("so")<<"  --sink <selection-pattern>\t: A pymol-like pattern that specifies sink residues in DoF transfer analysis. Default none."<<endl;
+  log("so")<<"  --source <selection-pattern>\t: A pymol-like pattern that specifies source residues in DoF transfer analysis. Default none."<<endl;
 }
 
 

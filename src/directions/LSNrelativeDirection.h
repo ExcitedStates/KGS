@@ -41,8 +41,12 @@ class LSNrelativeDirection: public Direction  {
   LSNrelativeDirection(Selection& atomsMoving,
                        const std::vector< std::tuple<Atom*, Atom*, double> >& goal_distances);
 
+  const std::vector< std::tuple<Atom*, Atom*, double> > getGoalDistances(){return m_goalDistances;}
+  void setGoalDistances(std::vector< std::tuple<Atom*, Atom*, double> > goal_distances){m_goalDistances=goal_distances;}
+
  protected:
   void computeGradient(Configuration* conf, Configuration* conf2, gsl_vector* ret) override;
+  void computeGradientExternalN(gsl_matrix* fullN, Configuration* conf, Configuration* conf2, gsl_vector* ret);
 
  private:
 
@@ -50,7 +54,9 @@ class LSNrelativeDirection: public Direction  {
   // void clashFreeGradient(gsl_vector* gradient, gsl_vector* admissible_gradient, Molecule* protein);
   gsl_matrix* determineBestMove(gsl_matrix* N, gsl_matrix* targetJacobian, gsl_matrix* TargetPosition);
   Selection& m_atomsMovingSelection;
-  std::vector< std::tuple<Atom*, Atom*, double> > goal_distances;
+  std::vector< std::tuple<Atom*, Atom*, double> > m_goalDistances;
+
+  friend class LSNclashAvoidingMove; //requires the computeGradientExternalN function
 };
 
 

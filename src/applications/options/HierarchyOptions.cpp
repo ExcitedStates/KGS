@@ -77,7 +77,10 @@ HierarchyOptions::HierarchyOptions(int argc, char* argv[])
     if(arg=="--residueNetwork" || arg=="-res"){ residueNetwork = argv[++i];                         continue; }
     if(arg=="--root"){                          Util::split( string(argv[++i]),',', roots );        continue; }
     if(arg=="--collisionCheck"){                collisionCheck = argv[++i];                         continue; }
-    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                         continue; }
+    if(arg=="--svdCutoff"){                     svdCutoff = atof(argv[++i]);                        continue; }
+    if(arg=="--sink"){                          sink = argv[++i];                                   continue; }
+    if(arg=="--source"){                        source = argv[++i];                                 continue; }
+    if(arg=="--sampleFree"){                    sampleFree = Util::stob(argv[++i]);                 continue; }
 
     if(arg.at(0)=='-'){
       cerr<<"Unknown option: "<<arg<<endl<<endl;
@@ -123,6 +126,9 @@ void HierarchyOptions::initializeVariables(){
   roots                     = {1}; //Choose the first atom
   collisionCheck            = "all";
   svdCutoff                 = 1.0e-12;
+  sink                      = "";
+  source                    = "";
+  sampleFree                = false;
 }
 
 void HierarchyOptions::print(){
@@ -138,11 +144,14 @@ void HierarchyOptions::print(){
   log("so")<<"\t--workingDirectory "<<workingDirectory<<endl;
   log("so")<<"\t--samples "<<samples<<endl;
   log("so")<<"\t--collisionFactor "<<collisionFactor<<endl;
+  log("so")<<"\t--stepSize "<<stepSize<<endl;
   log("so")<<"\t--saveData "<<saveData<<endl;
   log("so")<<"\t--residueNetwork "<<residueNetwork<<endl;
   log("so")<<"\t--root "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
   log("so")<<"\t--collisionCheck "<<collisionCheck<<endl;
   log("so")<<"\t--svdCutoff "<<svdCutoff<<endl;
+  log("so")<<"\t--sink "<<sink<<endl;
+  log("so")<<"\t--source "<<source<<endl<<endl;
 }
 
 void HierarchyOptions::printUsage(char* pname){
@@ -162,11 +171,15 @@ void HierarchyOptions::printUsage(char* pname){
   log("so")<<"  --samples <int> \t: Samples to generate: 0 (default, no samples) up to # of dofs "<<endl;
   log("so")<<"  --collisionFactor, -c <real number> \t: A number that is multiplied with the van der Waals radius when ";
   log("so")<<"checking for collisions. The default is 0.75."<<endl;
+  log("so")<<"  --stepSize, <real number> \t: Step size to scale move along motion modes when computing samples. "<<endl;
   log("so")<<"  --saveData <0|1|2|3>\t: Indicate whether files shall be saved! 0=none, 1=pdb, 2=pdb and q, 3=all. Default: 1"<<endl;
   log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies deformable residues during sampling. Default is 'all'."<<endl;
   log("so")<<"  --roots <int>[,<int>..]\t: Atom IDs of chain roots. Defaults to first atom of each chain."<<endl;
   log("so")<<"  --collisionCheck <string>\t: Atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace. Default: 1.0e-12. Higher value can artificially increase nullspace."<<endl;
+  log("so")<<"  --sink <selection-pattern>\t: A pymol-like pattern that specifies sink residues in DoF transfer analysis. Default none."<<endl;
+  log("so")<<"  --source <selection-pattern>\t: A pymol-like pattern that specifies source residues in DoF transfer analysis. Default none."<<endl;
+  log("so")<<"  --sampleFree <bool>\t: Sample lowest free energy motions instead of along indices in V."<<endl;
 }
 
 

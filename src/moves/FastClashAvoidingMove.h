@@ -65,7 +65,6 @@ class FastClashAvoidingMove : public Move
 
   /** Return a map that associates cycle-dofs and constrained dofs with a general dofs. */
   std::map<int,int> collectConstrainedDofMap(Configuration* conf, std::set< std::pair<Atom*,Atom*> >& allCollisions);
-  const double m_maxRotation;
   const int m_trialSteps;
   const bool m_projectConstraints;
   const std::string m_collisionCheckAtomTypes;

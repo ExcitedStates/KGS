@@ -44,7 +44,7 @@ ClashAvoidingMove::ClashAvoidingMove( double maxRotation,
                                       const std::string& atomTypes,
                                       bool projectConstraints
 ) :
-    m_maxRotation(maxRotation),
+    Move(maxRotation),
     m_trialSteps(trialSteps),
     m_collisionCheckAtomTypes(atomTypes),
     m_projectConstraints(projectConstraints)
@@ -63,7 +63,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   // Get atom positions at current
   Molecule *protein = current->updatedMolecule();
 
-  double currNorm = gsl_vector_length(gradient);
+  double normBefore = gsl_vector_length(gradient);
 //  log("planner") << "Norm of gradient: " << currNorm << endl;
 
   // Project the gradient onto the null space of current
@@ -82,16 +82,9 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
   //If resulting structure is in collision try scaling down the gradient
   for (int trialStep = 0; trialStep <= m_trialSteps; trialStep++) {
 
-    double currProjNorm = gsl_vector_length(projected_gradient);
-//    log("planner")<<"Norm of projected gradient: "<<currProjNorm<<endl;
-
-    // Normalize projected_gradient
-//    if (currProjNorm > 0.001)
-//      gsl_vector_normalize(projected_gradient);
-
     //Scale max entry
-//    gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
-
+    if(m_scale)
+      gsl_vector_scale_max_component(projected_gradient,m_maxRotation);
 
     for (int i = 0; i < new_q->getNumDOFs(); ++i) {
       new_q->m_dofs[i] = formatRangeRadian( current->m_dofs[i] + gsl_vector_get(projected_gradient, i) ); //added as transformation always starts from original coordinates
@@ -104,15 +97,7 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       log("planner") << "Rejected!" << endl;
       m_movesRejected++;
 
-//      log("planner")<<"Now computing a clash free m_direction!"<<endl;
       allCollisions = protein->getAllCollisions(m_collisionCheckAtomTypes);//get all collisions at this configuration
-
-//      for(auto const& prev_coll: previousCollisions){//collisions from previous trial
-//        log("planner")<<"Prev coll: "<<prev_coll.first->getId()<<" "<<prev_coll.first->getName()<<" "<<prev_coll.second->getId()<<" "<<prev_coll.second->getName()<<endl;
-//      }
-//      for(auto const& coll: allCollisions){//collisions from this trial
-//        log("planner")<<"Curr coll: "<<coll.first<<" "<<coll.first->getName()<<" "<<coll.second<<" "<<coll.second->getName()<<endl;
-//      }
 
       for(auto const& prev_coll: previousCollisions){//combine collisions
         auto ait = allCollisions.find(prev_coll);
@@ -133,10 +118,17 @@ Configuration* ClashAvoidingMove::performMove(Configuration* current, gsl_vector
       SVD* clashAvoidingSVD  = new SVDMKL(clashAvoidingJacobian);
       Nullspace* clashAvoidingNullSpace = new NullspaceSVD(clashAvoidingSVD);
       clashAvoidingNullSpace->updateFromMatrix();
-      clashAvoidingNullSpace->projectOnNullSpace(projected_gradient, projected_gradient);
+      clashAvoidingNullSpace->projectOnNullSpace(gradient, projected_gradient);
+
+      if(!m_scale) {//If no scaling, keep the same length as before! (this is for Poisson-Sampler)
+        double normAfter = gsl_vector_length(projected_gradient);
+        gsl_vector_scale(projected_gradient, normBefore / normAfter);
+      }
 
       new_q->m_usedClashPrevention = true;
-      new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanningTree->getNumCycleDOFs() + clashAvoidingNullSpace->getNullspaceSize();
+//      Changed this, clashAvoidingNullspace now based on all dofs
+//      new_q->m_clashFreeDofs = new_q->getNumDOFs() - new_q->getMolecule()->m_spanningTree->getNumCycleDOFs() + clashAvoidingNullSpace->getNullspaceSize();
+      new_q->m_clashFreeDofs = clashAvoidingNullSpace->getNullspaceSize();
 
 //      log("planner")<<"New nullspace dimension: "<< clashAvoidingNullSpace->getNullspaceSize()<<endl;
 
