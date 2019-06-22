@@ -247,3 +247,98 @@ double frobenius_norm (const gsl_matrix *m) {
   return pow(square_sum,0.5);
 }
 
+double fractionOfSignificantContributors(const gsl_vector *v){/// returns a value between 1/size and 1.
+
+  int size = v->size;
+  double sqSum=0.0;
+  double eVal = 0.0;
+  gsl_vector* kappa = gsl_vector_calloc(size);
+
+  for (int i=0; i<size; ++i) {
+    double val = gsl_vector_get(v,i);
+    sqSum += val*val;
+    gsl_vector_set(kappa,i,val*val);
+  }
+  gsl_vector_scale(kappa,1.0/sqSum); /// normalized the vector of kappa entries to length 1
+  for (int i=0; i< size; ++i){
+    double val = gsl_vector_get(kappa,i);
+//    cout<<" Shannon "<<val<<endl;
+//    if(!isinf(log(val))) { // 0 * log (0) = 0 after convention
+    if(val > 0) {
+      eVal += -val * log(val);
+    }
+  }
+  gsl_vector_free(kappa);
+
+  return 1.0/(double)(size) * exp(eVal); /// returns a value between 1/size and 1.
+}
+
+double significantContributors(const gsl_vector *v){/// returns a value between 1 and size, the number of significant contributors in this vector
+
+  int size = v->size;
+  double sqSum=0.0;
+  double eVal = 0.0;
+  gsl_vector* kappa = gsl_vector_calloc(size);
+
+  for (int i=0; i<size; ++i) {
+    double val = gsl_vector_get(v,i);
+    sqSum += val*val;
+    gsl_vector_set(kappa,i,val*val);
+  }
+  gsl_vector_scale(kappa,1.0/sqSum); /// normalized the vector of kappa entries to length 1
+  for (int i=0; i< size; ++i){
+    double val = gsl_vector_get(kappa,i);
+//    cout<<" Shannon "<<val<<endl;
+//    if(!isinf(log(val))) { // 0 * log (0) = 0 after convention
+    if(val > 0) {
+      eVal += -val * log(val);
+    }
+  }
+  gsl_vector_free(kappa);
+
+  return exp(eVal); /// returns a value between 1 and size.
+}
+
+double shannonEntropyInBits(const gsl_vector* v){// returns entropy of the vector in units information BIT (log2)
+
+  int size = v->size;
+  double sqSum=0.0;
+  double retVal = 0.0;
+  gsl_vector* kappa = gsl_vector_calloc(size);
+
+  for (int i=0; i<size; ++i) {
+    double val = gsl_vector_get(v,i);
+    sqSum += val*val;
+    gsl_vector_set(kappa,i,val*val);
+  }
+  gsl_vector_scale(kappa,1.0/sqSum); /// normalize the vector of kappa entries to length 1
+  for (int i=0; i< size; ++i){
+    double val = gsl_vector_get(kappa,i);
+//    cout<<" Shannon "<<val<<endl;
+//    if(!isinf(log(val))) { // 0 * log (0) = 0 after convention
+    if(val > 0) {
+      retVal += -val * log2(val);
+    }
+  }
+  gsl_vector_free(kappa);
+
+  return retVal; // returns entropy of the vector in units information BIT (log2)
+}
+
+
+double shannonEntropyUnnormalizedInBits(const gsl_vector* v){// returns entropy of the UNNORMALIZED INPUT VECTOR in units information BIT (log2)
+
+  int size = v->size;
+  double sqSum=0.0;
+  double eVal = 0.0;
+
+  for (int i=0; i<size; ++i) {
+    double val = fabs(gsl_vector_get(v,i));
+//    if(!isinf(log(val))) { // 0 * log (0) = 0 after convention
+    if(val > 0) {
+      eVal += -val * log2(val);
+    }
+  }
+
+  return eVal; /// returns a value in units information BIT
+}

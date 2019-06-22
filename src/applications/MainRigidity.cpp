@@ -43,6 +43,8 @@ IN THE SOFTWARE.
 #include "IO.h"
 #include "Logger.h"
 #include "applications/options/RigidityOptions.h"
+#include "../core/Configuration.h"
+#include "CTKTimer.h"
 
 extern double jacobianAndNullspaceTime;
 extern double rigidityTime;
@@ -51,19 +53,22 @@ using namespace std;
 
 int main( int argc, char* argv[] ){
 
-  enableLogger("rigidity");
+  CTKTimer timer;
+  timer.Reset();
+  double start_time = timer.LastElapsedTime();
 
   if(argc<2){ cerr<<"Too few arguments. Please specify PDB-file in arguments"<<endl; exit(-1);}
 
-  //RigidityOptions options(argc,argv);
   RigidityOptions::createOptions(argc,argv);
   RigidityOptions& options = *(RigidityOptions::getOptions());
 
+  enableLogger("rigidity");
+  enableLogger("default");
+
+  enableLogger("so"); //print options
   options.print();
 
   string out_path = options.workingDirectory;
-  //string pdb_file = path + protein_name + ".pdb";
-
   Selection movingResidues(options.residueNetwork);
   Molecule* protein = IO::readPdb(
       options.initialStructureFile,
@@ -77,37 +82,41 @@ int main( int argc, char* argv[] ){
   log("rigidity")<<"Molecule has:"<<endl;
   log("rigidity") << "> " << protein->getAtoms().size() << " atoms" << endl;
   log("rigidity")<<"> "<<protein->getInitialCollisions().size()<<" initial collisions"<<endl;
-  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" hydrogen bonds"<<endl;
+  log("rigidity")<<"> "<<protein->m_spanningTree->m_cycleAnchorEdges.size()<<" total bond constraints"<<endl;
+  log("rigidity")<<"> "<<protein->getHBonds().size()<<" hydrogen bonds"<<endl;
+  log("rigidity")<<"> "<<protein->getHydrophobicBonds().size()<<" hydrophobic bonds"<<endl;
+  log("rigidity")<<"> "<<protein->getDBonds().size()<<" distance bonds"<<endl;
   log("rigidity") << "> " << protein->m_spanningTree->getNumDOFs() << " DOFs of which " << protein->m_spanningTree->getNumCycleDOFs() << " are cycle-DOFs\n" << endl;
 
   Configuration* conf = protein->m_conf;
   NullspaceSVD ns = *(dynamic_cast<NullspaceSVD*>(conf->getNullspace()));
+  int numRows = ns.getMatrix()->size1;
   int numCols = ns.getMatrix()->size2;
   int nullspaceCols = ns.getNullspaceSize();
-  int sampleCount = 0;
-  gsl_vector* singValVector = gsl_vector_copy(ns.getSVD()->S);
+  int rankJacobian = numCols - nullspaceCols;
+  int numRedundantCons = numRows-rankJacobian;
 
-  log("rigidity") << "Dimension of Jacobian: " << ns.getMatrix()->size1 << " rows, ";
+  log("rigidity") << "Dimension of Jacobian: " << numRows << " rows, ";
   log("rigidity") << numCols << " columns" << endl;
-  log("rigidity") << "Dimension of kernel " << nullspaceCols << endl;
+  log("rigidity") << "Dimension of kernel: " << nullspaceCols << endl;
+  log("rigidity") << "Rank of Jacobian: " <<rankJacobian << endl;
+  log("rigidity") << "Number of redundant constraints: " <<numRedundantCons << endl;
 
-//  if (5*ns.getMatrix()->size1 < numCols){//less constraints than cycle-dofs
-//    //Write the complete J*V product out to file
-//    gsl_matrix* fullProduct = gsl_matrix_alloc(baseJacobian->size1, numCols);
-//    gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, baseJacobian, baseNullspaceV, 0.0, fullProduct);
-//    if(options.saveData > 1) {
-//      string outProd = "fullProduct_JV.txt";
-//      gsl_matrix_outtofile(fullProduct, outProd);
-//      gsl_matrix_free(fullProduct);
-//
-//      string outMat = "Vmatrix.txt";
-//      gsl_matrix_outtofile(baseNullspaceV, outMat);
-//    }
-//  }
+  //Site transfer DOF analysis
+  ///Only if source and sink are provided, compute mutual information
+  bool mutualInformation = options.source !="";
+  if(mutualInformation) {
+    Selection source(options.source);
+    Selection sink(options.sink);
+    double mutInfo = protein->m_conf->siteDOFTransfer(source, sink,
+                                                                ns.getBasis()); /// change this to V-matrix for whole sliding mechanism
+  }
+  /// Create larger rigid substructures for rigid cluster decomposition
+  Molecule* rigidified = protein->collapseRigidBonds(options.collapseRigid);
 
-
-
-  Molecule* rigidified = protein->collapseRigidBonds(2);
+  //Print final status
+  double end_time = timer.ElapsedTime();
+  log("rigidity")<< "Took "<<(end_time-start_time)<<" seconds to perform rigidity analysis\n";
 
   ///Write PDB File for pyMol usage
   int sample_id = 1;
@@ -117,6 +126,7 @@ int main( int argc, char* argv[] ){
                     + ".pdb";
 
   rigidified->writeRigidbodyIDToBFactor();
+  rigidified->m_conf->m_vdwEnergy = protein->vdwEnergy();
   IO::writePdb(rigidified, out_file);
 
   if(options.saveData <= 0) return 0;
@@ -134,14 +144,12 @@ int main( int argc, char* argv[] ){
   ///Write pyMol script
   IO::writePyMolScript(rigidified, out_file, pyMol, protein);
 
-  ///save singular values
-  NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
-  if (derived) {
-    string outSing = out_path + "output/singVals.txt";
-    gsl_vector_outtofile(derived->getSVD()->S, outSing);
-  }
-
   if(options.saveData <= 1) return 0;
+
+  ///save singular values
+  //NullspaceSVD* derived = dynamic_cast<NullspaceSVD*>(conf->getNullspace());
+  string outSing = out_path + "output/singVals.txt";
+  gsl_vector_outtofile(ns.getSVD()->S, outSing);
 
   ///save Jacobian and Nullspace to file
   string outJac=out_path + "output/" +  name + "_jac_" +
@@ -151,11 +159,31 @@ int main( int argc, char* argv[] ){
                  std::to_string((long long)sample_id)
                  + ".txt";
 
-  if (derived) {
-    derived->writeMatricesToFiles(outJac, outNull);
-  }
+  gsl_matrix_outtofile(ns.getBasis(),outNull);
+  gsl_matrix_outtofile(ns.getMatrix(),outJac);
 
   if(options.saveData <= 2) return 0;
+
+  if (conf->getHydrogenJacobian()){
+    string outHydrogenJacobian=out_path + "output/" +  name + "_HBondJacobian_" +
+                               std::to_string((long long)sample_id)
+                               + ".txt";
+    gsl_matrix_outtofile(conf->getHydrogenJacobian(), outHydrogenJacobian);
+  }
+
+  if (conf->getHydrophobicJacobian()) {
+    string outHpJacobian = out_path + "output/" + name + "_HydrophobicBondJacobian_" +
+                           std::to_string((long long) sample_id)
+                           + ".txt";
+    gsl_matrix_outtofile(conf->getHydrophobicJacobian(), outHpJacobian);
+  }
+
+  if (conf->getDistanceJacobian()) {
+    string outDJacobian = out_path + "output/" + name + "_DistanceBondJacobian_" +
+                           std::to_string((long long) sample_id)
+                           + ".txt";
+    gsl_matrix_outtofile(conf->getDistanceJacobian(), outDJacobian);
+  }
 
   string rbFile=out_path + "output/" +  name + "_RBs_" +
                 std::to_string((long long)sample_id)

@@ -207,6 +207,7 @@ void RelativeTransitionOptions::print(){
   log("so")<<"  --preventClashes "<<preventClashes<<endl;
   log("so")<<"  --gradientSelection "<<gradientSelection<<endl;
   log("so")<<"  --roots "; for(unsigned int i=0;i<roots.size();i++) log("so")<<roots[i]<<" "; log("so")<<endl;
+  log("so")<<"  --projectConstraints "<<projectConstraints<<endl;
   log("so")<<"  --collisionCheck "<<collisionCheck<<endl;
   log("so")<<"  --svdCutoff "<<svdCutoff<<endl;
   log("so")<<"  --collapseRigidEdges "<<collapseRigid<<endl;
@@ -235,6 +236,7 @@ void RelativeTransitionOptions::printUsage(char* pname){
   log("so")<<"  --gradientSelection <selection-pattern>\t: A pymol-like pattern that pecifies the residues of the molecule that are used to determine the gradient. Default is <heavy>."<<endl;
   log("so")<<"  --residueNetwork <selection-pattern>\t: A pymol-like pattern that specifies mobile residues during sampling (e.g. limited to single flexible loop). Default is 'all'."<<endl;
   log("so")<<"  --roots <comma-sep list of int>\t: The atom ID which will be part of the root rigid bodies. Specify one for each chain, as comma-separated list of ints."<<endl;
+  log("so")<<"  --projectConstraints <true/false>\t: If false, then we don't project moves onto the constraint manifold. Only recommended for testing."<<endl;
   log("so")<<"  --collisionCheck <string>\t: atoms used for collision detection: all (default), heavy, backbone"<<endl;
   log("so")<<"  --svdCutoff <real number> \t: Smallest singular value considered as part of the nullspace, default 1.0e-12."<<endl;
   log("so")<<"  --collapseRigidEdges <0|1|2> \t: Indicates whether to speed up null-space computation by collapsing rigid edges. 0: Dont collapse. 1: Collapse covalent bonds. 2: Collapse covalent and hydrogen bonds. Default 0."<<endl;

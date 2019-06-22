@@ -86,7 +86,8 @@ void PoissonPlanner::generateSamples()
   Selection sel(m_gradientSelection);
   Direction* direction = new RandomDirection(sel);
   gsl_vector* gradient = gsl_vector_alloc(m_molecule->totalDofNum());
-  double origStepSize = m_move->getStepSize();
+//  double origMaxRotation = m_move->getMaxRotation();
+  m_move->setScalingFlag(false);
 
   int sample_num = 1;
   int rejected_clash     = 0;
@@ -110,7 +111,7 @@ void PoissonPlanner::generateSamples()
     //Make m_maxRejectsBeforeClose attempts at perturbing it
     size_t attempt;
     for (attempt = 0; attempt < m_maxRejectsBeforeClose; attempt++) {
-      m_move->setStepSize(origStepSize);
+//      m_move->setMaxRotation(origMaxRotation); no scaling in moves anymore
       direction->gradient(seed, nullptr, gradient);  // Compute random gradient
       gsl_vector_scale(gradient, 1.0);
       Configuration *pert = m_move->move(seed, gradient);  // Perform move

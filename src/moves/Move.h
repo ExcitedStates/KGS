@@ -45,19 +45,22 @@ class Move{
    */
   Configuration* move(Configuration* current, gsl_vector* gradient);
 
-  double getStepSize();
+  double getMaxRotation();
+  void setMaxRotation(double maxRotation);
 
-  void setStepSize(double stepSize);
-
+  virtual void setScalingFlag(bool scale); //may be overridden in composite moves etc.
+  bool getScalingFlag();
 
  protected:
   Move();
+  Move(double maxRotation);
 
   virtual Configuration* performMove(Configuration* current, gsl_vector* gradient) = 0;
 
   int m_movesRejected;
   int m_movesAccepted;
-  double m_stepSize;
+  double m_maxRotation;
+  bool m_scale;
 };
 
 #endif

@@ -70,7 +70,7 @@ RRTPlanner::RRTPlanner(
     m_stepSize(stepSize),
     m_maxRotation(maxRotation),
     m_scaleToRadius(scaleToRadius)
-//m_maxDistance(ExploreOptions::getOptions()->explorationRadius)
+//m_explorationRadius(ExploreOptions::getOptions()->explorationRadius)
 {
   m_numDOFs = m_molecule->m_spanningTree->getNumDOFs();//m_edges.size();
   Configuration *pSmp = new Configuration(m_molecule);
@@ -83,11 +83,11 @@ RRTPlanner::RRTPlanner(
 
   m_numBuckets = NUM_BINS;
   m_bucketSize =
-      m_radius / (m_numBuckets - 1); //=0.25-0.50 ? the last bucket holds values bigger than m_maxDistance
+      m_radius / (m_numBuckets - 1); //=0.25-0.50 ? the last bucket holds values bigger than m_explorationRadius
 
   //m_bucketSize = 2*options.stepSize;
-  //m_numBuckets = min(MAX_BUCKET_NUM, int(m_maxDistance /m_bucketSize +1));
-  //m_bucketSize = m_maxDistance/(m_numBuckets-1);
+  //m_numBuckets = min(MAX_BUCKET_NUM, int(m_explorationRadius /m_bucketSize +1));
+  //m_bucketSize = m_explorationRadius/(m_numBuckets-1);
 
   distance_buckets[0].push_back(pSmp);
   m_current_max_bucket_id = 0;

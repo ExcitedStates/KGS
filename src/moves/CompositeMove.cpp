@@ -74,3 +74,10 @@ Configuration* CompositeMove::performMove(Configuration* current, gsl_vector* gr
 
 	throw "CompositeMove::performMove - Error: Shouldnt reach this point";
 }
+
+void CompositeMove::setScalingFlag(bool scale) {
+
+  for( pair< Move*, double > &child : child_moves ) {
+    child.first->setScalingFlag(scale);
+  }
+}

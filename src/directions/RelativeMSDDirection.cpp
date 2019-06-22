@@ -42,7 +42,7 @@ RelativeMSDDirection::RelativeMSDDirection(std::vector<std::tuple<Atom*, Atom*, 
 }
 
 void RelativeMSDDirection::computeGradient(Configuration* conf, Configuration* c_target, gsl_vector* ret) {
-  assert(c_target == nullptr);
+//  assert(c_target == nullptr);
   assert(conf->getMolecule()->m_spanningTree->getNumDOFs() == ret->size);
 
   Molecule *mol = conf->updatedMolecule();

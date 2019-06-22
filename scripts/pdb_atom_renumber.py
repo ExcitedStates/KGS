@@ -37,24 +37,16 @@ def main():
     """
     Function to call if this is called from command line.
     """
-
-    import argparse
-
-    # Parse command line
-    argparse.initializeParser(__description__,__date__)
-
-    file_list, options = argparse.parseCommandLine()
-
-    for pdb_file in file_list:
-    #for pdb_file in range(len(sys.argv)):
-   
+    import sys
+    for pdb_file in sys.argv[1:]:
+        
         # Read in the pdb file
         f = open(pdb_file,'r')
         pdb = f.readlines()
         f.close()
 
         out = pdbAtomRenumber(pdb)
-        if len(file_list) == 1:
+        if len(sys.argv) == 1:
             print "".join(out)
         else:
             out_file = "%s_renum.pdb" % pdb_file[:-4]

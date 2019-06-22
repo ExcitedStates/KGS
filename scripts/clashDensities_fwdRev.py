@@ -108,12 +108,15 @@ def main():
 	saveDir = os.getcwd()
 
 	for pdbPath in sys.argv[2:]:
-
 		pathFileSepIdx = pdbPath.rfind("/output")
 		expDir = pdbPath[0:pathFileSepIdx] if pathFileSepIdx!=-1 else "."
 		pathFileToOpen = pdbPath[pathFileSepIdx+1:] if pathFileSepIdx!=-1 else pdbPath
 		print pathFileToOpen
 		os.chdir(expDir)
+		if not os.path.isfile(pathFileToOpen):
+			print "Skipping",pathFileToOpen
+			os.chdir(saveDir)
+			continue #skipping non-existing path file
 		#Id's on the configurations on the path, separate for forward and reverse
 		pathList, reversePathList = extractPath(pathFileToOpen)
 		forwardClashes, reverseClashes = getClashes(pathFileToOpen,pathList, reversePathList)
@@ -201,12 +204,18 @@ def main():
 
 	#Select colors according to clashes
 	print "color gray80, b<0.99"
+	print "select clashFree, b<0.99"
 	print "color blue, ( b > 0.99 and b < "+str(colorBorders[-1])+")"
 	print "color deepteal, ( b > "+str(colorBorders[-1])+" and b < "+str(colorBorders[-2])+")"
 	print "color green, ( b > "+str(colorBorders[-2])+" and b < "+str(colorBorders[-3])+")"
 	print "color salmon, ( b > "+str(colorBorders[-3])+" and b < "+str(colorBorders[-4])+")"
 	print "color red, ( b > "+str(colorBorders[-4])+" )"
-	print "select high, b>"+str(colorBorders[-2])
+	print "select blue, ( b > 0.99 and b < "+str(colorBorders[-1])+")"
+	print "select deepteal, ( b > "+str(colorBorders[-1])+" and b < "+str(colorBorders[-2])+")"
+	print "select green, ( b > "+str(colorBorders[-2])+" and b < "+str(colorBorders[-3])+")"
+	print "select salmon, ( b > "+str(colorBorders[-3])+" and b < "+str(colorBorders[-4])+")"
+	print "select red, ( b > "+str(colorBorders[-4])+" )"
+	print "select high, b>"+str(colorBorders[-3])
 	print "show sticks, high"
 
 	print "bg_color white"
@@ -214,7 +223,8 @@ def main():
 	# hide everything
 	print "show lines"
 	print "set line_width = 1"
-	print "hide lines, b<0.99"
+	print "hide lines, clashFree"
+	print "hide lines, blue"
 	print "show cartoon"
 	print "set ray_opaque_background, on"
 	print "set cartoon_fancy_helices, on"

@@ -53,11 +53,13 @@ IN THE SOFTWARE.
 #include "core/Bond.h"
 #include "core/HBond.h"
 #include "core/DBond.h"
+#include "core/HydrophobicBond.h"
 #include "DisjointSets.h"
 #include "Logger.h"
 #include "Selection.h"
 #include "Color.h"
 #include "HbondIdentifier.h"
+#include "core/graph/KinTree.h"
 
 
 using namespace std;
@@ -91,9 +93,8 @@ Molecule* IO::readPdb (
     const string& hbondFile,
     const Molecule* reference
 )
-{
+ {
   Molecule* molecule = new Molecule();
-
   //Read molecule name
   int nameSplit=pdb_file.find_last_of("/\\");
   string moleculeName=pdb_file.substr(nameSplit + 1);
@@ -111,8 +112,10 @@ Molecule* IO::readPdb (
   vector< vector<int > > conectRecords;
   vector< pair<int,int> > torsionConstraints;
   vector< pair<int,int> > distanceConstraints;
+  vector< pair<int,int> > hydrophobicConstraints;
 
   int atomCount=0;
+
 
   //Read lines of PDB-file.
   while( !pdb.eof()) {
@@ -149,6 +152,14 @@ Molecule* IO::readPdb (
       iss>>id1>>id2;
       distanceConstraints.push_back( make_pair(id1,id2) );
 
+      continue;
+    }
+    if( line.substr(0,32)=="REMARK 555 HydrophobicConstraint"){
+      std::istringstream iss(line.substr(32));
+      int id1, id2;
+      //TODO: Fail gracefully
+      iss>>id1>>id2;
+      hydrophobicConstraints.push_back( make_pair(id1,id2) );
       continue;
     }
 
@@ -209,7 +220,6 @@ Molecule* IO::readPdb (
     }
   }
   if(!foundHydro) cerr<<"IO::readPdb - Warning: No hydrogens found in file. Consider running `reduce`"<<endl;
-
 
   //Create covalent bonds from residue profiles
   ResidueProfile residue_profile=readResidueProfile();
@@ -329,7 +339,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
 //        molecule->addCovBond(a1->getResidue(), a2->getResidue(), a1->getName(), a2->getName());
         molecule->addCovBond(a1, a2);
-//        cout << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
+        log("debug") << "Creating conect record bond between " << a1 << " and " << a2 << " in protein " << molecule->getName() << endl;
       }
     }
   }
@@ -367,7 +377,7 @@ Molecule* IO::readPdb (
 //        makeCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
 //        molecule->addCovBond(a3->getResidue(), a4->getResidue(), a3->getName(), a4->getName());
         molecule->addCovBond(a3, a4);
-        cout << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
+        log("debug") << "Creating conect record bond between " << a3 << " and " << a4 << " in protein " << molecule->getName()
              << endl;
       }
     }
@@ -444,7 +454,7 @@ Molecule* IO::readPdb (
 
     // Set the number of bars to six for all these bonds!
     if(fixedBonds.find(query1)!=fixedBonds.end() || fixedBonds.find(query2)!=fixedBonds.end()){
-      bond->Bars = 6;
+      bond->m_bars = 6;
     }
 
   }
@@ -482,7 +492,6 @@ Molecule* IO::readPdb (
 //      atom->setAsSidechainAtom();
 //  }
 
-
   //Create H-bonds from REMARK records
   for(const pair<int,int>& constraint: torsionConstraints) {
     Atom* hatom = molecule->getAtom(constraint.second);
@@ -514,6 +523,13 @@ Molecule* IO::readPdb (
     Atom* a2 = molecule->getAtom(constraint.second);
     DBond *new_db = new DBond(a1, a2);
     molecule->addDBond(new_db);
+  }
+  
+  for(const pair<int,int>& constraint: hydrophobicConstraints) {
+    Atom* a1 = molecule->getAtom(constraint.first);
+    Atom* a2 = molecule->getAtom(constraint.second);
+    HydrophobicBond *new_hyb = new HydrophobicBond(a1, a2);
+    molecule->addHydrophobicBond(new_hyb);
   }
 
   //For backwards compatibility: If hbondFile set, read additional hydrogen bonds
@@ -676,8 +692,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      continue;
 //    }
@@ -835,8 +851,8 @@ void IO::readHbonds(const std::string& hbondMethod, const std::string& hbondFile
 //    ///The isLocked/isPeptide bond check in Bond and the profiles
 //    ///As for some profiles, it can be either locked or rotatable!
 //
-//    if( bond->Bars == 6){//This is fixed in the Bond -> isLocked
-//      //cout<<"IO::readRigidBody - Bars=6"<<endl;
+//    if( bond->m_bars == 6){//This is fixed in the Bond -> isLocked
+//      //cout<<"IO::readRigidBody - m_bars=6"<<endl;
 //      ds.Union(bond->Atom1->getId(), bond->m_atom2->getId());
 //      log("debug") << "IO::readRigidbody["<< __LINE__<<"] - Joining " << bond->Atom1->getId() << " - " << bond->m_atom2->getId() << endl;
 //      continue;
@@ -1075,7 +1091,7 @@ void IO::writeCovBonds (Molecule *molecule, string output_file_name) {
   for (auto const& bond: molecule->getCovBonds()){
     output << right << setw(8) << bond->m_atom1->getId();
     output << right << setw(8) << bond->m_atom2->getId();
-    output << right << setw(8) << bond->Bars << endl;
+    output << right << setw(8) << bond->m_bars << endl;
   }
   output.close();
 }
@@ -1130,7 +1146,7 @@ void IO::writeHbondsIn (Molecule *molecule, string output_file_name) {
 void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   ofstream output(output_file_name.c_str());
 
-  int count=0;
+  int count=0; //hydrogen bond count
 
   //Header line
   output << "H-bond_ID ";
@@ -1148,26 +1164,64 @@ void IO::writeHbonds (Molecule *molecule, string output_file_name) {
   output << "#bars ";
   output << "length ";
   output << "angle_D_H_A ";
-  output << "angle_H_A_AA"<<endl;
+  output << "angle_H_A_AA ";
+  output << "row_idx"<<endl;
 
-  for (auto const& bond: molecule->getHBonds()){
-    output << ++count<<" ";
-    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
-    output << bond->Hatom->getResidue()->getId()<<" ";
-    output << bond->Hatom->getResidue()->getName()<<" ";
-    output << bond->Hatom->getName()<<" ";
-    output << bond->Hatom->getId()<<" ";
-    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
-    output << bond->Acceptor->getResidue()->getId()<<" ";
-    output << bond->Acceptor->getResidue()->getName()<<" ";
-    output << bond->Acceptor->getName()<<" ";
-    output << bond->Acceptor->getId()<<" ";
-    output << bond->getIniEnergy()<<" ";
-    output << bond->Bars<<" ";
-    output << bond->getLength()<<" ";
-    output << bond->getAngle_D_H_A()<<" ";
-    output << bond->getAngle_H_A_AA()<<endl;
+  int rowIdx=0;
+  for (std::pair<KinEdge*,KinVertex*>& edge_vertex_pair: molecule->m_spanningTree->m_cycleAnchorEdges){
+    KinEdge* edge_ptr = edge_vertex_pair.first;
+    Bond* bond_ptr = edge_ptr->getBond();
+    ///Correct row counter
+    if(bond_ptr->isDBond()){//3 constraints, 3 rel. DOF
+      rowIdx+=3;
+    }
+    else if(bond_ptr->isHydrophobicBond()){//hydrophobic bond, 1 constraint, 5 rel. DOF
+      rowIdx += 1;
+    }
+    else if(bond_ptr->isHBond()){//limit this analysis to hydrogen bonds
+      Hbond* bond = static_cast<Hbond*>(bond_ptr);
+      output << ++count<<" ";
+      output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+      output << bond->Hatom->getResidue()->getId()<<" ";
+      output << bond->Hatom->getResidue()->getName()<<" ";
+      output << bond->Hatom->getName()<<" ";
+      output << bond->Hatom->getId()<<" ";
+      output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+      output << bond->Acceptor->getResidue()->getId()<<" ";
+      output << bond->Acceptor->getResidue()->getName()<<" ";
+      output << bond->Acceptor->getName()<<" ";
+      output << bond->Acceptor->getId()<<" ";
+      output << bond->getIniEnergy()<<" ";
+      output << bond->m_bars<<" ";
+      output << bond->getLength()<<" ";
+      output << bond->getAngle_D_H_A()<<" ";
+      output << bond->getAngle_H_A_AA()<<" ";
+      output << rowIdx<<endl;
+      rowIdx+=5;
+    }
+    else{ //Hbonds or default; 5 constraints, 1 rel. DOF
+      rowIdx+=5;
+    }
   }
+
+//  for (auto const& bond: molecule->getHBonds()){
+//    output << ++count<<" ";
+//    output << bond->Hatom->getResidue()->getChain()->getName()<<" ";
+//    output << bond->Hatom->getResidue()->getId()<<" ";
+//    output << bond->Hatom->getResidue()->getName()<<" ";
+//    output << bond->Hatom->getName()<<" ";
+//    output << bond->Hatom->getId()<<" ";
+//    output << bond->Acceptor->getResidue()->getChain()->getName()<<" ";
+//    output << bond->Acceptor->getResidue()->getId()<<" ";
+//    output << bond->Acceptor->getResidue()->getName()<<" ";
+//    output << bond->Acceptor->getName()<<" ";
+//    output << bond->Acceptor->getId()<<" ";
+//    output << bond->getIniEnergy()<<" ";
+//    output << bond->m_bars<<" ";
+//    output << bond->getLength()<<" ";
+//    output << bond->getAngle_D_H_A()<<" ";
+//    output << bond->getAngle_H_A_AA()<<endl;
+//  }
   output.close();
 }
 
@@ -1195,7 +1249,7 @@ void IO::writeHbondsChange (Configuration *conf, string output_file_name) {
     output << bond->Hatom->getId()<<" ";
     output << bond->Acceptor->getId()<<" ";
     output << energy<<" ";
-    int numBars = bond->Bars;
+    int numBars = bond->m_bars;
     output << numBars<<" ";
     output << bond->getLength()<<" ";
     output << bond->getAngle_D_H_A()<<" ";
@@ -1569,6 +1623,26 @@ void IO::readHbonds_vadar(Molecule * molecule, string file){
 
 void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_file_name, Molecule* iniMolecule) {
 
+  //We sort them so the biggest clusters always have the smallest IDs and the same colors
+  std::vector< std::pair<int, unsigned int> > sortedRBs; //pair of int size, unsigned int ID
+
+  unsigned int maxSize = 0;
+  unsigned int maxIndex=0;
+
+  for(auto const& it : rigidified->getRigidbodies() ){
+    int rbSize = it->size();
+    sortedRBs.push_back(make_pair( rbSize , it->id() ));
+    if(rbSize > maxSize){
+      maxSize = rbSize;
+      maxIndex = it->id();
+    }
+  }
+
+  vector< pair<int, unsigned int> >::iterator vsit = sortedRBs.begin();
+  vector< pair<int, unsigned int> >::iterator veit = sortedRBs.end();
+
+  sort(vsit, veit,Rigidbody::compareSize); //sorts them by size
+
   ofstream pymol_script( output_file_name.c_str() );
 
   string render_style;
@@ -1601,14 +1675,10 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   // assign that color to those atoms.
   // Also, we save each cluster's color in a map for use again later
   Color::next_rcd_color_as_name(true);
-
-  for(auto const& rb : rigidified->getRigidbodies()){
-    if(rb->Atoms.size()>MIN_CLUSTER_SIZE){
-
+  for(auto const& rb : sortedRBs){
       string color = Color::next_rcd_color_as_name();
-      pymol_script << "color " << color << ", ( b > " << float(rb->id())/100-0.001
-                   << " and b < " << float(rb->id())/100+0.001 << ")" << endl;
-    }
+      pymol_script << "color " << color << ", ( b > " << float(rb.second)/100-0.001
+                   << " and b < " << float(rb.second)/100+0.001 << ")" << endl;
   }
 
   // Python commands to draw hbonds
@@ -1617,30 +1687,59 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   pymol_script << "set dash_gap, 0.1" << endl;
 
   int site_1, site_2;
-  vector< pair<KinEdge*,KinVertex*> >::iterator eit;
+  std::vector< pair<KinEdge*,KinVertex*> >::iterator eit;
 
+  /// initial molecule (nothing collapsed)
   if(iniMolecule) {
     for (eit = iniMolecule->m_spanningTree->m_cycleAnchorEdges.begin();
          eit != iniMolecule->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
-
       site_1 = eit->first->getBond()->m_atom1->getId();
       site_2 = eit->first->getBond()->m_atom2->getId();
-      pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
-
+      if(eit->first->getBond()->isHBond()) {
+        pymol_script << "distance allHbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if(eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance allHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if(eit->first->getBond()->isDBond()) {
+        pymol_script << "distance allDbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance allCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
     }
-    pymol_script << "color red, allHbonds" << endl;
-    pymol_script << "hide labels, allHbonds" << endl;
   }
 
-  for (eit=rigidified->m_spanningTree->m_cycleAnchorEdges.begin(); eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+  /// collapsed molecule, remaining constraints
+  if(rigidified) {
+    for (eit = rigidified->m_spanningTree->m_cycleAnchorEdges.begin();
+         eit != rigidified->m_spanningTree->m_cycleAnchorEdges.end(); eit++) {
+      site_1 = eit->first->getBond()->m_atom1->getId();
+      site_2 = eit->first->getBond()->m_atom2->getId();
 
-    site_1 = eit->first->getBond()->m_atom1->getId();
-    site_2 = eit->first->getBond()->m_atom2->getId();
-    pymol_script << "distance hbondConstraints = id " << site_1 << " , id " << site_2 << endl;
-
+      if (eit->first->getBond()->isHBond()) {
+        pymol_script << "distance mobileHbonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isHydrophobicBond()) {
+        pymol_script << "distance mobileHydrophobics = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else if (eit->first->getBond()->isDBond()) {
+        pymol_script << "distance mobileDBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+      else{ ///Default bonds, modeled as torsional
+        pymol_script << "distance mobileCycleCovBonds = id " << site_1 << " , id " << site_2 << endl;
+      }
+    }
   }
-  pymol_script << "color yellow, hbondConstraints" << endl;
-  pymol_script << "hide labels, hbondConstraints" << endl;
+  pymol_script << "color red, allHbonds" << endl;
+  pymol_script << "color yellow, mobileHbonds" << endl;
+  pymol_script << "color deepteal, allHydrophobics" << endl;
+  pymol_script << "color cyan, mobileHydrophobics" << endl;
+  pymol_script << "color black, allDBonds" << endl;
+  pymol_script << "color gray60, mobileDBonds" << endl;
+  pymol_script << "color lightmagenta, allCycleCovBonds" << endl;
+  pymol_script << "color deeppurple, mobileCycleCovBonds" << endl;
+  pymol_script << "hide labels" << endl;
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -1682,8 +1781,8 @@ void IO::writePyMolScript(Molecule * rigidified, string pdb_file, string output_
   //Create biggest cluster as separate object, color blue for simple identification
   pymol_script << "create biggestCluster, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
                << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
-  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
-               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
+//  pymol_script << "color blue, ( b > " << float(rigidified->m_conf->m_maxIndex)/100-0.001
+//               << " and b < " << float(rigidified->m_conf->m_maxIndex)/100+0.001 << ")" << endl;
 
   // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
@@ -1717,20 +1816,6 @@ void IO::writeRBs(Molecule * protein, string output_file_name){
       }
       output<<endl<<"NaN"<<endl<<endl;
     }
-//    vector< pair<int, unsigned int> >::iterator it=c->m_sortedRBs.begin();
-//
-//    while( it != c->m_sortedRBs.end() ){
-//
-//      vector<Atom*>::iterator ait = c->m_biggerRBMap[it->second]->Atoms.begin();
-//      while( ait != c->m_biggerRBMap[it->second]->Atoms.end() ){
-//      output << (*ait)->getId() << endl;
-//      ait++;
-//    }
-//      output << endl;
-//      output << "NaN"<<endl;
-//      output << endl;
-//      it++;
-//    }
 
   }
   output.close();
@@ -1754,18 +1839,25 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
     output << "Number of chains: " << protein->m_chains.size() << endl;
     output << "Number of atoms: " << protein->getAtoms().size() << endl;
     output << "Number of covalent bonds: " << protein->getCovBonds().size() << endl;
-    output << "Number of hydrogen bonds: " << protein->m_spanningTree->m_cycleAnchorEdges.size() << endl;
+    output << "Number of hydrogen bonds: " << protein->getHBonds().size() << endl;
+    output << "Number of distance bonds: " << protein->getDBonds().size() << endl;
+    output << "Number of hydrophobic bonds: " <<  protein->getHydrophobicBonds().size() << endl;
+    int numCovCycleCons = protein->m_spanningTree->m_cycleAnchorEdges.size() - protein->getHBonds().size()
+          - protein->getDBonds().size() - protein->getHydrophobicBonds().size();
+    output << "Number of cycle covalent bonds: " <<  numCovCycleCons << endl;
     output << "Number of dihedrals in spanning tree: " << protein->m_spanningTree->getNumDOFs() << endl;
     output << "Number of free DOFs: " << diff << endl;
     output << "Number of cycle DOFs: " << protein->m_spanningTree->getNumCycleDOFs() << endl << endl;
     output << "************* Statistics on rigidity analysis *************" << endl;
     output << "Number of internal m_dofs (nullspace dimension): " << protein->m_conf->getNullspace()->getNullspaceSize()
            << endl;
-    output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
-    output << "Number of rigidified covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
-           << endl;
-    output << "Number of rigidified hydrogen bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
 
+    output << "Overall number of m_dofs (free + coordinated): " << sum << endl;
+    output << "Number of rigidified DOFs (covalent bonds): " << protein->m_conf->getNullspace()->getNumRigidDihedrals()
+           << endl;
+    output << "Number of rigidified hydrogen and cycle covalent bonds: " << protein->m_conf->getNullspace()->getNumRigidHBonds() << endl;
+    output << "Number of rigidified distance bonds: " << protein->m_conf->getNullspace()->getNumRigidDBonds() << endl;
+    output << "Number of rigidified hydrophobic bonds: " << protein->m_conf->getNullspace()->getNumRigidHydrophobicBonds() << endl;
     if (rigidified) { ///rigidified is a protein with collapsed rigid bodies
       output << "Number of rigid clusters: " << rigidified->m_conf->m_numClusters << endl;
       output << "Size of biggest cluster: " << rigidified->m_conf->m_maxSize << endl;
@@ -1780,7 +1872,7 @@ void IO::writeStats(Molecule * protein, string output_file_name, Molecule* rigid
 
 }
 
-void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target) {
+void IO::writeTrajectory (Molecule* molecule, string output_file_name, string output_mdl, Molecule* target, const std::vector<std::tuple<Atom *, Atom *, double> >* deer) {
 
   ofstream output(output_file_name.c_str());
   if(!output.is_open()) {
@@ -1831,49 +1923,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
     for(int i=0; i <= treeDepth; i++){
 
       output << "MODEL"<<currId<<endl;
-
-      //			std::size_t pos = output_file_name.find("path");
-      //			string input_file_name=output_file_name.substr(0,pos) + "new_" +
-      //					static_cast<ostringstream*>( &(ostringstream() << currId) )->str() + ".pdb";
-      //			ifstream inputFile(input_file_name.c_str());
-      //
-      //			if (!inputFile.good()) {
-      //				cerr << "Error: cannot open file " << input_file_name << endl;
-      //				exit(-1);
-      //			}
-      //			string line, temp;
-      //
-      //			int test=0;
-      //			while (!inputFile.eof()) {
-      //				getline(inputFile,line);
-      //				if (inputFile.eof()) break;
-      //				if (line.substr(0,4)!="ATOM") // skip if it is not an ATOM line
-      //					continue;
-      //				output << line << endl;
-      //				test++;
-      //			}
-
-      //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = molecule->m_spanningTree->m_edges.begin(); eit != molecule->m_spanningTree->m_edges.end(); eit++){
-      //				KinEdge* e = (*eit);
-      //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
-      //				double val = Abs(c->m_f[dofId]);
-      //				int num;
-      //				if( val > 0.01)
-      //					num=1;
-      //				else if (val > 0.00000001)
-      //					num=2;
-      //				else
-      //					num=3;
-      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->m_id)->second)
-      //						resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //				else{
-      //					resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //			}
 
       for (auto const& atom: molecule->getAtoms()) {
         Residue* res = atom->getResidue();
@@ -1953,48 +2002,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
       output << "REMARK\tFile corresponds to sample "<<currId<<endl;
       output << "MODEL"<<++firstPathLength<<endl;
 
-      //			std::size_t pos = output_file_name.find("path");
-      //			string input_file_name=output_file_name.substr(0,pos) + "new_" +
-      //					static_cast<ostringstream*>( &(ostringstream() << currId) )->str() + ".pdb";
-      //			ifstream inputFile(input_file_name.c_str());
-      //
-      //			if (!inputFile.good()) {
-      //				cerr << "Error: cannot open file " << input_file_name << endl;
-      //				exit(-1);
-      //			}
-      //			string line, temp;
-      //
-      //			int test=0;
-      //			while (!inputFile.eof()) {
-      //				getline(inputFile,line);
-      //				if (inputFile.eof()) break;
-      //				if (line.substr(0,4)!="ATOM") // skip if it is not an ATOM line
-      //					continue;
-      //				output << line << endl;
-      //				test++;
-      //			}
-      //			map<unsigned int, unsigned int> resiColorMap;
-      //			for( eit = target->m_spanningTree->m_edges.begin(); eit != target->m_spanningTree->m_edges.end(); eit++){
-      //				KinEdge* e = (*eit);
-      //				int dofId = e->DOF_id;
-      //				CTKResidue* res = e->Bond->Atom1->m_parentResidue;
-      //				double val = Abs(c->m_f[dofId]);
-      //				int num;
-      //				if( val > 0.01)
-      //					num=1;
-      //				else if (val > 0.00000001)
-      //					num=2;
-      //				else
-      //					num=3;
-      //				if( resiColorMap.find(res->m_id) != resiColorMap.end()){
-      //					if( num < resiColorMap.find(res->m_id)->second)
-      //						resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //				else{
-      //					resiColorMap.insert( make_pair(res->m_id, num) );
-      //				}
-      //			}
-
       for (auto const& atom: target->getAtoms()) {
         Residue* res = atom->getResidue();
         char buffer[100];
@@ -2053,7 +2060,6 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   //////////////////////////////////////////////////////////////////////
   pymol_script << "load " << output_file_name << endl << endl;
   pymol_script << "set line_width = 1" << endl;
-  //	  pymol_script << "color black" << endl << endl;
 
   //Determine object name
   size_t start_idx = output_file_name.find_last_of("/")+1;
@@ -2067,19 +2073,8 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   // Also, we save each cluster's color in a map for use again later
 
   map< unsigned int, string > mapClusterIDtoColor;
-//  map<unsigned int,Rigidbody*>::iterator rbit = molecule->m_conf->m_biggerRBMap.begin();
-//  vector< pair< int, unsigned int> >::iterator sit = molecule->m_conf->m_sortedRBs.begin();
   Color::next_rcd_color_as_name(true);
 
-//  while(sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( sit->first >= MIN_CLUSTER_SIZE ){
-//      string color = Color::next_rcd_color_as_name();
-//      mapClusterIDtoColor[sit->second] = color;
-//      pymol_script << "color " << color << ", ( b > " << float(sit->second-0.01)
-//        << " and b < " << float(sit->second+0.01) << ")" << endl;
-//    }
-//    sit++;
-//  }
   for(auto const& rb: molecule->getRigidbodies()){
     if(rb->Atoms.size()<MIN_CLUSTER_SIZE) continue;
     string color = Color::next_rcd_color_as_name();
@@ -2100,11 +2095,29 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
 
     site_1 = eit.first->getBond()->m_atom1->getId();
     site_2 = eit.first->getBond()->m_atom2->getId();
-    pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
+    if(eit.first->getBond()->isHBond()) {
+      pymol_script << "distance hbonds = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else if(eit.first->getBond()->isDBond()) {
+      pymol_script << "distance dbonds = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else if(eit.first->getBond()->isHydrophobicBond()) {
+      pymol_script << "distance hydrophobics = id " << site_1 << " , id " << site_2 << endl;
+    }
+    else{
+      pymol_script << "distance constraints = id " << site_1 << " , id " << site_2 << endl;
+    }
 
   }
-  pymol_script << "color pink, hbonds" << endl;
-  pymol_script << "hide labels, hbonds" << endl;
+  pymol_script << "color yellow, hbonds" << endl;
+  pymol_script << "color teal, hydrophobics" << endl;
+  pymol_script << "color pink, dbonds" << endl;
+  pymol_script << "show dashes, hbonds" << endl;
+  pymol_script << "show dashes, hydrophobics" << endl;
+  pymol_script << "show dashes, dbonds" << endl;
+  pymol_script << "hide labels" << endl;
+
+  /// Commented out rigid clusters, too much information for long trajectories
 
   // Create the rigid cluster objects for pymol, and color them. Only those
   // clusters larger than the min_output_cluster_size will have objects
@@ -2112,34 +2125,21 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   // objects.
   //////////////////////////////////////////////////////////////////////
 
-  render_style = "lines";
-  //	   for each rigid cluster, create a new pymol object of the cluster.
-  unsigned int total_RC_objects = 0;
-//  rbit = molecule->m_conf->m_biggerRBMap.begin();
-//  sit = molecule->m_conf->m_sortedRBs.begin();
-//  while( sit != molecule->m_conf->m_sortedRBs.end() ){
-//    if( (sit->first) >= MIN_CLUSTER_SIZE ){
-//  pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << sit->second<< " has "
-//               << sit->first << " atoms." << endl;
-//  pymol_script << "select RC" << sit->second << ", ( b > " << float(sit->second-0.01)
-//               << " and b < " << float(sit->second+0.01) << ")" << endl;
-//  pymol_script << "show " << render_style << ", RC" << sit->second << endl;
-//  pymol_script << "set line_width = 3, " << "RC" << sit->second << endl;
-//  pymol_script << "color " << mapClusterIDtoColor[sit->second] << ", RC" << sit->second << endl << endl;
-//}
-//sit++;
-//}
-  for(auto const& rb: molecule->getRigidbodies()){
-    if(rb->Atoms.size()>=MIN_CLUSTER_SIZE){
-      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
-        << rb->Atoms.size() << " atoms." << endl;
-      pymol_script << "select RC" << rb->id() << ", ( b > " << float(rb->id()-0.01)
-        << " and b < " << float(rb->id()+0.01) << ")" << endl;
-      pymol_script << "show " << render_style << ", RC" << rb->id() << endl;
-      pymol_script << "set line_width = 3, " << "RC" << rb->id() << endl;
-      pymol_script << "color " << mapClusterIDtoColor[rb->id()] << ", RC" << rb->id() << endl << endl;
-    }
-  }
+//  render_style = "lines";
+//  //	   for each rigid cluster, create a new pymol object of the cluster.
+//  unsigned int total_RC_objects = 0;
+
+//  for(auto const& rb: molecule->getRigidbodies()){
+//    if(rb->Atoms.size()>=MIN_CLUSTER_SIZE){
+//      pymol_script << "# Rigid Cluster # " << ++total_RC_objects << " and ID " << rb->id()<< " has "
+//        << rb->Atoms.size() << " atoms." << endl;
+//      pymol_script << "select RC" << rb->id() << ", ( b > " << float(rb->id()-0.01)
+//        << " and b < " << float(rb->id()+0.01) << ")" << endl;
+//      pymol_script << "show " << render_style << ", RC" << rb->id() << endl;
+//      pymol_script << "set line_width = 3, " << "RC" << rb->id() << endl;
+//      pymol_script << "color " << mapClusterIDtoColor[rb->id()] << ", RC" << rb->id() << endl << endl;
+//    }
+//  }
 
   //	  pymol_script << "create Moving, ( b > " << float(0.9)
   //		<< " and b < " << float(1.1) << ")" << endl;
@@ -2153,24 +2153,35 @@ void IO::writeTrajectory (Molecule* molecule, string output_file_name, string ou
   //		<< " and b < " << float(3.1) << ")" << endl;
   //	  pymol_script << "color blue, Fix"<< endl;
 
-  // Some final global attributes to set.
+
+  if(deer!= nullptr) {
+    for (auto &m_goalDistance : *deer) {
+      Atom *a1 = get<0>(m_goalDistance);
+      Atom *a2 = get<1>(m_goalDistance);
+      pymol_script << "distance deer = id " << a1->getId() << " and "<<obj_name<<
+      ", id " << a2->getId() << " and "<<obj_name<<endl;
+    }
+    pymol_script << "color red, deer"<<endl;
+    pymol_script << "show dashes, deer" << endl;
+    pymol_script << "show labels, deer" << endl;
+  }
+
+    // Some final global attributes to set.
   //////////////////////////////////////////////////////////////////////
   pymol_script << "bg_color white" << endl;
   pymol_script << "clip slab, 200" << endl;
   pymol_script << "center all" << endl;
   pymol_script << "zoom" << endl <<endl;
 
-  pymol_script << "hide everything" << endl;
+//  pymol_script << "hide everything" << endl;
   pymol_script << "show lines" << endl;
-  pymol_script << "set line_width = 3 " << endl;
+//  pymol_script << "set line_width = 3 " << endl;
   pymol_script << "show cartoon" << endl;
-  pymol_script << "show dashes, hbonds" << endl;
+  pymol_script << "dss "<< obj_name<<endl;
   pymol_script << "set cartoon_transparency, 0.7" << endl;
 
   pymol_script.close();
 }
-
-
 
 std::vector< std::tuple<Atom*, Atom*, double> > IO::readRelativeDistances(const std::string& fname, Molecule* mol){
   ifstream input(fname.c_str());
@@ -2282,10 +2293,13 @@ void IO::writeNewSample(Configuration *conf, Configuration *ref, int sample_num,
 
     if (NullspaceSVD *derived = dynamic_cast<NullspaceSVD *>(conf->getNullspace())) {
       gsl_vector_outtofile(derived->getSVD()->S, outSing);
-      derived->writeMatricesToFiles(outJac, outNull);
+      gsl_matrix_outtofile(derived->getMatrix(),outJac);
+      gsl_matrix_outtofile(derived->getBasis(),outNull);
     }
     IO::writeRBs(protein, rbFile);
     IO::writeStats(protein, statFile);
 
   }
 }
+
+

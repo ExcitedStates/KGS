@@ -40,17 +40,29 @@ DecreaseStepMove::DecreaseStepMove(Move* m, unsigned int decreaseSteps, double d
     m_decreaseSteps(decreaseSteps),
     m_decreaseFactor(decreaseFactor)
 {
+  setScalingFlag(true);
 }
 
 Configuration* DecreaseStepMove::performMove(Configuration* current, gsl_vector* gradient) {
-  double subStepSize = m_stepSize;
 
-  m_subMove->setStepSize(subStepSize);
+  if(!m_scale){
+    std::cerr<<"DecreaseStepMove::performMove(): Using decrease-step move without step-scaling, please modify options accordingly"<<std::endl;
+    exit(-1);
+  }
+  double origSubMaxRot = m_subMove->getMaxRotation();
+  bool origScale = m_subMove->getScalingFlag();
+
+//  double subMaxRot = m_maxRotation; //use this one's maxRotation as a start
+  double subMaxRot = origSubMaxRot;//use submove's maxRotation as a start
+
+  //Impose scaling values
+  m_subMove->setMaxRotation(subMaxRot);
+  m_subMove->setScalingFlag(true);
+
   Configuration* new_q;
 
   //As sub-moves sometime modify the gradient we need a copy
   gsl_vector* gradient_copy = gsl_vector_copy(gradient);
-
 
   //If resulting structure is in collision try scaling down the gradient
   for (int step = 0; step <= m_decreaseSteps; step++) {
@@ -60,15 +72,20 @@ Configuration* DecreaseStepMove::performMove(Configuration* current, gsl_vector*
       gsl_vector_memcpy(gradient_copy, gradient);
       delete new_q;
 
-      subStepSize *= m_decreaseFactor;
-      m_subMove->setStepSize(subStepSize);
+      subMaxRot *= m_decreaseFactor;
+      m_subMove->setMaxRotation(subMaxRot);
 
     } else {
       gsl_vector_free(gradient_copy);
+      //Restore scaling values
+      m_subMove->setMaxRotation(origSubMaxRot);
+      m_subMove->setScalingFlag(origScale);
       return new_q;
     }
   }
-
   gsl_vector_free(gradient_copy);
+  //Restore scaling values
+  m_subMove->setMaxRotation(origSubMaxRot);
+  m_subMove->setScalingFlag(origScale);
   return new_q;
 }
