@@ -73,6 +73,25 @@ scl enable devtoolset-4 bash
 cmake <repo path>/src
 make -j 16
 ```
+On sdc04, there is no need to call 
+```bash
+scl enable devtoolset-4 bash
+```
+Just change to a bash shell:
+```bash
+bash
+. /home/sw/intel/compilers_and_libraries/linux/bin/compilervars.sh intel64
+cmake <repo path>/src
+make -j 16
+```
+
+### cmake complains it cannot find gsl, even though it is installed
+
+Make sure the executable
+```bash
+gsl-config
+```
+which  is part of gsl, is in your path
 
 ## Usage 
 
