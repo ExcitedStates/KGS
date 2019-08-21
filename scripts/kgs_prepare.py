@@ -171,7 +171,7 @@ class Atom:
         if mainchainOnly:
             return self.name=="O" or (self.name=="N" and len(self.neighbors)<=2)
         else:
-            return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2)
+            return self.elem=="O" or (self.elem=="N" and len(self.neighbors)<=2) or (self.elem=="S" and len(self.neighbors)<2)
         
     def isHydrophobicAtom(self):
         #Limit hydrophobic interactions to C,S in non-polar residue side-chains; taken from Betts2003: Amino acid properties and consequences of substitutions
@@ -507,6 +507,8 @@ class PDBFile:
             # phi = math.acos( dot(n_d, n_a) )
             # if phi>3.141592: phi = 3.141592-phi
             #  %%%%%%%%%%%%% BEFORE WITH BUG %%%%%%%%%%%%%%%%%%%%%%%%
+            
+            #print donor, acceptor, energy_dist * energy_angl * math.cos(max(phi,psi))**2
 
             return energy_dist * energy_angl * math.cos(max(phi,psi))**2
 
