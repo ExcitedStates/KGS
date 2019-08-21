@@ -175,7 +175,7 @@ Molecule* IO::readPdb (
       int res_id = atoi(line.substr(22+offset, 4).c_str()); // line[23:26]
       string res_name = Util::trim(line.substr(17+offset, 3)); // line[18:20]
       // atom info
-      int atom_id = atoi(line.substr(6+offset, 5).c_str()); // line[7:11]s
+      int atom_id = atoi(line.substr(6, 5+offset).c_str()); // line[7:11]s
       string atom_name = Util::trim(line.substr(12+offset, 5)); // line[13:17]
       if (atom_name == "OP3") continue;
       if (atom_name.at(0) >= 49 && atom_name.at(0) <= 57) { // if the first char is 1-9
